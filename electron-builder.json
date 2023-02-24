@@ -1,28 +1,43 @@
 {
-  "appId": "YouAppID",
+  "appId": "com.alixby.app",
+  "productName": "阿里云盘小白羊",
+  "copyright": "3.10.24",
   "asar": true,
   "directories": {
     "output": "release"
   },
+  "extraResources": [
+    { "from": "./aria2c.exe", "to": "."}
+  ],
   "files": [
     "dist"
   ],
   "mac": {
-    "artifactName": "${productName}_${version}.${ext}",
+    "icon": "public/favicon.ico",
+    "artifactName": "${productName}v${version}-${arch}.${ext}",
     "target": [
-      "dmg"
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      }
+    ]
+  },
+  "linux": {
+    "icon": "public/favicon.ico",
+    "artifactName": "${productName}v${version}-${arch}.${ext}",
+    "target": [
+      "AppImage"
     ]
   },
   "win": {
+    "icon": "public/favicon.ico",
     "target": [
       {
         "target": "nsis",
-        "arch": [
-          "x64"
-        ]
+        "arch": [ "x64" ]
       }
     ],
-    "artifactName": "${productName}_${version}.${ext}"
+    "artifactName": "${productName}v${version}-${arch}.${ext}"
   },
   "nsis": {
     "oneClick": false,
