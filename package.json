@@ -1,0 +1,68 @@
+{
+  "name": "aliyunpan",
+  "description": "阿里云盘小白羊V3",
+  "version": "3.10.24",
+  "main": "dist/electron/main/index.js",
+  "author": "",
+  "license": "",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build && electron-builder"
+  },
+  "engines": {
+    "node": ">=14.17.0"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@arco-design/web-vue": "^2.36.0",
+    "@electron/remote": "^2.0.8",
+    "@types/crypto-js": "^4.1.1",
+    "@types/lodash": "^4.14.184",
+    "@types/node": "^17.0.45",
+    "@types/secp256k1": "^4.0.3",
+    "@types/uuid": "^9.0.1",
+    "@vitejs/plugin-vue": "^3.1.0",
+    "@vitejs/plugin-vue-jsx": "^2.0.1",
+    "ant-design-vue": "^3.2.12",
+    "aria2-lib": "1.0.1",
+    "axios": "^0.27.2",
+    "crypto-js": "^4.1.1",
+    "dayjs": "^1.11.5",
+    "dexie": "^3.2.2",
+    "dom-to-image": "^2.6.0",
+    "electron": "^20.1.1",
+    "electron-builder": "^23.3.3",
+    "fuzzysort": "^2.0.1",
+    "isomorphic-fetch": "^3.0.0",
+    "jschardet": "^3.0.0",
+    "lodash": "^4.17.21",
+    "pinia": "^2.0.22",
+    "secp256k1": "^5.0.0",
+    "socks-proxy-agent": "^7.0.0",
+    "terser": "^5.15.0",
+    "typescript": "^4.8.2",
+    "unplugin-vue-components": "^0.22.4",
+    "uuid": "^9.0.0",
+    "uuid-by-string": "^4.0.0",
+    "viewerjs": "^1.10.5",
+    "vite": "^3.1.0",
+    "vite-plugin-electron": "^0.9.2",
+    "vite-plugin-resolve": "^2.1.2",
+    "vue": "^3.2.38",
+    "vue-tsc": "^0.40.10"
+  },
+  "debug": {
+    "env": {
+      "VITE_DEV_SERVER_HOSTNAME": "127.0.0.1",
+      "VITE_DEV_SERVER_PORT": 3344,
+      "VITE_DEV_SERVER_URL": "http://127.0.0.1:3344"
+    }
+  },
+  "keywords": [
+    "electron",
+    "rollup",
+    "vite",
+    "vue3",
+    "vue"
+  ]
+}
