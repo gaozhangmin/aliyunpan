@@ -2,7 +2,7 @@
 import { KeyboardState, useAppStore, useKeyboardStore, useWinStore } from '../store'
 import { onHideRightMenuScroll, onShowRightMenu, TestCtrl, TestKey, TestKeyboardScroll, TestKeyboardSelect } from '../utils/keyboardhelper'
 import { ref } from 'vue'
-import useUploadingStore from './uploadingstore'
+import useUploadingStore from './UploadingStore'
 
 import { Tooltip as AntdTooltip } from 'ant-design-vue'
 import 'ant-design-vue/es/tooltip/style/css'
@@ -29,9 +29,9 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
   if (TestCtrl('a', state.KeyDownEvent, () => uploadingStore.mSelectAll())) return
 
   if (TestKey('f5', state.KeyDownEvent, handleRefresh)) return
-  if (TestKey('Backspace', state.KeyDownEvent, handleBack)) return 
-  if (TestKeyboardSelect(state.KeyDownEvent, viewlist.value, uploadingStore, UploadingDAL.aUploadingStartOne)) return 
-  if (TestKeyboardScroll(state.KeyDownEvent, viewlist.value, uploadingStore)) return 
+  if (TestKey('Backspace', state.KeyDownEvent, handleBack)) return
+  if (TestKeyboardSelect(state.KeyDownEvent, viewlist.value, uploadingStore, UploadingDAL.aUploadingStartOne)) return
+  if (TestKeyboardScroll(state.KeyDownEvent, viewlist.value, uploadingStore)) return
 })
 
 const handleRefresh = () => UploadingDAL.aReloadUploading()
@@ -45,7 +45,7 @@ const handleSelect = (UploadID: number, event: any, isCtrl: boolean = false) => 
 
 const handleRightClick = (e: { event: MouseEvent; node: any }) => {
   const key = e.node.key
-  
+
   if (!uploadingStore.ListSelected.has(key)) uploadingStore.mMouseSelect(key, false, false)
   onShowRightMenu('rightuploadingmenu', e.event.clientX, e.event.clientY)
 }

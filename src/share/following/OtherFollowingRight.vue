@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useAppStore, useOtherFollowingStore, FollowingState, useKeyboardStore, KeyboardState, useMyFollowingStore, useUserStore } from '../../store'
-import FollowingDAL from './followingdal'
+import FollowingDAL from './FollowingDAL'
 import { copyToClipboard, openExternal } from '../../utils/electronhelper'
 import message from '../../utils/message'
 import { TestKey } from '../../utils/keyboardhelper'

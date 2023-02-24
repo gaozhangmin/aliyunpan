@@ -1,4 +1,4 @@
-import useUploadingStore from '../down/uploadingstore'
+import useUploadingStore from '../down/UploadingStore'
 import { useFootStore, useSettingStore } from '../store'
 import { IStateUploadInfo, IStateUploadTask, IStateUploadTaskFile } from '../utils/dbupload'
 import { clickWait } from '../utils/debounce'
@@ -11,7 +11,7 @@ const path = window.require('path')
 const fspromises = window.require('fs/promises')
 
 export default class UploadingDAL {
-  
+
   static QueryIsUploading() {
     return UploadingData.QueryIsUploading()
   }
@@ -27,12 +27,12 @@ export default class UploadingDAL {
     uploadingStore.ListLoading = false
   }
 
-  
+
   static mUploadingRefresh() {
     const uploadingStore = useUploadingStore()
     let dirKey = uploadingStore.showTaskID || 0
     let dirName = uploadingStore.ShowTaskName || ''
-    
+
 
     if (dirKey) {
       const data = UploadingData.UploadingShowListDir(dirKey)
@@ -43,7 +43,7 @@ export default class UploadingDAL {
         return
       }
     }
-    
+
     dirKey = 0
     dirName = ''
     const data = UploadingData.UploadingShowList()
@@ -52,7 +52,7 @@ export default class UploadingDAL {
     UploadingData.UploadingShowProgress()
   }
 
-  
+
   static async aUploadingStart(all: boolean, isToStart: boolean) {
     if (clickWait('aUploadingStart', 500)) return
     const uploadingStore = useUploadingStore()
@@ -60,7 +60,7 @@ export default class UploadingDAL {
     if (uploadingStore.showTaskID) {
       let UploadIDList: number[] = all ? [] : Array.from(uploadingStore.ListSelected)
       UploadIDList = await UploadingData.UploadingStartTaskFile(uploadingStore.showTaskID, UploadIDList, isToStart)
-      
+
       if (!isToStart) {
         if (all) {
           window.WinMsgToUpload({ cmd: 'UploadCmd', Command: 'stop', IsAll: false, UploadIDList: [], TaskIDList: [uploadingStore.showTaskID] })
@@ -71,7 +71,7 @@ export default class UploadingDAL {
     } else {
       let TaskIDList: number[] = all ? [] : Array.from(uploadingStore.ListSelected)
       TaskIDList = await UploadingData.UploadingStartTask(TaskIDList, isToStart)
-      
+
       if (!isToStart) {
         if (all) {
           window.WinMsgToUpload({ cmd: 'UploadCmd', Command: 'stop', IsAll: true, UploadIDList: [], TaskIDList: [] })
@@ -83,7 +83,7 @@ export default class UploadingDAL {
     UploadingDAL.mUploadingRefresh()
   }
 
-  
+
   static async aUploadingStartOne(TaskOrUploadID: number) {
     if (clickWait('aUploadingStartOne', 400)) return
     const uploadingStore = useUploadingStore()
@@ -91,19 +91,19 @@ export default class UploadingDAL {
       const isToStart = UploadingData.GetTaskFileIsStop(TaskOrUploadID)
       const UploadIDList: number[] = [TaskOrUploadID]
       await UploadingData.UploadingStartTaskFile(uploadingStore.showTaskID, UploadIDList, isToStart)
-      
+
       if (!isToStart) window.WinMsgToUpload({ cmd: 'UploadCmd', Command: 'stop', IsAll: false, UploadIDList: UploadIDList, TaskIDList: [] })
     } else {
       const isToStart = UploadingData.GetTaskIsStop(TaskOrUploadID)
       const TaskIDList: number[] = [TaskOrUploadID]
       await UploadingData.UploadingStartTask(TaskIDList, isToStart)
-      
+
       if (!isToStart) window.WinMsgToUpload({ cmd: 'UploadCmd', Command: 'stop', IsAll: false, UploadIDList: [], TaskIDList: TaskIDList })
     }
     UploadingDAL.mUploadingRefresh()
   }
 
-  
+
   static async aUploadingDelete(all: boolean) {
     if (clickWait('aUploadingDelete', 500)) return
     const uploadingStore = useUploadingStore()
@@ -127,7 +127,7 @@ export default class UploadingDAL {
     UploadingDAL.mUploadingRefresh()
   }
 
-  
+
   static mUploadingShowTask(TaskID: number = 0) {
     if (!TaskID) {
       const uploadingStore = useUploadingStore()
@@ -144,23 +144,23 @@ export default class UploadingDAL {
     }
   }
 
-  
+
   static mUploadingShowTaskBack() {
     useUploadingStore().mShowTask(0, '')
     UploadingDAL.mUploadingRefresh()
   }
 
-  
+
   static async aUploadingEvent(ReportList: IStateUploadInfo[], ErrorList: IStateUploadInfo[], SuccessList: IStateUploadTaskFile[], RunningKeys: number[], StopKeys: number[], LoadingKeys: number[], SpeedTotal: string) {
     UploadingData.UploadingEventSave(ReportList, ErrorList, SuccessList)
 
     const check = UploadingData.UploadingEventRunningCheck(RunningKeys, StopKeys)
     if (check.delList.length > 0) {
-      
+
       console.log('UploadingEventRunningCheck', check.delList)
       window.WinMsgToUpload({ cmd: 'UploadCmd', Command: 'delete', IsAll: false, UploadIDList: check.delList, TaskIDList: [] })
     }
-    
+
     const sendList = UploadingData.UploadingEventSendList(check.newList, LoadingKeys)
     if (sendList.length > 0) {
       window.WinMsgToUpload({ cmd: 'UploadAdd', UploadList: sendList })
@@ -173,14 +173,14 @@ export default class UploadingDAL {
     UploadingDAL.mUploadingRefresh()
   }
 
-  
+
   static async aUploadingAppendFiles(TaskID: number, UploadID: number, CreatedDirID: string, AppendList: IStateUploadTaskFile[]) {
     await UploadingData.UploadingAppendFilesSave(TaskID, UploadID, CreatedDirID, AppendList)
   }
 
-  
+
   static async aUploadLocalFiles(user_id: string, drive_id: string, parent_file_id: string, files: string[], check_name_mode: string, tip: boolean) {
-    
+
 
     if (!user_id) return 0
     if (!files || files.length == 0) return 0
@@ -195,16 +195,16 @@ export default class UploadingDAL {
 
     let addList: IStateUploadTask[] = []
     let plist: Promise<void>[] = []
-    
+
     const timeStr = dateNow.toString().substring(2, 12) + '00000'
-    let tasktime = parseInt(timeStr) 
+    let tasktime = parseInt(timeStr)
 
     let addall = 0
 
     const formax = ingoredList.length
     for (let i = 0, maxi = files.length; i < maxi; i++) {
       const filePath = files[i]
-      
+
       if (CheckWindowsBreakPath(filePath)) continue
 
       const filePathLower = filePath.toLowerCase()
@@ -212,12 +212,12 @@ export default class UploadingDAL {
         fspromises
           .lstat(filePath)
           .then((stat: any) => {
-            if (stat.isSymbolicLink()) return 
+            if (stat.isSymbolicLink()) return
             const isDir = stat.isDirectory()
             if (isDir == false) {
-              if (stat.isFile() == false) return 
+              if (stat.isFile() == false) return
               for (let j = 0; j < formax; j++) {
-                if (filePathLower.endsWith(ingoredList[j])) return 
+                if (filePathLower.endsWith(ingoredList[j])) return
               }
             }
             let baseName: string = path.basename(filePath)
@@ -233,7 +233,7 @@ export default class UploadingDAL {
 
             if (UniqueMap.has(parent_file_id + '|' + basePath + '|' + baseName)) {
               message.warning('跳过上传任务，已存在相同的任务：' + filePath)
-              return 
+              return
             }
 
             const TaskID = tasktime
@@ -281,7 +281,7 @@ export default class UploadingDAL {
       )
 
       if (plist.length >= 10) {
-        await Promise.all(plist).catch(() => {}) 
+        await Promise.all(plist).catch(() => {})
         plist = []
         if (addList.length >= 1000) {
           await UploadingData.UploadingAddTask(addList)

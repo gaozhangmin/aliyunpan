@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useAppStore, useMyFollowingStore, useKeyboardStore, KeyboardState, useUserStore, useWinStore } from '../../store'
-import FollowingDAL from './followingdal'
+import FollowingDAL from './FollowingDAL'
 import { copyToClipboard, getFromClipboard, openExternal } from '../../utils/electronhelper'
 import { TestCtrl, TestKey, TestKeyboardSelect, TestKeyboardScroll, onHideRightMenuScroll } from '../../utils/keyboardhelper'
 import message from '../../utils/message'
@@ -32,13 +32,13 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
   if (TestCtrl('c', state.KeyDownEvent, handleCopySelectedLink)) return
   if (TestCtrl('Delete', state.KeyDownEvent, handleDeleteSelectedLink)) return
   if (TestCtrl('n', state.KeyDownEvent, handleDaoRuLink)) return
-  if (TestCtrl('f', state.KeyDownEvent, () => inputsearch.value.focus())) return 
-  if (TestKey('f3', state.KeyDownEvent, () => inputsearch.value.focus())) return 
-  if (TestKey(' ', state.KeyDownEvent, () => inputsearch.value.focus())) return 
+  if (TestCtrl('f', state.KeyDownEvent, () => inputsearch.value.focus())) return
+  if (TestKey('f3', state.KeyDownEvent, () => inputsearch.value.focus())) return
+  if (TestKey(' ', state.KeyDownEvent, () => inputsearch.value.focus())) return
   if (TestKey('f5', state.KeyDownEvent, handleRefresh)) return
 
-  if (TestKeyboardSelect(state.KeyDownEvent, viewlist.value, myfollowingStore, handleOpenLink)) return 
-  if (TestKeyboardScroll(state.KeyDownEvent, viewlist.value, myfollowingStore)) return 
+  if (TestKeyboardSelect(state.KeyDownEvent, viewlist.value, myfollowingStore, handleOpenLink)) return
+  if (TestKeyboardScroll(state.KeyDownEvent, viewlist.value, myfollowingStore)) return
 })
 
 const handleRefresh = () => FollowingDAL.aReloadMyFollowing(useUserStore().user_id, true)
@@ -49,12 +49,12 @@ const handleSelect = (followingid: string, event: MouseEvent) => {
 }
 
 const handleOpenLink = (followingid: string) => {
-  AliFollowing.ApiSetFollowingMarkRead(useUserStore().user_id, followingid) 
+  AliFollowing.ApiSetFollowingMarkRead(useUserStore().user_id, followingid)
   const url = 'https://www.aliyundrive.com/u/' + followingid + '/feed'
   openExternal(url)
 }
 const handleOpenShare = (share_id: string, share_pwd: string, file_id_list: string[]) => {
-  AliShare.ApisSubscription(useUserStore().user_id, share_id) 
+  AliShare.ApisSubscription(useUserStore().user_id, share_id)
   modalShowShareLink(share_id, share_pwd, '', true, file_id_list)
 }
 const handleCopySelectedLink = () => {
@@ -105,7 +105,7 @@ const handleSaveDaoRuLink = () => {
     if (success) {
       daoruModelText.value = ''
       daoruModel.value = false
-      FollowingDAL.aReloadMyFollowing(useUserStore().user_id, true) 
+      FollowingDAL.aReloadMyFollowing(useUserStore().user_id, true)
     }
   })
 }

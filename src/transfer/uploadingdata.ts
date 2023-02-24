@@ -1,4 +1,4 @@
-import { IUploadingModel } from '../down/uploadingstore'
+import { IUploadingModel } from '../down/UploadingStore'
 import PanDAL from '../pan/pandal'
 import { useSettingStore } from '../store'
 import UploadDAL from './uploaddal'
@@ -31,7 +31,7 @@ const SaveTaskToDB = throttle(() => {
 }, 10000)
 
 export default class UploadingData {
-  
+
   static QueryIsUploading(): boolean {
     const keys = UploadingTaskList.keys()
     for (let i = 0, maxi = UploadingTaskList.size; i < maxi; i++) {
@@ -41,7 +41,7 @@ export default class UploadingData {
     return false
   }
 
-  
+
   static GetTaskUniqueID(): Set<string> {
     const map = new Set<string>()
     const values = UploadingTaskList.values()
@@ -79,16 +79,16 @@ export default class UploadingData {
     return UploadingInfoList.get(UploadID)
   }
 
-  
+
   static StartTask(TaskID: number, isToStart: boolean): boolean {
     const task = UploadingTaskList.get(TaskID)
     if (!task) return false
 
-    
+
     if (isToStart) UploadingTaskStop.delete(TaskID)
     else UploadingTaskStop.add(TaskID)
 
-    
+
     const childrenList = task.Children
     for (let i = 0, maxi = childrenList.length; i < maxi; i++) {
       const UploadID = childrenList[i].UploadID
@@ -97,7 +97,7 @@ export default class UploadingData {
       } else {
         UploadingInfoStop.add(UploadID)
       }
-      
+
       const info = UploadingInfoList.get(UploadID)
       if (info) {
         info.uploadState = isToStart ? '排队中' : '已暂停'
@@ -112,32 +112,32 @@ export default class UploadingData {
     return true
   }
 
-  
+
   static StartTaskFile(TaskID: number, UploadID: number, isToStart: boolean): boolean {
     const task = UploadingTaskList.get(TaskID)
     if (!task) return false
 
-    
+
     if (isToStart) UploadingInfoStop.delete(UploadID)
     else UploadingInfoStop.add(UploadID)
 
-    
+
     if (isToStart) UploadingTaskStop.delete(TaskID)
     else {
-      
+
       const childrenList = task.Children
       for (let i = 0, maxi = childrenList.length; i < maxi; i++) {
         if (UploadingInfoStop.has(childrenList[i].UploadID) == false) {
-          
+
           UploadingTaskStop.delete(TaskID)
           return true
         }
       }
-      
+
       UploadingTaskStop.add(TaskID)
     }
 
-    
+
     const info = UploadingInfoList.get(UploadID)
     if (info) {
       info.uploadState = isToStart ? '排队中' : '已暂停'
@@ -170,7 +170,7 @@ export default class UploadingData {
         item.Children.map((t) => fileMap.add(t.UploadID))
       }
     }
-    
+
     if (delTaskList.length > 0) await DBUpload.deleteUploadTaskBatch(delTaskList)
 
     const downAutoStart = useSettingStore().downAutoStart
@@ -185,14 +185,14 @@ export default class UploadingData {
     } else {
       const delInfoList: number[] = []
       for (let i = 0, maxi = infoList.length; i < maxi; i++) {
-        const item = infoList[i] 
+        const item = infoList[i]
 
         if (fileMap.has(item.UploadID)) {
-          
+
           if (downAutoStart && UploadingInfoStop.has(item.UploadID) == false) {
-            item.uploadState = '排队中' 
+            item.uploadState = '排队中'
           } else {
-            item.uploadState = '已暂停' 
+            item.uploadState = '已暂停'
           }
           item.failedCode = 0
           item.failedMessage = ''
@@ -206,12 +206,12 @@ export default class UploadingData {
           UploadingInfoStop.delete(item.UploadID)
         }
       }
-      
+
       if (delInfoList.length > 0) DBUpload.deleteUploadInfoBatch(delInfoList)
     }
   }
 
-  
+
   static UploadingShowList(): { showList: IUploadingModel[]; count: number } {
     const showList: IUploadingModel[] = []
     const now = Date.now() / 1000
@@ -219,13 +219,13 @@ export default class UploadingData {
     for (let i = 0, maxi = UploadingTaskList.size; i < maxi; i++) {
       const task = values.next().value as IStateUploadTask
       if (!task.isDir) {
-        
+
         if (task.Children.length == 1) {
           const item = UploadingData.UploadingShowOneItem(task.Children[0], now, task.localFilePath, task.TaskID, true)
           showList.push(item)
         }
       } else {
-        
+
         let isRunning = 0
         let isError = 0
         let speed = 0
@@ -262,7 +262,7 @@ export default class UploadingData {
           speedStr: isRunning ? humanSizeSpeed(speed) : '' ,
           Progress: Math.floor((childFinishSize * 100) / (task.ChildTotalSize + 1)) % 100,
           ProgressStr: task.ChildFinishCount + ' / ' + task.ChildTotalCount,
-          errorMessage: isError > 0 ? '有错误点击查看' : '' 
+          errorMessage: isError > 0 ? '有错误点击查看' : ''
         } as IUploadingModel)
       }
 
@@ -274,14 +274,14 @@ export default class UploadingData {
   static UploadingShowOneItem(item: IStateUploadTaskFile, now: number, localFilePath: string, TaskID: number, isShowTask: boolean): IUploadingModel {
     const info = UploadingInfoList.get(item.UploadID)
     if (info && !UploadingInfoStop.has(item.UploadID)) {
-      
+
       const isError = info.uploadState == 'error'
       const isSuccess = info.uploadState == 'success'
       const isRunning = info.uploadState == 'running'
       const isLoading = info.uploadState == '读取中'
       const isHashing = info.uploadState == 'hashing'
 
-      const lastTime = Math.max(1, Math.min((item.size - info.uploadSize) / (info.Speed + 1), 356400)) 
+      const lastTime = Math.max(1, Math.min((item.size - info.uploadSize) / (info.Speed + 1), 356400))
 
       let uploadState: string = info.uploadState
       if (isRunning) uploadState = info.failedMessage ? info.failedMessage : info.Progress + '% ' + humanTime(lastTime)
@@ -301,10 +301,10 @@ export default class UploadingData {
         speedStr: isRunning || isHashing ? info.speedStr : '' ,
         Progress: isSuccess ? 100 : info.Progress,
         ProgressStr: '',
-        errorMessage: isError ? info.failedCode + ' ' + info.failedMessage : '' 
+        errorMessage: isError ? info.failedCode + ' ' + info.failedMessage : ''
       }
     } else {
-      
+
       const isError = info && info.uploadState == 'error'
       return {
         UploadID: isShowTask ? TaskID : item.UploadID,
@@ -323,25 +323,25 @@ export default class UploadingData {
     }
   }
 
-  
+
   static UploadingShowListDir(showTaskID: number): { showList: IUploadingModel[]; count: number } {
     const showList: IUploadingModel[] = []
     const now = Date.now() / 1000
 
-    const task = UploadingTaskList.get(showTaskID) 
-    if (!task) return { showList: [], count: 0 } 
+    const task = UploadingTaskList.get(showTaskID)
+    if (!task) return { showList: [], count: 0 }
 
     const childrenList = task.Children
     for (let j = 0, maxj = childrenList.length; j < maxj; j++) {
       const item = childrenList[j]
-      
+
       showList.push(UploadingData.UploadingShowOneItem(item, now, task.localFilePath, task.TaskID, false))
       if (showList.length > 999) break
     }
     return { showList: showList, count: task.Children.length }
   }
 
-  
+
   static UploadingShowProgress(): void {
     let progress = -1
     let isRunning = false
@@ -364,7 +364,7 @@ export default class UploadingData {
     }
 
     if (isRunning) {
-      
+
       progress = Math.floor((finishSize / (totalSize + 1)) * 100) / 100
     }
     SetProgressBar(progress, 'upload')
@@ -375,7 +375,7 @@ export default class UploadingData {
     await DBUpload.saveUploadTaskBatch(taskList)
   }
 
-  
+
   static async UploadingStartTask(TaskIDList: number[], isToStart: boolean): Promise<number[]> {
     const IDList: number[] = []
     const map = new Set(TaskIDList)
@@ -391,7 +391,7 @@ export default class UploadingData {
     return IDList
   }
 
-  
+
   static async UploadingStartTaskFile(TaskID: number, UploadIDList: number[], isToStart: boolean): Promise<number[]> {
     const IDList: number[] = []
     const map = new Set(UploadIDList)
@@ -402,10 +402,10 @@ export default class UploadingData {
         const fileItem = childrenList[i]
         if (map.size == 0 || map.has(fileItem.UploadID)) {
           IDList.push(fileItem.UploadID)
-          
+
           if (isToStart) UploadingInfoStop.delete(fileItem.UploadID)
           else UploadingInfoStop.add(fileItem.UploadID)
-          
+
           const info = UploadingInfoList.get(fileItem.UploadID)
           if (info) {
             info.uploadState = isToStart ? '排队中' : '已暂停'
@@ -419,20 +419,20 @@ export default class UploadingData {
         }
       }
 
-      
+
       if (isToStart) {
         UploadingTaskStop.delete(TaskID)
       } else {
-        
+
         for (let i = 0, maxi = childrenList.length; i < maxi; i++) {
           if (UploadingInfoStop.has(childrenList[i].UploadID) == false) {
-            
+
             UploadingTaskStop.delete(TaskID)
             await DBUpload.saveUploadObj('UploadingStop', { TaskIDList: Array.from(UploadingTaskStop), UploadIDList: Array.from(UploadingInfoStop) })
             return IDList
           }
         }
-        
+
         UploadingTaskStop.add(TaskID)
       }
     }
@@ -441,12 +441,12 @@ export default class UploadingData {
     return IDList
   }
 
-  
+
   static async UploadingDeleteTask(TaskIDList: number[]): Promise<number[]> {
     const IDList: number[] = []
     const map = new Set(TaskIDList)
     const values = UploadingTaskList.values()
-    
+
     const delInfoList: number[] = []
     const delTaskList: number[] = []
     for (let i = 0, maxi = UploadingTaskList.size; i < maxi; i++) {
@@ -456,7 +456,7 @@ export default class UploadingData {
         IDList.push(TaskID)
         const childrenList = task.Children
         for (let i = 0, maxi = childrenList.length; i < maxi; i++) {
-          
+
           const UploadID = childrenList[i].UploadID
           UploadingInfoList.delete(UploadID)
           if (childrenList[i].isDir == false && childrenList[i].size > 3 * 1024 * 1024) delInfoList.push(UploadID)
@@ -464,7 +464,7 @@ export default class UploadingData {
         }
 
         UploadingTaskList.delete(TaskID)
-        SaveTaskList.delete(TaskID) 
+        SaveTaskList.delete(TaskID)
         delTaskList.push(TaskID)
         UploadingTaskStop.delete(TaskID)
       }
@@ -475,7 +475,7 @@ export default class UploadingData {
     return IDList
   }
 
-  
+
   static async UploadingDeleteTaskFile(TaskID: number, UploadIDList: number[]): Promise<number[]> {
     const IDList: number[] = []
     const map = new Set(UploadIDList)
@@ -493,18 +493,18 @@ export default class UploadingData {
           if (fileItem.isDir == false && fileItem.size > 3 * 1024 * 1024) delInfoList.push(fileItem.UploadID)
           UploadingInfoStop.delete(fileItem.UploadID)
         } else {
-          newChildren.push(fileItem) 
+          newChildren.push(fileItem)
         }
       }
 
       if (newChildren.length == 0) {
-        
+
         UploadingTaskList.delete(TaskID)
-        SaveTaskList.delete(TaskID) 
+        SaveTaskList.delete(TaskID)
         UploadingTaskStop.delete(TaskID)
         await DBUpload.deleteUploadTask(TaskID)
       } else if (delInfoList.length > 0) {
-        
+
         task.Children = newChildren
         await DBUpload.saveUploadTask(task)
       }
@@ -513,29 +513,29 @@ export default class UploadingData {
     return IDList
   }
 
-  
+
   static async UploadingEventSave(ReportList: IStateUploadInfo[], ErrorList: IStateUploadInfo[], SuccessList: IStateUploadTaskFile[]): Promise<void> {
-    
+
     for (let i = 0, maxi = ReportList.length; i < maxi; i++) {
       const item = ReportList[i]
-      item.autoTryCount = UploadingInfoList.get(item.UploadID)?.autoTryCount || 0 
+      item.autoTryCount = UploadingInfoList.get(item.UploadID)?.autoTryCount || 0
       UploadingInfoList.set(item.UploadID, item)
     }
-    
-    const time = Date.now() 
+
+    const time = Date.now()
     for (let i = 0, maxi = ErrorList.length; i < maxi; i++) {
       const item = ErrorList[i]
       item.Speed = 0
       item.speedStr = ''
 
       if (item.failedMessage.indexOf('出错暂停') >= 0 || item.failedMessage.indexOf('读取文件失败') >= 0 || item.failedMessage.indexOf('没有权限') >= 0 || item.failedMessage.indexOf('不存在') >= 0 || item.failedMessage.indexOf('跳过') >= 0) {
-        
+
         item.autoTryCount = 0
         item.autoTryTime = 0
         item.uploadState = 'error'
         UploadingInfoStop.add(item.UploadID)
       } else {
-        
+
         if (UploadingInfoList.has(item.UploadID)) {
           item.autoTryCount = UploadingInfoList.get(item.UploadID)!.autoTryCount + 1
         } else {
@@ -543,14 +543,14 @@ export default class UploadingData {
         }
 
         if (item.autoTryCount > 20) {
-          
+
           item.autoTryCount = 0
           item.autoTryTime = 0
           item.uploadState = '已暂停'
           UploadingInfoStop.add(item.UploadID)
         } else {
-          
-          
+
+
           item.autoTryTime = time + 60 * 1000 * Math.min(item.autoTryCount, 10)
         }
       }
@@ -558,28 +558,28 @@ export default class UploadingData {
       UploadingInfoList.set(item.UploadID, item)
     }
 
-    
+
     if (SuccessList.length > 0) {
-      
+
       const delInfoList: number[] = []
-      
+
       let saveTaskList: number[] = []
 
-      
+
       const delTaskList: number[] = []
       const saveUploadedList: IStateUploadTask[] = []
-      
+
       for (let i = 0, maxi = SuccessList.length; i < maxi; i++) {
         const fileItem = SuccessList[i]
         const TaskID = fileItem.TaskID
         const task = UploadingTaskList.get(TaskID)
         if (task) {
           if (!task.isDir && fileItem.uploaded_file_id) {
-            
+
             task.TaskFileID = fileItem.uploaded_file_id
             if (!saveTaskList.includes(TaskID)) saveTaskList.push(TaskID)
           }
-          
+
           let index = -1
           for (let j = 0, maxj = task.Children.length; j < maxj; j++) {
             const itemFile = task.Children[j]
@@ -589,7 +589,7 @@ export default class UploadingData {
             }
           }
           if (index >= 0) {
-            
+
             task.Children.splice(index, 1)
             if (!fileItem.isDir) {
               task.ChildFinishCount += 1
@@ -598,14 +598,14 @@ export default class UploadingData {
             if (!saveTaskList.includes(TaskID)) saveTaskList.push(TaskID)
             if (task.Children.length == 0) {
               UploadingTaskList.delete(TaskID)
-              SaveTaskList.delete(TaskID) 
+              SaveTaskList.delete(TaskID)
               delTaskList.push(TaskID)
               UploadingTaskStop.delete(TaskID)
               saveUploadedList.push(task)
-              
+
               PanDAL.aReLoadOneDirToRefreshTree(task.user_id, task.drive_id, task.parent_file_id)
             }
-            
+
             UploadingInfoList.delete(fileItem.UploadID)
             if (fileItem.isDir == false && fileItem.size > 3 * 1024 * 1024) delInfoList.push(fileItem.UploadID)
             UploadingInfoStop.delete(fileItem.UploadID)
@@ -613,7 +613,7 @@ export default class UploadingData {
         }
       }
       if (delInfoList.length > 0) await DBUpload.deleteUploadInfoBatch(delInfoList)
-      saveTaskList = saveTaskList.filter((t) => !delTaskList.concat(t)) 
+      saveTaskList = saveTaskList.filter((t) => !delTaskList.concat(t))
 
       for (let k = 0, maxk = saveTaskList.length; k < maxk; k++) {
         const kitem = UploadingTaskList.get(saveTaskList[k])
@@ -630,9 +630,9 @@ export default class UploadingData {
     }
   }
 
-  
+
   static UploadingEventRunningCheck(RunningKeys: number[], StopKeys: number[]): { delList: number[]; newList: number[] } {
-    
+
     let fixStop = 0
     for (let i = 0, maxi = StopKeys.length; i < maxi; i++) {
       if (UploadingInfoStop.has(StopKeys[i]) == false) {
@@ -649,17 +649,17 @@ export default class UploadingData {
     const delList: number[] = []
     const newList: number[] = []
     for (let i = 0, maxi = RunningKeys.length; i < maxi; i++) {
-      if (UploadingInfoStop.has(RunningKeys[i])) delList.push(RunningKeys[i]) 
+      if (UploadingInfoStop.has(RunningKeys[i])) delList.push(RunningKeys[i])
       else newList.push(RunningKeys[i])
     }
     return { delList: delList, newList: newList }
   }
 
-  
+
   static UploadingEventSendList(RunningKeys: number[], LoadingKeys: number[]): IUploadingUI[] {
     let sendList: IUploadingUI[] = []
-    const time = Date.now() 
-    
+    const time = Date.now()
+
     if (time - _UploadingSendTime > 800) {
       _UploadingSendTime = time
       const settingStore = useSettingStore()
@@ -674,20 +674,20 @@ export default class UploadingData {
     const sendList: IUploadingUI[] = []
     const values = UploadingTaskList.values()
     for (let i = 0, maxi = UploadingTaskList.size; i < maxi; i++) {
-      if (RunningKeys.length >= uploadFileMax) break 
+      if (RunningKeys.length >= uploadFileMax) break
 
       const task = values.next().value as IStateUploadTask
-      if (UploadingTaskStop.has(task.TaskID)) continue 
+      if (UploadingTaskStop.has(task.TaskID)) continue
       const childrenList = task.Children
       let dirCount = 0
       let fileCount = 0
       for (let j = 0, maxj = childrenList.length; j < maxj; j++) {
         const fileItem = childrenList[j]
-        if (UploadingInfoStop.has(fileItem.UploadID)) continue 
+        if (UploadingInfoStop.has(fileItem.UploadID)) continue
         if (fileItem.isDir) {
-          dirCount++ 
+          dirCount++
         } else if (RunningKeys.length >= uploadFileMax) {
-          fileCount++ 
+          fileCount++
         } else {
           let info = UploadingInfoList.get(fileItem.UploadID)
           if (!info) {
@@ -709,7 +709,7 @@ export default class UploadingData {
             UploadingInfoList.set(fileItem.UploadID, info)
           }
 
-          
+
           if (info.uploadState == 'error' && info.autoTryTime > 0 && info.autoTryTime < time) {
             info.uploadState = '排队中'
             info.failedCode = 0
@@ -727,7 +727,7 @@ export default class UploadingData {
       }
 
       if (LoadingKeys.length < 2 && dirCount > 0 && fileCount < 2000 && downSmallFileFirst == false) {
-        
+
         for (let j = 0, maxj = childrenList.length; j < maxj; j++) {
           const fileItem = childrenList[j]
           if (UploadingInfoStop.has(fileItem.UploadID)) continue
@@ -752,7 +752,7 @@ export default class UploadingData {
               UploadingInfoList.set(fileItem.UploadID, info)
             }
 
-            
+
             if (info.uploadState == 'error' && info.autoTryTime > 0 && info.autoTryTime < time) {
               info.uploadState = '排队中'
               info.failedCode = 0
@@ -776,7 +776,7 @@ export default class UploadingData {
                 File: fileItem,
                 Info: info
               } as IUploadingUI)
-              break 
+              break
             }
           }
         }
@@ -785,18 +785,18 @@ export default class UploadingData {
     return sendList
   }
 
-  
+
   static async UploadingAppendFilesSave(TaskID: number, UploadID: number, CreatedDirID: string, AppendList: IStateUploadTaskFile[]): Promise<void> {
     const task = UploadingTaskList.get(TaskID)
     if (task) {
       if (CreatedDirID) task.TaskFileID = CreatedDirID
-      
+
       const childrenList = task.Children
       const fileList: IStateUploadTaskFile[] = []
       const dirList: IStateUploadTaskFile[] = []
       for (let i = 0, maxi = childrenList.length; i < maxi; i++) {
         const itemFile = childrenList[i]
-        if (itemFile.UploadID == UploadID) continue 
+        if (itemFile.UploadID == UploadID) continue
         if (itemFile.isDir) dirList.push(itemFile)
         else fileList.push(itemFile)
       }
@@ -814,7 +814,7 @@ export default class UploadingData {
         }
         fileList.push(item)
       }
-      fileList.push(...dirList) 
+      fileList.push(...dirList)
 
       task.ChildTotalCount += fileCount
       task.ChildTotalSize += fileSize
@@ -822,15 +822,15 @@ export default class UploadingData {
 
       if (task.Children.length == 0) {
         UploadingTaskList.delete(TaskID)
-        SaveTaskList.delete(TaskID) 
+        SaveTaskList.delete(TaskID)
         await DBUpload.deleteUploadTask(TaskID)
         UploadingTaskStop.delete(TaskID)
         await DBUpload.saveUploadedBatch([task])
         UploadDAL.aReloadUploaded()
-        
+
         PanDAL.aReLoadOneDirToRefreshTree(task.user_id, task.drive_id, task.parent_file_id)
       } else {
-        
+
         SaveTaskList.set(task.TaskID, task)
         SaveTaskToDB()
       }

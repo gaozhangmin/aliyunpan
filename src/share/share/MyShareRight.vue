@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { IAliShareItem } from '../../aliapi/alimodels'
 import { useAppStore, useKeyboardStore, KeyboardState, useMyShareStore, useUserStore, useWinStore } from '../../store'
 import { humanCount } from '../../utils/format'
-import ShareDAL from './sharedal'
+import ShareDAL from './ShareDAL'
 import { onShowRightMenu, onHideRightMenuScroll, TestCtrl, TestKey, TestKeyboardScroll, TestKeyboardSelect } from '../../utils/keyboardhelper'
 import { copyToClipboard, openExternal } from '../../utils/electronhelper'
 import message from '../../utils/message'
@@ -32,13 +32,13 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
   if (TestCtrl('Delete', state.KeyDownEvent, () => handleDeleteSelectedLink('selected'))) return
   if (TestCtrl('e', state.KeyDownEvent, handleEdit)) return
   if (TestKey('f2', state.KeyDownEvent, handleEdit)) return
-  if (TestCtrl('f', state.KeyDownEvent, () => inputsearch.value.focus())) return 
-  if (TestKey('f3', state.KeyDownEvent, () => inputsearch.value.focus())) return 
-  if (TestKey(' ', state.KeyDownEvent, () => inputsearch.value.focus())) return 
+  if (TestCtrl('f', state.KeyDownEvent, () => inputsearch.value.focus())) return
+  if (TestKey('f3', state.KeyDownEvent, () => inputsearch.value.focus())) return
+  if (TestKey(' ', state.KeyDownEvent, () => inputsearch.value.focus())) return
   if (TestKey('f5', state.KeyDownEvent, handleRefresh)) return
 
-  if (TestKeyboardSelect(state.KeyDownEvent, viewlist.value, myshareStore, undefined)) return 
-  if (TestKeyboardScroll(state.KeyDownEvent, viewlist.value, myshareStore)) return 
+  if (TestKeyboardSelect(state.KeyDownEvent, viewlist.value, myshareStore, undefined)) return
+  if (TestKeyboardScroll(state.KeyDownEvent, viewlist.value, myshareStore)) return
 })
 
 const handleRefresh = () => ShareDAL.aReloadMyShare(useUserStore().user_id, true)
@@ -107,9 +107,9 @@ const handleDeleteSelectedLink = (delby: any) => {
     for (let i = 0, maxi = allList.length; i < maxi; i++) {
       item = allList[i]
       if (delby == 'expired') {
-        if (item.expired && item.first_file) list.push(item) 
+        if (item.expired && item.first_file) list.push(item)
       } else {
-        if (!item.first_file) list.push(item) 
+        if (!item.first_file) list.push(item)
       }
     }
   }
@@ -136,7 +136,7 @@ const handleSearchEnter = (event: any) => {
 }
 const handleRightClick = (e: { event: MouseEvent; node: any }) => {
   const key = e.node.key
-  
+
   if (!myshareStore.ListSelected.has(key)) myshareStore.mMouseSelect(key, false, false)
   onShowRightMenu('rightmysharemenu', e.event.clientX, e.event.clientY)
 }

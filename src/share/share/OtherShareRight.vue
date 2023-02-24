@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useAppStore, useKeyboardStore, KeyboardState, useOtherShareStore, useWinStore, IOtherShareLinkModel } from '../../store'
-import ShareDAL from './sharedal'
+import ShareDAL from './ShareDAL'
 import { onShowRightMenu, onHideRightMenuScroll, TestCtrl, TestKey, TestKeyboardScroll, TestKeyboardSelect } from '../../utils/keyboardhelper'
 import { copyToClipboard, getFromClipboard, openExternal } from '../../utils/electronhelper'
 import message from '../../utils/message'

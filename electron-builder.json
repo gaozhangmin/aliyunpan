@@ -1,19 +1,20 @@
 {
   "appId": "com.alixby.app",
-  "productName": "阿里云盘小白羊",
+  "productName": "alixby",
   "copyright": "3.10.24",
   "asar": true,
+  "compression": "store",
   "directories": {
     "output": "release"
   },
   "extraResources": [
-    { "from": "./aria2c.exe", "to": "."}
+    { "from": "./aria2c.exe", "to": "."},
+    { "from": "./aria2c", "to": "."}
   ],
   "files": [
     "dist"
   ],
   "mac": {
-    "icon": "public/favicon.ico",
     "artifactName": "${productName}v${version}-${arch}.${ext}",
     "target": [
       {
@@ -23,14 +24,17 @@
     ]
   },
   "linux": {
-    "icon": "public/favicon.ico",
+    "category": "Utility",
     "artifactName": "${productName}v${version}-${arch}.${ext}",
     "target": [
-      "AppImage"
+      {
+        "target": "AppImage",
+        "arch": [ "x64" ]
+      }
     ]
   },
   "win": {
-    "icon": "public/favicon.ico",
+    "icon": "./app.ico",
     "target": [
       {
         "target": "nsis",

@@ -8,9 +8,11 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "sourceMap": false,
-    "baseUrl": "./",
+    "baseUrl": ".",
     "strict": true,
-    "paths": {},
+    "paths": {
+      "*": ["src/*"]
+    },
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true
   },

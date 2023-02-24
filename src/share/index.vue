@@ -7,12 +7,12 @@ import OtherFollowingRight from './following/OtherFollowingRight.vue'
 import { useAppStore, useUserStore } from '../store'
 
 import ShareDAL from './share/ShareDAL'
-import FollowingDAL from './following/followingdal'
+import FollowingDAL from './following/FollowingDAL'
 
 const appStore = useAppStore()
 appStore.$subscribe((mutation) => {
   const appPage = appStore.GetAppTabMenu
-  
+
   if (appPage == 'ShareSiteRight') ShareDAL.aLoadShareSite()
   if (appPage == 'MyShareRight') ShareDAL.aReloadMyShare(useUserStore().user_id, false)
   if (appPage == 'MyFollowingRight') FollowingDAL.aReloadMyFollowing(useUserStore().user_id, false)

@@ -6,7 +6,7 @@ import UploadDAL from '../transfer/uploaddal'
 
 import { Tooltip as AntdTooltip } from 'ant-design-vue'
 import 'ant-design-vue/es/tooltip/style/css'
-import useUploadedStore from './uploadedstore'
+import useUploadedStore from './UploadedStore'
 import { IStateUploadTask } from '../utils/dbupload'
 import message from '../utils/message'
 import AliFile from '../aliapi/file'
@@ -28,8 +28,8 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
 
   if (TestKey('f5', state.KeyDownEvent, handleRefresh)) return
 
-  if (TestKeyboardSelect(state.KeyDownEvent, viewlist.value, uploadedStore, handleDbClick)) return 
-  if (TestKeyboardScroll(state.KeyDownEvent, viewlist.value, uploadedStore)) return 
+  if (TestKeyboardSelect(state.KeyDownEvent, viewlist.value, uploadedStore, handleDbClick)) return
+  if (TestKeyboardScroll(state.KeyDownEvent, viewlist.value, uploadedStore)) return
 })
 
 const handleRefresh = () => UploadDAL.aReloadUploaded()
@@ -45,7 +45,7 @@ const handleDbClick = (TaskID: number) => {
 
 const handleRightClick = (e: { event: MouseEvent; node: any }) => {
   const key = e.node.key
-  
+
   uploadedStore.mKeyboardSelect(key, false, false)
   onShowRightMenu('rightuploadedmenu', e.event.clientX, e.event.clientY)
 }
@@ -81,7 +81,7 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
     UploadDAL.UploadedDelete(false)
   }
   if (cmd == 'pan') {
-    
+
     if (item.TaskFileID) {
       AliFile.ApiGetFile(item.user_id, item.drive_id, item.TaskFileID).then(async (file) => {
         if (file) {

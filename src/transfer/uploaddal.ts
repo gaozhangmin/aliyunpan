@@ -1,10 +1,10 @@
 import { useSettingStore } from '../store'
 import DBUpload from '../utils/dbupload'
 import { clickWait, clickWaitDelete } from '../utils/debounce'
-import useUploadedStore from '../down/uploadedstore'
+import useUploadedStore from '../down/UploadedStore'
 
 export default class UploadDAL {
-  
+
   static async aReloadUploaded() {
     const uploadedStore = useUploadedStore()
     if (uploadedStore.ListLoading == true) return
@@ -15,13 +15,13 @@ export default class UploadDAL {
     uploadedStore.ListLoading = false
   }
 
-  
+
   static async aClearUploaded() {
     const max = useSettingStore().debugDownedListMax
     return await DBUpload.deleteUploadedOutCount(max)
   }
 
-  
+
   static async UploadedDelete(all: boolean) {
     if (clickWait('UploadedDelete', -1)) return
     if (all) {

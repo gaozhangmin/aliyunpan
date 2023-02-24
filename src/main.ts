@@ -5,7 +5,7 @@ import store, { useAppStore, useSettingStore } from './store'
 import '@arco-design/web-vue/dist/arco.css'
 import message from './utils/message'
 import DebugLog from './utils/debuglog'
-import { PageMain } from './layout/pagemain'
+import { PageMain } from './layout/PageMain'
 import { WorkerPage } from './workerpage/workercmd'
 
 window.onerror = function (errorMessage, scriptURI, lineNo, columnNo, error) {
@@ -40,8 +40,8 @@ window.addEventListener('unhandledrejection', function (event) {
     }
     if (!reason) DebugLog.mSaveDanger('unhandledrejection', JSON.stringify(event))
   } catch {}
-  event.stopPropagation() 
-  event.preventDefault() 
+  event.stopPropagation()
+  event.preventDefault()
 })
 
 const app = createApp(App)
@@ -108,7 +108,7 @@ window.Electron.ipcRenderer.on('setDownloadPort', (_event: any, args: any) => {
 window.Electron.ipcRenderer.on('setPage', (_event: any, args: any) => {
   console.log('setPage', args.page, args)
   const appStore = useAppStore()
-  const settingStore = useSettingStore() 
+  const settingStore = useSettingStore()
   if (args.theme && settingStore) appStore.toggleTheme(args.theme)
 
   if (args.page == 'PageMain') {
@@ -132,7 +132,7 @@ window.Electron.ipcRenderer.on('setPage', (_event: any, args: any) => {
 
 window.Electron.ipcRenderer.on('setTheme', (_event: any, args: any) => {
   const appStore = useAppStore()
-  appStore.toggleDark(args.dark) 
+  appStore.toggleDark(args.dark)
 })
 try {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
