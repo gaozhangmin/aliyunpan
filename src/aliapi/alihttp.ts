@@ -36,10 +36,10 @@ function BlobToBuff(body: Blob): Promise<ArrayBuffer | undefined> {
 
 function HttpCodeBreak(code: number): Boolean {
   if (code >= 200 && code <= 300) return true
-  // if (code == 400) return true
-  // if (code == 401) return true
+  if (code == 400) return true
+  if (code == 401) return true
   if (code >= 402 && code <= 428) return true
-  // if (code == 403) return true
+  if (code == 403) return true
   if (code == 404) return true
   if (code == 409) return true
   return false

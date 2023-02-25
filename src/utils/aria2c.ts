@@ -501,7 +501,7 @@ export function FormateAriaError(code: string, message: string): string {
     case '17':
       return 'aria2c文件写入失败'
     case '18':
-      return 'aria2c创建文件夹失败'
+      return 'aria2c创建文件夹失败, 请设置保存路径'
     case '19':
       return 'aria2cDNS解析失败'
     case '20':

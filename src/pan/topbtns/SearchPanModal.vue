@@ -2,7 +2,7 @@
 import { usePanTreeStore } from '../../store'
 import message from '../../utils/message'
 import { modalCloseAll } from '../../utils/modal'
-import { defineComponent, ref, reactive } from 'vue'
+import { defineComponent, ref, reactive, nextTick } from 'vue'
 import PanDAL from '../pandal'
 import dayjs from 'dayjs'
 
@@ -28,12 +28,12 @@ export default defineComponent({
       fav: false
     })
 
-    const handleOpen = () => {
+    const handleOpen = async () => {
+      await nextTick()
       formRef.value.resetFields()
     }
 
     const handleClose = () => {
-      
       if (okLoading.value) okLoading.value = false
       formRef.value.resetFields()
     }
@@ -54,7 +54,7 @@ export default defineComponent({
     },
     handleOK() {
       this.formRef.validate((data: any) => {
-        if (data) return 
+        if (data) return
         if (this.form.min > 0 && this.form.max > 0 && this.form.min > this.form.max) {
           message.error('最小体积(' + this.form.min + ')不能大于最大体积(' + this.form.max + ')')
           return
@@ -101,7 +101,9 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal :visible="visible" modal-class="modalclass" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
+  <a-modal :visible="visible" modal-class="modalclass"
+           :footer="false" :unmount-on-close="true" :mask-closable="false"
+           @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>
       <span class="modaltitle">在整个网盘内 高级搜索</span>
     </template>

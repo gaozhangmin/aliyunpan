@@ -5,7 +5,7 @@ import { useWinStore, WinState } from '../store'
 export default defineComponent({
   emits: ['splitSize'],
   setup() {
-    const leftMinWidth = 304
+    const leftMinWidth = 0
     const rightMinWidth = 380
     const winStore = useWinStore()
     const bodyWidth = ref(Math.max(winStore.width, 800))
