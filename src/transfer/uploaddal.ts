@@ -9,7 +9,8 @@ export default class UploadDAL {
     const uploadedStore = useUploadedStore()
     if (uploadedStore.ListLoading == true) return
     uploadedStore.ListLoading = true
-    const showlist = await DBUpload.getUploadedByTop(5000)
+    const max = useSettingStore().debugDownedListMax
+    const showlist = await DBUpload.getUploadedByTop(max)
     const count = await DBUpload.getUploadTaskCount()
     uploadedStore.aLoadListData(showlist, count)
     uploadedStore.ListLoading = false

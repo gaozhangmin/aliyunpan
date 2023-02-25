@@ -13,6 +13,7 @@ import {
   IsAria2cRemote
 } from '../utils/aria2c'
 import { humanSize } from '../utils/format'
+import DBUpload from "../utils/dbupload";
 
 export interface IStateDownFile {
   DownID: string
@@ -83,17 +84,9 @@ export default class DownDAL {
   /**
    * 从DB中加载数据
    */
-  static async aLoadDownedFromDB() {
-    const downedStore = useDownedStore()
-    downedStore.ListDataRaw = await DB.getDownedAll()
-    downedStore.mRefreshListDataShow(true)
-  }
-
-  /**
-   * 从DB中加载数据
-   */
-  static async aLoadFromDB() {
+  static async aReloadDowning () {
     const downingStore = useDowningStore()
+    if(downingStore.ListLoading) return
     downingStore.ListLoading = true
     const stateDownFiles = await DB.getDowningAll()
     // 首次从DB中加载数据，如果上次意外停止则重新开始，如果手动暂停则保持
@@ -116,7 +109,22 @@ export default class DownDAL {
     downingStore.ListDataRaw = stateDownFiles
     downingStore.mRefreshListDataShow(true)
     downingStore.ListLoading = false
-    this.aLoadDownedFromDB().then(r => {})
+  }
+
+  static async aReloadDowned () {
+    const downedStore = useDownedStore()
+    if(downedStore.ListLoading) return
+    const max = useSettingStore().debugDownedListMax
+    downedStore.ListLoading = true
+    const showlist = await DB.getDownedByTop(max)
+    const count = await DBUpload.getUploadTaskCount()
+    downedStore.aLoadListData(showlist, count)
+    downedStore.ListLoading = false
+  }
+
+  static async aClearDowned() {
+    const max = useSettingStore().debugDownedListMax
+    return await DB.deleteDownedOutCount(max)
   }
 
   /**

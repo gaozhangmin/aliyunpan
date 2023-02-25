@@ -1,6 +1,6 @@
 import fuzzysort from 'fuzzysort'
 import { defineStore } from 'pinia'
-import DownDAL, { IStateDownFile } from './DownDAL'
+import { IStateDownFile } from './DownDAL'
 import { GetSelectedList, GetFocusNext, SelectAll, MouseSelectOne, KeyboardSelectOne } from '../utils/selecthelper'
 import { humanSize } from '../utils/format'
 import message from '../utils/message'
@@ -164,17 +164,17 @@ const useDowningStore = defineStore('downing', {
     },
 
     mMouseSelect(key: string, Ctrl: boolean, Shift: boolean) {
-      /*if (this.ListDataShow.length == 0) return
-      const data = MouseSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift)
+      if (this.ListDataShow.length == 0) return
+      const data = MouseSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift, '')
       this.$patch({ ListSelected: data.selectedNew, ListFocusKey: data.focusLast, ListSelectKey: data.selectedLast })
-      this.mRefreshListDataShow(false)*/
+      this.mRefreshListDataShow(false)
     },
 
     mKeyboardSelect(key: string, Ctrl: boolean, Shift: boolean) {
-      /*if (this.ListDataShow.length == 0) return
-      const data = KeyboardSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift)
+      if (this.ListDataShow.length == 0) return
+      const data = KeyboardSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift, '')
       this.$patch({ ListSelected: data.selectedNew, ListFocusKey: data.focusLast, ListSelectKey: data.selectedLast })
-      this.mRefreshListDataShow(false)*/
+      this.mRefreshListDataShow(false)
     },
 
     GetSelected() {
@@ -198,7 +198,7 @@ const useDowningStore = defineStore('downing', {
     },
 
     mGetFocusNext(position: string) {
-      // return GetFocusNext(this.ListDataShow, KEY, this.ListFocusKey, position)
+      return GetFocusNext(this.ListDataShow, KEY, this.ListFocusKey, position, '')
     },
 
     mDeleteFiles(shareidlist: string[]) {

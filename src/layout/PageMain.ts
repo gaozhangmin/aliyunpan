@@ -27,16 +27,19 @@ export function PageMain() {
     })
     .then(async () => {
       await Sleep(500)
-      /*await DownDAL.aReloadDowning().catch((err: any) => {
+
+      await DownDAL.aReloadDowning().catch((err: any) => {
         DebugLog.mSaveDanger('aReloadDowning', err)
-      })*/ //TODO
+      })
+
+      await DownDAL.aReloadDowned().catch((err: any) => {
+        DebugLog.mSaveDanger('aReloadDowned', err)
+      })
+
       await UploadingDAL.aReloadUploading().catch((err: any) => {
         DebugLog.mSaveDanger('aReloadUploading', err)
       })
 
-      /*await DownDAL.aReloadDowned().catch((err: any) => {
-        DebugLog.mSaveDanger('aReloadDowned', err)
-      })*/ //TODO
       await UploadDAL.aReloadUploaded().catch((err: any) => {
         DebugLog.mSaveDanger('aReloadUploaded', err)
       })
@@ -124,9 +127,9 @@ function timeEvent() {
     UploadDAL.aClearUploaded().catch((err: any) => {
       DebugLog.mSaveDanger('aClearUploaded ', err)
     })
-    /*DownDAL.aClearDowned().catch((err: any) => {
+    DownDAL.aClearDowned().catch((err: any) => {
       DebugLog.mSaveDanger('aClearDowned ', err)
-    })*/ //TODO
+    })
   }
 
 
