@@ -206,6 +206,7 @@ class XBYDB3 extends Dexie {
     if (val) return val
     else return undefined
   }
+
   async getDownedAll(): Promise<IStateDownFile[]> {
     if (!this.isOpen()) await this.open().catch(() => {})
     const list = await this.idowned.where('Info.user_id').equals(useUserStore().user_id).reverse().toArray()
@@ -216,6 +217,13 @@ class XBYDB3 extends Dexie {
     if (!this.isOpen()) await this.open().catch(() => {})
     return await this.transaction('r', this.idowned, () => {
       return this.idowned.reverse().limit(limit).toArray()
+    })
+  }
+
+  async getDownedTaskCount(): Promise<number> {
+    if (!this.isOpen()) await this.open().catch(() => {})
+    return await this.transaction('r', this.idowned, () => {
+      return this.idowned.count()
     })
   }
 

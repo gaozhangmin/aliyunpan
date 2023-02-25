@@ -114,10 +114,10 @@ export default class DownDAL {
   static async aReloadDowned () {
     const downedStore = useDownedStore()
     if(downedStore.ListLoading) return
-    const max = useSettingStore().debugDownedListMax
     downedStore.ListLoading = true
+    const max = useSettingStore().debugDownedListMax
     const showlist = await DB.getDownedByTop(max)
-    const count = await DBUpload.getUploadTaskCount()
+    const count = await DB.getDownedTaskCount()
     downedStore.aLoadListData(showlist, count)
     downedStore.ListLoading = false
   }
