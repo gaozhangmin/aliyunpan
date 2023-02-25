@@ -94,7 +94,7 @@ function timeEvent() {
     chkDirSizeTime = 0
   }
 
-  if (chkUpgradeTime1 > 0 && nowTime - chkUpgradeTime1 > 360) {
+  /*if (chkUpgradeTime1 > 0 && nowTime - chkUpgradeTime1 > 360) {
     chkUpgradeTime1 = -1
     ServerHttp.CheckUpgrade(false).catch((err: any) => {
       DebugLog.mSaveDanger('CheckUpgrade', err)
@@ -105,10 +105,10 @@ function timeEvent() {
     ServerHttp.CheckUpgrade(false).catch((err: any) => {
       DebugLog.mSaveDanger('CheckUpgrade', err)
     })
-  }
+  }*/
 
-
-  if (settingStore.uiFolderSize == true && lockDirSizeTime == false && nowTime - runTime > 50 && chkDirSizeTime >= 10) {
+  if (settingStore.uiFolderSize == true
+      && lockDirSizeTime == false && nowTime - runTime > 50 && chkDirSizeTime >= 10) {
     lockDirSizeTime = true
     PanDAL.aUpdateDirFileSize()
       .catch((err: any) => {
@@ -139,8 +139,10 @@ function timeEvent() {
     UserDAL.aRefreshAllUserToken().catch((err: any) => {
       DebugLog.mSaveDanger('aRefreshAllUserToken', err)
     })
+    UserDAL.aRefreshAllUserSession().catch((err: any) => {
+      DebugLog.mSaveDanger('aRefreshAllUserSession', err)
+    })
   }
-
 
   chkTaskTime++
   if (nowTime - runTime > 6 && chkTaskTime >= 2) {

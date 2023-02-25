@@ -73,7 +73,6 @@ export default defineComponent({
           const result = JSON.parse(jsonstr).pds_login_result
           const deviceId = getUuid(result.userId.toString(), 5)
           const { signature } = GetSignature(0, result.userId.toString(), deviceId)
-          console.log(`deviceId: ${deviceId}, signature: ${signature}`)
           const tk2: ITokenInfo = {
             tokenfrom: 'account' ,
             access_token: result.accessToken,
@@ -102,9 +101,8 @@ export default defineComponent({
             pic_drive_id: '',
             vipname: '',
             vipexpire: '',
-            deviceId: deviceId,
-            signature: signature,
-            nonce: 0
+            device_id: deviceId,
+            signature: signature
           }
 
           UserDAL.UserLogin(tk2)

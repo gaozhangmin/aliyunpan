@@ -78,8 +78,21 @@ export default class UserDAL {
         const expire_time = new Date(token.expire_time).getTime()
 
         if (expire_time - dateNow < 1800000) await AliUser.ApiTokenRefreshAccount(token, false)
+
       } catch (err: any) {
         DebugLog.mSaveDanger('aRefreshAllUserToken', err)
+      }
+    }
+  }
+
+  static async aRefreshAllUserSession() {
+    const tokenList = await DB.getUserAll()
+    for (let i = 0, maxi = tokenList.length; i < maxi; i++) {
+      const token = tokenList[i]
+      try {
+        await AliUser.ApiSessionRefreshAccount(token,  false)
+      } catch (err: any) {
+        DebugLog.mSaveDanger('aRefreshAllUserSession', err)
       }
     }
   }
@@ -115,9 +128,8 @@ export default class UserDAL {
       vipname: '',
       vipexpire: '',
       pic_drive_id: '',
-      deviceId: '',
-      signature: '',
-      nonce: 0
+      device_id: '',
+      signature: ''
     }
   }
 

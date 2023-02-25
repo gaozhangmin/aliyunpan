@@ -9,8 +9,7 @@ export interface ITokenInfo {
   access_token: string
   refresh_token: string
   signature: string
-  nonce: number
-  deviceId: string
+  device_id: string
   expires_in: number
   token_type: string
   user_id: string

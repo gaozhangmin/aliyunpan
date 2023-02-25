@@ -26,29 +26,22 @@ export default class AliUser {
       SessionLockMap.delete(token.user_id)
       return true
     }
-    const apiUrl = 'https://api.aliyundrive.com/users/v1/users/device/'
-    const sessionUrl = token.nonce > 0 ? 'renew_session' : 'create_session'
-    let { signature, publicKey } = GetSignature(token.nonce, token.user_id, token.deviceId)
+    const apiUrl = 'https://api.aliyundrive.com/users/v1/users/device/create_session'
+    let { signature, publicKey } = GetSignature(0, token.user_id, token.device_id)
     const postData = {
       'deviceName': 'Edge浏览器',
       'modelName': 'Windows网页版',
       'pubKey': publicKey
     }
-    const resp = await AliHttp.Post(apiUrl + sessionUrl, postData, token.user_id, '')
+    const resp = await AliHttp.Post(apiUrl, postData, token.user_id, '')
     SessionLockMap.delete(token.user_id)
     if (AliHttp.IsSuccess(resp.code)) {
       SessionReTimeMap.set(token.user_id, Date.now())
       token.signature = signature
-      token.nonce = token.nonce + 1
-      if(token.nonce > 1073741823){
-        token.nonce = 0
-      }
+      UserDAL.SaveUserToken(token)
       return true
     } else {
-      if (resp.body?.code != 'UserDeviceIllegality') {
-        token.nonce = 0
-        DebugLog.mSaveWarning('ApiSessionRefreshAccount err=' + (resp.code || '') + ' ' + (resp.body?.code || ''))
-      }
+      DebugLog.mSaveWarning('ApiSessionRefreshAccount err=' + (resp.code || '') + ' ' + (resp.body?.code || ''))
       if (showMessage) {
         message.error('刷新账号[' + token.user_name + '] session 失败')
       }
@@ -95,7 +88,7 @@ export default class AliUser {
       token.pin_setup = resp.body.pin_setup
       token.is_first_login = resp.body.is_first_login
       token.need_rp_verify = resp.body.need_rp_verify
-      token.deviceId = getUuid(resp.body.user_id.toString(), 5)
+      token.device_id = getUuid(resp.body.user_id.toString(), 5)
       window.WebUserToken({
         user_id: token.user_id,
         name: token.user_name,

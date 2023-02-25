@@ -115,7 +115,7 @@ export default class AliHttp {
           if (error.response.data && (error.response.data.code == 'UserDeviceIllegality'
               || error.response.data.code == 'DeviceSessionSignatureInvalid')) {
             if (token) {
-              return await AliUser.ApiSessionRefreshAccount(token, true).then((isLogin: boolean) => {
+              return await AliUser.ApiSessionRefreshAccount(token,  true).then((isLogin: boolean) => {
                 return { code: 403, header: '', body: '刷新Session失败' } as IUrlRespData
               })
             } else {
@@ -179,7 +179,7 @@ export default class AliHttp {
       if (token) {
         headers['Authorization'] = token.token_type + ' ' + token.access_token
         headers['x-request-id'] = v4().toString()
-        headers['x-device-id'] = token.deviceId
+        headers['x-device-id'] = token.device_id
         headers['x-signature'] = token.signature
       }
       return axios
@@ -220,7 +220,7 @@ export default class AliHttp {
       if (token) {
         headers['Authorization'] = token.token_type + ' ' + token.access_token
         headers['x-request-id'] = v4().toString()
-        headers['x-device-id'] = token.deviceId
+        headers['x-device-id'] = token.device_id
         headers['x-signature'] = token.signature
       }
       headers.Range = 'bytes=0-' + (Math.min(fileSize, maxSize) - 1).toString()
@@ -307,7 +307,7 @@ export default class AliHttp {
       if (token) {
         headers['Authorization'] = token.token_type + ' ' + token.access_token
         headers['x-request-id'] = v4().toString()
-        headers['x-device-id'] = token.deviceId
+        headers['x-device-id'] = token.device_id
         headers['x-signature'] = token.signature
       }
       return axios
@@ -351,7 +351,7 @@ export default class AliHttp {
       if (token) {
         headers['Authorization'] = token.token_type + ' ' + token.access_token
         headers['x-request-id'] = v4().toString().toString()
-        headers['x-device-id'] = token.deviceId
+        headers['x-device-id'] = token.device_id
         headers['x-signature'] = token.signature
       }
       if (share_token) {
@@ -397,7 +397,7 @@ export default class AliHttp {
       if (token) {
         headers['Authorization'] = token.token_type + ' ' + token.access_token
         headers['x-request-id'] = v4().toString()
-        headers['x-device-id'] = token.deviceId
+        headers['x-device-id'] = token.device_id
         headers['x-signature'] = token.signature
       }
       if (share_token) {
