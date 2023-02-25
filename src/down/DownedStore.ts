@@ -128,7 +128,6 @@ const useDownStore = defineStore('down', {
         return
       }
       if (this.ListSearchKey) {
-
         let searchlist: Item[] = []
         let results = fuzzysort.go(this.ListSearchKey, this.ListDataRaw, {
           threshold: -200000,
@@ -141,7 +140,6 @@ const useDownStore = defineStore('down', {
         Object.freeze(searchlist)
         this.ListDataShow = searchlist
       } else {
-
         let ListDataShow = this.ListDataRaw.concat()
         Object.freeze(ListDataShow)
         this.ListDataShow = ListDataShow

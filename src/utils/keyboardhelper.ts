@@ -1,6 +1,5 @@
 import { KeyboardMessage } from '../store/keyboardstore'
-import { throttle } from './debounce'
-
+import {throttle} from "./debounce"
 
 export function TestCtrlShift(key: string, event: KeyboardMessage, fun: any): boolean {
   if (event.Key.toLowerCase() == key.toLowerCase() && event.Ctrl && event.Shift && event.Repeat == false) {
@@ -188,7 +187,7 @@ export function RefreshScrollTo(element: any, top: number) {
 
 const menulist = ['leftpansubmove', 'leftpansubzhankai', 'leftpanmenu', 'rightpansubmove', 'rightpansubbiaoji',
   'rightpansubmore', 'rightpanmenu', 'rightpantrashmenu', 'rightmysharemenu', 'rightothersharemenu',
-  'uploadingrightmenu', 'uploadedrightmenu', 'downingrightmenu', 'downedrightmenu']
+  'uploadingrightmenu', 'uploadedrightmenu', 'downingrightmenu', 'downedrightmenu', 'rightuploadedmenu', 'rightuploadingmenu']
 const menuliststate = new Set()
 
 export function onHideRightMenu(): void {
@@ -204,23 +203,21 @@ export function onHideRightMenu(): void {
   }
 }
 
-const hideMenu = throttle(() => {
-  for (let i = 0; i < menulist.length; i++) {
-    const menukey = menulist[i]
-    if (menuliststate.has(menukey)) {
-      const menu = document.getElementById(menukey)
-      if (menu) {
-        menu.style.left = '-200px'
-        menu.style.opacity = '0'
-        menu.style.zIndex = '-1'
-      }
-      menuliststate.delete(menukey)
-    }
-  }
-}, 200)
-
 export function onHideRightMenuScroll() {
-  hideMenu()
+  throttle(() => {
+    for (let i = 0; i < menulist.length; i++) {
+      const menukey = menulist[i]
+      if (menuliststate.has(menukey)) {
+        const menu = document.getElementById(menukey)
+        if (menu) {
+          menu.style.left = '-200px'
+          menu.style.opacity = '0'
+          menu.style.zIndex = '-1'
+        }
+        menuliststate.delete(menukey)
+      }
+    }
+  }, 200)
 }
 
 export function onShowRightMenu(menukey: string, clientX: number, clientY: number): void {

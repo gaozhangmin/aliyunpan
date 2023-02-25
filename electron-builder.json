@@ -8,8 +8,8 @@
     "output": "release"
   },
   "extraResources": [
-    { "from": "./aria2c.exe", "to": "."},
-    { "from": "./aria2c", "to": "."}
+    { "from": "./static/engine", "to": "./engine"},
+    { "from": "./static/crx", "to": "./crx"}
   ],
   "files": [
     "dist"

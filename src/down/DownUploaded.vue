@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { KeyboardState, useAppStore, useKeyboardStore, usePanFileStore, useWinStore } from '../store'
-import { onHideRightMenuScroll, onShowRightMenu, TestCtrl, TestKey, TestKeyboardScroll, TestKeyboardSelect } from '../utils/keyboardhelper'
+import {
+  onHideRightMenuScroll,
+  onShowRightMenu, RefreshScroll,
+  RefreshScrollTo,
+  TestCtrl,
+  TestKey,
+  TestKeyboardScroll,
+  TestKeyboardSelect
+} from '../utils/keyboardhelper'
 import { ref } from 'vue'
 import UploadDAL from '../transfer/uploaddal'
 
@@ -15,7 +23,7 @@ import { humanSize } from '../utils/format'
 
 const fs = window.require('fs')
 const viewlist = ref()
-
+const inputsearch = ref()
 const appStore = useAppStore()
 const winStore = useWinStore()
 const uploadedStore = useUploadedStore()
@@ -25,7 +33,9 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
   if (appStore.appTab != 'down' || appStore.GetAppTabMenu != 'UploadedRight') return
 
   if (TestCtrl('a', state.KeyDownEvent, () => uploadedStore.mSelectAll())) return
-
+  if (TestCtrl('f', state.KeyDownEvent, () => inputsearch.value.focus())) return
+  if (TestKey('f3', state.KeyDownEvent, () => inputsearch.value.focus())) return
+  if (TestKey(' ', state.KeyDownEvent, () => inputsearch.value.focus())) return
   if (TestKey('f5', state.KeyDownEvent, handleRefresh)) return
 
   if (TestKeyboardSelect(state.KeyDownEvent, viewlist.value, uploadedStore, handleDbClick)) return
@@ -48,6 +58,16 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
 
   uploadedStore.mKeyboardSelect(key, false, false)
   onShowRightMenu('rightuploadedmenu', e.event.clientX, e.event.clientY)
+}
+
+const handleSearchInput = (value: string) => {
+  uploadedStore.mSearchListData(value)
+  RefreshScrollTo(viewlist.value.$el, 0)
+}
+
+const handleSearchEnter = (event: any) => {
+  event.target.blur()
+  RefreshScroll(viewlist.value.$el)
 }
 
 const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
@@ -121,6 +141,21 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
     <div class="toppanbtn">
       <a-button type="text" size="small" tabindex="-1" @click="() => UploadDAL.UploadedDelete(true)"><i class="iconfont iconrest" />清空全部已上传</a-button>
     </div>
+
+    <div style="flex-grow: 1"></div>
+    <div class="toppanbtn">
+      <a-input-search
+          tabindex="-1"
+          ref="inputsearch"
+          size="small"
+          title="Ctrl+F / F3 / Space"
+          placeholder="快速筛选"
+          :model-value="uploadedStore.ListSearchKey"
+          @input="(val:any)=>handleSearchInput(val as string)"
+          @press-enter="handleSearchEnter"
+          @keydown.esc="($event.target as any).blur()"
+      />
+    </div>
   </div>
   <div style="height: 9px"></div>
   <div class="toppanarea">
@@ -152,6 +187,7 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
       }"
       style="width: 100%"
       :data="uploadedStore.ListDataShow"
+      :loading="uploadedStore.ListLoading"
       tabindex="-1"
       @scroll="onHideRightMenuScroll">
       <template #empty><a-empty description="没有 已上传 的任务" /></template>
@@ -194,7 +230,7 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
         </div>
       </template>
     </a-list>
-    <a-dropdown id="rightuploadedmenu" class="rightmenu" :popup-visible="true" style="z-index: -1; left: -200px; opacity: 0">
+    <a-dropdown id="rightuploadedmenu" class="rightmenu" :popup-visible="true" tabindex="-1" :draggable="false" style="z-index: -1; left: -200px; opacity: 0">
       <template #content>
         <a-doption @click="() => onSelectFile(undefined, 'pan')">
           <template #icon> <i class="iconfont iconcloud" /> </template>

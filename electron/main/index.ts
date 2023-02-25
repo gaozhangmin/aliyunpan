@@ -1,4 +1,4 @@
-import { getCrxPath, getResourcesPath, getUserDataPath, mkAriaConf } from './mainfile'
+import { getCrxPath, getResourcesPath, getStaticPath, getUserDataPath, mkAriaConf } from './mainfile'
 import { release } from 'os'
 import { AppWindow, creatElectronWindow, createMainWindow, createTray, Referer, ShowError, ShowErrorAndExit, ua } from './window'
 import Electron from 'electron'
@@ -96,8 +96,8 @@ app.on('will-quit', () => {
 
 app.setAboutPanelOptions({
   applicationName: '阿里云盘小白羊版',
-  copyright: 'PingKuNet',
-  website: 'https://github.com/PingKuNet/aliyunpan',
+  copyright: 'Odomu',
+  website: 'https://github.com/odomu/aliyunpan',
   iconPath: getResourcesPath('app.png'),
   applicationVersion: '30'
 })
@@ -506,15 +506,18 @@ ipcMain.on('WebOpenUrl', (event, data) => {
 
 async function creatAria() {
   try {
-    let basePath = path.resolve(app.getAppPath(), '..')
-    // if (DEBUGGING) basePath = path.resolve(app.getAppPath(), '..')
-    if (DEBUGGING) basePath = app.getAppPath()
+    let basePath = getStaticPath('engine')
+    let confPath = path.join(basePath, 'aria2.conf')
+    if (!existsSync(confPath)) mkAriaConf(confPath)
     let ariaPath = ''
     if (process.platform === 'win32') {
+      basePath = path.join(basePath, 'win32')
       ariaPath = 'aria2c.exe'
     } else if (process.platform === 'darwin') {
+      basePath = path.join(basePath, 'darwin')
       ariaPath = 'aria2c'
     } else if (process.platform === 'linux') {
+      basePath = path.join(basePath, 'linux')
       ariaPath = 'aria2c'
     }
     let ariaPath2 = path.join(basePath, ariaPath)
@@ -523,32 +526,19 @@ async function creatAria() {
       return 0
     }
 
-    let confPath = path.join(basePath, 'aria2.conf')
-    if (!existsSync(confPath)) mkAriaConf(confPath)
-
     process.chdir(basePath)
-    const options:SpawnOptions = { detached: true, stdio: 'ignore', cwd: basePath }
+    const options:SpawnOptions = { stdio: 'ignore', cwd: basePath }
     const port = await portIsOccupied(16800)
     const subprocess = spawn(
       ariaPath,
       [
         '--stop-with-process=' + process.pid,
         '-D',
-        '--enable-rpc=true',
-        '--rpc-allow-origin-all=true',
-        '--rpc-listen-all=false',
-        '--rpc-listen-port=' + port,
-        '--rpc-secret=S4znWTaZYQi3cpRNb',
-        '--rpc-secure=false',
-        '--auto-file-renaming=false',
-        '--check-certificate=false',
-        '--async-dns=false',
-        '--conf-path=aria2.conf'
+        '--conf-path=../aria2.conf'
       ],
       options
     )
-
-    // subprocess.unref()
+    subprocess.unref()
     return port
   } catch (e: any) {
     console.log(e)

@@ -101,7 +101,7 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
     <div style="margin: 0 3px">
       <AntdTooltip title="点击全选" placement="left">
         <a-button shape="circle" type="text" tabindex="-1" class="select all" @click="handleSelectAll" title="Ctrl+A">
-          <i :class="downedStore.IsListSelectedAll ? 'iconfont iconrsuccess' : 'iconfont iconrpic'" />
+          <i :class="downedStore.IsListSelectedAll ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
         </a-button>
       </AntdTooltip>
     </div>
@@ -135,7 +135,7 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
           >
             <div style="margin: 2px">
               <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index" @click.prevent.stop="handleSelect(item.DownID, { ctrlKey: true, shiftKey: false })">
-                <i :class="downedStore.ListSelected.has(item.DownID) ? 'iconfont iconrsuccess' : 'iconfont iconrpic'" />
+                <i :class="downedStore.ListSelected.has(item.DownID) ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
               </a-button>
             </div>
             <div class="fileicon">
@@ -177,7 +177,7 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
 
 <style>
 .cellcount {
-  align-items: 'center';
+  align-items: center;
   margin-right: 16px;
 }
 .cellcount .arco-badge .arco-badge-status-text {

@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { KeyboardState, useAppStore, useKeyboardStore, useWinStore } from '../store'
-import { onHideRightMenuScroll, onShowRightMenu, TestCtrl, TestKey, TestKeyboardScroll, TestKeyboardSelect } from '../utils/keyboardhelper'
+import {
+  onHideRightMenuScroll,
+  onShowRightMenu,
+  TestCtrl,
+  TestKey,
+  TestKeyboardScroll,
+  TestKeyboardSelect
+} from '../utils/keyboardhelper'
 import { ref } from 'vue'
 import useUploadingStore from './UploadingStore'
 
@@ -9,7 +16,6 @@ import 'ant-design-vue/es/tooltip/style/css'
 import UploadingDAL from '../transfer/uploadingdal'
 
 const viewlist = ref()
-
 const appStore = useAppStore()
 const winStore = useWinStore()
 const uploadingStore = useUploadingStore()
@@ -45,7 +51,6 @@ const handleSelect = (UploadID: number, event: any, isCtrl: boolean = false) => 
 
 const handleRightClick = (e: { event: MouseEvent; node: any }) => {
   const key = e.node.key
-
   if (!uploadingStore.ListSelected.has(key)) uploadingStore.mMouseSelect(key, false, false)
   onShowRightMenu('rightuploadingmenu', e.event.clientX, e.event.clientY)
 }
@@ -164,7 +169,7 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
         </div>
       </template>
     </a-list>
-    <a-dropdown id="rightuploadingmenu" class="rightmenu" :popup-visible="true" style="z-index: -1; left: -200px; opacity: 0">
+    <a-dropdown id="rightuploadingmenu" class="rightmenu" :popup-visible="true" tabindex="-1" :draggable="false" style="z-index: -1; left: -200px; opacity: 0">
       <template #content>
         <a-doption @click="() => UploadingDAL.aUploadingStart(false, true)">
           <template #icon> <i class="iconfont iconstart" /> </template>

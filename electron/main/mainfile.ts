@@ -5,6 +5,7 @@ const DEBUGGING = !app.isPackaged
 
 let NewCopyed = false
 let NewSaved = false
+
 export function getAsarPath(fileName: string) {
   if (DEBUGGING) {
     const basePath = path.resolve(app.getAppPath())
@@ -65,13 +66,19 @@ export function getResourcesPath(fileName: string) {
     return path.join(basePath, fileName)
   }
 }
-export function getCrxPath() {
+
+export function getStaticPath(fileName: string) {
+  let basePath = ''
   if (DEBUGGING) {
-    const basePath = path.resolve(app.getAppPath(), '.')
-    return path.join(basePath, 'crx')
+    basePath = path.resolve(app.getAppPath(), './static')
   } else {
-    let basePath = path.resolve(app.getAppPath(), '..')
-    basePath = path.join(basePath, 'crx')
+    basePath = path.resolve(app.getAppPath(), '..')
+  }
+  return path.join(basePath, fileName)
+}
+
+export function getCrxPath() {
+    let basePath = getStaticPath('crx')
     try {
       if (!existsSync(basePath)) mkdirSync(basePath)
     } catch {}
@@ -87,9 +94,7 @@ export function getCrxPath() {
       const devtoolsjs = path.join(basePath, 'devtools.js')
       if (!existsSync(devtoolsjs)) writeFileSync(devtoolsjs, crxdevtoolsjs, 'utf-8')
     } catch {}
-
     return basePath
-  }
 }
 
 export function getUserDataPath(fileName: string) {
