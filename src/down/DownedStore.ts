@@ -47,9 +47,6 @@ const useDownStore = defineStore('down', {
   }),
 
   getters: {
-    ListDataCount(state: State): number {
-      return state.ListDataShow.length
-    },
 
     IsListSelected(state: State): boolean {
       return state.ListSelected.size > 0
