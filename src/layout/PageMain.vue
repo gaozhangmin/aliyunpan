@@ -201,10 +201,10 @@ const handleCheckVer = () => {
             <i class="iconfont iconclose" />
           </div>
 
-          <!--<div class="footerBar fix">-->
-          <!--  <i class="iconfont iconshangchuansudu" />-->
-          <!--  <span id="footUploadSpeed" class="footspeedstr">{{ footStore.uploadTotalSpeed }}</span>-->
-          <!--</div>-->
+          <div class="footerBar fix">
+            <i class="iconfont iconshangchuansudu" />
+            <span id="footUploadSpeed" class="footspeedstr">{{ footStore.uploadTotalSpeed }}</span>
+          </div>
 
           <div class="footerBar fix">
             <i class="iconfont iconxiazaisudu" />
