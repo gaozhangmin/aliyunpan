@@ -1,6 +1,9 @@
 <script lang="ts">
 import { modalCloseAll } from '../../utils/modal'
-import { defineComponent, ref, reactive } from 'vue'
+import { defineComponent, ref } from 'vue'
+import useSettingStore from "../../setting/settingstore";
+import { menuDownload } from './topbtn'
+
 
 export default defineComponent({
   props: {
@@ -15,42 +18,65 @@ export default defineComponent({
   },
   setup(props) {
     const okLoading = ref(false)
-    const formRef = ref()
-
-    const form = reactive({
-      file_id: '',
-      parent_file_id: '',
-      isDir: false,
-      fileName: '',
-      bakName: ''
-    })
+    const settingStore = useSettingStore()
 
     const handleOpen = () => {}
 
-    const handleClose = () => {
-      
-      if (okLoading.value) okLoading.value = false
-      formRef.value.resetFields()
+    const handleClose = async () => {
+      modalCloseAll()
     }
 
-    return { okLoading, form, formRef, handleOpen, handleClose }
-  },
-  methods: {
-    handleHide() {
+    const handleHide = () => {
       modalCloseAll()
-    },
-    handleOK() {}
+    }
+
+    const handleOK = () => {
+      menuDownload(props.istree)
+      modalCloseAll()
+    }
+
+    const handleSelectDownSavePath = () => {
+      if (window.WebShowOpenDialogSync) {
+        window.WebShowOpenDialogSync(
+            {
+              title: '选择一个文件夹，把所有文件下载到此文件夹内',
+              buttonLabel: '选择',
+              properties: ['openDirectory', 'createDirectory'],
+              defaultPath: settingStore.downSavePath
+            },
+            (result: string[] | undefined) => {
+              if (result && result[0]) {
+                settingStore.updateStore({ downSavePath: result[0] })
+              }
+            }
+        )
+      }
+    }
+    return { okLoading, settingStore, handleOpen, handleClose, handleOK, handleHide, handleSelectDownSavePath }
   }
 })
 </script>
 
 <template>
-  <a-modal :visible="visible" modal-class="modalclass" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
+  <a-modal
+      :visible="visible"
+      modal-class="modalclass"
+      :footer="false"
+      :unmount-on-close="true"
+      :mask-closable="false"
+      @cancel="handleHide"
+      @before-open="handleOpen"
+      @close="handleClose">
     <template #title>
       <span class="modaltitle">从网盘下载 文件/文件夹 到本地</span>
     </template>
-    <div class="modalbody" style="width: 440px">
-      <br />
+    <div class="modalbody" style="width: 440px;padding-bottom: 24px;">
+      <a-input-search tabindex="-1"
+                      :readonly="true"
+                      button-text="更改"
+                      search-button
+                      :model-value="settingStore.downSavePath"
+                      @search="handleSelectDownSavePath" />
     </div>
     <div class="modalfoot">
       <div style="flex-grow: 1"></div>

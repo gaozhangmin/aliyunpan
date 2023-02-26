@@ -201,17 +201,22 @@ const handleCheckVer = () => {
             <i class="iconfont iconclose" />
           </div>
 
-          <div class="footerBar fix">
-            <i class="iconfont iconshangchuansudu" />
-            <span id="footUploadSpeed"></span>
-          </div>
+          <!--<div class="footerBar fix">-->
+          <!--  <i class="iconfont iconshangchuansudu" />-->
+          <!--  <span id="footUploadSpeed" class="footspeedstr">{{ footStore.uploadTotalSpeed }}</span>-->
+          <!--</div>-->
 
           <div class="footerBar fix">
             <i class="iconfont iconxiazaisudu" />
-            <span id="footDownSpeed"></span>
+            <span id="footDownSpeed" class="footspeedstr">{{ footStore.downloadTotalSpeed }}</span>
           </div>
 
-          <div class="footerBar fix" style="padding: 0 8px; cursor: pointer" @click="handleCheckVer">{{ Config.appVersion }}</div>
+          <div class="footerBar fix">
+            <span class="footAria" title="Aria已连接" v-if="footStore.ariaInfo"> {{ footStore.ariaInfo }} </span>
+            <span class="footAria" title="Aria已离线" v-else> Aria ⚯ Offline </span>
+          </div>
+
+          <!--<div class="footerBar fix" style="padding: 0 8px; cursor: pointer" @click="handleCheckVer">{{ Config.appVersion }}</div>-->
 
           <a-popover v-model:popup-visible="footStore.taskVisible" trigger="click" position="top" class="asynclist">
             <div class="footerBar fix" style="cursor: pointer">

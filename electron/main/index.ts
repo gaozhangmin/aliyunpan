@@ -527,14 +527,15 @@ async function creatAria() {
     }
 
     process.chdir(basePath)
-    const options:SpawnOptions = { stdio: 'ignore', cwd: basePath }
+    const options:SpawnOptions = { stdio: 'ignore', cwd: basePath, shell: true }
     const port = await portIsOccupied(16800)
     const subprocess = spawn(
       ariaPath,
       [
         '--stop-with-process=' + process.pid,
         '-D',
-        '--conf-path=../aria2.conf'
+        '--conf-path=' + confPath,
+        '--listen-port=' + port
       ],
       options
     )

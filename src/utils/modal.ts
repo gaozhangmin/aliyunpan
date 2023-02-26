@@ -43,7 +43,7 @@ export function modalSelectPanDir(selecttype: string, selectid: string, callback
 }
 
 export function modalShuXing(istree: boolean, ismulti: boolean) {
-  ismulti = false 
+  ismulti = false
   useModalStore().showModal(ismulti ? 'shuxingmulti' : 'shuxing', { istree })
 }
 

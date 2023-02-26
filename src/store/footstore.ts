@@ -23,29 +23,35 @@ export interface AsyncModel {
 }
 
 export interface FootState {
-  
+
   taskVisible: boolean
-  
+
   taskList: AsyncModel[]
 
-  
+
   audioUrl: string
-  
+
   rightWidth: number
-  
+
   panDirInfo: string
-  
+
   picDirInfo: string
-  
+
   uploadingInfo: string
-  
+
+  uploadTotalSpeed: string
+
   downloadingInfo: string
-  
+
+  downloadTotalSpeed: string
+
   loadingInfo: string
-  
+
   panSpaceInfo: string
-  
+
   picSpaceInfo: string
+
+  ariaInfo: string
 }
 
 const useFootStore = defineStore('foot', {
@@ -57,10 +63,13 @@ const useFootStore = defineStore('foot', {
     panDirInfo: '',
     picDirInfo: '',
     uploadingInfo: '',
+    uploadTotalSpeed: '',
     downloadingInfo: '',
+    downloadTotalSpeed: '',
     loadingInfo: '',
     panSpaceInfo: '',
-    picSpaceInfo: ''
+    picSpaceInfo: '',
+    ariaInfo: ''
   }),
 
   getters: {
@@ -73,7 +82,7 @@ const useFootStore = defineStore('foot', {
       return isRunning
     },
     GetSpaceInfo(state: FootState): string {
-      if (state.loadingInfo) return '' 
+      if (state.loadingInfo) return ''
       const appTab = useAppStore().appTab
       if (appTab == 'pan') return state.panSpaceInfo
       if (appTab == 'pic') return state.panSpaceInfo
@@ -96,21 +105,21 @@ const useFootStore = defineStore('foot', {
       this.$patch(partial)
     },
 
-    
+
     mDeleteTask(key: string) {
       this.taskList = this.taskList.filter((t) => t.key != key)
     },
-    
+
     mAddTask(user_id: string, key: string, type: AsyncType, title: string, todrive_id: string, tofile_id: string) {
       this.taskList = [{ user_id, todrive_id, tofile_id, zipdrive_id: '', zipfile_id: '', zipdomain_id: '', key, type, title: type + ' ' + title, status: 'running', starttime: new Date().getTime(), endtime: 0, usetime: '' } as AsyncModel].concat(this.taskList)
       this.taskVisible = true
     },
-    
+
     mAddTaskZip(user_id: string, key: string, type: AsyncType, title: string, todrive_id: string, tofile_id: string, zipdrive_id: string, zipfile_id: string, zipdomain_id: string) {
       this.taskList = [{ user_id, todrive_id, tofile_id, zipdrive_id, zipfile_id, zipdomain_id, key, type, title: type + ' ' + title, status: 'running', starttime: new Date().getTime(), endtime: 0, usetime: '' } as AsyncModel].concat(this.taskList)
       this.taskVisible = true
     },
-    
+
     aUpdateTask() {
       const list = this.taskList
       for (let i = 0, maxi = list.length; i < maxi; i++) {
@@ -120,7 +129,7 @@ const useFootStore = defineStore('foot', {
           if (item.type == '解压') {
             result = ApiGetAsyncTaskUnzip(item.user_id, item.zipdrive_id, item.zipfile_id, item.zipdomain_id, item.key)
           } else {
-            
+
             result = ApiGetAsyncTask(item.user_id, item.key)
           }
           result
@@ -129,7 +138,7 @@ const useFootStore = defineStore('foot', {
               list[i].endtime = new Date().getTime()
               list[i].usetime = humanTimeFM((list[i].endtime - list[i].starttime) / 1000)
               if (item.status != 'running') {
-                
+
                 if (item.type == '解压' || item.type == '复制' || item.type == '导入分享' || item.type == '回收站还原') {
                   PanDAL.GetDirFileList(item.user_id, item.todrive_id, item.tofile_id, '')
                 }
@@ -141,7 +150,7 @@ const useFootStore = defineStore('foot', {
         }
       }
     },
-    
+
     mClearTask() {
       const list = this.taskList
       const newList: AsyncModel[] = []
@@ -150,20 +159,35 @@ const useFootStore = defineStore('foot', {
       }
       this.taskList = newList
     },
+
     mSaveUploadingInfo(total: number) {
       this.uploadingInfo = total > 1000 ? '前 1000 / ' + total + ' 个' : ''
     },
-    
+
+    mSaveUploadTotalSpeedInfo(title: string) {
+      this.uploadTotalSpeed = title
+    },
+
+    mSaveDownTotalSpeedInfo(title: string) {
+      this.downloadTotalSpeed = title
+    },
+
     mSaveAudioUrl(url: string) {
       this.audioUrl = url
     },
-    
+
     mSaveLoading(title: string) {
       this.loadingInfo = title
     },
+
+    mSaveAriaInfo(title: string) {
+      this.ariaInfo = title
+    },
+
     mSaveUserInfo(token: ITokenInfo) {
       this.panSpaceInfo = '总空间 ' + token.spaceinfo
     },
+
     mSaveDirInfo(drive: Drive, info: string) {
       if (drive == 'pan') this.panDirInfo = info
       if (drive == 'pic') this.picDirInfo = info

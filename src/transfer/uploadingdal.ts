@@ -166,10 +166,7 @@ export default class UploadingDAL {
       window.WinMsgToUpload({ cmd: 'UploadAdd', UploadList: sendList })
       if (!SpeedTotal) SpeedTotal = humanSizeSpeed(0)
     }
-
-    const doc = document.getElementById('footUploadSpeed')
-    if (doc) doc.innerHTML = SpeedTotal ? '<span class="footspeedstr">' + SpeedTotal + '</span>' : ''
-
+    useFootStore().mSaveUploadTotalSpeedInfo(SpeedTotal)
     UploadingDAL.mUploadingRefresh()
   }
 

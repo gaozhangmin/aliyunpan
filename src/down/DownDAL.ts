@@ -1,7 +1,7 @@
 import { IAliGetFileModel } from '../aliapi/alimodels'
 import path from 'path'
 import TreeStore from '../store/treestore'
-import { useUserStore, useSettingStore, useDownedStore, useDowningStore } from '../store'
+import { useUserStore, useSettingStore, useDownedStore, useDowningStore, useFootStore } from '../store'
 import { ClearFileName } from '../utils/filehelper'
 import DB from '../utils/db'
 import {
@@ -12,8 +12,7 @@ import {
   FormateAriaError,
   IsAria2cRemote
 } from '../utils/aria2c'
-import { humanSize } from '../utils/format'
-import DBUpload from "../utils/dbupload";
+import { humanSize, humanSizeSpeed } from '../utils/format'
 
 export interface IStateDownFile {
   DownID: string
@@ -454,11 +453,9 @@ export default class DownDAL {
 
     if (saveList.length > 0) DB.saveDownings(JSON.parse(JSON.stringify(saveList)))
     if (dellist.length > 0) AriaDeleteList(dellist).then()
-    /*if (hasSpeed > 0) this.totalDownSpeed = format.humanStorageSize(hasSpeed) + '/s';
-    else this.totalDownSpeed = '';*/
-
     if (SaveTimeWait > 10) SaveTimeWait = 0;
     else SaveTimeWait++;
+    useFootStore().mSaveDownTotalSpeedInfo(humanSizeSpeed(hasSpeed))
   }
 
   /**

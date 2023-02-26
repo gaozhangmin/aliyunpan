@@ -235,7 +235,11 @@ const useDowningStore = defineStore('downing', {
       DowningList.push(...savelist);
       this.mRefreshListDataShow(true)
       if (tip) {
-        message.success('成功创建 ' + savelist.length.toString() + '个下载任务')
+        if (savelist.length == 0) {
+          message.info('下载任务已存在，请勿重复创建任务')
+        } else {
+          message.success('成功创建 ' + savelist.length.toString() + '个下载任务')
+        }
       }
     },
 

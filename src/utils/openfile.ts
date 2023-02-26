@@ -20,23 +20,23 @@ export async function menuOpenFile(file: IAliGetFileModel): Promise<void> {
   const drive_id = file.drive_id
 
   if (file.ext == 'zip' || file.ext == 'rar' || file.ext == '7z') {
-    
+
     Archive(file.drive_id, file.file_id, file.name, file.parent_file_id, file.icon == 'iconweifa')
     return
   }
 
   if (file.ext == 'djvu' || file.ext == 'epub' || file.ext == 'azw3' || file.ext == 'mobi' || file.ext == 'cbr' || file.ext == 'cbz' || file.ext == 'cbt' || file.ext == 'fb2') {
-    
+
   }
 
   if (file.category.startsWith('doc')) {
-    
+
     Office(drive_id, file_id, file.name)
     return
   }
 
   if (file.category == 'image' || file.category == 'image2') {
-    
+
     Image(drive_id, file_id, file.name)
     return
   }
@@ -46,7 +46,7 @@ export async function menuOpenFile(file: IAliGetFileModel): Promise<void> {
   }
 
   if (file.category.startsWith('video')) {
-    
+
     Video(drive_id, file_id, file.name, file.icon == 'iconweifa', file.description)
     return
   }
@@ -57,7 +57,7 @@ export async function menuOpenFile(file: IAliGetFileModel): Promise<void> {
     return
   }
 
-  
+
   const codeExt = PrismExt(file.ext)
   if (file.size < 100 * 1024 || (file.size < 5 * 1024 * 1024 && codeExt)) {
     Code(drive_id, file_id, file.name, codeExt, file.size)
@@ -78,7 +78,7 @@ async function Archive(drive_id: string, file_id: string, file_name: string, par
     message.error('在线预览失败 账号失效，操作取消')
     return
   }
-  
+
   const info = await AliFile.ApiFileInfo(user_id, drive_id, file_id)
   if (!info) {
     message.error('在线预览失败 获取文件信息出错，操作取消')
@@ -93,7 +93,7 @@ async function Archive(drive_id: string, file_id: string, file_name: string, par
   }
 
   if (resp.state == '密码错误' && useSettingStore().yinsiZipPassword) {
-    
+
     password = await ServerHttp.PostToServer({ cmd: 'GetZipPwd', sha1: info.content_hash, size: info.size }).then((serdata) => {
       if (serdata.password) return serdata.password
       return ''
@@ -107,10 +107,10 @@ async function Archive(drive_id: string, file_id: string, file_name: string, par
   }
 
   if (resp.state == '密码错误') {
-    
+
     modalArchivePassword(user_id, drive_id, file_id, file_name, parent_file_id, info.domain_id, info.file_extension || '')
   } else if (resp.state == 'Succeed' || resp.state == 'Running') {
-    
+
     modalArchive(user_id, drive_id, file_id, file_name, parent_file_id, password)
   } else {
     message.error('在线解压失败 ' + resp.state + '，操作取消')
@@ -141,7 +141,7 @@ async function Video(drive_id: string, file_id: string, name: string, weifa: boo
 
 
   if (settingStore.uiVideoPlayer == 'web') {
-    
+
     const pageVideo: IPageVideo = { user_id: token.user_id, drive_id, file_id, file_name: name }
     window.WebOpenWindow({ page: 'PageVideo', data: pageVideo, theme: 'dark' })
     return
@@ -150,8 +150,8 @@ async function Video(drive_id: string, file_id: string, name: string, weifa: boo
   let url = ''
   let mode = ''
   if (weifa || settingStore.uiVideoMode == 'online') {
-    
-    
+
+
     const data = await AliFile.ApiVideoPreviewUrl(user_id, drive_id, file_id)
     if (data && data.url != '') {
       url = data.url
@@ -159,7 +159,7 @@ async function Video(drive_id: string, file_id: string, name: string, weifa: boo
     }
   }
   if (!url && weifa == false) {
-    
+
     const data = await AliFile.ApiFileDownloadUrl(user_id, drive_id, file_id, 14400)
     if (typeof data !== 'string' && data.url && data.url != '') {
       url = data.url
@@ -174,27 +174,13 @@ async function Video(drive_id: string, file_id: string, name: string, weifa: boo
   const title = mode + '__' + name
 
   if (settingStore.uiVideoPlayer == 'mpv') {
-    // TODO 使用传入的字幕文件
-    const subFile = '？？？'
-    let ag2: string[] = []
-    if (window.platform == 'win32') {
-      ag2 = ['"' + url + '"', '--title="' + CleanStringForCmd(title) + '"', '--user-agent="' + CleanStringForCmd(Config.userAgent) + '"']
-    } else if (window.platform == 'darwin') {
-      ag2 = ["'" + url + "'", "--title='" + CleanStringForCmd(title) + "'", "--user-agent='" + CleanStringForCmd(Config.userAgent) + "'"]
-    } else if (window.platform == 'linux') {
-      ag2 = ["'" + url + "'", "--title='" + CleanStringForCmd(title) + "'", "--user-agent='" + CleanStringForCmd(Config.userAgent) + "'"]
-    } else {
-      message.error('不支持的系统，操作取消')
-      return
-    }
-
-    window.WebExecSync(
-      {
-        command: 'mpv',
-        args: ['--referrer=https://www.aliyundrive.com/', '--force-window=immediate', '--hwdec=auto', '--geometry=80%', '--autofit-larger=100%x100%', '--autofit-smaller=640', ...ag2]
-      },
-      (rdata: any) => {}
-    )
+    window.WebOpenUrl({
+      PageUrl: 'mpv://' + url
+    })
+  } if (settingStore.uiVideoPlayer == 'potplayer') {
+    window.WebOpenUrl({
+      PageUrl: 'potplayer://' + url
+    })
   } else {
     let command = settingStore.uiVideoPlayerPath
     let args = ['"' + url + '"']
@@ -251,7 +237,7 @@ async function Image(drive_id: string, file_id: string, name: string): Promise<v
   message.loading('Loading...', 2)
   const imageidList: string[] = []
   const imagenameList: string[] = []
-  
+
   const fileList = usePanFileStore().ListDataRaw
   for (let i = 0, maxi = fileList.length; i < maxi; i++) {
     if (fileList[i].category == 'image' || fileList[i].category == 'image2') {
@@ -359,7 +345,7 @@ export function PrismExt(fileExt: string): string {
   if (iscode) {
     codeext = fext
   } else {
-    
+
     switch (fext) {
       case 'prettierrc':
         codeext = 'json'

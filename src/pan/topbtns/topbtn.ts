@@ -65,10 +65,14 @@ export function menuDownload(istree: boolean) {
     const settingStore = useSettingStore()
     const savePath = settingStore.AriaIsLocal ? settingStore.downSavePath : settingStore.ariaSavePath
     const savePathFull = settingStore.downSavePathFull
-    if (settingStore.downSavePathDefault) {
+    const downSavePathDefault = settingStore.downSavePathDefault
+    if (downSavePathDefault && savePath) {
       // 直接下载
       DownDAL.aAddDownload(files, savePath, savePathFull, true)
-    } else modalDownload(false)
+    } else {
+      message.error('未设置保存路径')
+      modalDownload(istree)
+    }
   } catch (err: any) {
     message.error(err.message)
     DebugLog.mSaveDanger('menuDownload', err)

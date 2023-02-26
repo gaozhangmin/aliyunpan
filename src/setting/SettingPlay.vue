@@ -32,7 +32,7 @@ function handleSelectPlayer() {
     <div class="settinghead">:在线播放视频清晰度</div>
     <div class="settingrow">
       <a-radio-group type="button" tabindex="-1" :model-value="settingStore.uiVideoMode" @update:model-value="cb({ uiVideoMode: $event })">
-        <a-radio tabindex="-1" value="mpv">播放原始的文件</a-radio>
+        <a-radio tabindex="-1" value="web">播放原始的文件</a-radio>
         <a-radio tabindex="-1" value="online">播放转码后视频</a-radio>
       </a-radio-group>
       <a-popover position="bottom">
@@ -57,39 +57,44 @@ function handleSelectPlayer() {
     </div>
     <div class="settingspace"></div>
     <div class="settinghead">:在线播放视频播放器</div>
-    <div class="settingrow">
+    <div class="settingrow" style="min-width: 800px ">
       <a-radio-group type="button" tabindex="-1" :model-value="settingStore.uiVideoPlayer" @update:model-value="cb({ uiVideoPlayer: $event })">
-        <a-radio tabindex="-1" value="mpv">内置mpv播放器</a-radio>
-        <a-radio tabindex="-1" value="other">自定义播放软件</a-radio>
         <a-radio tabindex="-1" value="web">内置网页播放器</a-radio>
+        <a-radio tabindex="-1" value="mpv">本地Mpv播放器</a-radio>
+        <a-radio tabindex="-1" value="potplayer">本地PotPlayer播放器</a-radio>
+        <a-radio tabindex="-1" value="other">自定义播放软件</a-radio>
       </a-radio-group>
       <a-popover position="bottom">
         <i class="iconfont iconbulb" />
         <template #content>
           <div style="min-width: 400px">
-            默认：<span class="opred">内置mpv播放器</span>
+            默认：<span class="opred">内置网页播放器</span>
             <hr />
-            <span class="opred">内置mpv播放器</span>：<br />
-            windows/macOS 小白羊都内置了mpv播放器，无需任何设置直接播放
+            <span class="opred">内置网页播放器</span>：<br />
+            使用Videojs网页，播放转码后的视频<br />
+            支持 选择清晰度、倍速播放、内置字幕、画中画模式
+            <div class="hrspace"></div>
+            <span class="opred">本地Mpv播放器</span>：<br />
+            windows/macOS 本地需要安装Mpv播放器
             <br />
-            linux 系统特殊，需要自己执行命令<span class="opblue">sudo apt install mpv</span>安装<span class="oporg">一次</span>
+            linux 系统特殊，需要执行命令<span class="opblue">sudo apt install mpv</span>安装
             <br />
             mpv支持 快进、倍速播放、置顶、截图等非常多的功能(百度 MPV快捷键)
+            <div class="hrspace"></div>
+            <span class="opred">本地PotPlayer播放器</span>：<br />
+              本地需要安装PotPlayer播放器
             <div class="hrspace"></div>
             <span class="opred">自定义播放软件</span>：<br />
             是实验性的功能，可以<span class="oporg">自己选择</span>电脑上安装的播放软件<br />
             例如:Potplayer,IINA<br />
             <div class="hrspace"></div>
-            <span class="opred">内置网页播放器</span>：<br />
-            使用Videojs网页，播放转码后的视频<br />
-            支持 选择清晰度、倍速播放、内置字幕、画中画模式
-            <div class="hrspace"></div>
             详情请参阅<span class="opblue">帮助文档</span>
           </div>
         </template>
       </a-popover>
-      <div v-if="settingStore.uiVideoPlayer == 'mpv'" style="font-size: 12px; color: var(--color-text-3)">mpv 支持倍速！支持外挂字幕！支持切换音轨！</div>
-      <div v-if="settingStore.uiVideoPlayer == 'web'" style="font-size: 12px; color: var(--color-text-3)">网页 支持倍速！支持选择清晰度！支持继续播放！</div>
+      <div v-if="settingStore.uiVideoPlayer === 'mpv'" style="font-size: 12px; color: var(--color-text-3)">mpv 支持倍速！支持外挂字幕！支持切换音轨！</div>
+      <div v-if="settingStore.uiVideoPlayer === 'potplayer'" style="font-size: 12px; color: var(--color-text-3)">potplayer 支持倍速！支持外挂字幕！支持切换音轨！</div>
+      <div v-if="settingStore.uiVideoPlayer === 'web'" style="font-size: 12px; color: var(--color-text-3)">网页 支持倍速！支持选择清晰度！支持继续播放！</div>
     </div>
     <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'win32' ? '' : 'none', marginTop: '8px' }">
       <a-input-search tabindex="-1" style="max-width: 378px" :readonly="true" button-text="选择播放软件" search-button :model-value="settingStore.uiVideoPlayerPath" @search="handleSelectPlayer" />

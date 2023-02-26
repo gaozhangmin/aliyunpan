@@ -6,7 +6,7 @@ import axios from 'axios'
 import DownDAL, { IAriaDownProgress, IStateDownFile } from '../down/DownDAL'
 import message from './message'
 import UserDAL from '../user/userdal'
-import { useSettingStore } from '../store'
+import { useSettingStore, useFootStore } from '../store'
 import DebugLog from './debuglog'
 import Config from './config'
 import AliTrash from '../aliapi/trash'
@@ -36,24 +36,14 @@ function GetAria() {
 
 function SetAriaOnline(isOnline: boolean, ariaState: string = '') {
   if (!ariaState) ariaState = useSettingStore().ariaState
-  let doc = document.getElementById('footAria')
   if (ariaState == 'local') {
     IsAria2cOnlineLocal = isOnline
-    /*if (doc && doc.innerText != '') doc.innerText = ''*/
-    if (isOnline) {
-      let txt = 'Aria ⚯ Local'
-      if (doc && doc.innerText != txt) doc.innerText = txt
-    } else {
-      if (doc && doc.innerText != 'Aria 已断开') doc.innerText = 'Aria 已断开'
-    }
+    let ariaInfo = isOnline ? 'Aria ⚯ Local' : 'Aria 已断开'
+    useFootStore().mSaveAriaInfo(ariaInfo)
   } else {
     IsAria2cOnlineRemote = isOnline
-    if (isOnline) {
-      let txt = 'Aria ⚯ ' + (Aria2EngineRemote?.host || '')
-      if (doc && doc.innerText != txt) doc.innerText = txt
-    } else {
-      if (doc && doc.innerText != 'Aria 已断开') doc.innerText = 'Aria 已断开'
-    }
+    let ariaInfo = isOnline ? 'Aria ⚯ ' + (Aria2EngineRemote?.host || '') : 'Aria 已断开'
+    useFootStore().mSaveAriaInfo(ariaInfo)
   }
 }
 
@@ -155,11 +145,7 @@ export async function AriaChangeToRemote() {
       const url = host + ':' + port + ' secret=' + secret
       if (!settingStore.AriaIsLocal && Aria2cRemoteRetryTime % 10 == 1) message.error('无法连接到远程Aria2 ' + url)
     } else {
-      const limit = settingStore.downGlobalSpeed.toString() + (settingStore.downGlobalSpeedM == 'MB' ? 'M' : 'K')
-      await Aria2EngineRemote.call('aria2.changeGlobalOption', { 'max-overall-download-limit': limit }).catch((e: any) => {
-        if (e && e.message == 'Unauthorized') message.error('Aria2密码错误(密码不要有 ^ 或特殊字符)')
-        IsAria2cOnlineRemote = false
-      })
+      await AriaGlobalSpeed()
     }
   } catch (e) {
     SetAriaOnline(false, 'remote')
@@ -180,12 +166,11 @@ export async function AriaChangeToLocal() {
         IsAria2cOnlineLocal = false
         if (useSettingStore().AriaIsLocal) {
           message.error('Aria2本地连接已断开')
-          let doc = document.getElementById('footAria')
-          if (doc && doc.innerText != 'Aria 已断开') doc.innerText = 'Aria 已断开'
+          SetAriaOnline(false, 'local')
         }
       })
     }
-
+    await Sleep(500)
     await Aria2EngineLocal.open()
       .then(() => {
         Aria2cLocalRelanchTime = 0
@@ -203,12 +188,7 @@ export async function AriaChangeToLocal() {
       const url = '127.0.0.1:16800 secret=' + localPwd
       if (Aria2cLocalRelanchTime < 2) message.error('无法连接到本地Aria2 ' + url)
     } else {
-      const settingStore = useSettingStore()
-      const limit = settingStore.downGlobalSpeed.toString() + (settingStore.downGlobalSpeedM == 'MB' ? 'M' : 'K')
-      await Aria2EngineLocal.call('aria2.changeGlobalOption', { 'max-overall-download-limit': limit }).catch((e: any) => {
-        if (e && e.message == 'Unauthorized') message.error('Aria2密码错误(密码不要有 ^ 或特殊字符)')
-        IsAria2cOnlineLocal = false
-      })
+      await AriaGlobalSpeed()
     }
     await Sleep(1000)
   } catch (e) {
@@ -222,7 +202,10 @@ export async function AriaGlobalSpeed() {
   try {
     const settingStore = useSettingStore()
     const limit = settingStore.downGlobalSpeed.toString() + (settingStore.downGlobalSpeedM == 'MB' ? 'M' : 'K')
-    await GetAria()?.call('aria2.changeGlobalOption', { 'max-overall-download-limit': limit })
+    await GetAria()?.call('aria2.changeGlobalOption', { 'max-overall-download-limit': limit }).catch((e: any) => {
+      if (e && e.message == 'Unauthorized') message.error('Aria2密码错误(密码不要有 ^ 或特殊字符)')
+      IsAria2cOnlineLocal = false
+    })
   } catch {
     SetAriaOnline(false)
   }
