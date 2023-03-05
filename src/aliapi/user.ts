@@ -22,7 +22,7 @@ export default class AliUser {
     }
     SessionLockMap.set(token.user_id, Date.now())
     const time = SessionReTimeMap.get(token.user_id) || 0
-    if (Date.now() - time < 1000 * 60 * 5) {
+    if (Date.now() - time < 1000) {
       SessionLockMap.delete(token.user_id)
       return true
     }
@@ -127,6 +127,34 @@ export default class AliUser {
       return true
     } else {
       DebugLog.mSaveWarning('ApiUserInfo err=' + (resp.code || ''))
+    }
+    return false
+  }
+
+  static async ApiUserSign(token: ITokenInfo): Promise<boolean> {
+    if (!token.user_id) return false
+    const url = 'https://member.aliyundrive.com/v1/activity/sign_in_list'
+    const resp = await AliHttp.Post(url, {}, token.user_id, '')
+    // console.log(JSON.stringify(resp))
+    if (AliHttp.IsSuccess(resp.code)) {
+      if (!resp.body || !resp.body.result) {
+        message.error("签到失败" + resp.body?.message)
+        return false
+      }
+      let sign_data
+      const { title, signInCount = 0, signInLogs = [] } = resp.body.result
+      for (let i = 0; i < signInLogs.length - 1; i++) {
+          if (signInLogs[i]['status'] === 'miss') {
+            sign_data = signInLogs[i - 1]
+            break
+         }
+      }
+      const reward = !sign_data['isReward'] ? '无奖励' : `获得${sign_data["reward"]["name"]} ${sign_data["reward"]["description"]}`
+      message.success("签到成功, 本月累计签到" + signInCount + '次')
+      message.info("本次签到" + reward)
+      return true
+    } else {
+      message.error("签到失败" + resp.body?.message)
     }
     return false
   }

@@ -26,7 +26,7 @@ const appStore = useAppStore()
 const winStore = useWinStore()
 const keyboardStore = useKeyboardStore()
 const footStore = useFootStore()
-DebugLog.aLoadFromDB()
+
 
 const handleHideClick = (_e: any) => {
   if (window.WebToElectron) window.WebToElectron({ cmd: useSettingStore().uiExitOnClose ? 'exit' : 'close' })
@@ -201,14 +201,18 @@ const handleCheckVer = () => {
             <i class="iconfont iconclose" />
           </div>
 
-          <div class="footerBar fix">
+          <div class="footerBar fix" v-show="footStore.uploadTotalSpeed" >
             <i class="iconfont iconshangchuansudu" />
-            <span id="footUploadSpeed" class="footspeedstr">{{ footStore.uploadTotalSpeed }}</span>
+            <span id="footUploadSpeed" class="footspeedstr">
+              {{ footStore.uploadTotalSpeed }}
+            </span>
           </div>
 
-          <div class="footerBar fix">
+          <div class="footerBar fix" v-show="footStore.downloadTotalSpeed" >
             <i class="iconfont iconxiazaisudu" />
-            <span id="footDownSpeed" class="footspeedstr">{{ footStore.downloadTotalSpeed }}</span>
+            <span id="footDownSpeed" class="footspeedstr">
+              {{ footStore.downloadTotalSpeed }}
+            </span>
           </div>
 
           <div class="footerBar fix">

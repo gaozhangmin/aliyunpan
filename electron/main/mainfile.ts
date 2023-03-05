@@ -1,10 +1,39 @@
 import { app } from 'electron'
 import path  from 'path'
 import { existsSync, mkdirSync, writeFileSync, copyFileSync, rmSync } from 'fs'
+import stripAnsi from "strip-ansi";
+import { execSync } from "child_process"
 const DEBUGGING = !app.isPackaged
 
 let NewCopyed = false
 let NewSaved = false
+
+export function setShellPath() {
+  const parseEnv = env => {
+    env = String(env).split('_SHELL_ENV_DELIMITER_')[1]
+    const returnValue = {};
+    let filter = stripAnsi(env).split('\n').filter(line => Boolean(line))
+    for (const line of filter) {
+      const parts = line.split('=')
+      returnValue[parts.shift()] = parts.join("=")
+    }
+    return returnValue
+  }
+
+  if (process.platform === 'win32') {
+    return
+  }
+
+  const output = execSync('bash -ilc "echo -n "_SHELL_ENV_DELIMITER_"; env; echo -n "_SHELL_ENV_DELIMITER_"; exit"')
+  // @ts-ignore
+  const { PATH = undefined } = parseEnv(output)
+  process.env.PATH = PATH || [
+    './node_modules/.bin',
+    '/.nodebrew/current/bin',
+    '/usr/local/bin',
+    process.env.PATH,
+  ].join(':')
+}
 
 export function getAsarPath(fileName: string) {
   if (DEBUGGING) {
@@ -33,9 +62,8 @@ export function getAsarPath(fileName: string) {
 }
 
 export function getResourcesPath(fileName: string) {
-  let basePath = ''
-  basePath = path.resolve(app.getAppPath(), '..')
-  if (DEBUGGING) basePath =  path.resolve(app.getAppPath(), '.')
+  let basePath =  path.resolve(app.getAppPath(), '..')
+  if (DEBUGGING) basePath = path.resolve(app.getAppPath(), '.')
   if (fileName == 'app.ico' && process.platform !== 'win32') {
     fileName = 'app.png'
   }

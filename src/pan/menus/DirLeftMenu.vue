@@ -27,7 +27,7 @@ export default defineComponent({
       <a-dsubmenu id="leftpansubzhankai" class="rightmenu" trigger="hover">
         <template #default>
           <div @click.stop="() => {}">
-            <span class="arco-dropdown-option-icon"><i class="iconfont iconfenzhi1"></i></span>Tree
+            <span class="arco-dropdown-option-icon"><i class="iconfont iconfenzhi1"></i></span>目录
           </div>
         </template>
         <template #content>

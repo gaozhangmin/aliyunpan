@@ -41,7 +41,7 @@ const handleSaveLogCopy = () => {
       :data-refresh="logStore.logTime"
       :virtual-list-props="{
         height: logHeight,
-        threshold: 1
+        threshold: 50
       }">
       <template #item="{ item, index }">
         <a-list-item :key="index">

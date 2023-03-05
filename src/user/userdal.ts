@@ -176,8 +176,14 @@ export default class UserDAL {
     UserTokenMap.set(token.user_id, token)
 
     // 加载用户信息
-    await Promise.all([AliUser.ApiUserInfo(token), AliUser.ApiUserPic(token), AliUser.ApiUserVip(token)])
-
+    await Promise.all([
+        AliUser.ApiUserInfo(token),
+        AliUser.ApiUserPic(token),
+        AliUser.ApiUserVip(token)
+    ])
+    // 刷新session
+    await AliUser.ApiSessionRefreshAccount(token, true)
+    // 保存登录信息
     useUserStore().userLogin(token.user_id)
     await DB.saveValueString('uiDefaultUser', token.user_id)
     UserDAL.SaveUserToken(token)
@@ -279,9 +285,11 @@ export default class UserDAL {
     }
   }
 
-
-  static CurrUserToken(): string {
-
-    return ''
+  static async UserSign(user_id: string): Promise<boolean> {
+    const token = UserDAL.GetUserToken(user_id)
+    if (!token || !token.access_token) {
+      return false
+    }
+    return AliUser.ApiUserSign(token)
   }
 }

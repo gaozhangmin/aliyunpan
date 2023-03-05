@@ -455,7 +455,7 @@ export default class DownDAL {
     if (dellist.length > 0) AriaDeleteList(dellist).then()
     if (SaveTimeWait > 10) SaveTimeWait = 0;
     else SaveTimeWait++;
-    useFootStore().mSaveDownTotalSpeedInfo(humanSizeSpeed(hasSpeed))
+    useFootStore().mSaveDownTotalSpeedInfo(hasSpeed && humanSizeSpeed(hasSpeed) || '')
   }
 
   /**

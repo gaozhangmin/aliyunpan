@@ -1,4 +1,4 @@
-import { getCrxPath, getResourcesPath, getStaticPath, getUserDataPath, mkAriaConf } from './mainfile'
+import { getCrxPath, getResourcesPath, getStaticPath, getUserDataPath, mkAriaConf, setShellPath } from './mainfile'
 import { release } from 'os'
 import { AppWindow, creatElectronWindow, createMainWindow, createTray, Referer, ShowError, ShowErrorAndExit, ua } from './window'
 import Electron from 'electron'
@@ -12,6 +12,7 @@ import path from 'path'
 
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()
 
+setShellPath()
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true'
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 process.on('unhandledRejection', (reason, p) => {
@@ -511,15 +512,13 @@ async function creatAria() {
     if (!existsSync(confPath)) mkAriaConf(confPath)
     let ariaPath = ''
     if (process.platform === 'win32') {
-      basePath = path.join(basePath, 'win32')
       ariaPath = 'aria2c.exe'
     } else if (process.platform === 'darwin') {
-      basePath = path.join(basePath, 'darwin')
       ariaPath = 'aria2c'
     } else if (process.platform === 'linux') {
-      basePath = path.join(basePath, 'linux')
       ariaPath = 'aria2c'
     }
+    basePath = path.join(basePath, DEBUGGING ? process.platform : '')
     let ariaPath2 = path.join(basePath, ariaPath)
     if (!existsSync(ariaPath2)) {
       ShowError('找不到Aria程序文件', ariaPath2)
@@ -539,7 +538,6 @@ async function creatAria() {
       ],
       options
     )
-    subprocess.unref()
     return port
   } catch (e: any) {
     console.log(e)

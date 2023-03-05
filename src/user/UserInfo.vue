@@ -16,6 +16,10 @@ export default defineComponent({
       })
     }
 
+    const handleSign = () => {
+      UserDAL.UserSign(useUserStore().user_id)
+    }
+
     const handleUserSpace = () => {
       modalUserSpace()
     }
@@ -32,12 +36,13 @@ export default defineComponent({
     }
 
     const userList = computed(() => {
-      if (userStore.user_id) return UserDAL.GetUserList() 
+      if (userStore.user_id) return UserDAL.GetUserList()
       else return []
     })
     const userStore = useUserStore()
 
-    return { handleUserChange, handleRefreshUserInfo, handleLogOff, handleLogin, userList, userStore, handleUserSpace }
+    return { handleUserChange, handleRefreshUserInfo, handleSign, handleLogOff, handleLogin, userList, userStore,
+        handleUserSpace }
   }
 })
 </script>
@@ -48,7 +53,7 @@ export default defineComponent({
     <a-avatar v-else :size="28" style="margin-right: 12px" :style="{ backgroundColor: '#3370ff' }">登录</a-avatar>
 
     <template #content>
-      <div v-if="userStore.userLogined" style="width: 250px">
+      <div v-if="userStore.userLogined" style="width: 300px">
         <a-row justify="center" align="stretch">
           <a-col flex="150px">
             <span class="username">Hi {{ userStore.GetUserToken.nick_name ? userStore.GetUserToken.nick_name : userStore.GetUserToken.user_name }}</span>
@@ -56,6 +61,10 @@ export default defineComponent({
           <a-col flex="auto"></a-col>
           <a-col flex="50px">
             <a-button type="text" size="small" tabindex="-1" style="min-width: 46px; padding: 0 8px" title="刷新账号信息" @click="handleRefreshUserInfo">刷新</a-button>
+          </a-col>
+          <a-col flex="none">
+            <a-button type="text" size="small" tabindex="-1" style="min-width: 46px; padding: 0 8px" title="每日签到"
+                      @click="handleSign">签到</a-button>
           </a-col>
           <a-col flex="none">
             <a-button type="text" size="small" tabindex="-1" style="min-width: 46px; padding: 0 8px" title="退出该账号" @click="handleLogOff"> 退出 </a-button>

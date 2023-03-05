@@ -26,17 +26,17 @@ export interface DirData {
 
 export interface IDriverModel {
   drive_id: string
-  
+
   DirMap: Map<string, DirData>
-  
+
   DirChildrenMap: Map<string, DirData[]>
-  
+
   DirFileSizeMap: { [key: string]: number }
-  
+
   DirFileSizeTimeMap: { [key: string]: number }
-  
+
   DirTotalSizeMap: { [key: string]: number }
-  
+
   FileOrderMap: { [key: string]: string }
 }
 
@@ -49,12 +49,12 @@ export default class TreeStore {
   static async ConvertToOneDriver(drive_id: string, children: DirData[], saveToDB: boolean, saveToDriverData: boolean): Promise<IDriverModel> {
     console.log('ConvertToOneDriver')
     if (saveToDB) {
-      
-      UserAllDir.set(drive_id, new Date().getTime()) 
-      DB.saveValueObject('AllDir_' + drive_id, children) 
-      DB.saveValueNumber('AllDir_' + drive_id, Date.now()) 
+
+      UserAllDir.set(drive_id, new Date().getTime())
+      DB.saveValueObject('AllDir_' + drive_id, children)
+      DB.saveValueNumber('AllDir_' + drive_id, Date.now())
     }
-    
+
     const OneDriver: IDriverModel = {
       drive_id,
       DirMap: new Map<string, DirData>(),
@@ -64,26 +64,26 @@ export default class TreeStore {
       DirTotalSizeMap: {},
       FileOrderMap: {}
     }
-    
+
     const jsonSize = await DB.getValueObject('DirFileSize_' + drive_id)
     const sizeMap = jsonSize ? (jsonSize as { [key: string]: number }) : {}
     const jsonSizeTime = await DB.getValueObject('DirFileSizeTime_' + drive_id)
     const sizeTimeMap = jsonSizeTime ? (jsonSizeTime as { [key: string]: number }) : {}
-    
+
     const jsonOrder = await DB.getValueObject('DirFileOrder_' + drive_id)
     OneDriver.FileOrderMap = jsonOrder ? (jsonOrder as { [key: string]: string }) : {}
-    
+
     const root: DirData = { file_id: 'root', parent_file_id: '', name: '根目录', time: 0, size: 0 }
     OneDriver.DirMap.set(root.file_id, root)
 
     const childrenMap = new Map<string, DirData[]>()
     childrenMap.set(root.file_id, [])
-    
+
     try {
       let parent_file_id: string = ''
-      let childDirList: DirData[] = [] 
+      let childDirList: DirData[] = []
       let item: DirData
-      
+
       for (let i = 0, maxi = children.length; i < maxi; i++) {
         item = children[i]
         OneDriver.DirMap.set(item.file_id, item)
@@ -91,10 +91,10 @@ export default class TreeStore {
         OneDriver.DirFileSizeTimeMap[item.file_id] = sizeTimeMap[item.file_id] || 0
         if (parent_file_id != item.parent_file_id) {
           if (childrenMap.has(item.parent_file_id)) {
-            childDirList = childrenMap.get(item.parent_file_id)! 
+            childDirList = childrenMap.get(item.parent_file_id)!
           } else {
-            childDirList = [] 
-            childrenMap.set(item.parent_file_id, childDirList) 
+            childDirList = []
+            childrenMap.set(item.parent_file_id, childDirList)
           }
           parent_file_id = item.parent_file_id
         }
@@ -105,49 +105,49 @@ export default class TreeStore {
     if (saveToDriverData) {
       const childrenMap2 = new Map<string, DirData[]>()
       childrenMap.forEach(function (value, key) {
-        Object.freeze(value) 
+        Object.freeze(value)
         childrenMap2.set(key, value)
       })
       OneDriver.DirChildrenMap = childrenMap2
-      
+
       OneDriver.DirTotalSizeMap.root = TotalSize('root', OneDriver.DirTotalSizeMap, OneDriver.DirFileSizeMap, OneDriver.DirChildrenMap)
 
       DriverData.set(OneDriver.drive_id, OneDriver)
     } else {
-      
+
       OneDriver.DirChildrenMap = childrenMap
     }
     return OneDriver
   }
 
-  
+
   static async SaveOneDriver(OneDriver: IDriverModel): Promise<void> {
-    
+
     const childrenMap2 = new Map<string, DirData[]>()
     OneDriver.DirChildrenMap.forEach(function (value, key) {
-      Object.freeze(value) 
+      Object.freeze(value)
       childrenMap2.set(key, value)
     })
     OneDriver.DirChildrenMap = childrenMap2
 
-    
+
     DriverData.set(OneDriver.drive_id, OneDriver)
-    _RefreshAllDirTotalSizeFunc(OneDriver.drive_id) 
+    _RefreshAllDirTotalSizeFunc(OneDriver.drive_id)
   }
 
-  
+
   static async SaveOneDirFileList(oneDir: IAliFileResp, hasFiles: boolean): Promise<void> {
     console.log('SaveOneDirFileList', oneDir.dirID)
 
     if (oneDir.dirID == 'favorite' || oneDir.dirID == 'trash' || oneDir.dirID == 'recover' || oneDir.dirID.startsWith('search') || oneDir.dirID.startsWith('color') || oneDir.dirID.startsWith('video')) {
-      
+
       return
     }
 
     let driverData = DriverData.get(oneDir.m_drive_id)
     if (!driverData) {
-      
-      const cache = await DB.getValueObject('AllDir_' + oneDir.m_drive_id) 
+
+      const cache = await DB.getValueObject('AllDir_' + oneDir.m_drive_id)
       if (cache) {
         console.log('SaveOneDirFileList LoadCacheAllDir')
         driverData = await TreeStore.ConvertToOneDriver(oneDir.m_drive_id, cache as DirData[], false, true)
@@ -164,16 +164,16 @@ export default class TreeStore {
       else files.push(oneDir.items[i])
     }
     if (hasFiles) {
-      
+
       let dirSize = 0
       for (let i = 0, maxi = files.length; i < maxi; i++) {
         if (!files[i].isDir) dirSize += files[i].size
       }
-      driverData.DirFileSizeMap[oneDir.dirID] = dirSize 
-      driverData.DirFileSizeTimeMap[oneDir.dirID] = Math.floor(Date.now() / 1000) - 1654500000 
+      driverData.DirFileSizeMap[oneDir.dirID] = dirSize
+      driverData.DirFileSizeTimeMap[oneDir.dirID] = Math.floor(Date.now() / 1000) - 1654500000
     }
 
-    
+
     const dirList: DirData[] = []
     for (let i = 0, maxi = dirs.length; i < maxi; i++) {
       const item = dirs[i]
@@ -185,15 +185,15 @@ export default class TreeStore {
         size: 0
       }
       dirList.push(dirItem)
-      driverData.DirMap.set(dirItem.file_id, dirItem) 
+      driverData.DirMap.set(dirItem.file_id, dirItem)
     }
-    Object.freeze(dirList) 
-    driverData.DirChildrenMap.set(oneDir.dirID, dirList) 
+    Object.freeze(dirList)
+    driverData.DirChildrenMap.set(oneDir.dirID, dirList)
 
-    
+
     let dirID = oneDir.dirID
     while (true) {
-      driverData.DirTotalSizeMap[dirID] = TotalSize(dirID, driverData.DirTotalSizeMap, driverData.DirFileSizeMap, driverData.DirChildrenMap) 
+      driverData.DirTotalSizeMap[dirID] = TotalSize(dirID, driverData.DirTotalSizeMap, driverData.DirFileSizeMap, driverData.DirChildrenMap)
       const tdir = driverData.DirMap.get(dirID)
       if (tdir && tdir.parent_file_id != 'root' && tdir.parent_file_id != '') dirID = tdir.parent_file_id
       else break
@@ -202,31 +202,31 @@ export default class TreeStore {
     if (oneDir.dirID !== 'root') _SaveDirSize()
   }
 
-  
+
   static GetDirOrder(drive_id: string, file_id: string): string {
     const settingStore = useSettingStore()
-    let order = settingStore.uiFileListOrder || 'name desc'
+    let order = settingStore.uiFileListOrder || 'name asc'
     if (settingStore.uiFileOrderDuli != 'null') {
-      
+
       const driverData = DriverData.get(drive_id)
       if (driverData) order = driverData.FileOrderMap[file_id] || settingStore.uiFileOrderDuli || order
     }
     return order.toLowerCase()
   }
 
-  
+
   static SaveDirOrder(drive_id: string, file_id: string, order: string): void {
     const settingStore = useSettingStore()
     if (settingStore.uiFileOrderDuli != 'null') {
-      
+
       const driverData = DriverData.get(drive_id)
       if (driverData) {
         driverData.FileOrderMap[file_id] = order
-        DB.saveValueObject('DirFileOrder_' + drive_id, driverData.FileOrderMap) 
+        DB.saveValueObject('DirFileOrder_' + drive_id, driverData.FileOrderMap)
       }
     } else {
-      
-      settingStore.updateStore({ uiFileListOrder: order }) 
+
+      settingStore.updateStore({ uiFileListOrder: order })
     }
   }
 
@@ -238,16 +238,16 @@ export default class TreeStore {
     if (!order) {
       const settingStore = useSettingStore()
       if (settingStore.uiFileOrderDuli != 'null') {
-        
-        dirOrder = driverData.FileOrderMap[node.key] || settingStore.uiFileOrderDuli || settingStore.uiFileListOrder || 'name desc'
+
+        dirOrder = driverData.FileOrderMap[node.key] || settingStore.uiFileOrderDuli || settingStore.uiFileListOrder || 'name asc'
       } else {
-        
-        dirOrder = settingStore.uiFileListOrder || 'name desc'
-        order = dirOrder 
+
+        dirOrder = settingStore.uiFileListOrder || 'name asc'
+        order = dirOrder
       }
     } else dirOrder = order
     if (dirOrder.startsWith('size ')) {
-      
+
       for (let i = 0, maxi = childDirList.length; i < maxi; i++) {
         const item = childDirList[i]
         item.size = driverData.DirTotalSizeMap[item.file_id] || 0
@@ -273,7 +273,7 @@ export default class TreeStore {
     return DriverData.get(drive_id)
   }
 
-  
+
   static GetDir(drive_id: string, file_id: string): IAliGetDirModel | undefined {
     if (file_id == 'root') return { __v_skip: true, drive_id, file_id: 'root', parent_file_id: '', name: '根目录', namesearch: '', size: 0, time: 0, description: '' }
     if (file_id == 'favorite') return { __v_skip: true, drive_id, file_id: 'favorite', parent_file_id: '', name: '收藏夹', namesearch: '', size: 0, time: 0, description: '' }
@@ -288,10 +288,10 @@ export default class TreeStore {
     if (!driverData) return undefined
     const dir = driverData.DirMap.get(file_id)
     if (!dir) return undefined
-    return { __v_skip: true, drive_id, namesearch: '', description: '', ...dir } 
+    return { __v_skip: true, drive_id, namesearch: '', description: '', ...dir }
   }
 
-  
+
   static GetDirPath(drive_id: string, file_id: string): IAliGetDirModel[] {
     const dirPath: IAliGetDirModel[] = []
     if (!drive_id || !file_id) return dirPath
@@ -328,7 +328,7 @@ export default class TreeStore {
     return dirPath
   }
 
-  
+
   static GetDirChildDirID(drive_id: string, file_id: string): string[] {
     const allList: string[] = []
     const driverData = DriverData.get(drive_id)
@@ -338,20 +338,20 @@ export default class TreeStore {
     return allList
   }
 
-  
+
   static RenameDirs(drive_id: string, fileList: { file_id: string; parent_file_id: string; name: string; isDir: boolean }[]): void {
     const driverData = DriverData.get(drive_id)
     if (!driverData) return
     const dirMap = driverData.DirMap
     for (let i = 0, maxi = fileList.length; i < maxi; i++) {
       const item = fileList[i]
-      if (!item.isDir) continue 
+      if (!item.isDir) continue
       const findNode = dirMap.get(item.file_id)
       if (findNode) findNode.name = item.name
     }
   }
 
-  
+
   static DeleteDirs(drive_id: string, file_idList: string[]): void {
     const driverData = DriverData.get(drive_id)
     if (!driverData) return
@@ -374,7 +374,7 @@ export default class TreeStore {
     }
   }
 
-  
+
   static GetDirSizeNeedRefresh(drive_id: string, maxCacheTime: number = 604800): string[] {
     const driverData = DriverData.get(drive_id)
     if (!driverData) return []
@@ -394,7 +394,7 @@ export default class TreeStore {
     return diridList
   }
 
-  
+
   static SaveDirSizeNeedRefresh(drive_id: string, dirSizeList: { dirID: string; size: number }[]): void {
     const driverData = DriverData.get(drive_id)
     if (!driverData) return
@@ -408,10 +408,10 @@ export default class TreeStore {
       timeMap[t.dirID] = timeNow
     }
     _SaveDirSize(drive_id)
-    _RefreshAllDirTotalSize(drive_id) 
+    _RefreshAllDirTotalSize(drive_id)
   }
 
-  
+
   static ClearDirSize(drive_id: string, parentDirIDList: string[]) {
     const driverData = DriverData.get(drive_id)
     if (!driverData) return
@@ -434,7 +434,7 @@ function _RefreshAllDirTotalSizeFunc(drive_id: string): void {
   const driverData = DriverData.get(drive_id)
   if (!driverData) return
   console.log('_RefreshAllDirTotalSizeFuncbegin')
-  
+
   driverData.DirTotalSizeMap.root = TotalSize('root', driverData.DirTotalSizeMap, driverData.DirFileSizeMap, driverData.DirChildrenMap)
   console.log('_RefreshAllDirTotalSizeFunc')
   _SaveDirSize(drive_id)

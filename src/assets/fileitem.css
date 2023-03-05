@@ -25,11 +25,12 @@ body[arco-theme='dark'] .fileitem {
 }
 .fileitem.focus,
 .griditem.focus {
-  border: rgba(var(--primary-6), 0.6) dotted 1px;
+  border: rgba(var(--primary-6), 0.6) dotted 2px;
+  background-color: var(--listselectbg);
 }
 body[arco-theme='dark'] .fileitem.focus {
-  border: rgba(var(--primary-6), 0.9) dotted 1px;
-  border-bottom: rgba(var(--primary-6), 0.9) dotted 1px;
+  border: rgba(var(--primary-6), 0.9) dotted 2px;
+  border-bottom: rgba(var(--primary-6), 0.9) dotted 2px;
 }
 .fileitem.selected {
   background-color: var(--listselectbg);
