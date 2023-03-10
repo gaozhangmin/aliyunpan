@@ -346,7 +346,7 @@ export default class AliHttp {
       }
       if (token) {
         headers['Authorization'] = token.token_type + ' ' + token.access_token
-        headers['x-request-id'] = v4().toString().toString()
+        headers['x-request-id'] = v4().toString()
         headers['x-device-id'] = token.device_id
         headers['x-signature'] = token.signature
       }

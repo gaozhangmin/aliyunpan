@@ -64,31 +64,6 @@ export default class AliFile {
       url: '',
       size: 0
     }
-
-    const url1 = 'v2/file/get'
-    const postData1 = {
-      drive_id: drive_id,
-      file_id: file_id,
-      url_expire_sec: 14400,
-      office_thumbnail_process: 'image/resize,w_400/format,jpeg',
-      image_thumbnail_process: 'image/resize,w_400/format,jpeg',
-      image_url_process: 'image/resize,w_1920/format,jpeg',
-      video_thumbnail_process: 'video/snapshot,t_106000,f_jpg,ar_auto,m_fast,w_400'
-    }
-    const resp1 = await AliHttp.Post(url1, postData1, user_id, '')
-
-    if (AliHttp.IsSuccess(resp1.code)) {
-      const info = resp1.body as IAliFileItem
-      if (info.download_url && GetOssExpires(info.download_url) > 14400) {
-        data.url = info.download_url
-        data.size = info.size
-        data.expire_sec = GetOssExpires(data.url)
-        return data
-      }
-    } else {
-      DebugLog.mSaveWarning('ApiFileDownloadUrl1 err=' + file_id + ' ' + (resp1.code || ''))
-    }
-
     const url = 'v2/file/get_download_url'
     const postData = { drive_id: drive_id, file_id: file_id, expire_sec: expire_sec }
     const resp = await AliHttp.Post(url, postData, user_id, '')

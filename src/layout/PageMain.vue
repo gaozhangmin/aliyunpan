@@ -3,7 +3,6 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { useAppStore, useKeyboardStore, KeyboardState, useSettingStore, useUserStore, useWinStore, useFootStore, useServerStore } from '../store'
 import { onHideRightMenu, TestAlt, TestCtrl, TestKey, TestShift } from '../utils/keyboardhelper'
 import { getResourcesPath, openExternal } from '../utils/electronhelper'
-import Config from '../utils/config'
 import DebugLog from '../utils/debuglog'
 
 import Setting from '../setting/index.vue'
@@ -22,17 +21,25 @@ import { B64decode } from '../utils/format'
 import { throttle } from '../utils/debounce'
 import ServerHttp from '../aliapi/server'
 
+const panVisible = ref(true)
 const appStore = useAppStore()
 const winStore = useWinStore()
 const keyboardStore = useKeyboardStore()
 const footStore = useFootStore()
+// const leftDrawerIcon = computed(() => (!panVisible ? h('i', { class: 'iconfont iconmenuoff' }) : h('i', { class: 'iconfont iconmenuon' })))
 
+const handlePanVisible = () => {
+  panVisible.value = !panVisible.value
+}
 
 const handleHideClick = (_e: any) => {
   if (window.WebToElectron) window.WebToElectron({ cmd: useSettingStore().uiExitOnClose ? 'exit' : 'close' })
 }
 const handleMinClick = (_e: any) => {
   if (window.WebToElectron) window.WebToElectron({ cmd: 'minsize' })
+}
+const handleMaxClick = (_e: any) => {
+  if (window.WebToElectron) window.WebToElectron({ cmd: 'maxsize' })
 }
 
 const handleHelpPage = () => {
@@ -53,6 +60,7 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
   if (TestAlt('6', state.KeyDownEvent, () => appStore.toggleTab('setting'))) return
   if (TestAlt('f4', state.KeyDownEvent, () => handleHideClick(undefined))) return
   if (TestAlt('m', state.KeyDownEvent, () => handleMinClick(undefined))) return
+  if (TestAlt('enter', state.KeyDownEvent, () => handleMaxClick(undefined))) return
 
   if (TestShift('tab', state.KeyDownEvent, () => appStore.toggleTabNext())) return
   if (TestCtrl('tab', state.KeyDownEvent, () => appStore.toggleTabNextMenu())) return
@@ -102,6 +110,7 @@ const handleAudioStop = () => {
 
 onMounted(() => {
   onResize()
+  DebugLog.aLoadFromDB()
   window.addEventListener('resize', onResize, { passive: true })
   window.addEventListener('keydown', onKeyDown, true)
 
@@ -136,6 +145,10 @@ const handleCheckVer = () => {
   <a-layout style="height: 100vh" draggable="false">
     <a-layout-header id="xbyhead" draggable="false">
       <div id="xbyhead2" class="q-electron-drag">
+        <a-button v-show="appStore.appTab === 'pan'" type="text" size="small" @click="handlePanVisible">
+           <i class="iconfont iconmenuon" v-if="panVisible"/>
+           <i class="iconfont iconmenuoff" v-else/>
+        </a-button>
         <div class="title">阿里云盘</div>
 
         <a-menu mode="horizontal" :selected-keys="[appStore.appTab]" @update:selected-keys="appStore.toggleTab($event[0])">
@@ -156,6 +169,9 @@ const handleCheckVer = () => {
         <a-button type="text" tabindex="-1" title="最小化 Alt+M" @click="handleMinClick">
           <i class="iconfont iconzuixiaohua"></i>
         </a-button>
+        <a-button type="text" tabindex="-1" title="最大化 Alt+Enter" @click="handleMaxClick">
+          <i class="iconfont iconfullscreen"></i>
+        </a-button>
         <a-button type="text" tabindex="-1" title="关闭 Alt+F4" @click="handleHideClick">
           <i class="iconfont iconclose"></i>
         </a-button>
@@ -163,7 +179,7 @@ const handleCheckVer = () => {
     </a-layout-header>
     <a-layout-content id="xbybody">
       <a-tabs type="text" :direction="'horizontal'" class="hidetabs" :justify="true" :active-key="appStore.appTab">
-        <a-tab-pane key="pan" title="1"><Pan /></a-tab-pane>
+        <a-tab-pane key="pan" title="1"><Pan :visible="panVisible"/></a-tab-pane>
         <a-tab-pane key="pic" title="2"><Pic /></a-tab-pane>
         <a-tab-pane key="down" title="3"><Down /></a-tab-pane>
         <a-tab-pane key="share" title="4"><Share /></a-tab-pane>
@@ -189,7 +205,7 @@ const handleCheckVer = () => {
         <div class="flexauto">
           <audio id="ddsound" src="notify.wav"></audio>
         </div>
-        <div :style="{ minWidth: footStore.rightWidth + 'px', display: 'flex', paddingRight: '16px', flexShrink: 0, flexGrow: 0 }">
+        <div :style="{ display: 'flex', paddingRight: '16px', flexShrink: 0, flexGrow: 0 }">
           <div class="flexauto"></div>
           <div class="footinfo">
             {{ footStore.GetInfo }}
@@ -370,7 +386,6 @@ const handleCheckVer = () => {
   display: flex;
   flex-direction: row;
   height: 24px;
-  padding: 0;
   padding: 0 0 0 16px;
   color: var(--foot-txt);
   font-size: 12px;

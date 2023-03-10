@@ -1,16 +1,23 @@
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
+import {defineComponent, ref, watchEffect} from 'vue'
 import { useWinStore, WinState } from '../store'
 
 export default defineComponent({
+  props: {
+    visible: {
+      type: Boolean,
+      required: false,
+      default: true
+    },
+  },
   emits: ['splitSize'],
-  setup() {
+  setup(props) {
     const leftMinWidth = 0
-    const rightMinWidth = 380
+    const rightMinWidth = 280
     const winStore = useWinStore()
     const bodyWidth = ref(Math.max(winStore.width, 800))
     const splitMoveing = ref(false)
-    const splitSize = ref(bodyWidth.value < 900 ? '300px' : '350px')
+    const splitSize = ref(bodyWidth.value < 900 ? '280px' : '320px')
     const splitSizeMax = ref(bodyWidth.value - rightMinWidth)
 
     winStore.$subscribe((_m: any, state: WinState) => {
@@ -19,12 +26,21 @@ export default defineComponent({
         bodyWidth.value = width
         splitSizeMax.value = width - rightMinWidth
         const tempSize = parseInt(splitSize.value, 10)
-        if (tempSize < leftMinWidth) splitSize.value = leftMinWidth.toString() + 'px'
-        else if (tempSize > leftMinWidth && tempSize > splitSizeMax.value) splitSize.value = splitSizeMax.value.toString() + 'px'
+        if (tempSize < leftMinWidth) {
+          splitSize.value = leftMinWidth.toString() + 'px'
+        } else if (tempSize > leftMinWidth && tempSize > splitSizeMax.value) {
+          splitSize.value = splitSizeMax.value.toString() + 'px'
+        }
       }
     })
-
-    return { splitSize, leftMinWidth, splitSizeMax, splitMoveing }
+    watchEffect(() => {
+      if(props.visible){
+        splitSize.value = bodyWidth.value < 900 ? '280px' : '320px'
+      }else {
+        splitSize.value = '0px'
+      }
+    })
+    return { splitSize, leftMinWidth, splitSizeMax, splitMoveing,  }
   }
 })
 </script>
