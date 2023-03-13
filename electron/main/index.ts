@@ -1,4 +1,4 @@
-import { getCrxPath, getResourcesPath, getStaticPath, getUserDataPath, mkAriaConf, setShellPath } from './mainfile'
+import { getCrxPath, getResourcesPath, getStaticPath, getUserDataPath, mkAriaConf } from './mainfile'
 import { release } from 'os'
 import { AppWindow, creatElectronWindow, createMainWindow, createTray, Referer, ShowError, ShowErrorAndExit, ua } from './window'
 import Electron from 'electron'
@@ -8,11 +8,10 @@ import { app, BrowserWindow, dialog, Menu, MenuItem, ipcMain, shell, session } f
 import { exec, spawn } from 'child_process'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import path from 'path'
-
+import fixPath from 'fix-path'
 
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()
-
-setShellPath()
+fixPath()
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true'
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 process.on('unhandledRejection', (reason, p) => {
