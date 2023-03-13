@@ -70,12 +70,18 @@ onMounted(() => {
   // 初始化
   ArtPlayer = new Artplayer(options)
   ArtPlayer.title = name
+  // 获取用户配置
+  const storage = ArtPlayer.storage
+  const volume = storage.get('videoVolume')
+  if (volume) ArtPlayer.volume = parseFloat(volume)
+  const muted = storage.get('videoMuted')
+  if (muted) ArtPlayer.muted = muted === 'true'
   // 获取视频链接
   AliFile.ApiVideoPreviewUrl(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id).then((data) => {
     if (data) {
       // 画质
       const qualitySelector: { url: string; html: string; default?: boolean }[] = []
-      if (data.urlQHD) qualitySelector.push({url: data.urlQHD, html: '原画 (VIP)'})
+      if (data.urlQHD) qualitySelector.push({url: data.urlQHD, html: '原画'})
       if (data.urlFHD) qualitySelector.push({url: data.urlFHD, html: '全高清 1080P'})
       if (data.urlHD) qualitySelector.push({url: data.urlHD, html: '高清 720P'})
       if (data.urlSD) qualitySelector.push({url: data.urlSD, html: '标清 540P'})
@@ -135,12 +141,6 @@ onMounted(() => {
     }
   })
   ArtPlayer.on('ready', () => {
-    // 获取用户配置
-    const storage = ArtPlayer.storage
-    const volume = storage.get('videoVolume')
-    if (volume) ArtPlayer.volume = parseFloat(volume)
-    const muted = storage.get('videoMuted')
-    if (muted) ArtPlayer.muted = muted === 'true'
     // 进度
     AliFile.ApiFileInfo(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id).then((info) => {
       if (info?.play_cursor) {
@@ -153,8 +153,12 @@ onMounted(() => {
       }
       ArtPlayer.play()
     })
-    // 视频停止播放
+    // 视频播放完毕
     ArtPlayer.on('video:ended', () => {
+      updateVideoTime()
+    })
+    // 视频跳转
+    ArtPlayer.on('video:seeked', () => {
       updateVideoTime()
     })
     // 播放已暂停
@@ -177,7 +181,7 @@ const updateVideoTime = () => {
       ArtPlayer.currentTime
   )
 }
-const handleHideClick = (_e: any) => {
+const handleHideClick = () => {
   updateVideoTime().then(() => {
     window.close()
   })
