@@ -272,6 +272,7 @@ export default class UserDAL {
 
     if (!force || time < 600) {
       await Promise.all([AliUser.ApiUserInfo(token), AliUser.ApiUserPic(token), AliUser.ApiUserVip(token)])
+      UserDAL.SaveUserToken(token)
       return true
     } else {
       // 刷新token和session
@@ -281,6 +282,7 @@ export default class UserDAL {
       // 刷新用户信息
       await Promise.all([AliUser.ApiUserInfo(token), AliUser.ApiUserPic(token), AliUser.ApiUserVip(token)])
       useUserStore().userLogin(token.user_id)
+      UserDAL.SaveUserToken(token)
       return true
     }
   }

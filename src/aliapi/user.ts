@@ -170,7 +170,7 @@ export default class AliUser {
     if (AliHttp.IsSuccess(resp.code)) {
       let vipList = resp.body.vipList || []
       vipList = vipList.sort((a: any, b: any) => b.expire - a.expire)
-      if (vipList.length > 0 && new Date(vipList[0].expire) > new Date()) {
+      if (vipList.length > 0 && new Date(vipList[0].expire * 1000) > new Date()) {
         token.vipname = vipList[0].name
         token.vipexpire = humanDateTime(vipList[0].expire)
       } else {

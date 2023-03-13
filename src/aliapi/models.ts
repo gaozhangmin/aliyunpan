@@ -16,6 +16,8 @@ export interface IVideoPreviewUrl {
   duration: number
   width: number
   height: number
+  urlQHD: string
+
   urlFHD: string
   urlHD: string
   urlSD: string
