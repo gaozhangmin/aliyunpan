@@ -164,7 +164,7 @@ const setting: SettingState = {
   uiShareFormate: '「NAME」URL\n提取码: PWD',
   uiXBTNumber: 36,
   uiXBTWidth: 960,
-  uiFileListOrder: 'updated_at desc',
+  uiFileListOrder: 'name asc',
   uiFileListMode: 'list',
   uiFileColorArray: [
     { key: '#df5659', title: '鹅冠红' },

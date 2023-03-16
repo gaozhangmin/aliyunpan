@@ -143,7 +143,7 @@ export default class AliDirFileList {
 
     if (!user_id || !drive_id || !dirID) return dir
 
-    if (!order) order = 'updated_at desc'
+    if (!order) order = 'name asc'
     order = order.replace(' desc', ' DESC').replace(' asc', ' ASC')
     const orders = order.split(' ')
 
