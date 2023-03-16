@@ -161,7 +161,7 @@ const setting: SettingState = {
   uiTimeFolderIndex: 1,
   uiShareDays: 'always',
   uiSharePassword: 'random',
-  uiShareFormate: '「NAME」URL 提取码: PWD\n点击链接保存，或者复制本段内容，打开「阿里云盘」APP ，无需下载极速在线查看，视频原画倍速播放。',
+  uiShareFormate: '「NAME」URL\n提取码: PWD',
   uiXBTNumber: 36,
   uiXBTWidth: 960,
   uiFileListOrder: 'updated_at desc',

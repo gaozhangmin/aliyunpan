@@ -125,13 +125,13 @@ const cb = (val: any) => {
     <div class="settingspace"></div>
     <div class="settinghead">:复制分享链接模板</div>
     <div class="settingrow">
-      <a-input tabindex="-1" :style="{ width: '257px' }" placeholder="NAME URL 提取码：PWD" allow-clear :model-value="settingStore.uiShareFormate" @update:model-value="cb({ uiShareFormate: $event })" />
+      <a-input tabindex="-1" :style="{ width: '257px' }" placeholder="「NAME」URL 提取码：PWD" allow-clear :model-value="settingStore.uiShareFormate" @update:model-value="cb({ uiShareFormate: $event })" />
 
       <a-popover position="bottom">
         <i class="iconfont iconbulb" />
         <template #content>
           <div style="min-width: 400px">
-            默认：<span class="opred">NAME 链接：URL 提取码：PWD</span> <br />
+            默认：<span class="opred">「NAME」URL 提取码：PWD</span> <br />
             测试分享 链接：https://www.aliyundrive.com/s/jEmmmDkF 提取码：DNJI
             <hr />
             这里是编写链接模板，网盘内点击复制分享链接时会自动替换成对应的内容

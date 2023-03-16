@@ -17,6 +17,7 @@ export async function menuOpenFile(file: IAliGetFileModel): Promise<void> {
   if (clickWait('menuOpenFile', 500)) return
 
   const file_id = file.file_id
+  const parent_file_id = file.parent_file_id
   const drive_id = file.drive_id
 
   if (file.ext == 'zip' || file.ext == 'rar' || file.ext == '7z') {
@@ -47,7 +48,7 @@ export async function menuOpenFile(file: IAliGetFileModel): Promise<void> {
 
   if (file.category.startsWith('video')) {
 
-    Video(drive_id, file_id, file.name, file.icon == 'iconweifa', file.description)
+    Video(drive_id, file_id, parent_file_id, file.name, file.icon == 'iconweifa', file.description)
     return
   }
 
@@ -118,7 +119,7 @@ async function Archive(drive_id: string, file_id: string, file_name: string, par
   }
 }
 
-async function Video(drive_id: string, file_id: string, name: string, weifa: boolean, dec: string): Promise<void> {
+async function Video(drive_id: string, file_id: string, parent_file_id: string, name: string, weifa: boolean, dec: string): Promise<void> {
   const user_id = useUserStore().user_id
   const token = await UserDAL.GetUserTokenFromDB(user_id)
   if (!token || !token.access_token) {
@@ -138,11 +139,8 @@ async function Video(drive_id: string, file_id: string, name: string, weifa: boo
     })
   }
 
-
-
   if (settingStore.uiVideoPlayer == 'web') {
-
-    const pageVideo: IPageVideo = { user_id: token.user_id, drive_id, file_id, file_name: name }
+    const pageVideo: IPageVideo = { user_id: token.user_id, drive_id, file_id, parent_file_id, file_name: name }
     window.WebOpenWindow({ page: 'PageVideo', data: pageVideo, theme: 'dark' })
     return
   }
@@ -150,8 +148,6 @@ async function Video(drive_id: string, file_id: string, name: string, weifa: boo
   let url = ''
   let mode = ''
   if (weifa || settingStore.uiVideoMode == 'online') {
-
-
     const data = await AliFile.ApiVideoPreviewUrl(user_id, drive_id, file_id)
     if (data && data.url != '') {
       url = data.url
@@ -159,7 +155,6 @@ async function Video(drive_id: string, file_id: string, name: string, weifa: boo
     }
   }
   if (!url && weifa == false) {
-
     const data = await AliFile.ApiFileDownloadUrl(user_id, drive_id, file_id, 14400)
     if (typeof data !== 'string' && data.url && data.url != '') {
       url = data.url
@@ -172,7 +167,6 @@ async function Video(drive_id: string, file_id: string, name: string, weifa: boo
   }
 
   const title = mode + '__' + name
-
   if (settingStore.uiVideoPlayer == 'mpv') {
     window.WebOpenUrl({
       PageUrl: 'mpv://' + url

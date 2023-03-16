@@ -41,6 +41,7 @@ export interface IPageVideo {
   user_id: string
   drive_id: string
   file_id: string
+  parent_file_id: string
   file_name: string
 }
 
