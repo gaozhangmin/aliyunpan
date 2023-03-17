@@ -66,6 +66,24 @@ const options = {
     },
   },
 }
+const getCurDirList = async (filter?: RegExp): Promise<any[]>  => {
+  const dir = await AliDirFileList.ApiDirFileList(pageVideo.user_id, pageVideo.drive_id,
+                      pageVideo.parent_file_id, '', 'name asc', '')
+  const fileList: any[] = []
+  if (!dir.next_marker) {
+    for (let i = 0, maxi = dir.items.length; i < maxi; i++) {
+      let fileModel = dir.items[i]
+      if (fileModel.isDir) continue
+      else fileList.push({
+        html: '在线:  '+ fileModel.name,
+        name: fileModel.name,
+        file_id: fileModel.file_id,
+        ext: fileModel.ext
+      })
+    }
+  }
+  return filter ? fileList.filter(file => filter.test(file.ext)) : fileList
+}
 
 const getVideoInfo = async (art: Artplayer) => {
   // 获取视频链接
@@ -107,27 +125,14 @@ const getVideoInfo = async (art: Artplayer) => {
       art.subtitle.url = subSelector[0].url
     }
     // 尝试加载当前文件夹字幕文件
-    const dir = await AliDirFileList.ApiDirFileList(pageVideo.user_id, pageVideo.drive_id, pageVideo.parent_file_id, '', 'updated_at desc', '')
-    if (!dir.next_marker) {
-      for (let i = 0, maxi = dir.items.length; i < maxi; i++) {
-        let fileModel = dir.items[i]
-        if (fileModel.isDir) continue
-        else if (/srt|vtt|ass/.test(fileModel.ext)) {
-          subSelector.push({
-            html: '在线:  ' + fileModel.name,
-            name: fileModel.name,
-            file_id: fileModel.file_id,
-            url: '',
-          })
-        }
-      }
-    }
+    const dir = await getCurDirList(/srt|vtt|ass/)
+    subSelector.push(...dir)
     const subDefault = subSelector.find((item) => item.default) || subSelector[0]
     if (subSelector && subSelector.length > 0) {
       art.setting.add({
         name: 'Subtitle',
-        width: 200,
-        html: '字幕切换',
+        width: 250,
+        html: '字幕设置',
         tooltip: subDefault.html,
         selector: [
           {
@@ -138,19 +143,30 @@ const getVideoInfo = async (art: Artplayer) => {
               item.tooltip = item.switch ? '关闭' : '开启'
               art.subtitle.show = !item.switch
               art.notice.show = '字幕' + item.tooltip
-              let currentItem = Artplayer.utils.queryAll('.art-setting-panel.art-current div:nth-of-type(n+3)')
+              let currentItem = Artplayer.utils.queryAll('.art-setting-panel.art-current div:nth-of-type(n+4)')
               if (currentItem.length > 0) {
                 currentItem.forEach(current => {
                   if(item.switch){
                     Artplayer.utils.removeClass(current, 'art-current')
                     Artplayer.utils.addClass(current,'disable')
+                    item.$parentItem.tooltip = ''
                   } else {
                     Artplayer.utils.removeClass(current,'disable')
                   }
                 })
-                item.$parentItem.tooltip = ''
               }
               return !item.switch
+            },
+          },
+          {
+            html: '字幕大小',
+            tooltip: '20px',
+            range: [20, 20, 40, 5],
+            onChange: (item) => {
+              let size = item.range + 'px'
+              let subtitle = Artplayer.utils.query('.art-subtitle')
+              Artplayer.utils.setStyle(subtitle, 'fontSize', size)
+              return size
             },
           },
           ...subSelector
@@ -159,14 +175,14 @@ const getVideoInfo = async (art: Artplayer) => {
           if (art.subtitle.show) {
             if (!item.file_id) {
               art.notice.show = ''
-              art.subtitle.switch(item.url, {name: item.name})
+              art.subtitle.switch(item.url, { name: item.name })
               return item.html
             } else {
               art.notice.show = '正在加载在线字幕中...'
               const data = await AliFile.ApiFileDownloadUrl(pageVideo.user_id, pageVideo.drive_id, item.file_id, 14400)
               if (typeof data !== 'string' && data.url && data.url != '') {
                 art.notice.show = `加载${item.name}字幕文件成功`
-                art.subtitle.switch(data.url, {name: item.name})
+                art.subtitle.switch(data.url, { name: item.name })
                 return item.html
               } else {
                 art.notice.show = `加载${item.name}字幕文件失败`
@@ -184,9 +200,7 @@ const getVideoInfo = async (art: Artplayer) => {
 }
 onMounted(async () => {
   const name = appStore.pageVideo?.file_name || '视频在线预览'
-  setTimeout(() => {
-    document.title = name
-  }, 1000)
+  setTimeout(() => { document.title = name }, 1000)
   // 初始化
   ArtPlayerRef = new Artplayer(options)
   ArtPlayerRef.title = name
