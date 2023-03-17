@@ -123,6 +123,8 @@ const getVideoInfo = async (art: Artplayer) => {
         subSelector.push(subtitle)
       }
       art.subtitle.url = subSelector[0].url
+      let subtitle = Artplayer.utils.query('.art-subtitle')
+      Artplayer.utils.setStyle(subtitle, 'fontSize', '30px')
     }
     // 尝试加载当前文件夹字幕文件
     const dir = await getCurDirList(/srt|vtt|ass/)
@@ -160,8 +162,8 @@ const getVideoInfo = async (art: Artplayer) => {
           },
           {
             html: '字幕大小',
-            tooltip: '20px',
-            range: [20, 20, 40, 5],
+            tooltip: '30px',
+            range: [30, 20, 50, 5],
             onChange: (item) => {
               let size = item.range + 'px'
               let subtitle = Artplayer.utils.query('.art-subtitle')
@@ -183,6 +185,8 @@ const getVideoInfo = async (art: Artplayer) => {
               if (typeof data !== 'string' && data.url && data.url != '') {
                 art.notice.show = `加载${item.name}字幕文件成功`
                 art.subtitle.switch(data.url, { name: item.name })
+                let subtitle = Artplayer.utils.query('.art-subtitle')
+                Artplayer.utils.setStyle(subtitle, 'fontSize', '30px')
                 return item.html
               } else {
                 art.notice.show = `加载${item.name}字幕文件失败`
