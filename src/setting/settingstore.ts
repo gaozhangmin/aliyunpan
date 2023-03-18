@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import DebugLog from '../utils/debuglog'
-import { getResourcesPath } from '../utils/electronhelper'
+import { getResourcesPath, getUserDataPath } from '../utils/electronhelper'
 import { useAppStore } from '../store'
 import PanDAL from '../pan/pandal'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
@@ -299,7 +299,7 @@ let settingstr = ''
 
 function LoadSetting() {
   try {
-    const settingConfig = getResourcesPath('setting.config')
+    const settingConfig = getUserDataPath('setting.config')
     if (settingConfig && existsSync(settingConfig)) {
       settingstr = readFileSync(settingConfig, 'utf-8')
       const val = JSON.parse(settingstr)
@@ -348,7 +348,7 @@ function SaveSetting() {
   try {
     const saveStr = JSON.stringify(setting)
     if (saveStr != settingstr) {
-      const settingConfig = getResourcesPath('setting.config')
+      const settingConfig = getUserDataPath('setting.config')
       writeFileSync(settingConfig, saveStr, 'utf-8')
       settingstr = saveStr
     }

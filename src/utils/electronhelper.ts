@@ -54,6 +54,15 @@ export function getUserData(): string {
   return ElectronPath.AppUserData
 }
 
+export function getUserDataPath(fileName: string): string {
+  try {
+    LoadElectronPath()
+    return path.join(ElectronPath.AppUserData, fileName) as string
+  } catch {
+    return ''
+  }
+}
+
 export function getResourcesPath(fileName: string): string {
   try {
     LoadElectronPath()
