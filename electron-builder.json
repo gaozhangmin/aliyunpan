@@ -18,6 +18,7 @@
     "category": "public.app-category.utilities",
     "extraResources": [
       { "from": "./static/engine/darwin", "to": "./engine"},
+      { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
       { "from": "./static/crx", "to": "./crx"},
       { "from": "./app.ico", "to": "."},
       { "from": "./app.png", "to": "."}
@@ -30,6 +31,7 @@
     "category": "Network",
     "extraResources": [
       { "from": "./static/engine/linux", "to": "./engine"},
+      { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
       { "from": "./static/crx", "to": "./crx"},
       { "from": "./app.ico", "to": "."},
       { "from": "./app.png", "to": "."}
@@ -40,6 +42,7 @@
     "icon": "./app.ico",
     "extraResources": [
       { "from": "./static/engine/win32", "to": "./engine"},
+      { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
       { "from": "./static/crx", "to": "./crx"},
       { "from": "./app.ico", "to": "."},
       { "from": "./app.png", "to": "."}
