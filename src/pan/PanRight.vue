@@ -27,9 +27,9 @@ const viewlist = ref()
 const inputsearch = ref()
 
 const appStore = useAppStore()
+const settingStore = useSettingStore()
 const winStore = useWinStore()
 const panfileStore = usePanFileStore()
-
 
 let dirID = ''
 panfileStore.$subscribe((_m: any, state: PanFileState) => {
@@ -200,7 +200,7 @@ const resizeObserver = new ResizeObserver((entries) => {
   }
 })
 const onGridResize = throttle(() => {
-  handleListGridMode(listGridMode.value)
+  handleListGridMode(settingStore.uiFileListMode)
   useFootStore().rightWidth = listGridWidth
 }, 100)
 
@@ -208,11 +208,9 @@ onMounted(() => {
   resizeObserver.observe(document.getElementById('panfilelist')!)
 })
 
-const listGridMode = ref('list')
 const listGridColumn = ref(1)
 const listGridItemHeight = ref(50)
 const handleListGridMode = (mode: string) => {
-  listGridMode.value = mode
   if (mode == 'list') {
     if (listGridItemHeight.value != 50) {
       listGridItemHeight.value = 50
@@ -227,8 +225,8 @@ const handleListGridMode = (mode: string) => {
     if (listGridItemHeight.value != 180) listGridItemHeight.value = 240
     if (listGridColumn.value != count) listGridColumn.value = count
   }
-  useSettingStore().updateStore({ uiFileListMode: mode })
-  panfileStore.mGridListData(listGridMode.value, listGridColumn.value)
+  settingStore.updateStore({ uiFileListMode: mode })
+  panfileStore.mGridListData(mode, listGridColumn.value)
 }
 
 
@@ -540,17 +538,17 @@ const onPanDragEnd = (ev: any) => {
     </div>
     <div>
       <AntdTooltip title="列表模式" placement="bottom">
-        <a-button shape="square" type="text" tabindex="-1" :class="listGridMode == 'list' ? 'select active' : 'select'" @click="() => handleListGridMode('list')">
+        <a-button shape="square" type="text" tabindex="-1" :class="settingStore.uiFileListMode === 'list' ? 'select active' : 'select'" @click="() => handleListGridMode('list')">
           <i class="iconfont iconliebiaomoshi" />
         </a-button>
       </AntdTooltip>
       <AntdTooltip title="缩略图模式" placement="bottom">
-        <a-button shape="square" type="text" tabindex="-1" :class="listGridMode == 'image' ? 'select active' : 'select'" @click="() => handleListGridMode('image')">
+        <a-button shape="square" type="text" tabindex="-1" :class="settingStore.uiFileListMode === 'image' ? 'select active' : 'select'" @click="() => handleListGridMode('image')">
           <i class="iconfont iconxiaotumoshi" />
         </a-button>
       </AntdTooltip>
       <AntdTooltip title="大图模式" placement="bottom">
-        <a-button shape="square" type="text" tabindex="-1" :class="listGridMode == 'bigimage' ? 'select active' : 'select'" @click="() => handleListGridMode('bigimage')">
+        <a-button shape="square" type="text" tabindex="-1" :class="settingStore.uiFileListMode === 'bigimage' ? 'select active' : 'select'" @click="() => handleListGridMode('bigimage')">
           <i class="iconfont iconsuoluetumoshi" />
         </a-button>
       </AntdTooltip>
@@ -569,7 +567,7 @@ const onPanDragEnd = (ev: any) => {
       <a-skeleton-line :rows="10" :line-height="50" :line-spacing="50" />
     </a-skeleton>
     <a-list
-      v-else-if="listGridMode == 'list'"
+      v-else-if="settingStore.uiFileListMode === 'list'"
       ref="viewlist"
       :bordered="false"
       :split="false"
@@ -686,7 +684,7 @@ const onPanDragEnd = (ev: any) => {
     </a-list>
 
     <a-list
-      v-else-if="listGridMode == 'image'"
+      v-else-if="settingStore.uiFileListMode === 'image'"
       ref="viewlist"
       :bordered="false"
       :split="false"
@@ -710,7 +708,7 @@ const onPanDragEnd = (ev: any) => {
             <template v-for="(grid, gindex) in item.files" :key="grid.file_id">
               <div
                 v-if="grid.isDir"
-                :class="'griditem ' + listGridMode + ' ' + (panfileStore.ListSelected.has(grid.file_id) ? ' selected' : '') + (panfileStore.ListFocusKey == grid.file_id ? ' focus' : '')"
+                :class="'griditem ' + settingStore.uiFileListMode + ' ' + (panfileStore.ListSelected.has(grid.file_id) ? ' selected' : '') + (panfileStore.ListFocusKey == grid.file_id ? ' focus' : '')"
                 draggable="true"
                 @click="handleSelect(grid.file_id, $event)"
                 @mouseover="() => onSelectRang(grid.file_id)"
@@ -754,7 +752,7 @@ const onPanDragEnd = (ev: any) => {
               </div>
               <div
                 v-else
-                :class="'griditem ' + listGridMode + ' ' + (panfileStore.ListSelected.has(grid.file_id) ? ' selected' : '') + (panfileStore.ListFocusKey == grid.file_id ? ' focus' : '')"
+                :class="'griditem ' + settingStore.uiFileListMode + ' ' + (panfileStore.ListSelected.has(grid.file_id) ? ' selected' : '') + (panfileStore.ListFocusKey == grid.file_id ? ' focus' : '')"
                 draggable="true"
                 @click="handleSelect(grid.file_id, $event)"
                 @mouseover="() => onSelectRang(grid.file_id)"
@@ -823,7 +821,7 @@ const onPanDragEnd = (ev: any) => {
             <template v-for="(grid, gindex) in item.files" :key="grid.file_id">
               <div
                 v-if="grid.isDir"
-                :class="'griditem ' + listGridMode + ' ' + (panfileStore.ListSelected.has(grid.file_id) ? ' selected' : '') + (panfileStore.ListFocusKey == grid.file_id ? ' focus' : '')"
+                :class="'griditem ' + settingStore.uiFileListMode + ' ' + (panfileStore.ListSelected.has(grid.file_id) ? ' selected' : '') + (panfileStore.ListFocusKey == grid.file_id ? ' focus' : '')"
                 draggable="true"
                 @click="handleSelect(grid.file_id, $event)"
                 @mouseover="() => onSelectRang(grid.file_id)"
@@ -868,7 +866,7 @@ const onPanDragEnd = (ev: any) => {
               </div>
               <div
                 v-else
-                :class="'griditem ' + listGridMode + ' ' + (panfileStore.ListSelected.has(grid.file_id) ? ' selected' : '') + (panfileStore.ListFocusKey == grid.file_id ? ' focus' : '')"
+                :class="'griditem ' + settingStore.uiFileListMode + ' ' + (panfileStore.ListSelected.has(grid.file_id) ? ' selected' : '') + (panfileStore.ListFocusKey == grid.file_id ? ' focus' : '')"
                 draggable="true"
                 @click="handleSelect(grid.file_id, $event)"
                 @mouseover="() => onSelectRang(grid.file_id)"
