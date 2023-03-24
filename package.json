@@ -1,13 +1,13 @@
 {
   "name": "aliyunpan",
   "description": "阿里云盘小白羊V3",
-  "version": "3.10.24",
+  "version": "3.10.25",
   "main": "dist/electron/main/index.js",
   "author": "",
   "license": "",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build && electron-builder -mwl"
+    "build": "vue-tsc --noEmit && vite build && electron-builder -mw"
   },
   "engines": {
     "node": ">=14.17.0"
