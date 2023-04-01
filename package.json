@@ -1,7 +1,7 @@
 {
   "name": "aliyunpan",
   "description": "小白羊云盘",
-  "version": "3.11.2",
+  "version": "3.11.3",
   "main": "dist/electron/main/index.js",
   "author": "",
   "license": "",

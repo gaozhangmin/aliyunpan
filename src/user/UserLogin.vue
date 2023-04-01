@@ -105,13 +105,11 @@ export default defineComponent({
                           qrCodeStatus.textContent = `二维码状态: ${status} 如果无法跳转，打开以下URL`
                           qrCodeStatus.appendChild(qrCodeLink);
                           qrCodeLink.addEventListener('click', async (event) => {
-                            clearInterval(intervalId)
                             event.preventDefault();
                             require('electron').shell.openExternal(qrCodeUrl);
                             while(true) {
                               const statusResp = await AliHttp.GetWithOutUserId(codeStatusUrl)
                               if (AliHttp.IsSuccess(statusResp.code) && statusResp.body.status === 'LoginSuccess') {
-                                console.log("二维码状态: 登录成功2")
                                 loginbizExt(msg, statusResp.body.authCode)
                                 break
                               }
@@ -128,7 +126,6 @@ export default defineComponent({
                           }
                           if (statusResp.body.status === 'LoginSuccess') {
                             clearInterval(intervalId)
-                            console.log("二维码状态: 登录成功1")
                             loginbizExt(msg, statusResp.body.authCode)
                           }
                         } else {
@@ -164,7 +161,6 @@ export default defineComponent({
           client_secret: '',
           client_id: ''
         }
-        console.log("loginbizExt", requestBody)
 
         // 发送请求获取访问令牌
         w(data.bizExt).then(async (jsonstr: string) => {
@@ -223,8 +219,6 @@ export default defineComponent({
                 device_id: deviceId,
                 signature: signature
               }
-              console.log('登录成功', tk2)
-
               UserDAL.UserLogin(tk2).then(() => {
                 useUserStore().userShowLogin = false
                 if (window.WebClearCookies) window.WebClearCookies({
