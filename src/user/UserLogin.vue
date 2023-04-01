@@ -64,6 +64,7 @@ export default defineComponent({
           if (loading) loading.parentNode!.removeChild(loading)
           document.getElementById('loginframediverror')!.style.display = ''
         })
+
         webview.addEventListener('console-message', async (e: any) => {
             const msg = e.message || ''
             console.log("console-message", msg)
@@ -85,36 +86,55 @@ export default defineComponent({
                 const resp = await AliHttp.PostWithOutUserId(Config.qrCodeLoginUrl, qrCodeFetchdata)
                 if (AliHttp.IsSuccess(resp.code)) {
                     const qrCodeUrl = resp.body.qrCodeUrl
+                    const codeStatusUrl = qrCodeUrl + '/status'
+                    const qrCodeStatus = document.getElementById('qr-code-status') as any
                     webview.loadURL(qrCodeUrl)
                     webview.addEventListener('did-stop-loading', () => {
-                        const loading = document.getElementById('loginframedivloading')
-                        if (loading) loading.parentNode!.removeChild(loading)
-                        document.getElementById('loginframediverror')!.style.display = 'none'
-                        const codeStatusUrl = qrCodeUrl + '/status'
-                        const qrCodeStatus = document.getElementById('qr-code-status') as any
-                        // Start polling QR code status
-                        const intervalId = setInterval(async () => {
-                            const statusResp = await AliHttp.GetWithOutUserId(codeStatusUrl)
-                            if (AliHttp.IsSuccess(statusResp.code)) {
-                                const status = getStatusTranslation(statusResp.body.status)
-                                qrCodeStatus.textContent = `二维码状态: ${status}`
-                                if (statusResp.body.status === 'QRCodeExpired') {
-                                    console.log("检测到二维码状态过期，重新刷新")
-                                    clearInterval(intervalId)
-                                    const resp = await AliHttp.PostWithOutUserId(Config.qrCodeLoginUrl, qrCodeFetchdata)
-                                    if (AliHttp.IsSuccess(resp.code)) {
-                                        const qrCodeUrl = resp.body.qrCodeUrl
-                                        webview.loadURL(qrCodeUrl)
-                                    }
-                                }
-                                if (qrCodeStatus.textContent === `二维码状态: 登录成功`) {
-                                    loginbizExt(msg, statusResp.body.authCode)
-                                    clearInterval(intervalId)
-                                }
-                            } else {
-                                message.error('获取二维码状态出错，请退出小白羊后重新运行')
+                      const loading = document.getElementById('loginframedivloading')
+                      if (loading) loading.parentNode!.removeChild(loading)
+                      document.getElementById('loginframediverror')!.style.display = 'none'
+
+                      // Start polling QR code status
+                      const intervalId = setInterval(async () => {
+                        const statusResp = await AliHttp.GetWithOutUserId(codeStatusUrl)
+                        if (AliHttp.IsSuccess(statusResp.code)) {
+                          const status = getStatusTranslation(statusResp.body.status)
+                          const qrCodeLink = document.createElement('a');
+                          qrCodeLink.href = qrCodeUrl;
+                          qrCodeLink.textContent = qrCodeUrl;
+                          qrCodeStatus.textContent = `二维码状态: ${status} 如果无法跳转，打开以下URL`
+                          qrCodeStatus.appendChild(qrCodeLink);
+                          qrCodeLink.addEventListener('click', async (event) => {
+                            clearInterval(intervalId)
+                            event.preventDefault();
+                            require('electron').shell.openExternal(qrCodeUrl);
+                            while(true) {
+                              const statusResp = await AliHttp.GetWithOutUserId(codeStatusUrl)
+                              if (AliHttp.IsSuccess(statusResp.code) && statusResp.body.status === 'LoginSuccess') {
+                                console.log("二维码状态: 登录成功2")
+                                loginbizExt(msg, statusResp.body.authCode)
+                                break
+                              }
                             }
-                        }, 1000)
+                          });
+                          if (statusResp.body.status === 'QRCodeExpired') {
+                            console.log("检测到二维码状态过期，重新刷新")
+                            clearInterval(intervalId)
+                            const resp = await AliHttp.PostWithOutUserId(Config.qrCodeLoginUrl, qrCodeFetchdata)
+                            if (AliHttp.IsSuccess(resp.code)) {
+                              const qrCodeUrl = resp.body.qrCodeUrl
+                              webview.loadURL(qrCodeUrl)
+                            }
+                          }
+                          if (statusResp.body.status === 'LoginSuccess') {
+                            clearInterval(intervalId)
+                            console.log("二维码状态: 登录成功1")
+                            loginbizExt(msg, statusResp.body.authCode)
+                          }
+                        } else {
+                          message.error('获取二维码状态出错，请退出小白羊后重新运行')
+                        }
+                      }, 1000)
                     })
                 } else {
                     message.error('获取二维码出错，请退出小白羊后重新运行')
@@ -124,92 +144,111 @@ export default defineComponent({
       }, 500)
     }
 
+    let isRunning = false;
+
     function loginbizExt(msg: string, authCode: string) {
+      if (!isRunning) {
+        isRunning = true
         let data = { bizExt: '' }
         try {
-            data = JSON.parse(msg)
+          data = JSON.parse(msg)
         } catch {}
         if (!data.bizExt) {
-            DebugLog.mSaveDanger('登录失败：' + msg)
-            return
+          DebugLog.mSaveDanger('登录失败：' + msg)
+          return
         }
         // 构造请求体
         const requestBody = {
-            code: authCode,
-            grant_type: 'authorization_code',
-            client_secret: '',
-            client_id: ''
+          code: authCode,
+          grant_type: 'authorization_code',
+          client_secret: '',
+          client_id: ''
         }
         console.log("loginbizExt", requestBody)
 
         // 发送请求获取访问令牌
-
-        fetch(Config.accessTokenUrl, {
-            method: 'POST',
-            headers: {
+        w(data.bizExt).then(async (jsonstr: string) => {
+          try {
+            const result = JSON.parse(jsonstr).pds_login_result
+            const tk = UserDAL.GetUserToken(result.userId)
+            console.log("tk", tk)
+            if (tk?.user_id === result.userId) {
+              console.log('该账号已经登录过了')
+              return
+            }
+            const deviceId = getUuid(result.userId.toString(), 5)
+            const { signature } = GetSignature(0, result.userId.toString(), deviceId)
+            fetch(Config.accessTokenUrl, {
+              method: 'POST',
+              headers: {
                 'Content-Type': 'application/json',
-            }, body: JSON.stringify(requestBody),
-        }).then(response => response.json()).then(dataV2 => {
-            // 获取访问令牌
-            const accessTokenV2 = dataV2.access_token;
-            const refreshTokenV2 = dataV2.refresh_token;
-            const expiresInV2 = dataV2.expires_in;
-            const tokenTypeV2 = dataV2.token_type;
-            w(data.bizExt).then((jsonstr: string) => {
-                try {
-                    const result = JSON.parse(jsonstr).pds_login_result
-                    const deviceId = getUuid(result.userId.toString(), 5)
-                    const { signature } = GetSignature(0, result.userId.toString(), deviceId)
-                    const tk2: ITokenInfo = {
-                        tokenfrom: 'account' ,
-                        access_token: result.accessToken,
-                        refresh_token: result.refreshToken,
-                        expires_in: result.expiresIn,
-                        token_type: result.tokenType,
-                        access_token_v2: accessTokenV2,
-                        refresh_token_v2: refreshTokenV2,
-                        expires_in_v2: expiresInV2,
-                        token_type_v2: tokenTypeV2,
-                        user_id: result.userId,
-                        user_name: result.userName,
-                        avatar: result.avatar,
-                        nick_name: result.nickName,
-                        default_drive_id: result.defaultDriveId,
-                        default_sbox_drive_id: '' ,
-                        role: result.role,
-                        status: result.status,
-                        expire_time: result.expireTime,
-                        state: result.state,
-                        pin_setup: result.dataPinSetup,
-                        is_first_login: result.isFirstLogin,
-                        need_rp_verify: result.needRpVerify,
-                        name: '',
-                        spu_id: '',
-                        is_expires: false,
-                        used_size: 0,
-                        total_size: 0,
-                        spaceinfo: '',
-                        pic_drive_id: '',
-                        vipname: '',
-                        vipexpire: '',
-                        device_id: deviceId,
-                        signature: signature
-                    }
-                    console.log('登录成功', tk2)
+              }, body: JSON.stringify(requestBody),
+            }).then(response => response.json()).then(dataV2 => {
+              const accessTokenV2 = dataV2.access_token;
+              const refreshTokenV2 = dataV2.refresh_token;
+              const expiresInV2 = dataV2.expires_in;
+              const tokenTypeV2 = dataV2.token_type;
+              const tk2: ITokenInfo = {
+                tokenfrom: 'account',
+                access_token: result.accessToken,
+                refresh_token: result.refreshToken,
+                expires_in: result.expiresIn,
+                token_type: result.tokenType,
+                access_token_v2: accessTokenV2,
+                refresh_token_v2: refreshTokenV2,
+                expires_in_v2: expiresInV2,
+                token_type_v2: tokenTypeV2,
+                user_id: result.userId,
+                user_name: result.userName,
+                avatar: result.avatar,
+                nick_name: result.nickName,
+                default_drive_id: result.defaultDriveId,
+                default_sbox_drive_id: '',
+                role: result.role,
+                status: result.status,
+                expire_time: result.expireTime,
+                state: result.state,
+                pin_setup: result.dataPinSetup,
+                is_first_login: result.isFirstLogin,
+                need_rp_verify: result.needRpVerify,
+                name: '',
+                spu_id: '',
+                is_expires: false,
+                used_size: 0,
+                total_size: 0,
+                spaceinfo: '',
+                pic_drive_id: '',
+                vipname: '',
+                vipexpire: '',
+                device_id: deviceId,
+                signature: signature
+              }
+              console.log('登录成功', tk2)
 
-                    UserDAL.UserLogin(tk2).then(() => {
-                        useUserStore().userShowLogin = false
-                        if (window.WebClearCookies) window.WebClearCookies({ origin: 'https://auth.aliyundrive.com', storages: ['cookies', 'localstorage'] })
-                    }).catch(() => {
-                        useUserStore().userShowLogin = false
-                        if (window.WebClearCookies) window.WebClearCookies({ origin: 'https://auth.aliyundrive.com', storages: ['cookies', 'localstorage'] })
-                    })
-                } catch (err: any) {
-                    message.error('登录失败：' + (err.message || '解析失败'))
-                    DebugLog.mSaveDanger('登录失败：' + (err.message || '解析失败'), JSON.stringify(err))
-                }
+              UserDAL.UserLogin(tk2).then(() => {
+                useUserStore().userShowLogin = false
+                if (window.WebClearCookies) window.WebClearCookies({
+                  origin: 'https://auth.aliyundrive.com',
+                  storages: ['cookies', 'localstorage']
+                })
+              }).catch(() => {
+                useUserStore().userShowLogin = false
+                if (window.WebClearCookies) window.WebClearCookies({
+                  origin: 'https://auth.aliyundrive.com',
+                  storages: ['cookies', 'localstorage']
+                })
+              }).finally(() => {
+                isRunning = false;
+              })
             })
+          } catch (err: any) {
+            message.error('登录失败：' + (err.message || '解析失败'))
+            DebugLog.mSaveDanger('登录失败：' + (err.message || '解析失败'), JSON.stringify(err))
+          }
         })
+      } else {
+        console.log('正在登录中')
+      }
     }
     const useUser = useUserStore()
     return { useUser, handleOpen }
