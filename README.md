@@ -1,4 +1,4 @@
-# 小白羊阿里云盘Open API版本
+# 小白羊阿里云盘开放平台 API版本
 基于 https://github.com/liupan1890/aliyunpan 仓库，
 
 基于新版阿里云盘开放平台API，并新增了最近播放列表菜单，并支持保存观看进度。
