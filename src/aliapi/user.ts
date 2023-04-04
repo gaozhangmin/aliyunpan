@@ -52,10 +52,17 @@ export default class AliUser {
 
   static async ApiTokenRefreshAccountV2(token: ITokenInfo): Promise<IUrlRespData> {
     const postData = {
+<<<<<<< HEAD
       refresh_token: token.refresh_token_v2,
       grant_type: 'refresh_token',
       client_secret: 'a3d3a7036fa9417399eef14891f6084f',
       client_id: 'e90a7b360e894c60b7b314579f42827d'
+=======
+      "refresh_token": token.refresh_token_v2,
+      "grant_type": "refresh_token",
+      "client_secret": "a3d3a7036fa9417399eef14891f6084f",
+      "client_id": "e90a7b360e894c60b7b314579f42827d"
+>>>>>>> 2e23602 (V3.11.4)
     }
     return await AliHttp.Post(Config.accessTokenUrl, postData, '', '')
 
