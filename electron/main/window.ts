@@ -90,7 +90,7 @@ export function createMainWindow() {
   AppWindow.mainWindow.on('ready-to-show', function () {
     AppWindow.mainWindow!.webContents.send('setPage', { page: 'PageMain' })
     AppWindow.mainWindow!.webContents.send('setTheme', { dark: nativeTheme.shouldUseDarkColors })
-    AppWindow.mainWindow!.setTitle('阿里云盘小白羊版')
+    AppWindow.mainWindow!.setTitle('小白羊云盘')
     AppWindow.mainWindow!.show()
     creatUploadPort()
     creatDownloadPort()
@@ -194,13 +194,13 @@ export function createTray() {
   ]
 
   
-  const icon = getResourcesPath('app.png')
+  const icon = getResourcesPath('electron/assets/app_tray.png')
   AppWindow.appTray = new Tray(icon)
-  
+
   const contextMenu = Menu.buildFromTemplate(trayMenuTemplate)
-  
-  AppWindow.appTray.setToolTip('阿里云盘小白羊版')
-  
+
+  AppWindow.appTray.setToolTip('小白羊云盘')
+
   AppWindow.appTray.setContextMenu(contextMenu)
 
   AppWindow.appTray.on('click', () => {
@@ -221,7 +221,7 @@ export function creatUpload() {
   AppWindow.uploadWindow.on('ready-to-show', function () {
     creatUploadPort()
     AppWindow.uploadWindow!.webContents.send('setPage', { page: 'PageWorker', data: { type: 'upload' } })
-    AppWindow.uploadWindow!.setTitle('阿里云盘小白羊版上传进程')
+    AppWindow.uploadWindow!.setTitle('小白羊云盘上传进程')
   })
 
   AppWindow.uploadWindow.webContents.on('render-process-gone', function (event, details) {
@@ -243,7 +243,7 @@ export function creatDownload() {
   AppWindow.downloadWindow.on('ready-to-show', function () {
     creatDownloadPort()
     AppWindow.downloadWindow!.webContents.send('setPage', { page: 'PageWorker', data: { type: 'download' } })
-    AppWindow.downloadWindow!.setTitle('阿里云盘小白羊版下载进程')
+    AppWindow.downloadWindow!.setTitle('小白羊云盘下载进程')
   })
 
   AppWindow.downloadWindow.webContents.on('render-process-gone', function (event, details) {
@@ -268,7 +268,7 @@ export function creatElectronWindow(width: number, height: number, center: boole
     minWidth: width > 680 ? 680 : width,
     minHeight: height > 500 ? 500 : height,
     center: center,
-    icon: getResourcesPath('app.ico'),
+    icon: getResourcesPath('xby.ico'),
     useContentSize: true,
     frame: false,
     transparent: false,

@@ -1,5 +1,5 @@
 import AliFile from '../aliapi/file'
-import AliDirFileList, { IAliFileResp } from '../aliapi/dirfilelist'
+import { IAliFileResp } from '../aliapi/dirfilelist'
 
 import Aria2 from 'aria2-lib'
 import axios from 'axios'
@@ -13,7 +13,11 @@ import AliTrash from '../aliapi/trash'
 
 import path from 'path'
 import fsPromises from 'fs/promises'
-import fs from 'fs'
+import fs, { existsSync } from 'fs'
+import { getStaticPath, mkAriaConf } from '../../electron/main/mainfile'
+import { ShowError } from '../../electron/main/window'
+import { execFile, SpawnOptions } from 'child_process'
+import { portIsOccupied } from '../../electron/main/utils'
 
 const localPwd = 'S4znWTaZYQi3cpRNb'
 
@@ -154,6 +158,92 @@ export async function AriaChangeToRemote() {
   return IsAria2cOnlineRemote
 }
 
+export async function CreatLocalAria2c() {
+  try {
+    let basePath = getStaticPath('engine')
+    let confPath = path.join(basePath, 'aria2.conf')
+    if (!existsSync(confPath)) {
+      mkAriaConf(confPath)
+    }
+    let ariaPath = ''
+    if (process.platform === 'win32') {
+      ariaPath = 'aria2c.exe'
+    } else if (process.platform === 'darwin') {
+      ariaPath = 'aria2c'
+    } else if (process.platform === 'linux') {
+      ariaPath = 'aria2c'
+    }
+    let aria2cPath = path.join(basePath, ariaPath)
+    if (!existsSync(aria2cPath)) {
+      ShowError('找不到Aria程序文件', '找不到Aria程序文件 ' + aria2cPath)
+      return 0
+    }
+
+    process.chdir(basePath)
+    const options:SpawnOptions = { cwd: basePath, shell: true, windowsVerbatimArguments: true}
+    const port = await portIsOccupied(16800)
+    const subprocess = execFile(
+      ariaPath,
+      [
+        '-D',
+        '--conf-path=' + '"' + confPath + '"',
+        '--listen-port=' + port
+      ],
+      options,
+      async (error, stdout, stderr) => {
+        if (error) {
+          SetAriaOnline(false, 'local')
+          message.error(`启动本地aria2c失败 : ${error}`);
+          return;
+        } else {
+          await relaunchLocalAria(port);
+        }
+      }
+    );
+  } catch (e: any) {
+    SetAriaOnline(false, 'local')
+  }
+}
+
+async function relaunchLocalAria(port:number) {
+  CloseRemote()
+  try {
+    const options = { host: '127.0.0.1', port, secure: false, secret: localPwd, path: '/jsonrpc' }
+    Aria2EngineLocal = new Aria2({ WebSocket: global.WebSocket, fetch: global.fetch, ...options })
+    Aria2EngineLocal.on('close', () => {
+      IsAria2cOnlineLocal = false
+      if (useSettingStore().AriaIsLocal) {
+        message.error('Aria2本地连接已断开')
+        SetAriaOnline(false, 'local')
+      }
+    })
+    await Sleep(500)
+    await Aria2EngineLocal.open()
+      .then(() => {
+        Aria2cLocalRelanchTime = 0
+        SetAriaOnline(true, 'local')
+      })
+      .catch(async () => {
+        await window.WebRelaunchAria()
+        SetAriaOnline(false, 'local')
+        Aria2cLocalRelanchTime++
+        if (Aria2cLocalRelanchTime < 2) {
+          message.info('正在尝试重启Aria进程中。。。')
+        }
+      })
+
+    if (!IsAria2cOnlineLocal) {
+      const url = '127.0.0.1:16800 secret=' + localPwd
+      if (Aria2cLocalRelanchTime < 2) message.error('无法连接到本地Aria2 ' + url)
+    } else {
+      await AriaGlobalSpeed()
+    }
+    await Sleep(1000)
+  } catch (e) {
+    SetAriaOnline(false, 'local')
+  }
+  return true
+}
 
 export async function AriaChangeToLocal() {
   CloseRemote()
@@ -176,7 +266,8 @@ export async function AriaChangeToLocal() {
         Aria2cLocalRelanchTime = 0
         SetAriaOnline(true, 'local')
       })
-      .catch(() => {
+      .catch(async () => {
+        await window.WebRelaunchAria()
         SetAriaOnline(false, 'local')
         Aria2cLocalRelanchTime++
         if (Aria2cLocalRelanchTime < 2) {

@@ -161,7 +161,7 @@ export default class UploadingDAL {
       window.WinMsgToUpload({ cmd: 'UploadCmd', Command: 'delete', IsAll: false, UploadIDList: check.delList, TaskIDList: [] })
     }
 
-    const sendList = UploadingData.UploadingEventSendList(check.newList, LoadingKeys)
+    const sendList = await UploadingData.UploadingEventSendList(check.newList, LoadingKeys)
     if (sendList.length > 0) {
       window.WinMsgToUpload({ cmd: 'UploadAdd', UploadList: sendList })
       if (!SpeedTotal) SpeedTotal = humanSizeSpeed(0)
@@ -178,7 +178,7 @@ export default class UploadingDAL {
 
   static async aUploadLocalFiles(user_id: string, drive_id: string, parent_file_id: string, files: string[], check_name_mode: string, tip: boolean) {
 
-
+    console.log("aUploadLocalFiles", parent_file_id, files)
     if (!user_id) return 0
     if (!files || files.length == 0) return 0
     const dateNow = Date.now()

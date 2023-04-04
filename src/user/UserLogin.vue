@@ -78,9 +78,9 @@ export default defineComponent({
                 document.getElementById('loginframediverror')!.style.display = 'none'
                 const qrCodeFetchdata = {
                     width: 348,
-                    client_secret: '',
+                    client_secret: 'a3d3a7036fa9417399eef14891f6084f',
                     scopes: ['user:base', 'file:all:read', 'file:all:write'],
-                    client_id: '',
+                    client_id: 'e90a7b360e894c60b7b314579f42827d',
                     height: 400
                 }
                 const resp = await AliHttp.PostWithOutUserId(Config.qrCodeLoginUrl, qrCodeFetchdata)
@@ -158,8 +158,8 @@ export default defineComponent({
         const requestBody = {
           code: authCode,
           grant_type: 'authorization_code',
-          client_secret: '',
-          client_id: ''
+          client_secret: 'a3d3a7036fa9417399eef14891f6084f',
+          client_id: 'e90a7b360e894c60b7b314579f42827d'
         }
 
         // 发送请求获取访问令牌

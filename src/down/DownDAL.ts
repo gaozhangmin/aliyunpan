@@ -8,7 +8,7 @@ import {
   AriaAddUrl,
   AriaConnect, AriaDeleteList,
   AriaGetDowningList,
-  AriaHashFile,
+  AriaHashFile, AriaStopList,
   FormateAriaError,
   IsAria2cRemote
 } from '../utils/aria2c'
@@ -213,6 +213,8 @@ export default class DownDAL {
           DownUrl: downloadurl,
         },
       };
+      AriaStopList([downitem.Info.GID]).then(r => {})
+      AriaDeleteList([downitem.Info.GID]).then(r => {})
       if (downitem.Info.ariaRemote && !downitem.Info.isDir) downitem.Info.icon = 'iconfont iconcloud-download';
       downlist.push(downitem);
     }

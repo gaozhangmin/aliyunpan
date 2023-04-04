@@ -35,7 +35,7 @@ export default defineComponent({
   <a-layout style="height: 100vh; background: #f2f4f7" draggable="false">
     <a-layout-header id="xbyhead" draggable="false">
       <div id="xbyhead2" class="q-electron-drag">
-        <div class="title">阿里云盘小白羊版</div>
+        <div class="title">小白羊云盘</div>
         <div class="flexauto"></div>
         <a-button type="text" tabindex="-1" title="关闭 Alt+F4" @click="handleLoadObject"> LoadObject </a-button>
         <a-button type="text" tabindex="-1" title="关闭 Alt+F4" @click="handleCreatMap"> CreatMap </a-button>
