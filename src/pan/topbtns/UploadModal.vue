@@ -87,31 +87,31 @@ export default defineComponent({
       </div>
       <div class="settingspace"></div>
 
-      <div class="settinghead">:上传时 遇到重名文件冲突</div>
-      <div class="settingrow">
-        <a-select tabindex="-1" :style="{ width: '278px' }" :model-value="settingStore.downUploadWhatExist" @update:model-value="cb({ downUploadWhatExist: $event })">
-          <a-option value="ignore">删除网盘内文件，继续上传</a-option>
-          <a-option value="overwrite">覆盖网盘内文件，继续上传</a-option>
-          <a-option value="auto_rename">保留网盘内文件，继续上传，重命名</a-option>
-          <a-option value="refuse">保留网盘内文件，不上传了</a-option>
-        </a-select>
-        <a-popover position="bottom">
-          <i class="iconfont iconbulb" />
-          <template #content>
-            <div>
-              默认：<span class="opred">删除网盘内文件，继续上传</span>
-              <hr />
-              如果要上传的文件和网盘内已存在的文件重名了<br /><br />
-              当内容完全一致(sha1相同)时，则<span class="opred">无需</span>处理<br />
-              反之，需要<span class="opred">决定</span>如何处理<br />
-              <hr />
-              删除网盘内文件和覆盖网盘内文件区别是：<br />
-              删除会在回收站有已删除记录可以还原文件<br />
-              覆盖在回收站没有记录
-            </div>
-          </template>
-        </a-popover>
-      </div>
+<!--      <div class="settinghead">:上传时 遇到重名文件冲突</div>-->
+<!--      <div class="settingrow">-->
+<!--        <a-select tabindex="-1" :style="{ width: '278px' }" :model-value="settingStore.downUploadWhatExist" @update:model-value="cb({ downUploadWhatExist: $event })">-->
+<!--          <a-option value="ignore">删除网盘内文件，继续上传</a-option>-->
+<!--          <a-option value="overwrite">覆盖网盘内文件，继续上传</a-option>-->
+<!--          <a-option value="auto_rename">保留网盘内文件，继续上传，重命名</a-option>-->
+<!--          <a-option value="refuse">保留网盘内文件，不上传了</a-option>-->
+<!--        </a-select>-->
+<!--        <a-popover position="bottom">-->
+<!--          <i class="iconfont iconbulb" />-->
+<!--          <template #content>-->
+<!--            <div>-->
+<!--              默认：<span class="opred">删除网盘内文件，继续上传</span>-->
+<!--              <hr />-->
+<!--              如果要上传的文件和网盘内已存在的文件重名了<br /><br />-->
+<!--              当内容完全一致(sha1相同)时，则<span class="opred">无需</span>处理<br />-->
+<!--              反之，需要<span class="opred">决定</span>如何处理<br />-->
+<!--              <hr />-->
+<!--              删除网盘内文件和覆盖网盘内文件区别是：<br />-->
+<!--              删除会在回收站有已删除记录可以还原文件<br />-->
+<!--              覆盖在回收站没有记录-->
+<!--            </div>-->
+<!--          </template>-->
+<!--        </a-popover>-->
+<!--      </div>-->
       <div class="settingspace"></div>
       <br />
     </div>

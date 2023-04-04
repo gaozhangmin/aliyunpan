@@ -1,5 +1,5 @@
 {
-  "appId": "com.alixby.app",
+  "appId": "com.xby.app",
   "productName": "小白羊云盘",
   "copyright": "copyright ©2023 Zhangmin gao",
   "artifactName": "${productName}v${version}-${arch}.${ext}",
@@ -38,7 +38,7 @@
       { "from": "./static/images/app.ico", "to": "."},
       { "from": "./static/images/app.png", "to": "."}
     ],
-    "target": [ "AppImage" ]
+    "target": [ "zip" ]
   },
   "win": {
     "icon": "./static/images/icon.png",
@@ -50,7 +50,7 @@
       { "from": "./static/images/app.png", "to": "."}
     ],
     "target": [
-      { "target": "nsis", "arch": [ "x64" ] }
+      { "target": "nsis", "arch": [ "x64", "ia32"] }
     ]
   },
   "dmg": {

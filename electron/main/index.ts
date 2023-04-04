@@ -2,7 +2,7 @@ import { getCrxPath, getResourcesPath, getStaticPath, getUserDataPath, mkAriaCon
 import { release } from 'os'
 import { AppWindow, creatElectronWindow, createMainWindow, createTray, Referer, ShowError, ShowErrorAndExit, ua } from './window'
 import Electron from 'electron'
-import { SpawnOptions } from 'child_process'
+import {execFile, SpawnOptions} from 'child_process'
 import { portIsOccupied } from './utils'
 import { app, BrowserWindow, dialog, Menu, MenuItem, ipcMain, shell, session } from 'electron'
 import { exec, spawn } from 'child_process'
@@ -509,7 +509,9 @@ async function creatAria() {
   try {
     let basePath = getStaticPath('engine')
     let confPath = path.join(basePath, 'aria2.conf')
-    if (!existsSync(confPath)) mkAriaConf(confPath)
+    if (!existsSync(confPath)) {
+      mkAriaConf(confPath)
+    }
     let ariaPath = ''
     if (process.platform === 'win32') {
       ariaPath = 'aria2c.exe'
@@ -521,23 +523,28 @@ async function creatAria() {
     basePath = path.join(basePath, DEBUGGING ? process.platform : '')
     let ariaPath2 = path.join(basePath, ariaPath)
     if (!existsSync(ariaPath2)) {
-      ShowError('找不到Aria程序文件', ariaPath2)
+      ShowError('找不到Aria程序文件', '找不到Aria程序文件 ' + ariaPath2)
       return 0
     }
-
     process.chdir(basePath)
-    const options:SpawnOptions = { stdio: 'ignore', cwd: basePath, shell: true }
+    const options:SpawnOptions = { cwd: basePath, shell: true, windowsVerbatimArguments: true}
     const port = await portIsOccupied(16800)
-    const subprocess = spawn(
-      ariaPath,
-      [
-        '--stop-with-process=' + process.pid,
-        '-D',
-        '--conf-path=' + confPath,
-        '--listen-port=' + port
-      ],
-      options
-    )
+    const subprocess = execFile(
+        ariaPath,
+        [
+          '--stop-with-process=' + process.pid,
+          '-D',
+          '--conf-path=' + '"' + confPath + '"',
+          '--listen-port=' + port
+        ],
+        options,
+        (error, stdout, stderr) => {
+          if (error) {
+            console.error(`execFile error: ${error}`);
+            return;
+          }
+        }
+    );
     return port
   } catch (e: any) {
     console.log(e)
