@@ -79,8 +79,8 @@ export default defineComponent({
                 const qrCodeFetchdata = {
                     width: 348,
                     client_secret: 'a3d3a7036fa9417399eef14891f6084f',
-                    scopes: ['user:base', 'file:all:read', 'file:all:write'],
                     client_id: 'e90a7b360e894c60b7b314579f42827d',
+                    scopes: ['user:base', 'file:all:read', 'file:all:write'],
                     height: 400
                 }
                 const resp = await AliHttp.PostWithOutUserId(Config.qrCodeLoginUrl, qrCodeFetchdata)

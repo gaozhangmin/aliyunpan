@@ -30,6 +30,7 @@ const handleSelectDownSavePath = () => {
     <div class="settingrow">
       <a-input-search tabindex="-1" style="max-width: 420px" :readonly="true" button-text="更改" search-button :model-value="settingStore.downSavePath" @search="handleSelectDownSavePath" />
     </div>
+    <div class="settingspace"></div>
     <div class="settinghead"></div>
     <div class="settingrow">
       <MySwitch :value="settingStore.downSavePathDefault" @update:value="cb({ downSavePathDefault: $event })">默认此路径为下载路径</MySwitch>

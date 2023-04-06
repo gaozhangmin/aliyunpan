@@ -702,7 +702,6 @@ export default class UploadingData {
           fileCount++
         } else {
           let info = UploadingInfoList.get(fileItem.UploadID)
-
           if (!info) {
             info = {
               UploadID: fileItem.UploadID,
@@ -813,7 +812,6 @@ export default class UploadingData {
 
 
   static async UploadingAppendFilesSave(TaskID: number, UploadID: number, CreatedDirID: string, AppendList: IStateUploadTaskFile[]): Promise<void> {
-    console.log("UploadingAppendFilesSave", AppendList)
     const task = UploadingTaskList.get(TaskID)
     if (task) {
       if (CreatedDirID) task.TaskFileID = CreatedDirID

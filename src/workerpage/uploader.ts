@@ -135,7 +135,6 @@ interface ReadConfig {
 }
 
 async function creatDirAndReadChildren(fileui: IUploadingUI): Promise<void> {
-  console.log("creatDirAndReadChildren", fileui)
   fileui.Info.uploadState = '读取中'
 
   let uploaded_file_id = ''
@@ -167,7 +166,7 @@ async function creatDirAndReadChildren(fileui: IUploadingUI): Promise<void> {
 
   childList = read.fileList
   if (read.dirList.length > 0) childList.push(...read.dirList)
-  console.log("MainUploadAppendFiles", childList);
+
   window.WinMsgToMain({
     cmd: 'MainUploadAppendFiles',
     TaskID: fileui.TaskID,
@@ -175,7 +174,6 @@ async function creatDirAndReadChildren(fileui: IUploadingUI): Promise<void> {
     AppendList: childList,
     CreatedDirID: uploaded_file_id
   })
-
 
   RuningList.delete(fileui.UploadID) 
 }
@@ -194,7 +192,7 @@ async function readChildren(parentDirPartPath: string, parentDirName: string, re
   
   await AddDirs(addFileList, addDirList, files.dirList, parentDirPartPath, parentDirName, readConfig, Info)
 
-  console.log("readChildren", { error: '', fileList: addFileList, dirList: addDirList })
+
   return { error: '', fileList: addFileList, dirList: addDirList }
 }
 

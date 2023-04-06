@@ -340,7 +340,6 @@ ipcMain.on('WebExecSync', (event, data) => {
     if (data.args) cmdArguments.push(...data.args)
 
     const finalCmd = cmdArguments.join(' ')
-    console.log(finalCmd)
 
     exec(finalCmd, (err: any) => {
       event.returnValue = err
@@ -470,7 +469,6 @@ ipcMain.on('WebOpenWindow', (event, data) => {
   })
 })
 ipcMain.on('WebOpenUrl', (event, data) => {
-  console.log("WebOpenUrl", data)
   const win = new BrowserWindow({
     show: false,
     width: AppWindow.winWidth,
@@ -528,6 +526,7 @@ async function creatAria() {
       ShowError('找不到Aria程序文件', '找不到Aria程序文件 ' + ariaPath2)
       return 0
     }
+
     process.chdir(basePath)
     const options:SpawnOptions = { cwd: basePath, shell: true, windowsVerbatimArguments: true}
     const port = await portIsOccupied(16800)

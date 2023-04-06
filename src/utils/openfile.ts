@@ -168,12 +168,10 @@ async function Video(drive_id: string, file_id: string, parent_file_id: string, 
 
   const title = mode + '__' + name
   if (settingStore.uiVideoPlayer == 'mpv') {
-    console.log(url)
     window.WebOpenUrl({
       PageUrl: 'mpv://' + url
     })
   } if (settingStore.uiVideoPlayer == 'potplayer') {
-    console.log(url)
     window.WebOpenUrl({
       PageUrl: 'potplayer://' + url
     })
@@ -206,6 +204,7 @@ async function Video(drive_id: string, file_id: string, parent_file_id: string, 
       message.error('不支持的系统，操作取消')
       return
     }
+
     window.WebExecSync(
       {
         command,

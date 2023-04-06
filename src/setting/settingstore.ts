@@ -110,6 +110,9 @@ export interface SettingState {
 
   downAutoStart: boolean
 
+  localAria2cPath: string
+  localAria2cConfPath:string
+
 
 
   debugCacheSize: string
@@ -217,7 +220,10 @@ const setting: SettingState = {
   proxyHost: '',
   proxyPort: 0,
   proxyUserName: '',
-  proxyPassword: ''
+  proxyPassword: '',
+
+  localAria2cConfPath: '',
+  localAria2cPath:''
 }
 function _loadSetting(val: any) {
 
