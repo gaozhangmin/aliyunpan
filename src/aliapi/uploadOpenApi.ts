@@ -169,6 +169,7 @@ export default class AliUploadOpenApi {
       }
       postData.part_info_list[partIndex - 1].part_size = fileSize - (partIndex - 1) * partSize 
     }
+
     const resp = await AliHttp.Post(url, postData, user_id, '')
 
     if (typeof resp.body === 'object' && JSON.stringify(resp.body).indexOf('file size is exceed') > 0) {

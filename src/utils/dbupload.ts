@@ -204,7 +204,7 @@ class XBYDB3Upload extends Dexie {
   }
 
   async saveUploadTaskBatch(values: IStateUploadTask[]) {
-    console.log("saveUploadTaskBatch", values)
+    console.log('saveUploadTaskBatch', values.length)
     if (values.length == 0) return
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.iuploadtask.bulkPut(values).catch(() => {})

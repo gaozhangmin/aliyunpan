@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, Menu, MessageChannelMain, nativeTheme, Tray, screen } from 'electron'
+import { app, BrowserWindow, dialog, Menu, MessageChannelMain, nativeTheme, Tray, screen, nativeImage} from 'electron'
 import { getAsarPath, getResourcesPath, getUserDataPath } from './mainfile'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 
@@ -194,7 +194,7 @@ export function createTray() {
   ]
 
   
-  const icon = getResourcesPath('electron/assets/app_tray.png')
+  const icon = getResourcesPath('app.png')
   AppWindow.appTray = new Tray(icon)
 
   const contextMenu = Menu.buildFromTemplate(trayMenuTemplate)
@@ -268,7 +268,7 @@ export function creatElectronWindow(width: number, height: number, center: boole
     minWidth: width > 680 ? 680 : width,
     minHeight: height > 500 ? 500 : height,
     center: center,
-    icon: getResourcesPath('xby.ico'),
+    icon: getResourcesPath('app.png'),
     useContentSize: true,
     frame: false,
     transparent: false,

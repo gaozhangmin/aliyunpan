@@ -199,7 +199,7 @@ function handleSelectPlayer() {
 }
 .settinghead, .settingrow {
   display: inline-flex;
-  width: 60%;
+  width: 50%;
   padding: 10px;
   box-sizing: border-box;
   vertical-align: top;

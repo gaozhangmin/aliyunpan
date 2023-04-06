@@ -22,7 +22,8 @@
       { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
       { "from": "./static/crx", "to": "./crx"},
       { "from": "./static/images/app.ico", "to": "."},
-      { "from": "./static/images/app.png", "to": "."}
+      { "from": "./static/images/app.png", "to": "."},
+      { "from": "./static/images/icon.png", "to": "."}
     ],
     "target": [
       { "target": "dmg", "arch": [ "x64", "arm64" ] }
@@ -36,7 +37,8 @@
       { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
       { "from": "./static/crx", "to": "./crx"},
       { "from": "./static/images/app.ico", "to": "."},
-      { "from": "./static/images/app.png", "to": "."}
+      { "from": "./static/images/app.png", "to": "."},
+      { "from": "./static/images/icon.png", "to": "."}
     ],
     "target": [ "zip" ]
   },
@@ -47,10 +49,11 @@
       { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
       { "from": "./static/crx", "to": "./crx"},
       { "from": "./static/images/app.ico", "to": "."},
-      { "from": "./static/images/app.png", "to": "."}
+      { "from": "./static/images/app.png", "to": "."},
+      { "from": "./static/images/icon.png", "to": "."}
     ],
     "target": [
-      { "target": "nsis", "arch": [ "x64"] }
+      { "target": "nsis", "arch": [ "x64", "ia32"] }
     ]
   },
   "dmg": {

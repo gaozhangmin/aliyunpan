@@ -10,6 +10,7 @@ import SettingAria from './SettingAria.vue'
 import SettingLog from './SettingLog.vue'
 import { useAppStore } from '../store'
 import SettingProxy from './SettingProxy.vue'
+import SettingLocalAria from './SettingLocalAria.vue'
 
 const appStore = useAppStore()
 
@@ -83,6 +84,10 @@ onUnmounted(() => {
           <template #icon><i class="iconfont iconchuanshu" /></template>
           远程Aria
         </a-menu-item>
+        <a-menu-item key="SettingLocalAria">
+            <template #icon><i class="iconfont iconchuanshu" /></template>
+            本地Aria
+        </a-menu-item>
         <a-menu-item key="SettingLog">
           <template #icon><i class="iconfont icondebug" /></template>
           运行日志
@@ -147,6 +152,13 @@ onUnmounted(() => {
             <a-divider orientation="center" class="settinghr">远程Aria</a-divider>
           </div>
           <SettingAria />
+        </div>
+        <div id="SettingLocalAria">
+            <div>
+                <div style="height: 10px"></div>
+                <a-divider orientation="center" class="settinghr">本地Aria</a-divider>
+            </div>
+            <SettingLocalAria />
         </div>
         <div id="SettingLog">
           <div>
