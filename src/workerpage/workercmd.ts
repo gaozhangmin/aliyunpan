@@ -47,6 +47,7 @@ export const WinMsgUpload = function (arg: any) {
     } else if (arg.cmd == 'ClearUserToken') {
       UserDAL.ClearUserTokenMap()
     } else if (arg.cmd == 'UploadAdd') {
+      console.log('UploadAdd', arg.UploadList)
       UploadAdd(arg.UploadList)
     } else if (arg.cmd == 'UploadCmd') {
       UploadCmd(arg.Command, arg.IsAll, arg.UploadIDList, arg.TaskIDList)

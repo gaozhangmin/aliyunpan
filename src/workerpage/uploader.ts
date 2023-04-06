@@ -135,6 +135,7 @@ interface ReadConfig {
 }
 
 async function creatDirAndReadChildren(fileui: IUploadingUI): Promise<void> {
+  console.log("creatDirAndReadChildren", fileui)
   fileui.Info.uploadState = '读取中'
 
   let uploaded_file_id = ''
@@ -166,7 +167,7 @@ async function creatDirAndReadChildren(fileui: IUploadingUI): Promise<void> {
 
   childList = read.fileList
   if (read.dirList.length > 0) childList.push(...read.dirList)
-  
+  console.log("MainUploadAppendFiles", childList);
   window.WinMsgToMain({
     cmd: 'MainUploadAppendFiles',
     TaskID: fileui.TaskID,
@@ -174,6 +175,7 @@ async function creatDirAndReadChildren(fileui: IUploadingUI): Promise<void> {
     AppendList: childList,
     CreatedDirID: uploaded_file_id
   })
+
 
   RuningList.delete(fileui.UploadID) 
 }
@@ -192,7 +194,7 @@ async function readChildren(parentDirPartPath: string, parentDirName: string, re
   
   await AddDirs(addFileList, addDirList, files.dirList, parentDirPartPath, parentDirName, readConfig, Info)
 
-  
+  console.log("readChildren", { error: '', fileList: addFileList, dirList: addDirList })
   return { error: '', fileList: addFileList, dirList: addDirList }
 }
 
@@ -220,7 +222,7 @@ async function AddFiles(addFileList: IStateUploadTaskFile[], fileList: string[],
             TaskID: readConfig.TaskID,
             UploadID: readConfig.filetime,
             partPath: path.join(parentDirPartPath, fileName),
-            name: parentDirName + '/' + fileName,
+            name: fileName,
             size: stat ? stat.size : 1,
             sizeStr: humanSize(stat ? stat.size : 1),
             mtime: stat ? stat.mtime.getTime() : 0 ,
@@ -271,9 +273,12 @@ async function AddDirs(addFileList: IStateUploadTaskFile[], addDirList: IStateUp
 
 const MAXFILE = 20
 const MAXDIR = 20
-async function readChildrenDiGui(addFileList: IStateUploadTaskFile[], addDirList: IStateUploadTaskFile[], diritem: IStateUploadTaskFile, readConfig: ReadConfig, Info: IStateUploadInfo, plist: Promise<{ file_id: string; error: string }>[]): Promise<void> {
-
-
+async function readChildrenDiGui(addFileList: IStateUploadTaskFile[],
+                                 addDirList: IStateUploadTaskFile[],
+                                 diritem: IStateUploadTaskFile,
+                                 readConfig: ReadConfig,
+                                 Info: IStateUploadInfo,
+                                 plist: Promise<{ file_id: string; error: string }>[]): Promise<void> {
   const localDirPath = path.join(readConfig.localFilePath, diritem.partPath, path.sep)
   const dirFiles = await readDir(localDirPath, readConfig.ingoredList)
   if (dirFiles.error) {

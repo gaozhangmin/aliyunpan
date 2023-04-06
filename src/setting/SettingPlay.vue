@@ -57,16 +57,11 @@ function handleSelectPlayer() {
     </div>
     <div class="settingspace"></div>
     <div class="settinghead">视频播放器</div>
-    <div class="settingrow" style="min-width: 800px ">
-      <div class="my-radio-group">
-      <a-radio-group type="button" tabindex="-1" :model-value="settingStore.uiVideoPlayer"
-                     @update:model-value="cb({ uiVideoPlayer: $event })">
+    <div class="settingrow" >
+      <a-radio-group tabindex="-1" :model-value="settingStore.uiVideoPlayer" @update:model-value="cb({ uiVideoPlayer: $event })">
         <a-radio tabindex="-1" value="web">网页内置</a-radio>
-        <a-radio tabindex="-1" value="mpv">MPV</a-radio>
-        <a-radio tabindex="-1" value="potplayer">PotPlayer</a-radio>
         <a-radio tabindex="-1" value="other">自定义</a-radio>
       </a-radio-group>
-      </div>
       <a-popover position="bottom">
         <i class="iconfont iconbulb" />
         <template #content>
@@ -77,27 +72,17 @@ function handleSelectPlayer() {
             使用Videojs网页，播放转码后的视频<br />
             支持 选择清晰度、倍速播放、内置字幕、画中画模式
             <div class="hrspace"></div>
-            <span class="opred">本地Mpv播放器</span>：<br />
-            windows/macOS 本地需要安装Mpv播放器
-            <br />
-            linux 系统特殊，需要执行命令<span class="opblue">sudo apt install mpv</span>安装
-            <br />
-            mpv支持 快进、倍速播放、置顶、截图等非常多的功能(百度 MPV快捷键)
-            <div class="hrspace"></div>
-            <span class="opred">本地PotPlayer播放器</span>：<br />
-              本地需要安装PotPlayer播放器
-            <div class="hrspace"></div>
             <span class="opred">自定义播放软件</span>：<br />
             是实验性的功能，可以<span class="oporg">自己选择</span>电脑上安装的播放软件<br />
-            例如:Potplayer,IINA<br />
+            例如:Potplayer,MPV<br />
             <div class="hrspace"></div>
             详情请参阅<span class="opblue">帮助文档</span>
           </div>
         </template>
       </a-popover>
-      <div v-if="settingStore.uiVideoPlayer === 'mpv'" style="font-size: 12px; color: var(--color-text-3)">mpv 支持倍速！支持外挂字幕！支持切换音轨！</div>
-      <div v-if="settingStore.uiVideoPlayer === 'potplayer'" style="font-size: 12px; color: var(--color-text-3)">potplayer 支持倍速！支持外挂字幕！支持切换音轨！</div>
-      <div v-if="settingStore.uiVideoPlayer === 'web'" style="font-size: 12px; color: var(--color-text-3)">网页 支持倍速！支持选择清晰度！支持继续播放！</div>
+<!--      <div v-if="settingStore.uiVideoPlayer === 'mpv'" style="font-size: 12px; color: var(&#45;&#45;color-text-3)">mpv 支持倍速！支持外挂字幕！支持切换音轨！</div>-->
+<!--      <div v-if="settingStore.uiVideoPlayer === 'potplayer'" style="font-size: 12px; color: var(&#45;&#45;color-text-3)">potplayer 支持倍速！支持外挂字幕！支持切换音轨！</div>-->
+<!--      <div v-if="settingStore.uiVideoPlayer === 'web'" style="font-size: 12px; color: var(&#45;&#45;color-text-3)">网页 支持倍速！支持选择清晰度！支持继续播放！</div>-->
     </div>
     <div class="settinghead"></div>
     <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'win32' ? '' : 'none', marginTop: '8px' }">
@@ -214,7 +199,7 @@ function handleSelectPlayer() {
 }
 .settinghead, .settingrow {
   display: inline-flex;
-  width: 50%;
+  width: 60%;
   padding: 10px;
   box-sizing: border-box;
   vertical-align: top;

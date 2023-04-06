@@ -9,9 +9,10 @@ import AliFile from "./file";
 export default class AliFileCmd {
   
   static async ApiCreatNewForder(user_id: string, drive_id: string, parent_file_id: string, creatDirName: string): Promise<{ file_id: string; error: string }> {
+    console.log("ApiCreatNewForder", creatDirName, parent_file_id)
     const result = { file_id: '', error: '新建文件夹失败' }
     if (!user_id || !drive_id || !parent_file_id) return result
-    const url = 'adrive/v2/file/createWithFolders'
+    const url = 'adrive/v1.0/openFile/create'
     const postData = JSON.stringify({
       drive_id: drive_id,
       parent_file_id: parent_file_id,

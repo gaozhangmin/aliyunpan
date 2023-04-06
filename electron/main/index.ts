@@ -340,6 +340,7 @@ ipcMain.on('WebExecSync', (event, data) => {
     if (data.args) cmdArguments.push(...data.args)
 
     const finalCmd = cmdArguments.join(' ')
+    console.log(finalCmd)
 
     exec(finalCmd, (err: any) => {
       event.returnValue = err
@@ -469,6 +470,7 @@ ipcMain.on('WebOpenWindow', (event, data) => {
   })
 })
 ipcMain.on('WebOpenUrl', (event, data) => {
+  console.log("WebOpenUrl", data)
   const win = new BrowserWindow({
     show: false,
     width: AppWindow.winWidth,

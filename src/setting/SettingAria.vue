@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import useSettingStore from './settingstore'
-import { AriaChangeToLocal, AriaChangeToRemote, AriaTest } from '../utils/aria2c'
+import { AriaChangeToLocal, AriaChangeToRemote, AriaTest, CreatLocalAria2c} from '../utils/aria2c'
 import message from '../utils/message'
 
 import { Checkbox as AntdCheckbox } from 'ant-design-vue'
@@ -64,7 +64,6 @@ const handleAriaConn = () => {
           }
         })
       } else {
-
         settingStore.ariaLoading = false
       }
     })
@@ -171,8 +170,9 @@ const handleAriaOff = (tip: boolean) => {
     <div class="settingrow" v-show="settingStore.AriaIsLocal">
       <a-button type="outline" size="small" tabindex="-1" :loading="settingStore.ariaLoading" @click="handleAriaConn">当前是 本地模式，点击切换</a-button>
     </div>
-    <div class="settingrow" v-show="!settingStore.ariaLoading && settingStore.AriaIsLocal">
-      <a-typography-text type="secondary">新创建的下载任务都会下载到本地，只能管理本地的下载任务</a-typography-text>
+    <div class="settinghead"></div>
+    <div class="settingrow" v-show="settingStore.AriaIsLocal">
+      <a-button type="outline" size="small" tabindex="-1" :loading="settingStore.ariaLoading" @click="CreatLocalAria2c">点击，尝试重启本地Aria2c进程</a-button>
     </div>
 
     <div class="settingrow" v-show="!settingStore.AriaIsLocal">

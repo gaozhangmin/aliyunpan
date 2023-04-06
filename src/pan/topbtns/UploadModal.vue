@@ -77,7 +77,7 @@ export default defineComponent({
     </template>
     <div class="modalbody" style="width: 440px; max-height: calc(80vh - 100px); overflow-y: scroll">
       <div class="settinghead">
-        :把<span class="filelistcount">{{ filelist.length }}</span
+        把<span class="filelistcount">{{ filelist.length }}</span
         >个文件上传到网盘：
       </div>
       <div class="settingrow">

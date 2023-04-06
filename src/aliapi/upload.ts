@@ -57,6 +57,7 @@ export default class AliUpload {
       postData.part_info_list[partIndex - 1].part_size = fileSize - (partIndex - 1) * partSize 
     }
 
+    console.log("UploadCreatFileWithPreHash", postData)
     const resp = await AliHttp.Post(url, postData, user_id, '')
 
     if (typeof resp.body === 'object' && JSON.stringify(resp.body).indexOf('file size is exceed') > 0) {
@@ -174,7 +175,7 @@ export default class AliUpload {
       }
       postData.part_info_list[partIndex - 1].part_size = fileSize - (partIndex - 1) * partSize 
     }
-
+    console.log("UploadCreatFileWithPreHash1", postData)
     const resp = await AliHttp.Post(url, postData, user_id, '')
 
     if (typeof resp.body === 'object' && JSON.stringify(resp.body).indexOf('file size is exceed') > 0) {
