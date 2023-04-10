@@ -30,6 +30,8 @@ export interface SettingState {
 
   uiExitOnClose: boolean
 
+  launchAtStartup:boolean
+
 
 
   uiFolderSize: boolean
@@ -223,7 +225,8 @@ const setting: SettingState = {
   proxyPassword: '',
 
   localAria2cConfPath: '',
-  localAria2cPath:''
+  localAria2cPath:'',
+  launchAtStartup:false
 }
 function _loadSetting(val: any) {
 
@@ -377,14 +380,18 @@ const useSettingStore = defineStore('setting', {
       if (Object.hasOwn(partial, 'proxyUseProxy')) {
         this.WebSetProxy()
       }
-      SaveSetting()
-      window.WinMsgToUpload({ cmd: 'SettingRefresh' })
-      window.WinMsgToDownload({ cmd: 'SettingRefresh' })
-      useAppStore().toggleTheme(setting.uiTheme)
-
+      if (Object.hasOwn(partial, 'launchAtStartup')) {
+        window.AutoLanuchAtStartup({launchAtStartup: setting.launchAtStartup})
+      }
+      if (Object.hasOwn(partial, 'uiTheme')) {
+        useAppStore().toggleTheme(setting.uiTheme)
+      }
       if (Object.hasOwn(partial, 'uiShowPanMedia') || Object.hasOwn(partial, 'uiFolderSize') || Object.hasOwn(partial, 'uiFileOrderDuli')) {
         PanDAL.aReLoadOneDirToShow('', 'refresh', false)
       }
+      SaveSetting()
+      window.WinMsgToUpload({ cmd: 'SettingRefresh' })
+      window.WinMsgToDownload({ cmd: 'SettingRefresh' })
     },
 
     updateFileColor(key: string, title: string) {

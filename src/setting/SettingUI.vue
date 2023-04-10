@@ -39,7 +39,6 @@ const handleCheckVer = () => {
       </button>
     </div>
     <div class="settingspace"></div>
-    <div class="settingspace"></div>
     <div class="settinghead">关闭窗口</div>
     <div class="settingrow">
       <MySwitch :value="settingStore.uiExitOnClose" @update:value="cb({ uiExitOnClose: $event })"></MySwitch>
@@ -53,6 +52,11 @@ const handleCheckVer = () => {
           </div>
         </template>
       </a-popover>
+    </div>
+    <div class="settingspace"></div>
+    <div class="settinghead">开机自启动</div>
+    <div class="settingrow">
+        <MySwitch :value="settingStore.launchAtStartup" @update:value="cb({ launchAtStartup: $event })"></MySwitch>
     </div>
   </div>
 </template>

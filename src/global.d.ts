@@ -29,9 +29,12 @@ declare global {
     WinMsgToUpload: any
     WinMsgToDownload: any
     WinMsgToMain: any
+    AutoLanuchAtStartup: any
     IsMainPage: boolean
     WebSetProxy: any
     speedLimte: number
     WebSetProgressBar: any
+    Aria2cDownloadSpeed: any
+    Aria2cUploadSpeed: any
   }
 }

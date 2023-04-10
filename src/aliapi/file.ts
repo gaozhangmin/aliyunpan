@@ -6,6 +6,9 @@ import AliHttp from './alihttp'
 import {IAliFileItem, IAliGetDirModel, IAliGetFileModel, IAliGetForderSizeModel} from './alimodels'
 import AliDirFileList from './dirfilelist'
 import { IDownloadUrl, IOfficePreViewUrl, IVideoPreviewUrl, IVideoXBTUrl } from './models'
+import fs from "fs";
+import sharp from "sharp";
+import https from "https";
 
 export default class AliFile {
 
@@ -524,6 +527,36 @@ export default class AliFile {
     }
     return imgList
   }
+
+static mergeSpiritImages(spiritImageUrlList: IVideoXBTUrl[], width:number, height:number): void {
+  // 创建可写流，用于保存合并后的图片
+  const writableStream = fs.createWriteStream('/Users/didi/test.png');
+
+  // 创建Sharp实例，设置图片宽度和高度
+  const sharpInstance = sharp().resize(width, height);
+
+  // 遍历URL列表，下载图片并添加到Sharp实例中
+  for (let i = 0; i < spiritImageUrlList.length; i++) {
+    const imageUrl = spiritImageUrlList[i].url;
+    const time = spiritImageUrlList[i].time;
+
+    https.get(imageUrl, (response) => {
+      const chunks = [];
+      response.on('data', (chunk) => {
+        chunks.push(chunk);
+      });
+      response.on('end', () => {
+        const buffer = Buffer.concat(chunks);
+        sharpInstance.composite([{input: buffer, top: 0, left: i * width}]);
+
+        if (i === spiritImageUrlList.length - 1) {
+          // 所有图片都添加到Sharp实例后，将合并后的图片保存到本地
+          sharpInstance.png().pipe(writableStream);
+        }
+      });
+    });
+  }
+}
 
   static async ApiUpdateVideoTimeOpenApi(user_id: string, drive_id: string, file_id: string, play_cursor: number): Promise<IAliFileItem | undefined> {
     if (!useSettingStore().uiAutoPlaycursorVideo) return

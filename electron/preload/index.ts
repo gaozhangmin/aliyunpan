@@ -134,6 +134,12 @@ window.WebSetProxy = function (data: { proxyUrl: string }) {
   } catch {}
 }
 
+window.AutoLanuchAtStartup = function (data: { launchAtStartup: string }) {
+  try {
+    ipcRenderer.send('AutoLanuchAtStartup', data)
+  } catch {}
+}
+
 function createRightMenu() {
   window.addEventListener(
     'contextmenu',
