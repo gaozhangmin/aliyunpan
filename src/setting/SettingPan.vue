@@ -20,17 +20,6 @@ const cb = (val: any) => {
       </a-popover>
     </div>
     <div class="settingspace"></div>
-    <div class="settinghead">详细信息</div>
-    <div class="settingrow">
-      <MySwitch :value="settingStore.uiShowPanMedia" @update:value="cb({ uiShowPanMedia: $event })"></MySwitch>
-      <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
-        <template #content>
-          <div style="min-width: 400px">在右侧文件列表中显示每个文件的（播放时长、分辨率）</div>
-        </template>
-      </a-popover>
-    </div>
-    <div class="settingspace"></div>
     <div class="settinghead">文件夹体积</div>
     <div class="settingrow">
       <MySwitch :value="settingStore.uiFolderSize" @update:value="cb({ uiFolderSize: $event })"></MySwitch>

@@ -8,7 +8,7 @@ import { MapValueToArray } from '../utils/utils'
 import { throttle } from '../utils/debounce'
 import { SetProgressBar } from '../utils/electronhelper'
 import AliFileCmd from '../aliapi/filecmd'
-const path = window.require('path')
+import path from 'path'
 
 const UploadingTaskList = new Map<number, IStateUploadTask>()
 
@@ -671,11 +671,11 @@ export default class UploadingData {
     return sendList
   }
 
-  private static async createFolderHierarchy(path: string, user_id:string, driver_id:string, parent_fileid:string): Promise<string> {
-    const folders = path.split('/');
+  private static async createFolderHierarchy(folderPath: string, user_id:string, driver_id:string, parent_fileid:string): Promise<string> {
+    const foldersSplitor = folderPath.split(path.sep);
     let parent_file_id = parent_fileid;
-    for (let i = 1; i < folders.length-1; i++) {
-      const folderName = folders[i];
+    for (let i = 1; i < foldersSplitor.length-1; i++) {
+      const folderName = foldersSplitor[i];
       const result = await AliFileCmd.ApiCreatNewForder(user_id, driver_id, parent_file_id, folderName);
       parent_file_id = result.file_id; // 更新父目录为当前目录
     }
@@ -734,7 +734,7 @@ export default class UploadingData {
             RunningKeys.push(fileItem.UploadID)
             info.uploadState = 'running'
             const pathSplitor = fileItem.partPath.split("/");
-            let parent_file_id = task.TaskFileID;
+            let parent_file_id = task.TaskFileID ? task.TaskFileID : task.parent_file_id;
             if (pathSplitor.length > 2) {
               parent_file_id = await UploadingData.createFolderHierarchy(fileItem.partPath, task.user_id, task.drive_id, task.TaskFileID);
             }

@@ -23,11 +23,13 @@ const Processing = ref(0)
 const scanCount = ref(0)
 const totalDirCount = ref(0)
 const totalFileCount = ref(0)
+const isAllChecked = ref(false)
+
 
 const ScanPanData = NewScanDriver('')
 
 const checkedCount = ref(0)
-const checkedKeys = new Set<string>()
+const checkedKeys = ref(new Set<string>())
 const checkedSize = ref(0)
 const treeData = ref<FileNodeData[]>([])
 
@@ -41,7 +43,7 @@ const handleReset = () => {
 
   ResetScanDriver(ScanPanData)
 
-  checkedKeys.clear()
+  checkedKeys.value.clear()
   checkedCount.value = 0
   checkedSize.value = 0
   treeData.value = []
@@ -64,26 +66,65 @@ const RefreshTree = () => {
   showData = showData.sort((a, b) => b.files[0].size - a.files[0].size)
   Object.freeze(showData)
   treeData.value = showData
-  checkedKeys.clear()
+  checkedKeys.value.clear()
   checkedCount.value = 0
   checkedSize.value = 0
   scanCount.value = showData.length
 }
 
-const handleCheck = (file_id: string) => {
-  if (checkedKeys.has(file_id)) checkedKeys.delete(file_id)
-  else checkedKeys.add(file_id)
-  treeData.value = treeData.value.concat() 
-  checkedCount.value = checkedKeys.size
-  let size = 0
+// const handleCheck = (file_id: string) => {
+//   if (checkedKeys.value.has(file_id)) checkedKeys.value.delete(file_id)
+//   else checkedKeys.value.add(file_id)
+//   treeData.value = treeData.value.concat()
+//   checkedCount.value = checkedKeys.value.size
+//   let size = 0
+//   treeData.value.map((t) => {
+//     t.files.map((f) => {
+//       if (checkedKeys.value.has(f.file_id)) size += f.size
+//       return true
+//     })
+//     return true
+//   })
+//   checkedSize.value = size
+// }
+
+const check = (file_id: string) => {
+  return checkedKeys.value.has(file_id);
+}
+
+const handleCheck = (id: string) => {
   treeData.value.map((t) => {
     t.files.map((f) => {
-      if (checkedKeys.has(f.file_id)) size += f.size
+      if (checkedKeys.value.has(id)) {
+        checkedKeys.value.delete(id)
+        checkedSize.value -= f.size
+        checkedCount.value -= 1
+        isAllChecked.value = false
+      } else {
+        checkedKeys.value.add(id)
+        checkedSize.value += f.size
+        checkedCount.value += 1
+        isAllChecked.value = checkedCount.value === treeData.value.flatMap((node) => node.files).length
+      }
       return true
     })
     return true
   })
-  checkedSize.value = size
+}
+const handleCheckAll = (isChecked: boolean) => {
+  isAllChecked.value = isChecked
+  checkedKeys.value.clear()
+  checkedSize.value = 0
+  checkedCount.value = 0
+  treeData.value.forEach((node) => {
+    node.files.forEach((file) => {
+      if (isChecked) {
+        checkedKeys.value.add(file.file_id)
+        checkedSize.value += file.size
+        checkedCount.value += 1
+      }
+    })
+  })
 }
 
 const handleDelete = () => {
@@ -93,12 +134,12 @@ const handleDelete = () => {
     return
   }
   delLoading.value = true
-  const idList = Array.from(checkedKeys)
+  const idList = Array.from(checkedKeys.value)
   AliFileCmd.ApiTrashBatch(user.user_id, user.default_drive_id, idList).then((success: string[]) => {
     delLoading.value = false
     
     DeleteFromSameData(ScanPanData, idList)
-    checkedKeys.clear()
+    checkedKeys.value.clear()
     checkedCount.value = 0
     checkedSize.value = 0
     RefreshTree()
@@ -148,6 +189,8 @@ const handleScan = () => {
     })
 }
 
+
+
 const scanType = ref('video')
 </script>
 
@@ -181,6 +224,7 @@ const scanType = ref('video')
 
     <div class="settingcard scanauto" style="padding: 4px; margin-top: 4px">
       <a-row justify="space-between" align="center" style="margin: 12px; height: 28px; flex-grow: 0; flex-shrink: 0; flex-wrap: nowrap; overflow: hidden">
+        <a-checkbox v-model:checked="isAllChecked" @change="handleCheckAll"></a-checkbox>
         <span v-if="scanLoaded" class="checkedInfo">已选中 {{ checkedCount }} 个文件 {{ humanSize(checkedSize) }}</span>
 
         <span v-else-if="totalDirCount > 0" class="checkedInfo">正在列出文件 {{ Processing }} / {{ totalDirCount }}</span>
@@ -223,7 +267,7 @@ const scanType = ref('video')
               <div v-for="file in item.files" :key="file.file_id" class="samefile">
                 <div class="samefileinfo">
                   <div class="samecheck">
-                    <AntdCheckbox tabindex="-1" :checked="checkedKeys.has(file.file_id)" @click.stop.prevent="handleCheck(file.file_id)"></AntdCheckbox>
+                    <AntdCheckbox tabindex="-1" :checked="check(file.file_id)" @click.stop.prevent="handleCheck(file.file_id)"></AntdCheckbox>
                   </div>
                   <div class="fileicon">
                     <i :class="'iconfont ' + file.icon" aria-hidden="true"></i>
