@@ -2,9 +2,13 @@
 import useSettingStore from './settingstore'
 import MySwitch from '../layout/MySwitch.vue'
 import MyTags from '../layout/MyTags.vue'
+import {AriaGlobalDownSpeed, AriaGlobalUploadSpeed} from "../utils/aria2c";
 const settingStore = useSettingStore()
-const cb = (val: any) => {
-  settingStore.updateStore(val)
+const cb = async (val: any) => {
+    settingStore.updateStore(val)
+    if (val.downGlobalSpeed > 0) {
+        await AriaGlobalDownSpeed()
+    }
 }
 </script>
 

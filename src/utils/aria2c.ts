@@ -174,7 +174,7 @@ export async function AriaChangeToRemote() {
       const url = host + ':' + port + ' secret=' + secret
       if (!settingStore.AriaIsLocal && Aria2cRemoteRetryTime % 10 == 1) message.error('无法连接到远程Aria2 ' + url)
     } else {
-      await AriaGlobalSpeed()
+      await AriaGlobalDownSpeed()
     }
   } catch (e) {
     SetAriaOnline(false, 'remote')
@@ -247,7 +247,7 @@ async function relaunchLocalAria(port:number) {
       const url = '127.0.0.1:16800 secret=' + localPwd
       if (Aria2cLocalRelanchTime < 2) message.error('无法连接到本地Aria2 ' + url)
     } else {
-      await AriaGlobalSpeed()
+      await AriaGlobalDownSpeed()
     }
     await Sleep(1000)
   } catch (e) {
@@ -291,7 +291,7 @@ export async function AriaChangeToLocal() {
       const url = '127.0.0.1:16800 secret=' + localPwd
       if (Aria2cLocalRelanchTime < 2) message.error('无法连接到本地Aria2 ' + url)
     } else {
-      await AriaGlobalSpeed()
+      await AriaGlobalDownSpeed()
     }
     await Sleep(1000)
   } catch (e) {
@@ -301,12 +301,29 @@ export async function AriaChangeToLocal() {
 }
 
 
-export async function AriaGlobalSpeed() {
+export async function AriaGlobalDownSpeed() {
   try {
     const settingStore = useSettingStore()
     const limit = settingStore.downGlobalSpeed.toString() + (settingStore.downGlobalSpeedM == 'MB' ? 'M' : 'K')
+    console.log("AriaGlobalDownSpeed", limit)
     await GetAria()?.call('aria2.changeGlobalOption', { 'max-overall-download-limit': limit }).catch((e: any) => {
-      if (e && e.message == 'Unauthorized') message.error('Aria2密码错误(密码不要有 ^ 或特殊字符)')
+      if (e) message.error('设置下载限速失败，Error: ' + e.message)
+      else message.info('设置下载速度成功，限速：' + limit)
+      IsAria2cOnlineLocal = false
+    })
+  } catch {
+    SetAriaOnline(false)
+  }
+}
+
+export async function AriaGlobalUploadSpeed() {
+  try {
+    const settingStore = useSettingStore()
+    const limit = settingStore.uploadGlobalSpeed.toString() + (settingStore.uploadGlobalSpeedM == 'MB' ? 'M' : 'K')
+    console.log("AriaGlobalUploadSpeed", limit)
+    await GetAria()?.call('aria2.changeGlobalOption', { 'max-overall-upload-limit': limit }).catch((e: any) => {
+      if (e) message.error('上传限速失败，Error: ' + e.message)
+      else message.info('设置设置上传速度成功，限速：' + limit)
       IsAria2cOnlineLocal = false
     })
   } catch {

@@ -118,6 +118,29 @@ ipcMain.on('WebUserToken', (event, data) => {
   }
 })
 
+ipcMain.on('AutoLanuchAtStartup', (event, shouldAutoLaunch) => {
+  if (shouldAutoLaunch) {
+    app.setLoginItemSettings({
+      openAtLogin: true,
+      openAsHidden: true,
+      path: process.execPath,
+      args: [
+        '--processStart', `${process.execPath}`,
+        '--process-start-args', `"--hidden"`
+      ]
+    });
+  } else {
+    app.setLoginItemSettings({
+      openAtLogin: false,
+      path: process.execPath,
+      args: [
+        '--processStart', `${process.execPath}`,
+        '--process-start-args', `"--hidden"`
+      ]
+    });
+  }
+});
+
 app
   .whenReady()
   .then(() => {

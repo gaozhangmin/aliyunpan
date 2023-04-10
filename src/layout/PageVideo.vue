@@ -10,11 +10,6 @@ import AliDirFileList from '../aliapi/dirfilelist'
 import { SettingOption } from "artplayer/types/setting"
 import AliHttp from "../aliapi/alihttp";
 import {IAliRecentPlayList} from "../aliapi/alimodels";
-import useSettingStore from '../setting/settingstore'
-import https from 'https';
-import http from 'http';
-import fs from 'fs';
-import ffmpeg from 'fluent-ffmpeg';
 
 /**
  * @type {import("artplayer")}
@@ -85,14 +80,14 @@ const options = {
 }
 const getCurDirList = async (filter?: RegExp): Promise<any[]>  => {
   const dir = await AliDirFileList.ApiDirFileList(pageVideo.user_id, pageVideo.drive_id,
-                      pageVideo.parent_file_id, '', 'name asc', '')
+    pageVideo.parent_file_id, '', 'name asc', '')
   const fileList: any[] = []
   if (!dir.next_marker) {
     for (let i = 0, maxi = dir.items.length; i < maxi; i++) {
       let fileModel = dir.items[i]
       if (fileModel.isDir) continue
       else fileList.push({
-        html: '在线:  '+ fileModel.name,
+        html: '在线:  ' + fileModel.name,
         name: fileModel.name,
         file_id: fileModel.file_id,
         ext: fileModel.ext
@@ -116,6 +111,12 @@ const getVideoInfo = async (art: Artplayer) => {
 
     const qualityDefault = qualitySelector.find((item) => item.default) || qualitySelector[0]
     art.url = qualityDefault.url
+
+    const spiritImageUrlList = await AliFile.ApiBiXueTuBatch(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id,
+      data.duration, 60, 16)
+
+    await AliFile.mergeSpiritImages(spiritImageUrlList, 160, 90)
+
     art.controls.add({
       name: 'quality',
       index: 10,
