@@ -5,11 +5,16 @@ import HlsJs from 'hls.js'
 import AliFile from '../aliapi/file'
 import { useAppStore } from '../store'
 import { onBeforeUnmount, onMounted } from 'vue'
-import { IVideoPreviewUrl } from '../aliapi/models'
+import { IVideoPreviewUrl, IVideoXBTUrl } from '../aliapi/models'
 import AliDirFileList from '../aliapi/dirfilelist'
 import { SettingOption } from "artplayer/types/setting"
 import AliHttp from "../aliapi/alihttp";
 import {IAliRecentPlayList} from "../aliapi/alimodels";
+import useSettingStore from '../setting/settingstore'
+import https from 'https';
+import http from 'http';
+import fs from 'fs';
+import ffmpeg from 'fluent-ffmpeg';
 
 /**
  * @type {import("artplayer")}
@@ -25,7 +30,6 @@ const options = {
   volume: 0.5,
   autoSize: false,
   autoMini: true,
-  loop: false,
   flip: true,
   playbackRate: true,
   aspectRatio: true,
@@ -36,11 +40,22 @@ const options = {
   fullscreen: true,
   fullscreenWeb: true,
   subtitleOffset: true,
-  miniProgressBar: false,
   playsInline: true,
   quality: [],
   plugins: [],
   whitelist: [],
+  screenshot: true,
+  loop: true,
+  miniProgressBar: true,
+  airplay: true,
+  theme: '#23ade5',
+  thumbnails: {
+    url: '',
+    number: 60,
+    column: 10,
+    width: 100,
+    height: 100
+  },
   moreVideoAttr: {
     // @ts-ignore
     "webkit-playsinline": true,
@@ -98,6 +113,7 @@ const getVideoInfo = async (art: Artplayer) => {
     if (data.urlHD) qualitySelector.push({url: data.urlHD, html: '高清 720P'})
     if (data.urlSD) qualitySelector.push({url: data.urlSD, html: '标清 540P'})
     if (data.urlLD) qualitySelector.push({url: data.urlLD, html: '流畅 480P'})
+
     const qualityDefault = qualitySelector.find((item) => item.default) || qualitySelector[0]
     art.url = qualityDefault.url
     art.controls.add({
@@ -113,6 +129,7 @@ const getVideoInfo = async (art: Artplayer) => {
     })
     // 内嵌字幕
     const subSelector: { url: string; file_id?: string, html: string; name: string; default?: boolean }[] = []
+    console.log("data.subtitles", data.subtitles)
     if (data.subtitles.length > 0) {
       for (let i = 0; i < data.subtitles.length; i++) {
         const subtitle =
@@ -131,6 +148,7 @@ const getVideoInfo = async (art: Artplayer) => {
     }
     // 尝试加载当前文件夹字幕文件
     const dir = await getCurDirList(/srt|vtt|ass/)
+    console.log("subtitles dir", dir)
     subSelector.push(...dir)
     const subDefault = subSelector.find((item) => item.default) || subSelector[0]
     if (subSelector && subSelector.length > 0) {
@@ -239,6 +257,7 @@ onMounted(async () => {
   if (muted) ArtPlayerRef.muted = muted === 'true'
   // 获取视频信息
   await getVideoInfo(ArtPlayerRef)
+  console.log("ArtPlayerRef", ArtPlayerRef)
   ArtPlayerRef.on('ready', () => {
     // // 进度
     // AliFile.ApiFileInfo(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id).then((info) => {

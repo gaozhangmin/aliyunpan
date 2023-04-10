@@ -93,7 +93,7 @@ export default defineComponent({
       this.okLoading = true
       
       localStorage.setItem('share_pwd', share_pwd)
-      if (multi == false) {
+      if (!multi) {
         const result = await AliShare.ApiCreatShare(user_id, drive_id, expiration, share_pwd, share_name, file_id_list)
 
         if (typeof result == 'string') {
@@ -112,20 +112,25 @@ export default defineComponent({
         this.okLoading = false
         modalCloseAll()
       } else {
-        const result = await AliShare.ApiCreatShareBatch(user_id, drive_id, expiration, share_pwd, file_id_list)
-
-        if (result.reslut.length > 0) {
-          let url = ''
-          for (let i = 0, maxi = result.reslut.length; i < maxi; i++) {
-            const share = result.reslut[i]
-            url += GetShareUrlFormate(share.share_name!, share.share_url!, share.share_pwd!) + '\n'
+        let url = ''
+        let successfullySharedCount = 0
+        let share_id = ''
+        for (let i = 0, maxi = file_id_list.length; i < maxi; i++) {
+          const result = await AliShare.ApiCreatShare(user_id, drive_id, expiration, share_pwd, share_name, file_id_list)
+          if (typeof result == 'string') {
+            this.okLoading = false
+            message.error(result)
+            continue
           }
-          copyToClipboard(url)
-          await ShareDAL.aReloadMyShareUntilShareID(user_id, result.reslut[0].share_id!)
-          message.success('创建 ' + result.count.toString() + '条 分享链接成功，分享链接已复制到剪切板')
-        } else {
-          message.success('批量创建分享链接出错')
+          successfullySharedCount += 1
+          if (share_id === '') {
+            share_id = result.share_id
+          }
+          url += GetShareUrlFormate(result.share_name, result.share_url, result.share_pwd) + '\n'
         }
+        copyToClipboard(url)
+        await ShareDAL.aReloadMyShareUntilShareID(user_id, share_id)
+        message.success('创建 ' + successfullySharedCount + '条 分享链接成功，分享链接已复制到剪切板')
         this.okLoading = false
         modalCloseAll()
       }

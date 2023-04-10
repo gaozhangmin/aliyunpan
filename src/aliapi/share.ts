@@ -233,8 +233,6 @@ export default class AliShare {
 
   
   static async ApiCreatShare(user_id: string, drive_id: string, expiration: string, share_pwd: string, share_name: string, file_id_list: string[]): Promise<string | IAliShareItem> {
-    
-    
     if (!user_id || !drive_id || file_id_list.length == 0) return '创建分享链接失败数据错误'
     const url = 'adrive/v2/share_link/create'
     const postData = JSON.stringify({ drive_id, expiration, share_pwd: share_pwd, share_name: share_name, file_id_list })
@@ -293,10 +291,6 @@ export default class AliShare {
 
   
   static async ApiUpdateShareBatch(user_id: string, share_idList: string[], expirationList: string[], share_pwdList: string[], share_nameList: string[] | undefined): Promise<UpdateShareModel[]> {
-    
-
-    
-
     if (!share_idList || share_idList.length == 0) return []
     const batchList: string[] = []
     if (share_nameList) {
