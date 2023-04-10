@@ -528,37 +528,7 @@ export default class AliFile {
     return imgList
   }
 
-static mergeSpiritImages(spiritImageUrlList: IVideoXBTUrl[], width:number, height:number): void {
-  // 创建可写流，用于保存合并后的图片
-  const writableStream = fs.createWriteStream('/Users/didi/test.png');
-
-  // 创建Sharp实例，设置图片宽度和高度
-  const sharpInstance = sharp().resize(width, height);
-
-  // 遍历URL列表，下载图片并添加到Sharp实例中
-  for (let i = 0; i < spiritImageUrlList.length; i++) {
-    const imageUrl = spiritImageUrlList[i].url;
-    const time = spiritImageUrlList[i].time;
-
-    https.get(imageUrl, (response) => {
-      const chunks = [];
-      response.on('data', (chunk) => {
-        chunks.push(chunk);
-      });
-      response.on('end', () => {
-        const buffer = Buffer.concat(chunks);
-        sharpInstance.composite([{input: buffer, top: 0, left: i * width}]);
-
-        if (i === spiritImageUrlList.length - 1) {
-          // 所有图片都添加到Sharp实例后，将合并后的图片保存到本地
-          sharpInstance.png().pipe(writableStream);
-        }
-      });
-    });
-  }
-}
-
-  static async ApiUpdateVideoTimeOpenApi(user_id: string, drive_id: string, file_id: string, play_cursor: number): Promise<IAliFileItem | undefined> {
+  static ApiUpdateVideoTimeOpenApi(user_id: string, drive_id: string, file_id: string, play_cursor: number): void {
     if (!useSettingStore().uiAutoPlaycursorVideo) return
     if (!user_id || !drive_id || !file_id) return undefined
     const upateCursorUrl = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/video/updateRecord'
@@ -567,13 +537,14 @@ static mergeSpiritImages(spiritImageUrlList: IVideoXBTUrl[], width:number, heigh
       "file_id": file_id,
       "play_cursor":play_cursor.toString()
     }
-    const respvideo = await AliHttp.Post(upateCursorUrl, postData, user_id, '')
-    if (AliHttp.IsSuccess(respvideo.code)) {
-      return respvideo.body as IAliFileItem
-    } else {
-      DebugLog.mSaveWarning('ApiUpdateVideoTime2 err=' + file_id + ' ' + (respvideo.code || ''))
-    }
-    return undefined
+    AliHttp.Post(upateCursorUrl, postData, user_id, '')
+    // const respvideo = await AliHttp.Post(upateCursorUrl, postData, user_id, '')
+    // if (AliHttp.IsSuccess(respvideo.code)) {
+    //   return respvideo.body as IAliFileItem
+    // } else {
+    //   DebugLog.mSaveWarning('ApiUpdateVideoTime2 err=' + file_id + ' ' + (respvideo.code || ''))
+    // }
+    // return undefined
   }
 
   

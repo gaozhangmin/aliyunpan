@@ -111,12 +111,6 @@ const getVideoInfo = async (art: Artplayer) => {
 
     const qualityDefault = qualitySelector.find((item) => item.default) || qualitySelector[0]
     art.url = qualityDefault.url
-
-    const spiritImageUrlList = await AliFile.ApiBiXueTuBatch(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id,
-      data.duration, 60, 16)
-
-    await AliFile.mergeSpiritImages(spiritImageUrlList, 160, 90)
-
     art.controls.add({
       name: 'quality',
       index: 10,
@@ -316,7 +310,7 @@ onMounted(async () => {
 })
 
 const updateVideoTime = () => {
-  return AliFile.ApiUpdateVideoTimeOpenApi(
+   AliFile.ApiUpdateVideoTimeOpenApi(
       pageVideo.user_id,
       pageVideo.drive_id,
       pageVideo.file_id,
@@ -324,9 +318,8 @@ const updateVideoTime = () => {
   )
 }
 const handleHideClick = () => {
-  updateVideoTime().then(() => {
-    window.close()
-  })
+  updateVideoTime()
+  window.close()
 }
 
 onBeforeUnmount(() => {
