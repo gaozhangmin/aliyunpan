@@ -6,11 +6,12 @@ import MyLoading from '../../layout/MyLoading.vue'
 import { useUserStore, useWinStore } from '../../store'
 import UserDAL from '../../user/userdal'
 import AliFileCmd from '../../aliapi/filecmd'
-import { LoadScanDir, NewScanDriver, ResetScanDriver, FileNodeData, FileData } from '../ScanDAL'
+import {LoadScanDir, NewScanDriver, ResetScanDriver, FileNodeData, FileData, TreeSelectAll} from '../ScanDAL'
 import { DeleteFromSameData, GetSameFile } from './scansame'
 
 import { Checkbox as AntdCheckbox } from 'ant-design-vue'
 import 'ant-design-vue/es/checkbox/style/css'
+import {GetTreeCheckedSize} from "../rssscanclean/ScanClean";
 
 const winStore = useWinStore()
 const userStore = useUserStore()
@@ -31,6 +32,7 @@ const ScanPanData = NewScanDriver('')
 const checkedCount = ref(0)
 const checkedKeys = ref(new Set<string>())
 const checkedSize = ref(0)
+const checkedKeysBak = new Set<string>()
 const treeData = ref<FileNodeData[]>([])
 
 const handleReset = () => {
@@ -72,53 +74,34 @@ const RefreshTree = () => {
   scanCount.value = showData.length
 }
 
-// const handleCheck = (file_id: string) => {
-//   if (checkedKeys.value.has(file_id)) checkedKeys.value.delete(file_id)
-//   else checkedKeys.value.add(file_id)
-//   treeData.value = treeData.value.concat()
-//   checkedCount.value = checkedKeys.value.size
-//   let size = 0
-//   treeData.value.map((t) => {
-//     t.files.map((f) => {
-//       if (checkedKeys.value.has(f.file_id)) size += f.size
-//       return true
-//     })
-//     return true
-//   })
-//   checkedSize.value = size
-// }
+const handleCheck = (file_id: string) => {
+  if (checkedKeys.value.has(file_id)) checkedKeys.value.delete(file_id)
+  else checkedKeys.value.add(file_id)
+  treeData.value = treeData.value.concat()
+  checkedCount.value = checkedKeys.value.size
+  let size = 0
+  treeData.value.map((t) => {
+    t.files.map((f) => {
+      if (checkedKeys.value.has(f.file_id)) size += f.size
+      return true
+    })
+    return true
+  })
+  checkedSize.value = size
+}
 
 const check = (file_id: string) => {
   return checkedKeys.value.has(file_id);
 }
 
-const handleCheck = (id: string) => {
-  treeData.value.map((t) => {
-    t.files.map((f) => {
-      if (checkedKeys.value.has(id)) {
-        checkedKeys.value.delete(id)
-        checkedSize.value -= f.size
-        checkedCount.value -= 1
-        isAllChecked.value = false
-      } else {
-        checkedKeys.value.add(id)
-        checkedSize.value += f.size
-        checkedCount.value += 1
-        isAllChecked.value = checkedCount.value === treeData.value.flatMap((node) => node.files).length
-      }
-      return true
-    })
-    return true
-  })
-}
-const handleCheckAll = (isChecked: boolean) => {
-  isAllChecked.value = isChecked
+const handleCheckAll = () => {
+  isAllChecked.value = !isAllChecked.value
   checkedKeys.value.clear()
   checkedSize.value = 0
   checkedCount.value = 0
   treeData.value.forEach((node) => {
     node.files.forEach((file) => {
-      if (isChecked) {
+      if (isAllChecked.value) {
         checkedKeys.value.add(file.file_id)
         checkedSize.value += file.size
         checkedCount.value += 1
@@ -224,8 +207,9 @@ const scanType = ref('video')
 
     <div class="settingcard scanauto" style="padding: 4px; margin-top: 4px">
       <a-row justify="space-between" align="center" style="margin: 12px; height: 28px; flex-grow: 0; flex-shrink: 0; flex-wrap: nowrap; overflow: hidden">
-        <a-checkbox v-model:checked="isAllChecked" @change="handleCheckAll"></a-checkbox>
-        <span v-if="scanLoaded" class="checkedInfo">已选中 {{ checkedCount }} 个文件 {{ humanSize(checkedSize) }}</span>
+<!--        <a-checkbox v-model:checked="isAllChecked" @change="handleCheckAll"></a-checkbox>-->
+          <a-checkbox v-model:checked="isAllChecked" @change="handleCheckAll"></a-checkbox>
+          <span v-if="scanLoaded" class="checkedInfo">已选中 {{ checkedCount }} 个文件 {{ humanSize(checkedSize) }}</span>
 
         <span v-else-if="totalDirCount > 0" class="checkedInfo">正在列出文件 {{ Processing }} / {{ totalDirCount }}</span>
         <span v-else class="checkedInfo">网盘中文件很多时，需要扫描很长时间</span>
