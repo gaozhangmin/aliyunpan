@@ -20,8 +20,7 @@
 2. 整体UI改造
 
 # 小白羊公众号
-![WechatIMG4](https://user-images.githubusercontent.com/9278488/231073907-58dbbcea-8c65-472e-9ad1-b1e55103dc94.jpeg)
-
+![image](https://user-images.githubusercontent.com/9278488/231074062-660f7fa6-4900-4c37-918a-2b520bfaf760.png)
 
 
 # License
