@@ -19,8 +19,10 @@
 1. 相册功能
 2. 整体UI改造
 
-# 注意事项
-如果在使用过程中遇到问题，欢迎大家提出issue，我会长期维护该项目。
+# 小白羊公众号
+![WechatIMG4](https://user-images.githubusercontent.com/9278488/231073907-58dbbcea-8c65-472e-9ad1-b1e55103dc94.jpeg)
+
+
 
 # License
 [LICENSE](./LICENSE)
