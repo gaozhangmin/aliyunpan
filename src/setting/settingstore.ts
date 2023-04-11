@@ -302,6 +302,8 @@ function _loadSetting(val: any) {
   setting.proxyPort = defaultNumber(val.proxyPort, 0)
   setting.proxyUserName = defaultString(val.proxyUserName, '')
   setting.proxyPassword = defaultString(val.proxyPassword, '')
+  setting.localAria2cPath = defaultString(val.localAria2cPath, '')
+  setting.localAria2cConfPath = defaultString(val.localAria2cConfPath, '')
 }
 let settingstr = ''
 

@@ -144,6 +144,18 @@ ipcMain.on('AutoLanuchAtStartup', (event, shouldAutoLaunch) => {
 app
   .whenReady()
   .then(() => {
+    const versionFile = getUserDataPath('version')
+    if (versionFile && existsSync(versionFile)) {
+      const version = readFileSync(versionFile, 'utf-8')
+      if (version != app.getVersion()) {
+        session.defaultSession.clearCache()
+        session.defaultSession.clearAuthCache()
+        writeFileSync(versionFile, app.getVersion(), 'utf-8')
+      }
+    } else {
+      writeFileSync(versionFile, app.getVersion(), 'utf-8')
+    }
+
     session.defaultSession.webRequest.onBeforeSendHeaders((details, cb) => {
 
       const should115Referer = details.url.indexOf('.115.com') > 0

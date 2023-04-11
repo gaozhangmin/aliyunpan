@@ -19,7 +19,12 @@ export default class AliUploadOpenApi {
       result.errormsg = '创建文件失败(数据错误)'
       return result
     }
-
+    if (check_name_mode != 'overwrite'
+      && check_name_mode != 'auto_rename'
+      && check_name_mode != 'refuse'
+      && check_name_mode != 'ignore') {
+      check_name_mode = 'refuse'
+    }
 
     const url = 'adrive/v1.0/openFile/create'
     const postData: {
@@ -123,7 +128,12 @@ export default class AliUploadOpenApi {
       return result
     }
 
-
+    if (check_name_mode != 'overwrite'
+      && check_name_mode != 'auto_rename'
+      && check_name_mode != 'refuse'
+      && check_name_mode != 'ignore') {
+      check_name_mode = 'refuse'
+    }
 
     const url = 'adrive/v1.0/openFile/create'
     const postData: {

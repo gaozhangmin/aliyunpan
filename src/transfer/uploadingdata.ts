@@ -671,11 +671,16 @@ export default class UploadingData {
     return sendList
   }
 
-  private static async createFolderHierarchy(folderPath: string, user_id:string, driver_id:string, parent_fileid:string): Promise<string> {
+  private static async createFolderHierarchy(folderPath: string, user_id:string, driver_id:string, parent_fileid:string, createdDirs:Record<string, string>): Promise<string> {
     const foldersSplitor = folderPath.split(path.sep);
     let parent_file_id = parent_fileid;
     for (let i = 1; i < foldersSplitor.length-1; i++) {
       const folderName = foldersSplitor[i];
+      if (createdDirs[folderName + parent_file_id] === parent_file_id) {
+        continue;
+      }
+      createdDirs[folderName + parent_file_id] = parent_file_id
+
       const result = await AliFileCmd.ApiCreatNewForder(user_id, driver_id, parent_file_id, folderName);
       parent_file_id = result.file_id; // 更新父目录为当前目录
     }
@@ -693,6 +698,7 @@ export default class UploadingData {
       const childrenList = task.Children
       let dirCount = 0
       let fileCount = 0
+      const createdDirs:Record<string, string> = {}
       for (let j = 0, maxj = childrenList.length; j < maxj; j++) {
         const fileItem = childrenList[j]
         if (UploadingInfoStop.has(fileItem.UploadID)) continue
@@ -733,10 +739,10 @@ export default class UploadingData {
           if (info.uploadState == '排队中' && (downSmallFileFirst == false || fileItem.size < 100 * 1024 * 1024)) {
             RunningKeys.push(fileItem.UploadID)
             info.uploadState = 'running'
-            const pathSplitor = fileItem.partPath.split("/");
+            const pathSplitor = fileItem.partPath.split(path.sep);
             let parent_file_id = task.TaskFileID ? task.TaskFileID : task.parent_file_id;
             if (pathSplitor.length > 2) {
-              parent_file_id = await UploadingData.createFolderHierarchy(fileItem.partPath, task.user_id, task.drive_id, task.TaskFileID);
+              parent_file_id = await UploadingData.createFolderHierarchy(fileItem.partPath, task.user_id, task.drive_id, task.TaskFileID, createdDirs);
             }
             const uploadingItems = {
               IsRunning: true, TaskID: task.TaskID,
@@ -800,6 +806,7 @@ export default class UploadingData {
                 File: fileItem,
                 Info: info
               } as IUploadingUI
+              console.log("uploadItems", uploadItems, task)
               sendList.push(uploadItems)
               break
             }
