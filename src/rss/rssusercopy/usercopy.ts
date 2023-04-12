@@ -45,7 +45,7 @@ export async function LoadDir(dirID: string, DirData: ICopyTreeInfo, treeData: R
     DirData.dirName = '根目录'
     DirData.parentID = 'root'
   } else {
-    const getdir = await AliFile.ApiFileInfo(DirData.user_id, DirData.drive_id, dirID)
+    const getdir = await AliFile.ApiFileInfoOpenApi(DirData.user_id, DirData.drive_id, dirID)
     if (getdir) {
       DirData.dirID = getdir.file_id
       DirData.dirName = getdir.name

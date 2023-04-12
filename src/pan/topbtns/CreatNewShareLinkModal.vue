@@ -115,8 +115,8 @@ export default defineComponent({
         let url = ''
         let successfullySharedCount = 0
         let share_id = ''
-        for (let i = 0, maxi = file_id_list.length; i < maxi; i++) {
-          const result = await AliShare.ApiCreatShare(user_id, drive_id, expiration, share_pwd, share_name, file_id_list)
+        for (let i = 0; i < file_id_list.length; i++) {
+          const result = await AliShare.ApiCreatShare(user_id, drive_id, expiration, share_pwd, share_name, file_id_list.slice(i, i + 1))
           if (typeof result == 'string') {
             this.okLoading = false
             message.error(result)

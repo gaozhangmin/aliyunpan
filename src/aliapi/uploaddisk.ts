@@ -3,7 +3,6 @@ import DebugLog from '../utils/debuglog'
 import { OpenFileHandle } from '../utils/filehelper'
 import { FileHandle, FileReadResult } from 'fs/promises'
 import { IUploadInfo } from './models'
-import AliUpload from './upload'
 import DBCache from '../utils/dbcache'
 import UserDAL from '../user/userdal'
 import { Sleep } from '../utils/format'
@@ -11,7 +10,14 @@ import AliUploadHashPool from './uploadhashpool'
 import nodehttps from 'https'
 import path from 'path'
 import AliUploadOpenApi from "./uploadOpenApi";
+import {useSettingStore} from "../store";
+import {Howl} from "howler";
 
+const sound = new Howl({
+  src: ["../../electron/assets/upload_finished.mp3"], // 音频文件路径
+  autoplay: false, // 是否自动播放
+  volume: 1.0, // 音量，范围 0.0 ~ 1.0
+});
 
 const filePosMap = new Map<number, number>()
 let UploadSpeedTotal = 0
@@ -40,7 +46,13 @@ export default class AliUploadDisk {
         fileui.File.uploaded_is_rapid = false
         fileui.Info.up_file_id = ''
         fileui.Info.up_upload_id = ''
-        if (isSuccess) return 'success'
+        if (isSuccess) {
+          if (useSettingStore().downFinishAudio && !sound.playing()) {
+            console.log("cccccc")
+            sound.play()
+          }
+          return 'success'
+        }
         else return '合并文件时出错，请重试'
       })
       .catch((err: any) => {

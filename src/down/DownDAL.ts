@@ -13,6 +13,7 @@ import {
   IsAria2cRemote
 } from '../utils/aria2c'
 import { humanSize, humanSizeSpeed } from '../utils/format'
+import {Howl} from "howler";
 
 export interface IStateDownFile {
   DownID: string
@@ -78,6 +79,13 @@ let SaveTimeWait = 0
 export let DownInExeMap = new Map<string, IStateDownFile>()
 /** 下载正在队列中的数据 */
 export let DownInQueues: IStateDownFile[] = []
+
+const sound = new Howl({
+  src: ["../../electron/assets/down_finished.mp3"], // 音频文件路径
+  autoplay: false, // 是否自动播放
+  volume: 1.0, // 音量，范围 0.0 ~ 1.0
+});
+
 export default class DownDAL {
 
   /**
@@ -395,6 +403,9 @@ export default class DownDAL {
               down.DownState = '校验中';
               const check = AriaHashFile(downItem);
               if (check.Check) {
+                if (useSettingStore().downFinishAudio && !sound.playing()) {
+                  sound.play()
+                }
                 downingStore.mUpdateDownState({
                   DownID: check.DownID,
                   DownState: '已完成',

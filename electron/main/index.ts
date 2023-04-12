@@ -571,7 +571,7 @@ async function creatAria() {
           '--stop-with-process=' + process.pid,
           '-D',
           '--conf-path=' + '"' + confPath + '"',
-          '--listen-port=' + port
+          '--rpc-listen-port=' + port
         ],
         options,
         (error, stdout, stderr) => {

@@ -38,7 +38,7 @@ export default defineComponent({
       const playercurr = playerList.value[index]
       const first = usePanFileStore().GetSelectedFirst()!
       const user_id = usePanTreeStore().user_id
-      const info = await AliFile.ApiFileInfo(user_id, first.drive_id, first.file_id)
+      const info = await AliFile.ApiFileInfoOpenApi(user_id, first.drive_id, first.file_id)
       const previewData: IVideoPreviewUrl | undefined = await AliFile.ApiVideoPreviewUrlOpenApi(user_id, first.drive_id, first.file_id)
       if (!info) {
         message.error('读取文件链接失败，请重试')

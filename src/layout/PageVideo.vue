@@ -5,7 +5,7 @@ import HlsJs from 'hls.js'
 import AliFile from '../aliapi/file'
 import { useAppStore } from '../store'
 import { onBeforeUnmount, onMounted } from 'vue'
-import { IVideoPreviewUrl, IVideoXBTUrl } from '../aliapi/models'
+import { IVideoPreviewUrl } from '../aliapi/models'
 import AliDirFileList from '../aliapi/dirfilelist'
 import { SettingOption } from "artplayer/types/setting"
 import AliHttp from "../aliapi/alihttp";
@@ -44,13 +44,6 @@ const options = {
   miniProgressBar: true,
   airplay: true,
   theme: '#23ade5',
-  thumbnails: {
-    url: '',
-    number: 60,
-    column: 10,
-    width: 100,
-    height: 100
-  },
   moreVideoAttr: {
     // @ts-ignore
     "webkit-playsinline": true,
@@ -97,10 +90,18 @@ const getCurDirList = async (filter?: RegExp): Promise<any[]>  => {
   return filter ? fileList.filter(file => filter.test(file.ext)) : fileList
 }
 
-const getVideoInfo = async (art: Artplayer) => {
+const getVideoInfo = async (art: Artplayer,
+                            videoData: IVideoPreviewUrl | undefined=undefined,
+                            videoPlayList: { videoItem:IVideoPreviewUrl, url: string; html: string; style: any, quality: { url: string; html: string; default?: boolean }[]}[] = []) => {
   // 获取视频链接
-  const data: IVideoPreviewUrl | undefined = await AliFile.ApiVideoPreviewUrlOpenApi(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id)
-  if (data) {
+  let data: IVideoPreviewUrl | undefined
+  const playList: { videoItem:IVideoPreviewUrl, url: string; html: string; style: any, quality: { url: string; html: string; default?: boolean }[]}[] = []
+  if (videoData === undefined) {
+     data = await AliFile.ApiVideoPreviewUrlOpenApi(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id, true)
+  } else {
+    data = videoData
+  }
+  if (data && data.url != '') {
     // 画质
     const qualitySelector: { url: string; html: string; default?: boolean }[] = []
     if (data.urlQHD) qualitySelector.push({url: data.urlQHD, html: '原画'})
@@ -108,11 +109,10 @@ const getVideoInfo = async (art: Artplayer) => {
     if (data.urlHD) qualitySelector.push({url: data.urlHD, html: '高清 720P'})
     if (data.urlSD) qualitySelector.push({url: data.urlSD, html: '标清 540P'})
     if (data.urlLD) qualitySelector.push({url: data.urlLD, html: '流畅 480P'})
-
     const qualityDefault = qualitySelector.find((item) => item.default) || qualitySelector[0]
     art.url = qualityDefault.url
     art.controls.add({
-      name: 'quality',
+      name: '清晰度',
       index: 10,
       position: 'right',
       style: {marginRight: '10px',},
@@ -122,9 +122,58 @@ const getVideoInfo = async (art: Artplayer) => {
         art.switchQuality(item.url)
       }
     })
+    if (videoData === undefined) {
+      playList.push({
+        videoItem: data,
+        url: data.url,
+        html: 1 + "." + pageVideo.file_name,
+        style: { textAlign: 'left' },
+        quality: qualitySelector
+      })
+      if (data.playList && data.playList.length > 0) {
+        for (let i = 0; i < data.playList.length; i++) {
+          const item = data.playList[i]
+          if (item.url === '') continue
+          const quality: { url: string; html: string; default?: boolean }[] = []
+          if (item.urlQHD) quality.push({ url: item.urlQHD, html: '原画' })
+          if (item.urlFHD) quality.push({ url: item.urlFHD, html: '全高清 1080P' })
+          if (item.urlHD) quality.push({ url: item.urlHD, html: '高清 720P' })
+          if (item.urlSD) quality.push({ url: item.urlSD, html: '标清 540P' })
+          if (item.urlLD) quality.push({ url: item.urlLD, html: '流畅 480P' })
+          const play = {
+            videoItem: item,
+            html: item.file_name == undefined ? "视频" + (i + 2) : (i + 2) + "." + item.file_name,
+            url: item.url,
+            quality: quality,
+            style: { textAlign: 'left' }
+          }
+          playList.push(play)
+        }
+      }
+    } else {
+      playList.push(...videoPlayList)
+    }
+
+    //播放列表
+    console.log("playList", playList)
+    art.controls.add({
+      name: '播放列表',
+      index: 10,
+      position: 'right',
+      style: { padding: '0 10px' },
+      html: pageVideo.file_name,
+      selector: playList,
+      onSelect: (item: { videoItem:IVideoPreviewUrl, url: string; html: string; quality: { url: string; html: string; default?: boolean }[] }) => {
+        // item.videoItem.playList = data?.playList
+        if (appStore.pageVideo) {
+          appStore.pageVideo.file_name = item.html
+        }
+        art.destroy(false)
+        setVideoPlayer(item.html, item.videoItem, playList)
+      }
+    })
     // 内嵌字幕
     const subSelector: { url: string; file_id?: string, html: string; name: string; default?: boolean }[] = []
-    console.log("data.subtitles", data.subtitles)
     if (data.subtitles.length > 0) {
       for (let i = 0; i < data.subtitles.length; i++) {
         const subtitle =
@@ -143,7 +192,6 @@ const getVideoInfo = async (art: Artplayer) => {
     }
     // 尝试加载当前文件夹字幕文件
     const dir = await getCurDirList(/srt|vtt|ass/)
-    console.log("subtitles dir", dir)
     subSelector.push(...dir)
     const subDefault = subSelector.find((item) => item.default) || subSelector[0]
     if (subSelector && subSelector.length > 0) {
@@ -221,11 +269,16 @@ const getVideoInfo = async (art: Artplayer) => {
     }
   }
 }
-onMounted(async () => {
-  const name = appStore.pageVideo?.file_name || '视频在线预览'
+
+const setVideoPlayer = async (videoName: string,
+                              videoData: IVideoPreviewUrl | undefined=undefined,
+                              videoPlayList: { videoItem:IVideoPreviewUrl, url: string; html: string; style: any, quality: { url: string; html: string; default?: boolean }[]}[] = []) => {
+  const name = videoName
+  // 初始化
   setTimeout(() => { document.title = name }, 1000)
   // 初始化
   ArtPlayerRef = new Artplayer(options)
+
   ArtPlayerRef.title = name
   // 自定义热键
   // enter
@@ -251,21 +304,8 @@ onMounted(async () => {
   const muted = storage.get('videoMuted')
   if (muted) ArtPlayerRef.muted = muted === 'true'
   // 获取视频信息
-  await getVideoInfo(ArtPlayerRef)
-  console.log("ArtPlayerRef", ArtPlayerRef)
+  await getVideoInfo(ArtPlayerRef, videoData, videoPlayList)
   ArtPlayerRef.on('ready', () => {
-    // // 进度
-    // AliFile.ApiFileInfo(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id).then((info) => {
-    //   if (info?.play_cursor) {
-    //     ArtPlayerRef.currentTime = info?.play_cursor
-    //   } else if (info?.user_meta) {
-    //     const meta = JSON.parse(info?.user_meta)
-    //     if (meta.play_cursor) {
-    //       ArtPlayerRef.currentTime = parseFloat(meta.play_cursor)
-    //     }
-    //   }
-    //   ArtPlayerRef.play()
-    // })
     // 进度
     const recentPlayListUrl = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/video/recentList'
     AliHttp.Post(recentPlayListUrl, {}, pageVideo.user_id, '')
@@ -307,19 +347,25 @@ onMounted(async () => {
       storage.set('videoMuted', ArtPlayerRef.muted ? 'true' : 'false')
     })
   })
+}
+
+onMounted(async () => {
+  const name = appStore.pageVideo?.file_name || '视频在线预览'
+  setVideoPlayer(name)
 })
 
 const updateVideoTime = () => {
-   AliFile.ApiUpdateVideoTimeOpenApi(
-      pageVideo.user_id,
-      pageVideo.drive_id,
-      pageVideo.file_id,
-      ArtPlayerRef.currentTime
+  return AliFile.ApiUpdateVideoTimeOpenApi(
+    pageVideo.user_id,
+    pageVideo.drive_id,
+    pageVideo.file_id,
+    ArtPlayerRef.currentTime
   )
 }
 const handleHideClick = () => {
-  updateVideoTime()
-  window.close()
+  updateVideoTime().then(() => {
+    window.close()
+  })
 }
 
 onBeforeUnmount(() => {

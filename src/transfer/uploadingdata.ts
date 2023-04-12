@@ -699,8 +699,11 @@ export default class UploadingData {
       let dirCount = 0
       let fileCount = 0
       const createdDirs:Record<string, string> = {}
-      for (let j = 0, maxj = childrenList.length; j < maxj; j++) {
-        const fileItem = childrenList[j]
+      for (let j2 = 0; j2 < childrenList.length; j2++) {
+        const fileItem = childrenList[j2]
+        if (!fileItem) {
+          continue
+        }
         if (UploadingInfoStop.has(fileItem.UploadID)) continue
         if (fileItem.isDir) {
           dirCount++
@@ -740,9 +743,11 @@ export default class UploadingData {
             RunningKeys.push(fileItem.UploadID)
             info.uploadState = 'running'
             const pathSplitor = fileItem.partPath.split(path.sep);
+            const pathString = pathSplitor.slice(1, pathSplitor.length-1).join(path.sep)
             let parent_file_id = task.TaskFileID ? task.TaskFileID : task.parent_file_id;
             if (pathSplitor.length > 2) {
-              parent_file_id = await UploadingData.createFolderHierarchy(fileItem.partPath, task.user_id, task.drive_id, task.TaskFileID, createdDirs);
+              const result = await AliFileCmd.ApiCreatNewForder(task.user_id, task.drive_id, parent_file_id, pathString);
+              parent_file_id = result.file_id
             }
             const uploadingItems = {
               IsRunning: true, TaskID: task.TaskID,
@@ -758,8 +763,11 @@ export default class UploadingData {
 
       if (LoadingKeys.length < 2 && dirCount > 0 && fileCount < 2000 && downSmallFileFirst == false) {
 
-        for (let j = 0, maxj = childrenList.length; j < maxj; j++) {
-          const fileItem = childrenList[j]
+        for (let j1 = 0; j1 < childrenList.length; j1++) {
+          const fileItem = childrenList[j1]
+          if (!fileItem) {
+            continue
+          }
           if (UploadingInfoStop.has(fileItem.UploadID)) continue
           if (fileItem.isDir) {
             let info = UploadingInfoList.get(fileItem.UploadID)

@@ -155,7 +155,7 @@ export default class AliHttp {
   }
 
   static async Get(url: string, user_id: string): Promise<IUrlRespData> {
-    if (!url.startsWith('http')) url = AliHttp.baseapi + url
+    if (!url.startsWith('http') && !url.startsWith('https')) url = AliHttp.baseapi + url
     for (let i = 0; i <= 5; i++) {
       const resp = await AliHttp._Get(url, user_id)
       if (HttpCodeBreak(resp.code)) return resp
@@ -196,7 +196,7 @@ export default class AliHttp {
 
 
   static async GetString(url: string, user_id: string, fileSize: number, maxSize: number): Promise<IUrlRespData> {
-    if (!url.startsWith('http')) url = AliHttp.baseapi + url
+    if (!url.startsWith('http') && !url.startsWith('https')) url = AliHttp.baseapi + url
     for (let i = 0; i <= 5; i++) {
       const resp = await AliHttp._GetString(url, user_id, fileSize, maxSize)
       if (HttpCodeBreak(resp.code)) return resp
@@ -215,8 +215,9 @@ export default class AliHttp {
         headers['x-device-id'] = token.device_id
         headers['x-signature'] = token.signature
       }
-      headers.Range = 'bytes=0-' + (Math.min(fileSize, maxSize) - 1).toString()
-
+      if (maxSize > 0) {
+        headers.Range = 'bytes=0-' + (Math.min(fileSize, maxSize) - 1).toString()
+      }
       return axios
         .get(url, {
           withCredentials: false,
@@ -283,7 +284,7 @@ export default class AliHttp {
 
 
   static async GetBlob(url: string, user_id: string): Promise<IUrlRespData> {
-    if (!url.startsWith('http')) url = AliHttp.baseapi + url
+    if (!url.startsWith('http') && !url.startsWith('https')) url = AliHttp.baseapi + url
     for (let i = 0; i <= 5; i++) {
       const resp = await AliHttp._GetBlob(url, user_id)
       if (HttpCodeBreak(resp.code)) return resp
@@ -324,7 +325,8 @@ export default class AliHttp {
 
   static async Post(url: string, postData: any, user_id: string, share_token: string): Promise<IUrlRespData> {
     if (!url.startsWith('http') && !url.startsWith('https')) {
-      if (url.startsWith('adrive/v1.0/openFile')) {
+      if (url.startsWith('adrive/v1.0/openFile')
+        || url.startsWith('adrive/v1.0/user')) {
         url = AliHttp.baseOpenApi + url
       } else {
         url = AliHttp.baseapi + url
@@ -338,10 +340,10 @@ export default class AliHttp {
           || url.includes('/file/walk')
           || url.includes('/file/scan')
           || url.includes('openFile'))
-          && !resp.body?.code) await Sleep(2000)
+          && !resp.body?.code) await Sleep(1000)
       else if (HttpCodeBreak(resp.code)) return resp
-      else if (i == 5) return resp
-      else await Sleep(2000)
+      else if (i == 3) return resp
+      else await Sleep(1000)
     }
     return { code: 608, header: '', body: 'NetError PostLost' } as IUrlRespData
   }
@@ -428,7 +430,7 @@ export default class AliHttp {
   }
 
   static async PostString(url: string, postData: any, user_id: string, share_token: string): Promise<IUrlRespData> {
-    if (!url.startsWith('http')) url = AliHttp.baseapi + url
+    if (!url.startsWith('http') && !url.startsWith('https')) url = AliHttp.baseapi + url
     for (let i = 0; i <= 5; i++) {
       const resp = await AliHttp._PostString(url, postData, user_id, share_token)
       if (HttpCodeBreak(resp.code)) return resp

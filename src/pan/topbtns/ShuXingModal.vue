@@ -48,7 +48,7 @@ export default defineComponent({
         AliFile.ApiFileGetPathString(pantreeStore.user_id, pantreeStore.drive_id, file_id, '/').then((data) => {
           dirPath.value = '/' + data
         })
-        fileInfo.value = await AliFile.ApiFileInfo(pantreeStore.user_id, pantreeStore.drive_id, file_id)
+        fileInfo.value = await AliFile.ApiFileInfoOpenApi(pantreeStore.user_id, pantreeStore.drive_id, file_id)
 
         if (fileInfo.value?.category == 'audio') {
           const audio = await AliFile.ApiAudioPreviewUrl(pantreeStore.user_id, pantreeStore.drive_id, file_id)

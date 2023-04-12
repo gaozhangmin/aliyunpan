@@ -146,10 +146,10 @@ export default class AliDirFileList {
     const orders = order.split(' ')
 
     let pageIndex = 0
-    if (dirID == 'video') {
-      await AliDirFileList._ApiVideoListRecent(orders[0], orders[1], dir, pageIndex)
-      pageIndex++
-    }
+    // if (dirID == 'video') {
+    //   await AliDirFileList._ApiVideoListRecent(orders[0], orders[1], dir, pageIndex)
+    //   pageIndex++
+    // }
 
     let max: number = useSettingStore().debugFileListMax
     if (dirID == 'favorite' || dirID.startsWith('color') || dirID.startsWith('search') || dirID.startsWith('video')) max = useSettingStore().debugFavorListMax
@@ -166,9 +166,8 @@ export default class AliDirFileList {
         isGet = await AliDirFileList._ApiFavorFileListOnePage(orders[0], orders[1], dir, pageIndex)
       } else if (dirID == 'trash') {
         isGet = await AliDirFileList._ApiTrashFileListOnePage(orders[0], orders[1], dir, pageIndex)
-      } else if (dirID == 'history') {
-        isGet = await AliDirFileList._ApiVideoListRecent(orders[0], orders[1], dir, pageIndex)
-      } else if (dirID == 'recover') {
+      }
+      else if (dirID == 'recover') {
         isGet = await AliDirFileList._ApiDeleteedFileListOnePage(orders[0], orders[1], dir, pageIndex)
       } else if (dirID.startsWith('color')) {
         if (!needTotal) {
@@ -184,7 +183,11 @@ export default class AliDirFileList {
           })
         }
         isGet = await AliDirFileList._ApiSearchFileListOnePage(orders[0], orders[1], dir, pageIndex)
-      } else if (dirID == 'video') {
+      } else if (dirID === 'video') {
+        isGet = await AliDirFileList._ApiVideoListOnePage(orders[0], orders[1], dir, pageIndex)
+      } else if (dirID === 'video.recentplay') {
+        isGet = await AliDirFileList._ApiVideoListRecent(orders[0], orders[1], dir, pageIndex)
+      } else if (dirID === 'video.compilation') {
         isGet = await AliDirFileList._ApiVideoListOnePage(orders[0], orders[1], dir, pageIndex)
       } else if (dirID.startsWith('video')) {
         isGet = await AliDirFileList._ApiVideoFileListOnePage(orders[0], orders[1], dir, pageIndex)
@@ -197,7 +200,7 @@ export default class AliDirFileList {
         isGet = await AliDirFileList._ApiDirFileListOnePageOpenApi(orders[0], orders[1], dir, type, pageIndex)
       }
 
-      if (isGet != true) {
+      if (!isGet) {
         if (needTotal) dir.itemsTotal = -1
         break 
       }
@@ -250,7 +253,6 @@ export default class AliDirFileList {
       parent_file_id: dir.dirID,
       marker: dir.next_marker,
       limit: 200,
-      all: false,
       order_by: orderby,
       order_direction: order.toUpperCase()
     }

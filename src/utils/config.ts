@@ -1,5 +1,5 @@
 export default class Config {
-  static appVersion = 'v3.11.4'
+  static appVersion = 'v3.11.5'
   static referer = 'https://www.aliyundrive.com/'
   static downAgent = 'okhttp/4.2.2'
   static userAgent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) aDrive/4.1.0 Chrome/108.0.5359.215 Electron/22.3.1 Safari/537.36'
@@ -9,4 +9,5 @@ export default class Config {
   static accessTokenUrl = 'https://open.aliyundrive.com/oauth/access_token'
   static driverInfoUrl = 'https://open.aliyundrive.com/adrive/v1.0/user/getDriveInfo'
   static listFile = 'adrive/v1.0/openFile/list'
+  static recentPlayListUrl = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/video/recentList'
 }

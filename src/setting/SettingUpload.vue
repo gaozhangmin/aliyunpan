@@ -90,22 +90,22 @@ const cb = async (val: any) => {
         </template>
       </a-popover>
     </div>
-    <div class="settingspace"></div>
-    <div class="settinghead">秒传模式</div>
-    <div class="settingrow">
-      <MySwitch :value="settingStore.downUploadBreakFile" @update:value="cb({ downUploadBreakFile: $event })"></MySwitch>
-      <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
-        <template #content>
-          <div>
-            默认：<span class="opred">关闭</span>
-            <hr />
-            开启后，上传时只上传能够秒传的文件<br />
-            遇到不能秒传的文件会暂停这个上传任务
-          </div>
-        </template>
-      </a-popover>
-    </div>
+<!--    <div class="settingspace"></div>-->
+<!--    <div class="settinghead">秒传模式</div>-->
+<!--    <div class="settingrow">-->
+<!--      <MySwitch :value="settingStore.downUploadBreakFile" @update:value="cb({ downUploadBreakFile: $event })"></MySwitch>-->
+<!--      <a-popover position="bottom">-->
+<!--        <i class="iconfont iconbulb" />-->
+<!--        <template #content>-->
+<!--          <div>-->
+<!--            默认：<span class="opred">关闭</span>-->
+<!--            <hr />-->
+<!--            开启后，上传时只上传能够秒传的文件<br />-->
+<!--            遇到不能秒传的文件会暂停这个上传任务-->
+<!--          </div>-->
+<!--        </template>-->
+<!--      </a-popover>-->
+<!--    </div>-->
     <div class="settingspace"></div>
     <div class="settinghead">自动关机</div>
     <div class="settingrow">

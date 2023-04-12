@@ -119,7 +119,7 @@ export default defineComponent({
       treeSelectedKeys.value = []
       treeCheckedKeys.value = []
       saveInfo.value = ''
-      fileInfo.value = await AliFile.ApiFileInfo(props.user_id, props.drive_id, props.file_id)
+      fileInfo.value = await AliFile.ApiFileInfoOpenApi(props.user_id, props.drive_id, props.file_id)
       if (!fileInfo.value) {
         message.error('在线解压失败，操作取消')
         return

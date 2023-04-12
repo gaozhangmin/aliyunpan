@@ -1,7 +1,6 @@
 import { Dirent, Stats } from 'fs'
 import AliFileCmd from '../aliapi/filecmd'
 import { IUploadInfo } from '../aliapi/models'
-import AliUpload from '../aliapi/upload'
 import AliUploadDisk from '../aliapi/uploaddisk'
 import AliUploadHashPool from '../aliapi/uploadhashpool'
 import { useSettingStore } from '../store'

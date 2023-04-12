@@ -33,7 +33,7 @@ export default defineComponent({
       drive_id.value = first.drive_id
       file_id.value = first.file_id
       file_name.value = first.name
-      const info = await AliFile.ApiFileInfo(user_id.value, first.drive_id, first.file_id)
+      const info = await AliFile.ApiFileInfoOpenApi(user_id.value, first.drive_id, first.file_id)
       if (!info) {
         message.error('读取文件链接失败，请重试')
         return
@@ -64,7 +64,40 @@ export default defineComponent({
       }
     }
 
-    const handleDownload = (item: string) => {
+    interface M3U8Segment {
+      duration: number;
+      url: string;
+    }
+
+    function parseM3U8(m3u8String: string, baseUrl:string): string[] {
+      const lines = m3u8String.split('\n');
+      const urls: string[] = [];
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+
+        // 解析出以 "#EXTINF:" 开头的行，其下一行为 URL
+        if (line.startsWith('#EXTINF:')) {
+          const nextLine = lines[i + 1]?.trim();
+          if (nextLine) {
+            urls.push(baseUrl + "/" + nextLine);
+          }
+        }
+      }
+
+      return urls;
+    }
+
+    function parseBaseUrl(url: string): string | null {
+      // 匹配关键字 "media.m3u8"
+      const match = url.match(/(.*\/)media\.m3u8/i);
+      if (match && match.length > 1) {
+        return match[1];
+      }
+      return null;
+    }
+
+    const handleDownload = async (item: string) => {
       message.error('当前版本M3U8视频下载功能尚不可用，可以自行使用其他m3u8下载软件下载', 5)
       handleCopyUrl(item)
     }
@@ -130,7 +163,7 @@ export default defineComponent({
           <span class="arco-upload-list-item-operation">
             <a-button-group>
               <a-button type="outline" size="small" @click="() => handleCopyUrl(item)">复制</a-button>
-              <a-button type="outline" size="small" @click="() => handleDownload(item)">下载</a-button>
+              <a-button disabled type="outline" size="small" @click="() => handleDownload(item)">下载</a-button>
             </a-button-group>
           </span>
         </div>

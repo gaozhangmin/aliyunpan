@@ -137,12 +137,10 @@ export default class TreeStore {
 
 
   static async SaveOneDirFileList(oneDir: IAliFileResp, hasFiles: boolean): Promise<void> {
-    console.log('SaveOneDirFileList', oneDir.dirID)
-
     if (oneDir.dirID == 'favorite' || oneDir.dirID == 'trash' || oneDir.dirID == 'recover' || oneDir.dirID.startsWith('search') || oneDir.dirID.startsWith('color') || oneDir.dirID.startsWith('video')) {
-
       return
     }
+    console.log('SaveOneDirFileList', oneDir.dirID)
 
     let driverData = DriverData.get(oneDir.m_drive_id)
     if (!driverData) {
@@ -279,12 +277,11 @@ export default class TreeStore {
     if (file_id == 'root') return { __v_skip: true, drive_id, file_id: 'root', parent_file_id: '', name: '根目录', namesearch: '', size: 0, time: 0, description: '' }
     if (file_id == 'favorite') return { __v_skip: true, drive_id, file_id: 'favorite', parent_file_id: '', name: '收藏夹', namesearch: '', size: 0, time: 0, description: '' }
     if (file_id == 'trash') return { __v_skip: true, drive_id, file_id: 'trash', parent_file_id: '', name: '回收站', namesearch: '', size: 0, time: 0, description: '' }
-    if (file_id == 'history') return { __v_skip: true, drive_id, file_id: 'history', parent_file_id: '', name: '最近播放', namesearch: '', size: 0, time: 0, description: '' }
     if (file_id == 'recover') return { __v_skip: true, drive_id, file_id: 'recover', parent_file_id: '', name: '文件恢复', namesearch: '', size: 0, time: 0, description: '' }
     if (file_id.startsWith('search')) return { __v_skip: true, drive_id, file_id: file_id, parent_file_id: '', name: ('搜索 ' + file_id.substring(6)).trimEnd(), namesearch: '', size: 0, time: 0, description: '' }
     if (file_id.startsWith('color')) return { __v_skip: true, drive_id, file_id: file_id, parent_file_id: '', name: '标记 · ' + file_id.substring(file_id.indexOf(' ') + 1), namesearch: '', size: 0, time: 0, description: '' }
     if (file_id == 'video') return { __v_skip: true, drive_id, file_id: 'video', parent_file_id: '', name: '放映室', namesearch: '', size: 0, time: 0, description: '' }
-    if (file_id.startsWith('video')) return { __v_skip: true, drive_id, file_id: file_id, parent_file_id: '', name: '放映室 · ' + file_id.substring('video'.length), namesearch: '', size: 0, time: 0, description: '' }
+    if (file_id.startsWith('video')) return { __v_skip: true, drive_id, file_id: file_id, parent_file_id: '', name: '放映室-' + file_id.substring('video.'.length), namesearch: '', size: 0, time: 0, description: '' }
 
     const driverData = DriverData.get(drive_id)
     if (!driverData) return undefined
@@ -302,7 +299,6 @@ export default class TreeStore {
     if (file_id == 'trash') return [{ __v_skip: true, drive_id, file_id: 'trash', parent_file_id: '', name: '回收站', namesearch: '', size: 0, time: 0, description: '' }]
     if (file_id == 'recover') return [{ __v_skip: true, drive_id, file_id: 'recover', parent_file_id: '', name: '文件恢复', namesearch: '', size: 0, time: 0, description: '' }]
     if (file_id == 'search') return [{ __v_skip: true, drive_id, file_id: 'search', parent_file_id: '', name: '全盘搜索', namesearch: '', size: 0, time: 0, description: '' }]
-    if (file_id == 'history') return [{ __v_skip: true, drive_id, file_id: 'history', parent_file_id: '', name: '最近播放', namesearch: '', size: 0, time: 0, description: '' }]
     if (file_id.startsWith('search')) {
       return [
         { __v_skip: true, drive_id, file_id: 'search', parent_file_id: '', name: '全盘搜索', namesearch: '', size: 0, time: 0, description: '' },
@@ -314,7 +310,7 @@ export default class TreeStore {
     if (file_id.startsWith('video'))
       return [
         { __v_skip: true, drive_id, file_id: 'video', parent_file_id: '', name: '放映室', namesearch: '', size: 0, time: 0, description: '' },
-        { __v_skip: true, drive_id, file_id: file_id, parent_file_id: '', name: '放映室 · ' + file_id.substring('video'.length), namesearch: '', size: 0, time: 0, description: '' }
+        { __v_skip: true, drive_id, file_id: file_id, parent_file_id: '', name: '放映室-' + file_id.substring('video.'.length), namesearch: '', size: 0, time: 0, description: '' }
       ]
 
     const driverData = DriverData.get(drive_id)

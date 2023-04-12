@@ -9,4 +9,5 @@ tmp
 release
 
 .idea
+yarn.lock
 

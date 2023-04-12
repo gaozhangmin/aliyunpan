@@ -196,7 +196,7 @@ export async function CreatLocalAria2c(aria2cPath:string, aria2cConfPath:string)
       [
         '-D',
         '--conf-path=' + '"' + aria2cConfPath + '"',
-        '--listen-port=' + port
+        '--rpc-listen-port=' + port
       ],
       options,
       async (error, stdout, stderr) => {
@@ -220,7 +220,7 @@ async function relaunchLocalAria(port:number) {
     if (Aria2EngineLocal != undefined) {
       await Aria2EngineLocal.close()
     }
-    const options = { host: '127.0.0.1', port, secure: false, secret: localPwd, path: '/jsonrpc' }
+    const options = { host: '127.0.0.1', port:port, secure: false, secret: localPwd, path: '/jsonrpc' }
     Aria2EngineLocal = new Aria2({ WebSocket: global.WebSocket, fetch: global.fetch, ...options })
     Aria2EngineLocal.on('close', () => {
       IsAria2cOnlineLocal = false
@@ -263,7 +263,7 @@ export async function AriaChangeToLocal() {
       await Aria2EngineLocal.close()
     }
     const port = window.WebRelaunchAria ? await window.WebRelaunchAria() : 16800
-    const options = { host: '127.0.0.1', port, secure: false, secret: localPwd, path: '/jsonrpc' }
+    const options = { host: '127.0.0.1', port:port, secure: false, secret: localPwd, path: '/jsonrpc' }
     Aria2EngineLocal = new Aria2({ WebSocket: global.WebSocket, fetch: global.fetch, ...options })
     Aria2EngineLocal.on('close', () => {
       IsAria2cOnlineLocal = false
@@ -305,7 +305,6 @@ export async function AriaGlobalDownSpeed() {
   try {
     const settingStore = useSettingStore()
     const limit = settingStore.downGlobalSpeed.toString() + (settingStore.downGlobalSpeedM == 'MB' ? 'M' : 'K')
-    console.log("AriaGlobalDownSpeed", limit)
     await GetAria()?.call('aria2.changeGlobalOption', { 'max-overall-download-limit': limit }).catch((e: any) => {
       if (e) message.error('设置下载限速失败，Error: ' + e.message)
       else message.info('设置下载速度成功，限速：' + limit)
