@@ -20,8 +20,7 @@
 2. 整体UI改造
 
 # 小白羊公众号
-![image](https://user-images.githubusercontent.com/9278488/231074062-660f7fa6-4900-4c37-918a-2b520bfaf760.png)
-
+![image](https://user-images.githubusercontent.com/9278488/231347295-dcaa0a5a-5f21-4d13-ba42-68eda9cbe66d.png)
 
 # License
 [LICENSE](./LICENSE)
