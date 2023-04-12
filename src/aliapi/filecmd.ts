@@ -14,6 +14,7 @@ export default class AliFileCmd {
     if (!user_id || !drive_id || !parent_file_id) return result
     const url = 'adrive/v1.0/openFile/create'
     const pathSplitor = creatDirName.split(path.sep);
+    DebugLog.mSaveDanger("ApiCreatNewForder pathSplitor=" + pathSplitor + "    " + "path= "+creatDirName)
     if (pathSplitor.length > 1) {
       let parentFileId = parent_file_id;
       for (let i = 0; i < pathSplitor.length; i++) {
