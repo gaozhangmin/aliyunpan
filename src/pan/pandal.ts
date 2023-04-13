@@ -123,7 +123,6 @@ export default class PanDAL {
     let dir = TreeStore.GetDir(drive_id, file_id)
     let dirPath = TreeStore.GetDirPath(drive_id, file_id)
     if (!dir || (dirPath.length == 0 && file_id != 'root')) {
-      
       const findPath = await AliFile.ApiFileGetPath(pantreeStore.user_id, drive_id, file_id)
       if (findPath.length > 0) {
         dirPath = findPath

@@ -1,7 +1,15 @@
 <!-- eslint-disable no-irregular-whitespace -->
 <script setup lang="ts">
 import { IAliGetFileModel } from '../aliapi/alimodels'
-import { KeyboardState, useAppStore, useFootStore, useKeyboardStore, usePanFileStore, useSettingStore } from '../store'
+import {
+  KeyboardState,
+  useAppStore,
+  useFootStore,
+  useKeyboardStore,
+  usePanFileStore,
+  useSettingStore,
+  useUserStore
+} from '../store'
 import useWinStore from '../store/winstore'
 import { onShowRightMenu, TestCtrl, TestCtrlShift, TestKey, TestKeyboardScroll, TestKeyboardSelect, onHideRightMenuScroll } from '../utils/keyboardhelper'
 import { onMounted, ref, watchEffect } from 'vue'
@@ -22,6 +30,8 @@ import DirTopPath from './menus/DirTopPath.vue'
 import message from '../utils/message'
 import { menuOpenFile } from '../utils/openfile'
 import { throttle } from '../utils/debounce'
+import AliDirFileList from "../aliapi/dirfilelist";
+
 
 const viewlist = ref()
 const inputsearch = ref()
@@ -230,6 +240,7 @@ const handleListGridMode = (mode: string) => {
 }
 
 
+
 const rangIsSelecting = ref(false)
 const rangSelectID = ref('')
 const rangSelectStart = ref('')
@@ -244,6 +255,14 @@ const onSelectRangStart = () => {
   rangSelectEnd.value = ''
   rangSelectFiles.value = {}
   panfileStore.mRefreshListDataShow(false)
+}
+
+const onSelectAllCompilation = () => {
+  PanDAL.aReLoadOneDirToShow(panfileStore.DriveID, 'video.compilation', true)
+}
+
+const onSelectRecentPlay = () => {
+  PanDAL.aReLoadOneDirToShow(panfileStore.DriveID, "video.recentplay", true)
 }
 
 const onSelectRang = (file_id: string) => {
@@ -554,6 +573,18 @@ const onPanDragEnd = (ev: any) => {
       </AntdTooltip>
     </div>
     <div class="cell pr"></div>
+  </div>
+  <div v-if="panfileStore.SelectDirType == 'video'" class="toppanarea" tabindex="-1">
+      <div style="margin: 0 0px">
+          <AntdTooltip placement="rightTop">
+              <a-button type='dashed' tabindex="-1"  @click="onSelectAllCompilation">全部专辑</a-button>
+          </AntdTooltip>
+      </div>
+      <div style="margin: 0 10px">
+          <AntdTooltip placement="rightTop">
+              <a-button type='dashed' tabindex="-1" @click="onSelectRecentPlay">正在看</a-button>
+          </AntdTooltip>
+      </div>
   </div>
   <div
     id="panfilelist"

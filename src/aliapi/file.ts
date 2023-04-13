@@ -528,7 +528,7 @@ export default class AliFile {
     return imgList
   }
 
-  static ApiUpdateVideoTimeOpenApi(user_id: string, drive_id: string, file_id: string, play_cursor: number): void {
+  static async ApiUpdateVideoTimeOpenApi(user_id: string, drive_id: string, file_id: string, play_cursor: number): Promise<IAliFileItem | undefined> {
     if (!useSettingStore().uiAutoPlaycursorVideo) return
     if (!user_id || !drive_id || !file_id) return undefined
     const upateCursorUrl = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/video/updateRecord'
@@ -537,14 +537,13 @@ export default class AliFile {
       "file_id": file_id,
       "play_cursor":play_cursor.toString()
     }
-    AliHttp.Post(upateCursorUrl, postData, user_id, '')
-    // const respvideo = await AliHttp.Post(upateCursorUrl, postData, user_id, '')
-    // if (AliHttp.IsSuccess(respvideo.code)) {
-    //   return respvideo.body as IAliFileItem
-    // } else {
-    //   DebugLog.mSaveWarning('ApiUpdateVideoTime2 err=' + file_id + ' ' + (respvideo.code || ''))
-    // }
-    // return undefined
+    const respvideo = await AliHttp.Post(upateCursorUrl, postData, user_id, '')
+    if (AliHttp.IsSuccess(respvideo.code)) {
+      return respvideo.body as IAliFileItem
+    } else {
+      DebugLog.mSaveWarning('ApiUpdateVideoTime2 err=' + file_id + ' ' + (respvideo.code || ''))
+    }
+    return undefined
   }
 
   

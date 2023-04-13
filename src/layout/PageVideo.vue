@@ -44,13 +44,6 @@ const options = {
   miniProgressBar: true,
   airplay: true,
   theme: '#23ade5',
-  thumbnails: {
-    url: '',
-    number: 60,
-    column: 10,
-    width: 100,
-    height: 100
-  },
   moreVideoAttr: {
     // @ts-ignore
     "webkit-playsinline": true,
@@ -100,6 +93,8 @@ const getCurDirList = async (filter?: RegExp): Promise<any[]>  => {
 const getVideoInfo = async (art: Artplayer) => {
   // 获取视频链接
   const data: IVideoPreviewUrl | undefined = await AliFile.ApiVideoPreviewUrlOpenApi(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id)
+  // https://api.aliyundrive.com/adrive/v2/video/compilation/listByFileInfo
+
   if (data) {
     // 画质
     const qualitySelector: { url: string; html: string; default?: boolean }[] = []
@@ -226,6 +221,7 @@ onMounted(async () => {
   setTimeout(() => { document.title = name }, 1000)
   // 初始化
   ArtPlayerRef = new Artplayer(options)
+
   ArtPlayerRef.title = name
   // 自定义热键
   // enter
@@ -252,7 +248,6 @@ onMounted(async () => {
   if (muted) ArtPlayerRef.muted = muted === 'true'
   // 获取视频信息
   await getVideoInfo(ArtPlayerRef)
-  console.log("ArtPlayerRef", ArtPlayerRef)
   ArtPlayerRef.on('ready', () => {
     // // 进度
     // AliFile.ApiFileInfo(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id).then((info) => {
@@ -310,16 +305,17 @@ onMounted(async () => {
 })
 
 const updateVideoTime = () => {
-   AliFile.ApiUpdateVideoTimeOpenApi(
-      pageVideo.user_id,
-      pageVideo.drive_id,
-      pageVideo.file_id,
-      ArtPlayerRef.currentTime
+  return AliFile.ApiUpdateVideoTimeOpenApi(
+    pageVideo.user_id,
+    pageVideo.drive_id,
+    pageVideo.file_id,
+    ArtPlayerRef.currentTime
   )
 }
 const handleHideClick = () => {
-  updateVideoTime()
-  window.close()
+  updateVideoTime().then(() => {
+    window.close()
+  })
 }
 
 onBeforeUnmount(() => {
