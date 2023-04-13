@@ -204,10 +204,12 @@ export default class AliFile {
       if (playList) {
         const playListResp = await AliHttp.Post(playListUrl, playListPostData, user_id, '')
         if (AliHttp.IsSuccess(playListResp.code)) {
+          console.log("playListResp", playListResp)
           for (const item of playListResp.body.items) {
             if (item.file_id === file_id) continue
             const playListItem = await AliFile.ApiVideoPreviewUrlOpenApi(user_id, drive_id, item.file_id)
             if (playListItem) {
+              playListItem.file_name = item.name
               data.playList?.push(playListItem)
             }
           }

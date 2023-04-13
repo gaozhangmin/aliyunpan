@@ -92,7 +92,7 @@ const getCurDirList = async (filter?: RegExp): Promise<any[]>  => {
 
 const getVideoInfo = async (art: Artplayer) => {
   // 获取视频链接
-  const data: IVideoPreviewUrl | undefined = await AliFile.ApiVideoPreviewUrlOpenApi(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id)
+  const data: IVideoPreviewUrl | undefined = await AliFile.ApiVideoPreviewUrlOpenApi(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id, true)
   if (data) {
     // 画质
     const qualitySelector: { url: string; html: string; default?: boolean }[] = []
@@ -101,17 +101,11 @@ const getVideoInfo = async (art: Artplayer) => {
     if (data.urlHD) qualitySelector.push({url: data.urlHD, html: '高清 720P'})
     if (data.urlSD) qualitySelector.push({url: data.urlSD, html: '标清 540P'})
     if (data.urlLD) qualitySelector.push({url: data.urlLD, html: '流畅 480P'})
-
-
-    const playList: { url: string; html: string; default?: boolean }[] = []
-    if (data.playList && data.playList.length > 0) {
-
-    }
-
     const qualityDefault = qualitySelector.find((item) => item.default) || qualitySelector[0]
     art.url = qualityDefault.url
+    art.controls.name
     art.controls.add({
-      name: 'quality',
+      name: '清晰度',
       index: 10,
       position: 'right',
       style: {marginRight: '10px',},
@@ -121,20 +115,48 @@ const getVideoInfo = async (art: Artplayer) => {
         art.switchQuality(item.url)
       }
     })
-
-    art.controls.add({
-      name: '播放列表',
-      index: 10,
-      position: 'left',
-      style: {marginRight: '10px',},
-      html: qualityDefault ? qualityDefault.html : '',
-      selector: qualitySelector,
-      onSelect: (item: { url: string; html: string; default?: boolean }) => {
-        art.switchQuality(item.url)
+    //播放列表
+    if (data.playList && data.playList.length > 0) {
+      const playList: { url: string; html: string; quality: { url: string; html: string; default?: boolean }[]}[] = []
+      for (let i = 0; i < data.playList.length; i++) {
+        const item = data.playList[i]
+        const quality: { url: string; html: string; default?: boolean }[] = []
+        if (item.urlQHD) quality.push({url: item.urlQHD, html: '原画'})
+        if (item.urlFHD) quality.push({url: item.urlFHD, html: '全高清 1080P'})
+        if (item.urlHD) quality.push({url: item.urlHD, html: '高清 720P'})
+        if (item.urlSD) quality.push({url: item.urlSD, html: '标清 540P'})
+        if (item.urlLD) quality.push({url: item.urlLD, html: '流畅 480P'})
+        const play = {
+          html: item.file_name == undefined? "视频" + (i + 1):item.file_name,
+          url: item.url,
+          quality: quality
+        }
+        playList.push(play)
       }
-    })
-
-
+      art.controls.add({
+        name: '播放列表',
+        index: 10,
+        position: 'left',
+        style: {marginLeft: '10px',},
+        html: pageVideo.file_name,
+        selector: playList,
+        onSelect: (item: { url: string; html: string; quality: { url: string; html: string; default?: boolean }[] }) => {
+          const defaultQ = item.quality[0]
+          art.controls.add({
+            name: '清晰度',
+            index: 10,
+            position: 'right',
+            style: {marginRight: '10px',},
+            html: defaultQ ? defaultQ.html : '',
+            selector: item.quality,
+            onSelect: (item: { url: string; html: string; default?: boolean }) => {
+              art.switchQuality(item.url)
+            }
+          })
+          art.switchUrl(item.url)
+        }
+      })
+    }
     // 内嵌字幕
     const subSelector: { url: string; file_id?: string, html: string; name: string; default?: boolean }[] = []
     if (data.subtitles.length > 0) {
@@ -266,18 +288,6 @@ onMounted(async () => {
   // 获取视频信息
   await getVideoInfo(ArtPlayerRef)
   ArtPlayerRef.on('ready', () => {
-    // // 进度
-    // AliFile.ApiFileInfo(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id).then((info) => {
-    //   if (info?.play_cursor) {
-    //     ArtPlayerRef.currentTime = info?.play_cursor
-    //   } else if (info?.user_meta) {
-    //     const meta = JSON.parse(info?.user_meta)
-    //     if (meta.play_cursor) {
-    //       ArtPlayerRef.currentTime = parseFloat(meta.play_cursor)
-    //     }
-    //   }
-    //   ArtPlayerRef.play()
-    // })
     // 进度
     const recentPlayListUrl = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/video/recentList'
     AliHttp.Post(recentPlayListUrl, {}, pageVideo.user_id, '')
