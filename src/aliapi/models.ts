@@ -22,6 +22,7 @@ export interface IVideoPreviewUrl {
   urlHD: string
   urlSD: string
   urlLD: string
+  playList?:IVideoPreviewUrl[],
   subtitles: {
     language: string
     url: string

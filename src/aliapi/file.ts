@@ -6,9 +6,6 @@ import AliHttp from './alihttp'
 import {IAliFileItem, IAliGetDirModel, IAliGetFileModel, IAliGetForderSizeModel} from './alimodels'
 import AliDirFileList from './dirfilelist'
 import { IDownloadUrl, IOfficePreViewUrl, IVideoPreviewUrl, IVideoXBTUrl } from './models'
-import fs from "fs";
-import sharp from "sharp";
-import https from "https";
 
 export default class AliFile {
 
@@ -60,7 +57,7 @@ export default class AliFile {
   
   static async ApiFileInfoByPath(user_id: string, drive_id: string, file_path: string): Promise<IAliFileItem | undefined> {
     if (!user_id || !drive_id || !file_path) return undefined
-    if (file_path.startsWith('/') == false) file_path = '/' + file_path
+    if (!file_path.startsWith('/')) file_path = '/' + file_path
     const url = 'v2/file/get_by_path'
     const postData = {
       drive_id: drive_id,
@@ -147,8 +144,11 @@ export default class AliFile {
     return '网络错误'
   }
 
-  static async ApiVideoPreviewUrlOpenApi(user_id: string, drive_id: string, file_id: string): Promise<IVideoPreviewUrl | undefined> {
+  static async ApiVideoPreviewUrlOpenApi(user_id: string, drive_id: string, file_id: string, playList:boolean=false): Promise<IVideoPreviewUrl | undefined> {
     if (!user_id || !drive_id || !file_id) return undefined
+    const playListPostData = { file_id: file_id, limit: 10, drive_id: drive_id}
+    const playListUrl = 'adrive/v2/video/compilation/listByFileInfo'
+
     const url = 'adrive/v1.0/openFile/getVideoPreviewPlayInfo'
     const postData = { drive_id: drive_id, file_id: file_id, category: 'live_transcoding', template_id: '', get_subtitle_info: true, url_expire_sec: 14400 }
     const resp = await AliHttp.Post(url, postData, user_id, '')
@@ -171,6 +171,7 @@ export default class AliFile {
       urlHD: '',
       urlSD: '',
       urlLD: '',
+      playList: [],
       subtitles: []
     }
     if (AliHttp.IsSuccess(resp.code)) {
@@ -199,6 +200,19 @@ export default class AliFile {
       data.width = resp.body.video_preview_play_info?.meta?.width || 0
       data.height = resp.body.video_preview_play_info?.meta?.height || 0
       data.expire_sec = GetOssExpires(data.url)
+
+      if (playList) {
+        const playListResp = await AliHttp.Post(playListUrl, playListPostData, user_id, '')
+        if (AliHttp.IsSuccess(playListResp.code)) {
+          for (const item of playListResp.body.items) {
+            if (item.file_id === file_id) continue
+            const playListItem = await AliFile.ApiVideoPreviewUrlOpenApi(user_id, drive_id, item.file_id)
+            if (playListItem) {
+              data.playList?.push(playListItem)
+            }
+          }
+        }
+      }
       return data
     } else {
       DebugLog.mSaveWarning('ApiVideoPreviewUrl err=' + file_id + ' ' + (resp.code || ''))

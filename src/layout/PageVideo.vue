@@ -93,8 +93,6 @@ const getCurDirList = async (filter?: RegExp): Promise<any[]>  => {
 const getVideoInfo = async (art: Artplayer) => {
   // 获取视频链接
   const data: IVideoPreviewUrl | undefined = await AliFile.ApiVideoPreviewUrlOpenApi(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id)
-  // https://api.aliyundrive.com/adrive/v2/video/compilation/listByFileInfo
-
   if (data) {
     // 画质
     const qualitySelector: { url: string; html: string; default?: boolean }[] = []
@@ -103,6 +101,12 @@ const getVideoInfo = async (art: Artplayer) => {
     if (data.urlHD) qualitySelector.push({url: data.urlHD, html: '高清 720P'})
     if (data.urlSD) qualitySelector.push({url: data.urlSD, html: '标清 540P'})
     if (data.urlLD) qualitySelector.push({url: data.urlLD, html: '流畅 480P'})
+
+
+    const playList: { url: string; html: string; default?: boolean }[] = []
+    if (data.playList && data.playList.length > 0) {
+
+    }
 
     const qualityDefault = qualitySelector.find((item) => item.default) || qualitySelector[0]
     art.url = qualityDefault.url
@@ -117,9 +121,22 @@ const getVideoInfo = async (art: Artplayer) => {
         art.switchQuality(item.url)
       }
     })
+
+    art.controls.add({
+      name: '播放列表',
+      index: 10,
+      position: 'left',
+      style: {marginRight: '10px',},
+      html: qualityDefault ? qualityDefault.html : '',
+      selector: qualitySelector,
+      onSelect: (item: { url: string; html: string; default?: boolean }) => {
+        art.switchQuality(item.url)
+      }
+    })
+
+
     // 内嵌字幕
     const subSelector: { url: string; file_id?: string, html: string; name: string; default?: boolean }[] = []
-    console.log("data.subtitles", data.subtitles)
     if (data.subtitles.length > 0) {
       for (let i = 0; i < data.subtitles.length; i++) {
         const subtitle =
