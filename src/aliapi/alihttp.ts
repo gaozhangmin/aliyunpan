@@ -324,7 +324,8 @@ export default class AliHttp {
 
   static async Post(url: string, postData: any, user_id: string, share_token: string): Promise<IUrlRespData> {
     if (!url.startsWith('http') && !url.startsWith('https')) {
-      if (url.startsWith('adrive/v1.0/openFile')) {
+      if (url.startsWith('adrive/v1.0/openFile')
+        || url.startsWith('adrive/v1.0/user')) {
         url = AliHttp.baseOpenApi + url
       } else {
         url = AliHttp.baseapi + url
@@ -338,6 +339,7 @@ export default class AliHttp {
           || url.includes('/file/walk')
           || url.includes('/file/scan')
           || url.includes('openFile'))
+          && !url.includes('adrive/v1/user/albums_info')
           && !resp.body?.code) await Sleep(2000)
       else if (HttpCodeBreak(resp.code)) return resp
       else if (i == 5) return resp

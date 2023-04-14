@@ -133,16 +133,23 @@ export default class AliUser {
 
   static async ApiUserInfo(token: ITokenInfo): Promise<boolean> {
     if (!token.user_id) return false
-    const url = 'v2/databox/get_personal_info'
+    const url = 'adrive/v1.0/user/getDriveInfo'
+    const spaceUrl = 'adrive/v1.0/user/getSpaceInfo'
     const postData = ''
     const resp = await AliHttp.Post(url, postData, token.user_id, '')
-    if (AliHttp.IsSuccess(resp.code)) {
-      token.used_size = resp.body.personal_space_info.used_size
-      token.total_size = resp.body.personal_space_info.total_size
-      token.spu_id = resp.body.personal_rights_info.spu_id
-      token.is_expires = resp.body.personal_rights_info.is_expires
-      token.name = resp.body.personal_rights_info.name
+    const spaceResp = await AliHttp.Post(spaceUrl, postData, token.user_id, '')
+    if (AliHttp.IsSuccess(spaceResp.code)) {
+      token.used_size = spaceResp.body.personal_space_info.used_size
+      token.total_size = spaceResp.body.personal_space_info.total_size
       token.spaceinfo = humanSize(token.used_size) + ' / ' + humanSize(token.total_size)
+      return true
+    } else {
+      DebugLog.mSaveWarning('getSpaceInfo err=' + (resp.code || ''))
+    }
+    if (AliHttp.IsSuccess(resp.code)) {
+      token.spu_id = ''
+      token.is_expires = resp.body.status === 'enabled'
+      token.name = resp.body.nick_name===''?resp.body.phone:resp.body.nick_name
       return true
     } else {
       DebugLog.mSaveWarning('ApiUserInfo err=' + (resp.code || ''))
@@ -181,20 +188,15 @@ export default class AliUser {
 
   static async ApiUserVip(token: ITokenInfo): Promise<boolean> {
     if (!token.user_id) return false
-    const url = 'business/v1.0/users/vip/info'
-
-
+    const url = 'adrive/v1.0/user/getVipInfo'
     const postData = {}
     const resp = await AliHttp.Post(url, postData, token.user_id, '')
     if (AliHttp.IsSuccess(resp.code)) {
-      let vipList = resp.body.vipList || []
-      vipList = vipList.sort((a: any, b: any) => b.expire - a.expire)
-      if (vipList.length > 0 && new Date(vipList[0].expire * 1000) > new Date()) {
-        token.vipname = vipList[0].name
-        token.vipexpire = humanDateTime(vipList[0].expire)
+      token.vipname = resp.body.identity
+      if (resp.body.expire  && new Date(resp.body.expire * 1000) > new Date()) {
+        token.vipexpire = humanDateTime(resp.body.expire)
       } else {
-        token.vipname = '免费用户'
-        token.vipexpire = ''
+        token.vipexpire = '';
       }
       return true
     } else {
@@ -207,8 +209,6 @@ export default class AliUser {
   static async ApiUserPic(token: ITokenInfo): Promise<boolean> {
     if (!token.user_id) return false
     const url = 'adrive/v1/user/albums_info'
-
-
     const postData = {}
     const resp = await AliHttp.Post(url, postData, token.user_id, '')
     if (AliHttp.IsSuccess(resp.code)) {

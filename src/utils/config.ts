@@ -9,4 +9,5 @@ export default class Config {
   static accessTokenUrl = 'https://open.aliyundrive.com/oauth/access_token'
   static driverInfoUrl = 'https://open.aliyundrive.com/adrive/v1.0/user/getDriveInfo'
   static listFile = 'adrive/v1.0/openFile/list'
+  static recentPlayListUrl = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/video/recentList'
 }

@@ -10,6 +10,7 @@ import AliDirFileList from '../aliapi/dirfilelist'
 import { SettingOption } from "artplayer/types/setting"
 import AliHttp from "../aliapi/alihttp";
 import {IAliRecentPlayList} from "../aliapi/alimodels";
+import Config from "../utils/config";
 
 /**
  * @type {import("artplayer")}
@@ -17,6 +18,8 @@ import {IAliRecentPlayList} from "../aliapi/alimodels";
 const appStore = useAppStore()
 const pageVideo = appStore.pageVideo!
 let ArtPlayerRef: Artplayer
+let playListIndex = 0
+let globalPlayList:string[] = []
 
 const options = {
   id: "artPlayer",
@@ -93,8 +96,9 @@ const getCurDirList = async (filter?: RegExp): Promise<any[]>  => {
 const getVideoInfo = async (art: Artplayer) => {
   // 获取视频链接
   const data: IVideoPreviewUrl | undefined = await AliFile.ApiVideoPreviewUrlOpenApi(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id, true)
-  if (data) {
+  if (data && data.url != '') {
     // 画质
+    globalPlayList.push(data.url)
     const qualitySelector: { url: string; html: string; default?: boolean }[] = []
     if (data.urlQHD) qualitySelector.push({url: data.urlQHD, html: '原画'})
     if (data.urlFHD) qualitySelector.push({url: data.urlFHD, html: '全高清 1080P'})
@@ -103,7 +107,6 @@ const getVideoInfo = async (art: Artplayer) => {
     if (data.urlLD) qualitySelector.push({url: data.urlLD, html: '流畅 480P'})
     const qualityDefault = qualitySelector.find((item) => item.default) || qualitySelector[0]
     art.url = qualityDefault.url
-    art.controls.name
     art.controls.add({
       name: '清晰度',
       index: 10,
@@ -117,9 +120,11 @@ const getVideoInfo = async (art: Artplayer) => {
     })
     //播放列表
     if (data.playList && data.playList.length > 0) {
-      const playList: { url: string; html: string; quality: { url: string; html: string; default?: boolean }[]}[] = []
+      const playList: { url: string; html: string; style: any, quality: { url: string; html: string; default?: boolean }[]}[] = []
       for (let i = 0; i < data.playList.length; i++) {
         const item = data.playList[i]
+        if(item.url === '') continue
+        globalPlayList.push(item.url)
         const quality: { url: string; html: string; default?: boolean }[] = []
         if (item.urlQHD) quality.push({url: item.urlQHD, html: '原画'})
         if (item.urlFHD) quality.push({url: item.urlFHD, html: '全高清 1080P'})
@@ -129,30 +134,31 @@ const getVideoInfo = async (art: Artplayer) => {
         const play = {
           html: item.file_name == undefined? "视频" + (i + 1):item.file_name,
           url: item.url,
-          quality: quality
+          quality: quality,
+          style: { textAlign: 'left' }
         }
         playList.push(play)
       }
       art.controls.add({
         name: '播放列表',
         index: 10,
-        position: 'left',
-        style: {marginLeft: '10px',},
+        position: 'right',
+        style: { padding: '0 10px' },
         html: pageVideo.file_name,
         selector: playList,
         onSelect: (item: { url: string; html: string; quality: { url: string; html: string; default?: boolean }[] }) => {
-          const defaultQ = item.quality[0]
-          art.controls.add({
-            name: '清晰度',
-            index: 10,
-            position: 'right',
-            style: {marginRight: '10px',},
-            html: defaultQ ? defaultQ.html : '',
-            selector: item.quality,
-            onSelect: (item: { url: string; html: string; default?: boolean }) => {
-              art.switchQuality(item.url)
-            }
-          })
+          // const defaultQ = item.quality[0]
+          // art.controls.add({
+          //   name: '清晰度',
+          //   index: 10,
+          //   position: 'right',
+          //   style: { textAlign: 'left' },
+          //   html: defaultQ ? defaultQ.html : '',
+          //   selector: item.quality,
+          //   onSelect: (item: { url: string; html: string; default?: boolean }) => {
+          //     art.switchQuality(item.url)
+          //   }
+          // })
           art.switchUrl(item.url)
         }
       })
@@ -258,6 +264,9 @@ const getVideoInfo = async (art: Artplayer) => {
 onMounted(async () => {
   const name = appStore.pageVideo?.file_name || '视频在线预览'
   setTimeout(() => { document.title = name }, 1000)
+  if (pageVideo.file_name.endsWith("m3u8")) {
+
+  }
   // 初始化
   ArtPlayerRef = new Artplayer(options)
 
@@ -289,8 +298,7 @@ onMounted(async () => {
   await getVideoInfo(ArtPlayerRef)
   ArtPlayerRef.on('ready', () => {
     // 进度
-    const recentPlayListUrl = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/video/recentList'
-    AliHttp.Post(recentPlayListUrl, {}, pageVideo.user_id, '')
+    AliHttp.Post(Config.recentPlayListUrl, {}, pageVideo.user_id, '')
         .then((resp) => {
           if (resp.code === 200) {
             const list = resp.body.items as IAliRecentPlayList[]
@@ -314,6 +322,7 @@ onMounted(async () => {
     // 视频播放完毕
     ArtPlayerRef.on('video:ended', () => {
       updateVideoTime()
+      playNext()
     })
     // 视频跳转
     ArtPlayerRef.on('video:seeked', () => {
@@ -330,6 +339,40 @@ onMounted(async () => {
     })
   })
 })
+
+function playM3u8(video: HTMLVideoElement, url: string, art:Artplayer) {
+  if (Hls.isSupported()) {
+    const hls = new Hls();
+    hls.loadSource(url);
+    hls.attachMedia(video);
+
+    // optional
+    art.hls = hls;
+    art.once('url', () => hls.destroy());
+    art.once('destroy', () => hls.destroy());
+  } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = url;
+  } else {
+    art.notice.show = 'Unsupported playback format: m3u8';
+  }
+}
+
+
+function playNext() {
+  playListIndex += 1;
+  var url = globalPlayList[playListIndex]
+  if (url) {
+    // play next
+    ArtPlayerRef.switchUrl(url)
+  } else {
+    // play first
+    playListIndex = 0;
+    ArtPlayerRef.switchUrl(globalPlayList[playListIndex])
+  }
+
+  ArtPlayerRef.seek = 0;
+  ArtPlayerRef.play();
+}
 
 const updateVideoTime = () => {
   return AliFile.ApiUpdateVideoTimeOpenApi(

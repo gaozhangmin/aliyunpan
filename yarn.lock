@@ -930,11 +930,6 @@ array-tree-filter@^2.1.0:
   resolved "https://registry.npmmirror.com/array-tree-filter/-/array-tree-filter-2.1.0.tgz"
   integrity sha512-4ROwICNlNw/Hqa9v+rk5h22KjmzB1JGTMVKP2AKJBOCgb0yL0ASf0+YvCcLNNwquOHNX48jkeZIJ3a+oOQqKcw==
 
-artplayer-plugin-playlist@^3.2.4:
-  version "3.2.4"
-  resolved "https://registry.yarnpkg.com/artplayer-plugin-playlist/-/artplayer-plugin-playlist-3.2.4.tgz#cd82b1387f2dff9c1d75e70bbcf187d1f59ee31d"
-  integrity sha512-i4KElC1BUMs07O8/dEnY95BV9znH5j7IQSdwJgCJA2Gfu/+EkX6ghhrkfriLMgdwBTNVhDSYwFKxLYMhMU4Z+g==
-
 artplayer@^4.6.2:
   version "4.6.2"
   resolved "https://registry.npmjs.org/artplayer/-/artplayer-4.6.2.tgz"
@@ -2544,6 +2539,11 @@ lru-cache@^6.0.0:
   integrity sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==
   dependencies:
     yallist "^4.0.0"
+
+m3u-parser-generator@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.npmmirror.com/m3u-parser-generator/-/m3u-parser-generator-1.2.0.tgz#238d4473b8bf8d355493f78dca48ae0598962b46"
+  integrity sha512-OyE/U0Irwgt4PLdOpktDuodCNEjehAVSasrczVtkf353Rxqq14KhR/HlId4564jplVXAr9qLv3tCQ9l/DTQxsg==
 
 magic-string@^0.25.7:
   version "0.25.9"

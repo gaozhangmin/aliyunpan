@@ -256,7 +256,6 @@ export default class AliDirFileList {
       parent_file_id: dir.dirID,
       marker: dir.next_marker,
       limit: 200,
-      all: false,
       order_by: orderby,
       order_direction: order.toUpperCase()
     }
