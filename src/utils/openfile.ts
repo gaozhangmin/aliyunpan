@@ -80,7 +80,7 @@ async function Archive(drive_id: string, file_id: string, file_name: string, par
     return
   }
 
-  const info = await AliFile.ApiFileInfo(user_id, drive_id, file_id)
+  const info = await AliFile.ApiFileInfoOpenApi(user_id, drive_id, file_id)
   if (!info) {
     message.error('在线预览失败 获取文件信息出错，操作取消')
     return

@@ -281,7 +281,7 @@ export default class TreeStore {
     if (file_id.startsWith('search')) return { __v_skip: true, drive_id, file_id: file_id, parent_file_id: '', name: ('搜索 ' + file_id.substring(6)).trimEnd(), namesearch: '', size: 0, time: 0, description: '' }
     if (file_id.startsWith('color')) return { __v_skip: true, drive_id, file_id: file_id, parent_file_id: '', name: '标记 · ' + file_id.substring(file_id.indexOf(' ') + 1), namesearch: '', size: 0, time: 0, description: '' }
     if (file_id == 'video') return { __v_skip: true, drive_id, file_id: 'video', parent_file_id: '', name: '放映室', namesearch: '', size: 0, time: 0, description: '' }
-    if (file_id.startsWith('video')) return { __v_skip: true, drive_id, file_id: file_id, parent_file_id: '', name: '放映室 · ' + file_id.substring('video'.length), namesearch: '', size: 0, time: 0, description: '' }
+    if (file_id.startsWith('video')) return { __v_skip: true, drive_id, file_id: file_id, parent_file_id: '', name: '放映室-' + file_id.substring('video.'.length), namesearch: '', size: 0, time: 0, description: '' }
 
     const driverData = DriverData.get(drive_id)
     if (!driverData) return undefined
@@ -310,7 +310,7 @@ export default class TreeStore {
     if (file_id.startsWith('video'))
       return [
         { __v_skip: true, drive_id, file_id: 'video', parent_file_id: '', name: '放映室', namesearch: '', size: 0, time: 0, description: '' },
-        { __v_skip: true, drive_id, file_id: file_id, parent_file_id: '', name: '放映室 · ' + file_id.substring('video'.length), namesearch: '', size: 0, time: 0, description: '' }
+        { __v_skip: true, drive_id, file_id: file_id, parent_file_id: '', name: '放映室-' + file_id.substring('video.'.length), namesearch: '', size: 0, time: 0, description: '' }
       ]
 
     const driverData = DriverData.get(drive_id)

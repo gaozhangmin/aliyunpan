@@ -204,7 +204,6 @@ export default class AliFile {
       if (playList) {
         const playListResp = await AliHttp.Post(playListUrl, playListPostData, user_id, '')
         if (AliHttp.IsSuccess(playListResp.code)) {
-          console.log("playListResp", playListResp)
           for (const item of playListResp.body.items) {
             if (item.file_id === file_id) continue
             const playListItem = await AliFile.ApiVideoPreviewUrlOpenApi(user_id, drive_id, item.file_id)
@@ -566,27 +565,14 @@ export default class AliFile {
   static async ApiUpdateVideoTime(user_id: string, drive_id: string, file_id: string, play_cursor: number): Promise<IAliFileItem | undefined> {
     if (!useSettingStore().uiAutoPlaycursorVideo) return 
     if (!user_id || !drive_id || !file_id) return undefined
-    const url = 'v2/file/get'
-    const postData = {
-      drive_id: drive_id,
-      file_id: file_id,
-      url_expire_sec: 14400,
-      office_thumbnail_process: 'image/resize,w_400/format,jpeg',
-      image_thumbnail_process: 'image/resize,w_400/format,jpeg',
-      image_url_process: 'image/resize,w_1920/format,jpeg',
-      video_thumbnail_process: 'video/snapshot,t_' + Math.floor(play_cursor) + ',f_jpg,w_0,h_0,m_fast'
-    }
-    const resp = await AliHttp.Post(url, postData, user_id, '')
-
-    if (AliHttp.IsSuccess(resp.code)) {
-      const info = resp.body as IAliFileItem
-
+    const resp = await  AliFile.ApiFileInfoOpenApi(user_id, drive_id, file_id)
+    if (resp) {
       const urlvideo = 'adrive/v2/video/update'
       const postVideoData = {
         drive_id: drive_id,
         file_id: file_id,
         play_cursor: play_cursor.toString(),
-        thumbnail: info.thumbnail || ''
+        thumbnail: resp.thumbnail || ''
       }
       const respvideo = await AliHttp.Post(urlvideo, postVideoData, user_id, '')
       if (AliHttp.IsSuccess(respvideo.code)) {
@@ -595,7 +581,7 @@ export default class AliFile {
         DebugLog.mSaveWarning('ApiUpdateVideoTime2 err=' + file_id + ' ' + (respvideo.code || ''))
       }
     } else {
-      DebugLog.mSaveWarning('ApiUpdateVideoTime err=' + file_id + ' ' + (resp.code || ''))
+      DebugLog.mSaveWarning('ApiUpdateVideoTime err=' + file_id)
     }
     return undefined
   }

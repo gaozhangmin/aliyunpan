@@ -41,7 +41,7 @@ export default defineComponent({
 
       
       loading.value = true
-      const alifile = await AliFile.ApiFileInfo(pageVideoXBT.user_id, pageVideoXBT.drive_id, pageVideoXBT.file_id)
+      const alifile = await AliFile.ApiFileInfoOpenApi(pageVideoXBT.user_id, pageVideoXBT.drive_id, pageVideoXBT.file_id)
 
       if (!alifile) {
         message.error('错误的文件')

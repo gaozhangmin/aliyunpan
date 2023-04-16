@@ -167,9 +167,6 @@ export default class AliDirFileList {
       } else if (dirID == 'trash') {
         isGet = await AliDirFileList._ApiTrashFileListOnePage(orders[0], orders[1], dir, pageIndex)
       }
-      // else if (dirID == 'history') {
-      //   isGet = await AliDirFileList._ApiVideoListRecent(orders[0], orders[1], dir, pageIndex)
-      // }
       else if (dirID == 'recover') {
         isGet = await AliDirFileList._ApiDeleteedFileListOnePage(orders[0], orders[1], dir, pageIndex)
       } else if (dirID.startsWith('color')) {
@@ -203,7 +200,7 @@ export default class AliDirFileList {
         isGet = await AliDirFileList._ApiDirFileListOnePageOpenApi(orders[0], orders[1], dir, type, pageIndex)
       }
 
-      if (isGet != true) {
+      if (!isGet) {
         if (needTotal) dir.itemsTotal = -1
         break 
       }

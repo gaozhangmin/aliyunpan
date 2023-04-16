@@ -65,14 +65,14 @@ const handleEncryption = async () => {
 const handleDecryption = async () => {
   if (Loading.value) return
   if (!dirPath.value) {
-    message.error('还没有选择要执行加密的文件夹')
+    message.error('还没有选择要执行解密的文件夹')
     return
   }
   Loading.value = true
 
   const runCount =  await DoDecryption(dirPath.value,  passwored.value)
   await Sleep(2000)
-  if (runCount > 0) message.success('成功加密 ' + runCount + ' 个文件')
+  if (runCount > 0) message.success('成功解密 ' + runCount + ' 个文件')
 
   Loading.value = false
 }
@@ -154,8 +154,8 @@ const handleDecryption = async () => {
       </div>
       <div class="settingspace"></div>
       <div class="settingrow">
-        <a-button v-if="mode == '加密'"  type="primary" tabindex="-1" status="danger" :loading="Loading" @click="handleEncryption">执行加密</a-button>
-        <a-button v-else  type="primary" tabindex="-1" status="success" :loading="Loading" @click="handleDecryption">执行解密</a-button>
+        <a-button v-if="mode == '加密'"  disabled type="primary" tabindex="-1" status="danger" :loading="Loading" @click="handleEncryption">执行加密</a-button>
+        <a-button v-else  disabled type="primary" tabindex="-1" status="success" :loading="Loading" @click="handleDecryption">执行解密</a-button>
         <div><span class="opred">文件加密功能仍在测试阶段，暂未开放公众使用</span></div>
       </div>
     </div>

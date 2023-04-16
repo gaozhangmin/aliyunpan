@@ -33,7 +33,7 @@ export default defineComponent({
       drive_id.value = first.drive_id
       file_id.value = first.file_id
       file_name.value = first.name
-      const info = await AliFile.ApiFileInfo(user_id.value, first.drive_id, first.file_id)
+      const info = await AliFile.ApiFileInfoOpenApi(user_id.value, first.drive_id, first.file_id)
       if (!info) {
         message.error('读取文件链接失败，请重试')
         return
