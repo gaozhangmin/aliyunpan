@@ -25,8 +25,6 @@
 #歡迎加入電報群
 https://t.me/+wjdFeQ7ZNNE1NmM1
 
-
-sa
 # License
 [LICENSE](./LICENSE)
 
