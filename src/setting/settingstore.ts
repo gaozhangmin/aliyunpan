@@ -394,6 +394,7 @@ const useSettingStore = defineStore('setting', {
       SaveSetting()
       window.WinMsgToUpload({ cmd: 'SettingRefresh' })
       window.WinMsgToDownload({ cmd: 'SettingRefresh' })
+      console.log("useSettingStore().downFinishAudio", useSettingStore().downFinishAudio)
     },
 
     updateFileColor(key: string, title: string) {

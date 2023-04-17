@@ -27,10 +27,10 @@ const appStore = useAppStore()
           <template #icon><i class="iconfont iconcameraadd" /></template>
           视频文件洗码
         </a-menu-item>
-        <a-menu-item key="RssJiaMi">
-          <template #icon><i class="iconfont iconsafebox" /></template>
-          文件加密 x
-        </a-menu-item>
+<!--        <a-menu-item key="RssJiaMi">-->
+<!--          <template #icon><i class="iconfont iconsafebox" /></template>-->
+<!--          文件加密 x-->
+<!--        </a-menu-item>-->
         <a-menu-item key="RssScanClean">
           <template #icon><i class="iconfont iconclear" /></template>
           扫描大文件
