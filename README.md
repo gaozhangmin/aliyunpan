@@ -22,7 +22,7 @@
 # 小白羊公众号
 ![image](https://user-images.githubusercontent.com/9278488/231347295-dcaa0a5a-5f21-4d13-ba42-68eda9cbe66d.png)
 
-#歡迎加入電報群
+# 电报群
 https://t.me/+wjdFeQ7ZNNE1NmM1
 
 # License
