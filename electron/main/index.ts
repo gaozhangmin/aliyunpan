@@ -570,8 +570,16 @@ async function creatAria() {
         [
           '--stop-with-process=' + process.pid,
           '-D',
-          '--conf-path=' + '"' + confPath + '"',
-          '--rpc-listen-port=' + port
+          '--enable-rpc=true',
+          '--rpc-allow-origin-all=true',
+          '--rpc-listen-all=false',
+          '--rpc-listen-port=' + port,
+          '--rpc-secret=S4znWTaZYQi3cpRNb',
+          '--rpc-secure=false',
+          '--auto-file-renaming=false',
+          '--check-certificate=false',
+          '--async-dns=false',
+          '--conf-path=' + '"' + confPath + '"'
         ],
         options,
         (error, stdout, stderr) => {
