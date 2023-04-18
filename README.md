@@ -3,6 +3,11 @@
 
 基于新版阿里云盘开放平台API，新增了最近播放列表菜单，支持保存观看进度。
 
+# 下载地址
+[GitHub](https://github.com/gaozhangmin/aliyunpan/releases)
+
+[123网盘 密码xby1](https://www.123pan.com/s/wbncVv-Dobcv.html)
+
 # 使用方法
 见 源码开发打包帮助.md
 
@@ -23,7 +28,7 @@
 ![image](https://user-images.githubusercontent.com/9278488/231347295-dcaa0a5a-5f21-4d13-ba42-68eda9cbe66d.png)
 
 # 电报群
-https://t.me/+wjdFeQ7ZNNE1NmM1
+[电报群](https://t.me/+wjdFeQ7ZNNE1NmM1)
 
 # License
 [LICENSE](./LICENSE)
