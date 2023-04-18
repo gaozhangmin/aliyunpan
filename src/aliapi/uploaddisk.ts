@@ -12,6 +12,7 @@ import path from 'path'
 import AliUploadOpenApi from "./uploadOpenApi";
 import {useSettingStore} from "../store";
 import {Howl} from "howler";
+import AliUpload from './upload'
 
 const sound = new Howl({
   src: ["../../electron/assets/upload_finished.mp3"], // 音频文件路径
@@ -40,7 +41,7 @@ export default class AliUploadDisk {
     if (fileHandle.handle) await fileHandle.handle.close()
 
 
-    return AliUploadOpenApi.UploadFileComplete(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo.sha1)
+    return AliUpload.UploadFileComplete(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo.sha1)
       .then((isSuccess) => {
         fileui.File.uploaded_file_id = fileui.Info.up_file_id
         fileui.File.uploaded_is_rapid = false
@@ -89,7 +90,7 @@ export default class AliUploadDisk {
 
         if (lastTime < 5 * 60) {
 
-          await AliUploadOpenApi.UploadFilePartUrl(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo).catch(() => {})
+          await AliUpload.UploadFilePartUrl(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo).catch(() => {})
           if (uploadInfo.part_info_list.length == 0) return '获取分片信息失败，请重试'
           part = uploadInfo.part_info_list[i]
         }
@@ -131,7 +132,7 @@ export default class AliUploadDisk {
     }
 
 
-    return AliUploadOpenApi.UploadFileComplete(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo.sha1)
+    return AliUpload.UploadFileComplete(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo.sha1)
       .then((isSuccess) => {
         if (isSuccess) return 'success'
         else return '合并文件时出错，请重试'

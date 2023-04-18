@@ -196,15 +196,7 @@ export async function CreatLocalAria2c(aria2cPath:string, aria2cConfPath:string)
       [
         '--stop-with-process=' + process.pid,
         '-D',
-        '--enable-rpc=true',
-        '--rpc-allow-origin-all=true',
-        '--rpc-listen-all=false',
         '--rpc-listen-port=' + port,
-        '--rpc-secret=S4znWTaZYQi3cpRNb',
-        '--rpc-secure=false',
-        '--auto-file-renaming=false',
-        '--check-certificate=false',
-        '--async-dns=false',
         '--conf-path=' + '"' + aria2cConfPath + '"'
       ],
       options,
