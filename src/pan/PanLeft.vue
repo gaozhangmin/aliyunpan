@@ -275,7 +275,7 @@ const handleQuickSelect = (index: number) => {
 .sharetree .iconfont.iconfile-folder,
 .quicktree .iconfont.iconfile-folder,
 .videotree .iconfont.iconfile-folder {
-  color: #ffb74d;
+  color: #0078D7;
   font-size: 20px;
 }
 .colortree .iconfont {
@@ -296,7 +296,7 @@ const handleQuickSelect = (index: number) => {
   color: #a760ef;
 }
 .ant-tree .iconfile-folder {
-  color: #ffb74d;
+  color: #0078D7;
   font-size: 20px;
 }
 

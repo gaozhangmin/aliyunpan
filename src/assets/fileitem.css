@@ -46,7 +46,7 @@ body[arco-theme='dark'] .fileitem.focus {
   position: relative;
 }
 .fileicon .iconfile-folder {
-  color: #ffb74d !important;
+  color: #0078D7 !important;
 }
 
 .iconfile_video,
@@ -393,7 +393,7 @@ body[arco-theme='dark'] .griditem .select:hover {
   opacity: 0.75;
 }
 .gridicon .iconfile-folder {
-  color: #ffb74d !important;
+  color: #0078D7 !important;
 }
 
 .gridicon img {
