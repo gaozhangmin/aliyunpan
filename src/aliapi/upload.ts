@@ -1,7 +1,6 @@
 import DebugLog from '../utils/debuglog'
 import AliHttp from './alihttp'
 import { IUploadCreat, IUploadInfo } from './models'
-import AliUploadOpenApi from "./uploadOpenApi";
 
 export default class AliUpload {
 

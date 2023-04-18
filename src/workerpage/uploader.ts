@@ -12,7 +12,9 @@ import { humanSize, Sleep } from '../utils/format'
 import { RuningList } from './uiupload'
 import path from 'path'
 import fspromises from 'fs/promises'
-import AliUploadOpenApi from "../aliapi/uploadOpenApi";
+import AliUploadOpenApi from '../aliapi/uploadOpenApi'
+import AliUpload from '../aliapi/upload'
+
 
 export async function StartUpload(fileui: IUploadingUI): Promise<void> {
   
@@ -404,10 +406,10 @@ async function reloadUploadUrl(uploadInfo: IUploadInfo, fileui: IUploadingUI): P
   
   uploadInfo.part_info_list = []
   
-  let isOk = await AliUploadOpenApi.UploadFilePartUrl(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo).catch(() => {})
+  let isOk = await AliUpload.UploadFilePartUrl(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo).catch(() => {})
   if (isOk != 'success') return isOk || 'codeerror'
   if (uploadInfo.part_info_list.length > 0) {
-    isOk = await AliUploadOpenApi.UploadFileListUploadedParts(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, 0, uploadInfo).catch(() => {})
+    isOk = await AliUpload.UploadFileListUploadedParts(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, 0, uploadInfo).catch(() => {})
     if (isOk == 'success') {
       const part_info_list = uploadInfo.part_info_list
       let isUpload = true
@@ -442,7 +444,7 @@ async function checkPreHashAndGetPartlist(uploadInfo: IUploadInfo, fileui: IUplo
       fileui.Info.failedMessage = prehash.substring('error'.length)
       return false 
     } else {
-      const matched = await AliUploadOpenApi.UploadCreatFileWithPreHash(fileui.user_id, fileui.drive_id, fileui.parent_file_id, fileui.File.name, fileui.File.size, prehash, fileui.check_name_mode)
+      const matched = await AliUpload.UploadCreatFileWithPreHash(fileui.user_id, fileui.drive_id, fileui.parent_file_id, fileui.File.name, fileui.File.size, prehash, fileui.check_name_mode)
       if (!matched.errormsg) {
         
         fileui.Info.up_upload_id = matched.upload_id
@@ -479,7 +481,7 @@ async function checkPreHashAndGetPartlist(uploadInfo: IUploadInfo, fileui: IUplo
 
   uploadInfo.sha1 = proof.sha1
 
-  const miaoChuan = await AliUploadOpenApi.UploadCreatFileWithFolders(fileui.user_id, fileui.drive_id, fileui.parent_file_id, fileui.File.name, fileui.File.size, proof.sha1, proof.proof_code, fileui.check_name_mode)
+  const miaoChuan = await AliUpload.UploadCreatFileWithFolders(fileui.user_id, fileui.drive_id, fileui.parent_file_id, fileui.File.name, fileui.File.size, proof.sha1, proof.proof_code, fileui.check_name_mode)
   if (miaoChuan.errormsg != '') {
     fileui.Info.uploadState = 'error'
     fileui.Info.failedCode = 504
