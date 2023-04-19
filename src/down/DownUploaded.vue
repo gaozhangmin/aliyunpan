@@ -220,7 +220,7 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
                 <i class="iconfont iconwenjian" />
               </a-button>
               <a-button type="text" tabindex="-1" title="打开文件夹" @click.prevent.stop="onSelectFile(item, 'dir')">
-                <i class="iconfont iconfile-folder" />
+                <i class="fa-solid fa-folder" />
               </a-button>
               <a-button type="text" tabindex="-1" title="删除上传记录" @click.prevent.stop="onSelectFile(item, 'delete')">
                 <i class="iconfont icondelete" />
@@ -241,7 +241,7 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
           <template #default>打开文件</template>
         </a-doption>
         <a-doption @click="() => onSelectFile(undefined, 'dir')">
-          <template #icon> <i class="iconfont iconfile-folder" /> </template>
+          <template #icon> <i class="fa-solid fa-folder" /> </template>
           <template #default>打开文件夹</template>
         </a-doption>
         <a-doption @click="() => onSelectFile(undefined, 'delete')">

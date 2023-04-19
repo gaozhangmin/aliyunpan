@@ -34,7 +34,7 @@ export interface CheckNode {
   children: CheckNode[]
 }
 
-const iconfolder = h('i', { class: 'iconfont iconfile-folder' })
+const iconfolder = h('i', { class: 'fa-solid fa-folder' })
 const foldericonfn = () => iconfolder
 const fileiconfn = (icon: string) => h('i', { class: 'iconfont ' + icon })
 

@@ -34,7 +34,7 @@ export interface CheckNode {
   children: CheckNode[]
 }
 
-const folderIconFn = () => h('i', { class: 'iconfont iconfile-folder' })
+const folderIconFn = () => h('i', { class: 'fa-solid fa-folder' })
 const fileIconFn = () => h('i', { class: 'iconfont iconwenjian' })
 
 function getDirSize(sizeInfo: { size: number; dirCount: number; fileCount: number }, treeData: TreeNodeData[], linkList: ILinkTxt[], dirMap: Set<string>) {

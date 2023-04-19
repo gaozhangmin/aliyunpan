@@ -174,7 +174,7 @@ async function GetAllDir(user_id: string, drive_id: string) {
     })
 }
 
-const iconFolder = h('i', { class: 'iconfont iconfile-folder' })
+const iconFolder = h('i', { class: 'fa-solid fa-folder' })
 export const foldericonfn = () => iconFolder
 const fileIcon = h('i', { class: 'iconfont iconwenjian' })
 export const fileiconfn = () => fileIcon

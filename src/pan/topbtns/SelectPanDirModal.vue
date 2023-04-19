@@ -13,7 +13,7 @@ import PanDAL from '../pandal'
 import { Sleep } from '../../utils/format'
 import { treeSelectToExpand } from '../../utils/antdtree'
 
-const iconfolder = h('i', { class: 'iconfont iconfile-folder' })
+const iconfolder = h('i', { class: 'fa-solid fa-folder' })
 const foldericonfn = () => iconfolder
 export default defineComponent({
   components: {
@@ -232,7 +232,7 @@ export default defineComponent({
           <i class="ant-tree-switcher-icon iconfont Arrow" />
         </template>
         <template #icon>
-          <i class="iconfont iconfile-folder" />
+          <i class="fa-solid fa-folder" />
         </template>
         <template #title="{ dataRef }">
           <span class="sharetitleleft">{{ dataRef.title }}</span>

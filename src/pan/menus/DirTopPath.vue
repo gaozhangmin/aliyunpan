@@ -27,7 +27,7 @@ export default defineComponent({
           <span> &nbsp; {{ item.name }} </span>
           <template #content>
             <a-doption v-for="option in pantreeStore.selectDirPath" :key="'drop' + option.file_id" @click="() => selectDir(option.drive_id, option.file_id)">
-              <template #icon> <i class="iconfont iconfile-folder" /> </template>
+              <template #icon> <i class="fa-solid fa-folder" /> </template>
               <template #default>{{ option.name }}</template>
             </a-doption>
           </template>

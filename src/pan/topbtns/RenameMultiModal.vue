@@ -17,7 +17,7 @@ import { throttle } from '../../utils/debounce'
 import { IAliGetFileModel } from '../../aliapi/alimodels'
 import { treeSelectToExpand } from '../../utils/antdtree'
 
-const iconfolder = h('i', { class: 'iconfont iconfile-folder' })
+const iconfolder = h('i', { class: 'fa-solid fa-folder' })
 const foldericonfn = () => iconfolder
 const fileiconfn = (icon: string) => h('i', { class: 'iconfont ' + icon })
 

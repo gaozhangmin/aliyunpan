@@ -195,7 +195,7 @@ const handleQuickSelect = (index: number) => {
               <i class="ant-tree-switcher-icon iconfont Arrow" />
             </template>
             <template #icon>
-              <i class="iconfont iconfile-folder" />
+              <i class="fa-solid fa-folder" />
             </template>
             <template #title="{ dataRef }">
               <span v-if="dataRef.key.length == 40 || dataRef.key == 'root'" class="dirtitle treedragnode" @drop="onRowItemDrop($event, dataRef.key)" @dragover="onRowItemDragOver" @dragenter="onRowItemDragEnter" @dragleave="onRowItemDragLeave">{{ dataRef.title }}</span>
@@ -243,7 +243,7 @@ const handleQuickSelect = (index: number) => {
             :tree-data="pantreeStore.quickData"
             @select="(_:any[],e:any)=>pantreeStore.mTreeSelected(e.node.key)">
             <template #icon>
-              <i class="iconfont iconfile-folder" />
+              <i class="fa-solid fa-folder" />
             </template>
             <template #title="{ dataRef }">
               <span class="quicktitle" :title="dataRef.namesearch">快捷 · {{ dataRef.title }}</span>

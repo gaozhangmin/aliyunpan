@@ -200,7 +200,7 @@ const handleScan = () => {
             <i class="ant-tree-switcher-icon iconfont Arrow" />
           </template>
           <template #icon>
-            <i class="iconfont iconfile-folder" />
+            <i class="fa-solid fa-folder" />
           </template>
         </AntdTree>
       </a-spin>

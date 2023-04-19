@@ -69,7 +69,7 @@ onUnmounted(() => {
           在线播放
         </a-menu-item>
         <a-menu-item key="SettingPan">
-          <template #icon><i class="iconfont iconfile-folder" /></template>
+          <template #icon><i class="fa-solid fa-folder" /></template>
           网盘
         </a-menu-item>
         <a-menu-item key="SettingDebug">

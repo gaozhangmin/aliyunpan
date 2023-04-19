@@ -31,7 +31,7 @@ export default defineComponent({
           <template #default>新建文件</template>
         </a-doption>
         <a-doption value="newfolder" title="Ctrl+Shift+N" @click="() => modalCreatNewDir('folder')">
-          <template #icon> <i class="iconfont iconfile-folder" /> </template>
+          <template #icon> <i class="fa-solid fa-folder" /> </template>
           <template #default>新建文件夹</template>
         </a-doption>
         <a-doption value="newdatefolder" @click="() => modalCreatNewDir('datefolder')">
@@ -48,7 +48,7 @@ export default defineComponent({
           <template #default>上传文件</template>
         </a-doption>
         <a-doption value="uploaddir" title="Ctrl+Shift+U" @click="() => handleUpload('folder')">
-          <template #icon> <i class="iconfont iconfile-folder" /> </template>
+          <template #icon> <i class="fa-solid fa-folder" /> </template>
           <template #default>上传文件夹</template>
         </a-doption>
       </template>
