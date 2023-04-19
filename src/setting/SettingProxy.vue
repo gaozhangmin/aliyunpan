@@ -72,7 +72,7 @@ const handleProxyConn = async () => {
         <a-option value="socks5h">SOCKS5H</a-option>
       </a-select>
       <a-popover position="right">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">HTTP</span>
@@ -111,7 +111,7 @@ const handleProxyConn = async () => {
     <div class="settingrow">
       <MySwitch :value="settingStore.proxyUseProxy" @update:value="cb({ proxyUseProxy: $event })"></MySwitch>
       <a-popover position="right">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">关闭</span>

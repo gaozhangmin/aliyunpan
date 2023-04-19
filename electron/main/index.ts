@@ -6,7 +6,7 @@ import {execFile, SpawnOptions} from 'child_process'
 import { portIsOccupied } from './utils'
 import { app, BrowserWindow, dialog, Menu, MenuItem, ipcMain, shell, session } from 'electron'
 import { exec, spawn } from 'child_process'
-import { existsSync, readFileSync, writeFileSync } from 'fs'
+import { existsSync, readFileSync, writeFileSync, rmdirSync } from 'fs'
 import path from 'path'
 import fixPath from 'fix-path'
 
@@ -34,8 +34,8 @@ app.commandLine.appendSwitch('ignore-certificate-errors')
 app.commandLine.appendSwitch('proxy-bypass-list', '<local>')
 app.commandLine.appendSwitch('wm-window-animations-disabled')
 
-app.setAppUserModelId('com.github.liupan1890')
-app.name = 'alixby3'
+app.setAppUserModelId('zhangao')
+app.name = 'XiaoBaiYangDriver'
 const DEBUGGING = !app.isPackaged
 
 const userData = getResourcesPath('userdir.config')
@@ -95,7 +95,7 @@ app.on('will-quit', () => {
 })
 
 app.setAboutPanelOptions({
-  applicationName: '小白羊阿里云盘',
+  applicationName: '小白羊云盘',
   copyright: 'Zhangmin Gao',
   website: 'https://github.com/gaozhangmin/aliyunpan',
   iconPath: getResourcesPath('app.png'),
@@ -148,12 +148,28 @@ app
     if (versionFile && existsSync(versionFile)) {
       const version = readFileSync(versionFile, 'utf-8')
       if (version != app.getVersion()) {
-        session.defaultSession.clearCache()
-        session.defaultSession.clearAuthCache()
-        writeFileSync(versionFile, app.getVersion(), 'utf-8')
+        try {
+          rmdirSync(getUserDataPath('databases'))
+          rmdirSync(getUserDataPath('IndexedDB'))
+          rmdirSync(getUserDataPath('Local Storage'))
+          rmdirSync(getUserDataPath('Session Storage'))
+          rmdirSync(getUserDataPath('Code Cache'))
+          writeFileSync(versionFile, app.getVersion(), 'utf-8')
+        } catch (error) {
+          console.log(error)
+        }
       }
     } else {
-      writeFileSync(versionFile, app.getVersion(), 'utf-8')
+      try {
+        rmdirSync(getUserDataPath('databases'))
+        rmdirSync(getUserDataPath('IndexedDB'))
+        rmdirSync(getUserDataPath('Local Storage'))
+        rmdirSync(getUserDataPath('Session Storage'))
+        rmdirSync(getUserDataPath('Code Cache'))
+        writeFileSync(versionFile, app.getVersion(), 'utf-8')
+      } catch (error) {
+        console.log(error)
+      }
     }
 
     session.defaultSession.webRequest.onBeforeSendHeaders((details, cb) => {
@@ -428,7 +444,7 @@ ipcMain.on('WebRelaunch', (event, data) => {
 })
 
 ipcMain.handle('WebRelaunchAria', async (event, data) => {
-  return await creatAria()
+  return await startAria2c()
 })
 
 ipcMain.on('WebSetProgressBar', (event, data) => {
@@ -540,7 +556,7 @@ ipcMain.on('WebOpenUrl', (event, data) => {
   })
 })
 
-async function creatAria() {
+async function startAria2c() {
   try {
     let basePath = getStaticPath('engine')
     let confPath = path.join(basePath, 'aria2.conf')
@@ -566,7 +582,7 @@ async function creatAria() {
     const options:SpawnOptions = { cwd: basePath, shell: true, windowsVerbatimArguments: true}
     const port = await portIsOccupied(16800)
     const subprocess = execFile(
-        ariaPath,
+      ariaPath2,
         [
           '--stop-with-process=' + process.pid,
           '-D',
@@ -576,7 +592,7 @@ async function creatAria() {
         options,
         (error, stdout, stderr) => {
           if (error) {
-            console.error(`execFile error: ${error}`);
+            ShowError("启动Aria2c失败", error.message)
             return;
           }
         }

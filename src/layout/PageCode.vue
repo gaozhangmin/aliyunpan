@@ -68,14 +68,14 @@ export default defineComponent({
     <a-layout-header id="xbyhead" draggable="false">
       <div id="xbyhead2" class="q-electron-drag">
         <a-button type="text" tabindex="-1">
-          <i v-if="format" class="iconfont icondebug"></i>
-          <i v-else class="iconfont iconfile-txt"></i>
+          <i v-if="format" class="fa-solid fa-code"></i>
+          <i v-else class="fa-solid fa-file-text"></i>
         </a-button>
         <div class="title">{{ appStore.pageCode?.file_name || '文档在线预览' }}</div>
         <div class="flexauto"></div>
 
         <a-button type="text" tabindex="-1" title="关闭 Alt+F4" @click="handleHideClick">
-          <i class="iconfont iconclose"></i>
+          <i class="fa-solid fa-x"></i>
         </a-button>
       </div>
     </a-layout-header>

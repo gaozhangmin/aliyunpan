@@ -96,7 +96,7 @@ export default defineComponent({
 <!--          <a-option value="refuse">保留网盘内文件，不上传了</a-option>-->
 <!--        </a-select>-->
 <!--        <a-popover position="bottom">-->
-<!--          <i class="iconfont iconbulb" />-->
+<!--          <i class="fa-solid fa-lightbulb" />-->
 <!--          <template #content>-->
 <!--            <div>-->
 <!--              默认：<span class="opred">删除网盘内文件，继续上传</span>-->

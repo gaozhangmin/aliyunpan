@@ -103,8 +103,8 @@ body {
   --arcoblue-9: 12, 19, 121 !important;
   --arcoblue-10: 0, 3, 77 !important;
 
-  --foot-bg: #3c86f5;
-  --foot-txt: rgb(245, 245, 246);
+  --foot-bg: #1f9bde;
+  --foot-txt: rgb(20, 20, 203);
   --topshadow: rgba(0, 0, 0, 0.1);
   --leftshadow: rgba(29, 35, 41, 0.05);
   --rightbg2: #f2f3f5;
@@ -145,6 +145,8 @@ body[arco-theme='dark'] {
 .arco-layout-sider .arco-menu-light .arco-menu-item.arco-menu-selected .arco-menu-icon {
   color: var(--color-text-2);
 }
+
+
 
 body[arco-theme='dark'] .arco-layout-sider,
 body[arco-theme='dark'] .arco-layout-sider-light,
@@ -423,7 +425,7 @@ body[arco-theme='dark'] .toppanbtn .arco-btn.danger:active {
   border-bottom-right-radius: 0 !important;
 }
 
-.toppanbtn .iconfont {
+.toppanbtn .fa-solid {
   font-size: 18px;
   line-height: 24px;
 }
@@ -554,14 +556,12 @@ body[arco-theme='dark'] .toppanarea {
   background: rgba(99, 125, 255, 0.1) !important;
   color: rgb(var(--primary-6)) !important;
 }
-.select .iconfont {
+.select .fa-solid {
   font-size: 24px;
   line-height: 34px;
-  color: rgb(var(--primary-6)) !important;
+  color: #52c4f6 !important;
 }
-.select .iconfont.iconrpic {
-  opacity: 0.8;
-}
+
 .vermodalhead {
   display: flex;
   align-items: center;
@@ -576,7 +576,7 @@ body[arco-theme='dark'] .toppanarea {
 }
 .vertip {
   padding-left: 12px;
-  color: rgb(40, 104, 240);
+  color: #52c4f6;
   flex-grow: 1;
 }
 
@@ -627,7 +627,7 @@ body[arco-theme='dark'] .toppanarea {
   transform: scaleY(1);
   opacity: 1;
   transition: transform 0.15s cubic-bezier(0.645, 0.045, 0.355, 1), opacity 0.15s cubic-bezier(0.645, 0.045, 0.355, 1);
-  border-right: 2px solid #637dff;
+  border-right: 2px solid #52c4f6;
 }
 .xbyleftmenu.arco-menu .arco-menu-item .arco-menu-icon {
   width: 30px;
@@ -638,7 +638,7 @@ body[arco-theme='dark'] .toppanarea {
   flex-shrink: 0;
   flex-grow: 0;
 }
-.xbyleftmenu.arco-menu .arco-menu-item .arco-menu-icon .iconfont {
+.xbyleftmenu.arco-menu .arco-menu-item .arco-menu-icon .fa-solid {
   font-size: 20px;
 }
 
@@ -712,4 +712,17 @@ body[arco-theme='dark'] .toppanarea {
 
 .arco-scrollbar {
   height: 100%;
+}
+
+.fa-solid, .fa-brands {
+  font-size: 2em; /* 将图标大小设置为原始大小的2倍 */
+  color: #52c4f6;
+}
+.fa-lightbulb {
+  font-size: 1em;
+  color: #f65278;
+  margin-left: 4px;
+}
+.fa-minimize, .fa-maximize, .fa-window-close, .fa-gear {
+  color: #a8a4a4;
 }

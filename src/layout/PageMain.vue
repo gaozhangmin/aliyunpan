@@ -30,7 +30,6 @@ const appStore = useAppStore()
 const winStore = useWinStore()
 const keyboardStore = useKeyboardStore()
 const footStore = useFootStore()
-// const leftDrawerIcon = computed(() => (!panVisible ? h('i', { class: 'iconfont iconmenuoff' }) : h('i', { class: 'iconfont iconmenuon' })))
 
 const handlePanVisible = () => {
   panVisible.value = !panVisible.value
@@ -150,14 +149,14 @@ const handleCheckVer = () => {
     <a-layout-header id="xbyhead" draggable="false">
       <div id="xbyhead2" class="q-electron-drag">
         <a-button v-show="appStore.appTab === 'pan'" type="text" size="small" @click="handlePanVisible">
-           <i class="iconfont iconmenuon" v-if="panVisible"/>
-           <i class="iconfont iconmenuoff" v-else/>
+           <i class="fa-solid fa-toggle-on" v-if="panVisible"/>
+           <i class="fa-solid fa-toggle-off" v-else/>
         </a-button>
         <div class="title">小白羊 {{ Config.appVersion }}</div>
 
         <a-menu mode="horizontal" :selected-keys="[appStore.appTab]" @update:selected-keys="appStore.toggleTab($event[0])">
           <a-menu-item key="pan" title="Alt+1">网盘</a-menu-item>
-          <a-menu-item key="pic" title="Alt+2">相册</a-menu-item>
+<!--          <a-menu-item key="pic" title="Alt+2">相册</a-menu-item>-->
           <a-menu-item key="down" title="Alt+3">传输</a-menu-item>
           <a-menu-item key="share" title="Alt+4">分享</a-menu-item>
           <a-menu-item key="rss" title="Alt+5">插件</a-menu-item>
@@ -168,16 +167,16 @@ const handleCheckVer = () => {
         <UserInfo />
         <UserLogin />
         <a-button type="text" tabindex="-1" title="设置 Alt+6" :class="appStore.appTab == 'setting' ? 'active' : ''" @click="appStore.toggleTab('setting')">
-          <i class="iconfont iconsetting"></i>
+          <i class="fa-solid fa-gear"></i>
         </a-button>
         <a-button type="text" tabindex="-1" title="最小化 Alt+M" @click="handleMinClick">
-          <i class="iconfont iconzuixiaohua"></i>
+          <i class="fa-solid fa-minimize"></i>
         </a-button>
         <a-button type="text" tabindex="-1" title="最大化 Alt+Enter" @click="handleMaxClick">
-          <i class="iconfont iconfullscreen"></i>
+          <i class="fa-solid fa-maximize"></i>
         </a-button>
         <a-button type="text" tabindex="-1" title="关闭 Alt+F4" @click="handleHideClick">
-          <i class="iconfont iconclose"></i>
+          <i class="fa-solid fa-window-close"></i>
         </a-button>
       </div>
     </a-layout-header>
@@ -218,18 +217,18 @@ const handleCheckVer = () => {
             <audio controls autoplay style="width: 360px; height: 24px; margin: 0 -50px 0 -12px" :src="footStore.audioUrl">no audio</audio>
           </div>
           <div v-if="footStore.audioUrl" class="footerBar fix" title="关闭音频预览" style="cursor: pointer" @click.stop="handleAudioStop()">
-            <i class="iconfont iconclose" />
+            <i class="fa-solid fa-x" />
           </div>
 
           <div class="footerBar fix" v-show="footStore.uploadTotalSpeed" >
-            <i class="iconfont iconshangchuansudu" />
+            <i class="fa-solid fa-arrow-up" />
             <span id="footUploadSpeed" class="footspeedstr">
               {{ footStore.uploadTotalSpeed }}
             </span>
           </div>
 
           <div class="footerBar fix" v-show="footStore.downloadTotalSpeed" >
-            <i class="iconfont iconxiazaisudu" />
+            <i class="fa-solid fa-arrow-down" />
             <span id="footDownSpeed" class="footspeedstr">
               {{ footStore.downloadTotalSpeed }}
             </span>
@@ -245,7 +244,7 @@ const handleCheckVer = () => {
           <a-popover v-model:popup-visible="footStore.taskVisible" trigger="click" position="top" class="asynclist">
             <div class="footerBar fix" style="cursor: pointer">
               <span :class="footStore.GetIsRunning ? 'shake' : ''">
-                <i class="iconfont icontongzhiblue" />
+                <i class="fa-solid fa-bell" />
               </span>
               <span>异步通知</span>
             </div>
@@ -255,9 +254,9 @@ const handleCheckVer = () => {
                   <div class="asynclistitem-content">
                     <div v-if="item.status == 'error'" class="asynclistitem-name danger" :title="item.title">{{ item.title }}</div>
                     <div v-else class="asynclistitem-name" :title="item.title">{{ item.title }}</div>
-                    <span v-if="item.status == 'running'" class="asynclistitem-progress asynclistitem-icon-running" title="执行中"><i class="iconfont iconhourglass" />{{ item.usetime }}</span>
-                    <span v-if="item.status == 'success'" class="asynclistitem-progress asynclistitem-icon-success" title="成功"><i class="iconfont iconcheck" />{{ item.usetime }}</span>
-                    <span v-if="item.status == 'error'" class="asynclistitem-progress asynclistitem-icon-error" title="失败"><i class="iconfont iconclose" />{{ item.usetime }}</span>
+                    <span v-if="item.status == 'running'" class="asynclistitem-progress asynclistitem-icon-running" title="执行中"><i class="fa-solid fa-hourglass-start" />{{ item.usetime }}</span>
+                    <span v-if="item.status == 'success'" class="asynclistitem-progress asynclistitem-icon-success" title="成功"><i class="fa-solid fa-check" />{{ item.usetime }}</span>
+                    <span v-if="item.status == 'error'" class="asynclistitem-progress asynclistitem-icon-error" title="失败"><i class="fa-solid fa-x" />{{ item.usetime }}</span>
                   </div>
                   <div class="asynclistitem-operation">
                     <a-button type="text" size="mini" @click.stop="handleAsyncDelete(item.key)">删除</a-button>
@@ -334,7 +333,7 @@ const handleCheckVer = () => {
   color: rgb(var(--primary-6));
   background-color: var(--color-fill-2);
 }
-#xbyhead2 .iconfont {
+#xbyhead2 .fa-solid {
   font-size: 24px;
 }
 #xbyhead2 .arco-menu-horizontal {
@@ -433,7 +432,7 @@ a {
 .footerBar:hover {
   background-color: #569dff;
 }
-.footerBar .iconfont {
+.footerBar .fa-solid {
   font-size: 14px;
   line-height: 24px;
 }

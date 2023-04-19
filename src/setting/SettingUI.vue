@@ -43,7 +43,7 @@ const handleCheckVer = () => {
     <div class="settingrow">
       <MySwitch :value="settingStore.uiExitOnClose" @update:value="cb({ uiExitOnClose: $event })"></MySwitch>
       <a-popover position="right">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">关闭</span>

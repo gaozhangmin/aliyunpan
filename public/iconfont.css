@@ -6,7 +6,7 @@
 .iconfont {
   font-family: "iconfont" !important;
   font-size: 16px;
-  color: #0078D7;
+  color: #52c4f6;
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -813,7 +813,7 @@
   content: "\e623";
 }
 
-.iconwenjian:before {
+.fa-file:before {
   content: "\e637";
 }
 

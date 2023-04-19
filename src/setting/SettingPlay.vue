@@ -36,7 +36,7 @@ function handleSelectPlayer() {
         <a-radio tabindex="-1" value="online">播放转码视频</a-radio>
       </a-radio-group>
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">播放原始的文件</span>
@@ -63,7 +63,7 @@ function handleSelectPlayer() {
         <a-radio tabindex="-1" value="other">自定义</a-radio>
       </a-radio-group>
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div style="min-width: 400px">
             默认：<span class="opred">内置网页播放器</span>
@@ -88,7 +88,7 @@ function handleSelectPlayer() {
     <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'win32' ? '' : 'none', marginTop: '8px' }">
       <a-input-search tabindex="-1" style="max-width: 100px" :readonly="true" button-text="选择播放软件" search-button :model-value="settingStore.uiVideoPlayerPath" @search="handleSelectPlayer" />
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div style="min-width: 400px">
             <span class="opred">windows</span>：选择一个播放软件.exe
@@ -108,7 +108,7 @@ function handleSelectPlayer() {
     <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'darwin' ? '' : 'none', marginTop: '8px' }">
       <a-input-search tabindex="-1" style="max-width: 200px" :readonly="true" button-text="选择播放软件" search-button :model-value="settingStore.uiVideoPlayerPath" @search="handleSelectPlayer" />
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div style="min-width: 400px">
             <span class="opred">macOS</span>：选择一个播放软件.app
@@ -127,7 +127,7 @@ function handleSelectPlayer() {
     <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'linux' ? '' : 'none', marginTop: '8px' }">
       <a-auto-complete :data="['mpv', 'vlc', 'totem', 'mplayer', 'smplayer', 'xine', 'parole', 'kodi']" :style="{ width: '378px' }" placeholder="请填写一个播放软件" strict :model-value="settingStore.uiVideoPlayerPath" @change="cb({ uiVideoPlayerPath: $event })" />
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div style="min-width: 400px">
             <span class="opred">linux</span>：手动填写一个播放命令
@@ -147,7 +147,7 @@ function handleSelectPlayer() {
     <div class="settingrow">
       <MySwitch :value="settingStore.uiAutoColorVideo" @update:value="cb({ uiAutoColorVideo: $event })"></MySwitch>
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div style="min-width: 400px">观看视频时 将视频自动标记为浅灰色</div>
         </template>
@@ -158,7 +158,7 @@ function handleSelectPlayer() {
     <div class="settingrow">
       <MySwitch :value="settingStore.uiAutoPlaycursorVideo" @update:value="cb({ uiAutoPlaycursorVideo: $event })"></MySwitch>
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div style="min-width: 400px">观看视频时 将播放进度同步到网盘放映室<br /> 只有使用 <span class="opblue">内置网页播放器</span> 时才支持同步
             播放进度</div>

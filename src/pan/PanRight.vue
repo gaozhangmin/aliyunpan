@@ -1,5 +1,6 @@
 <!-- eslint-disable no-irregular-whitespace -->
-<script setup lang="ts">
+<script  setup lang="ts">
+
 import { IAliGetFileModel } from '../aliapi/alimodels'
 import {
   KeyboardState,
@@ -7,8 +8,7 @@ import {
   useFootStore,
   useKeyboardStore,
   usePanFileStore,
-  useSettingStore,
-  useUserStore
+  useSettingStore
 } from '../store'
 import useWinStore from '../store/winstore'
 import { onShowRightMenu, TestCtrl, TestCtrlShift, TestKey, TestKeyboardScroll, TestKeyboardSelect, onHideRightMenuScroll } from '../utils/keyboardhelper'
@@ -18,7 +18,16 @@ import PanDAL from './pandal'
 import { Tooltip as AntdTooltip } from 'ant-design-vue'
 import 'ant-design-vue/es/tooltip/style/css'
 
-import { handleUpload, topFavorDeleteAll, menuFavSelectFile, menuTrashSelectFile, menuCopySelectedFile, menuCreatShare, topSearchAll, dropMoveSelectedFile } from './topbtns/topbtn'
+import {
+  handleUpload,
+  topFavorDeleteAll,
+  menuFavSelectFile,
+  menuTrashSelectFile,
+  menuCopySelectedFile,
+  menuCreatShare,
+  topSearchAll,
+  dropMoveSelectedFile
+} from './topbtns/topbtn'
 import { modalCreatNewFile, modalCreatNewDir, modalRename, modalDaoRuShareLink, modalUpload } from '../utils/modal'
 import { PanFileState } from './panfilestore'
 import PanTopbtn from './menus/PanTopbtn.vue'
@@ -26,11 +35,9 @@ import FileTopbtn from './menus/FileTopbtn.vue'
 import FileRightMenu from './menus/FileRightMenu.vue'
 import TrashRightMenu from './menus/TrashRightMenu.vue'
 import TrashTopbtn from './menus/TrashTopbtn.vue'
-import DirTopPath from './menus/DirTopPath.vue'
 import message from '../utils/message'
 import { menuOpenFile } from '../utils/openfile'
 import { throttle } from '../utils/debounce'
-import AliDirFileList from "../aliapi/dirfilelist";
 
 
 const viewlist = ref()
@@ -40,6 +47,9 @@ const appStore = useAppStore()
 const settingStore = useSettingStore()
 const winStore = useWinStore()
 const panfileStore = usePanFileStore()
+
+
+
 
 let dirID = ''
 panfileStore.$subscribe((_m: any, state: PanFileState) => {
@@ -109,6 +119,25 @@ const handleBack = () => PanDAL.aReLoadOneDirToShow('', 'back', false)
 const handleHome = () => PanDAL.aReLoadOneDirToShow('', 'root', false)
 const handleSelectAll = () => panfileStore.mSelectAll()
 
+const sortIcon = (name:string):string => {
+  if (panfileStore.FileOrderDesc==='名称 · 降') {
+    return 'fa-solid fa-sort-alpha-up'
+  } else if (panfileStore.FileOrderDesc==='名称 · 升') {
+    return 'fa-solid fa-sort-alpha-down'
+  } else if (panfileStore.FileOrderDesc==='大小 · 降') {
+    return 'fa-solid fa-sort-amount-down'
+  } else if (panfileStore.FileOrderDesc==='大小 · 升') {
+    return 'fa-solid fa-sort-amount-up'
+  } else if (panfileStore.FileOrderDesc==='时间 · 降') {
+    return 'fa-solid fa-sort-numeric-up'
+  } else if (panfileStore.FileOrderDesc==='时间 · 升') {
+    return 'fa-solid fa-sort-numeric-down'
+  } else {
+    return 'fa-sort'
+  }
+
+}
+
 
 const handleSelect = (file_id: string, event: any, isCtrl: boolean = false) => {
   onHideRightMenuScroll()
@@ -170,15 +199,6 @@ const handleOpenFile = (event: Event, file: IAliGetFileModel | undefined) => {
   if (!panfileStore.ListSelected.has(file.file_id)) panfileStore.mMouseSelect(file.file_id, false, false)
 
   menuOpenFile(file)
-}
-
-const handleSearchInput = (value: string) => {
-  panfileStore.mSearchListData(value)
-  viewlist.value.scrollIntoView(0)
-}
-const handleSearchEnter = (event: any) => {
-  event.target.blur()
-  viewlist.value.scrollIntoView(0)
 }
 
 const menuShowVideo = ref(false)
@@ -431,84 +451,84 @@ const onPanDragEnd = (ev: any) => {
     showDragUpload.value = false
   }
 }
+
+const showSearchBox = ref(false);
+
+const handleSearchInput = (value: string) => {
+  panfileStore.mSearchListData(value)
+  viewlist.value.scrollIntoView(0)
+}
+
+const handleSearchEnter = (event: any) => {
+  event.target.blur()
+  viewlist.value.scrollIntoView(0)
+}
 </script>
 
 <template>
-  <div style="height: 7px"></div>
-  <div class="toppanbtns" style="height: 26px">
-    <DirTopPath />
-    <div style="flex-grow: 1"></div>
-    <div v-if="panfileStore.SelectDirType == 'trash'" class="toppantip"><span class="opred">回收站有效期 免费=10天 会员=30天 超级会员=60天</span></div>
-    <div v-if="panfileStore.SelectDirType == 'recover'" class="toppantip"><span class="opred">仅会员可用 恢复60天内彻底删除的文件(不保留文件夹路径)</span></div>
-    <div v-if="panfileStore.SelectDirType == 'favorite'" class="toppantip"><span class="opred">列出已收藏的文件和文件夹 右键可定位到文件夹</span></div>
-    <div v-if="panfileStore.SelectDirType == 'color'" class="toppantip"><span class="opred">列出已标记的文件和文件夹 右键可定位到文件夹</span></div>
-    <div v-if="panfileStore.SelectDirType == 'video'" class="toppantip"><span class="opred">同步手机APP的放映室 设置为内置网页播放器时可继续播放</span></div>
-  </div>
-  <div style="height: 14px"></div>
-  <div class="toppanbtns" style="height: 26px" tabindex="-1">
-    <div class="toppanbtn">
-      <a-button type="text" size="small" tabindex="-1" :disabled="panfileStore.ListLoading" title="后退 Back Space" @click="handleBack">
-        <template #icon>
-            <i class="fa-solid fa-arrow-circle-left"></i>
-        </template>
-      </a-button>
-      <a-button type="text" size="small" tabindex="-1" :loading="panfileStore.ListLoading" title="刷新 F5" @click="handleRefresh">
-        <template #icon>
-          <i class="fa-solid fa-refresh" />
-        </template>
-      </a-button>
-      <a-button type="text" size="small" tabindex="-1" :disabled="panfileStore.ListLoading" title="定位 F6" @click="handleDingWei">
-        <template #icon>
-          <i class="fa-solid fa-location-crosshairs" />
-        </template>
+<!--  <div style="height: 7px"></div>-->
+<!--  <div class="toppanbtns" style="height: 26px">-->
+<!--    <DirTopPath />-->
+<!--    <div style="flex-grow: 1"></div>-->
+<!--    <div v-if="panfileStore.SelectDirType == 'trash'" class="toppantip"><span class="opred">回收站有效期 免费=10天 会员=30天 超级会员=60天</span></div>-->
+<!--    <div v-if="panfileStore.SelectDirType == 'recover'" class="toppantip"><span class="opred">仅会员可用 恢复60天内彻底删除的文件(不保留文件夹路径)</span></div>-->
+<!--    <div v-if="panfileStore.SelectDirType == 'favorite'" class="toppantip"><span class="opred">列出已收藏的文件和文件夹 右键可定位到文件夹</span></div>-->
+<!--    <div v-if="panfileStore.SelectDirType == 'color'" class="toppantip"><span class="opred">列出已标记的文件和文件夹 右键可定位到文件夹</span></div>-->
+<!--    <div v-if="panfileStore.SelectDirType == 'video'" class="toppantip"><span class="opred">同步手机APP的放映室 设置为内置网页播放器时可继续播放</span></div>-->
+<!--  </div>-->
+  <div style="height: 10px"></div>
+  <div class="toppanbtns" style="height: 30px" tabindex="-1">
+    <div v-show="appStore.appTab === 'pan'" class="toppanbtn-fa-search">
+      <a-button type="text" size="small" tabindex="-1" style="border: none" @click="() => topSearchAll('topSearchAll高级搜索')">
+        <i class="fa-solid fa-search iconsize-small" />
       </a-button>
     </div>
     <div v-show="panfileStore.SelectDirType == 'favorite'" class="toppanbtn">
-      <a-button type="text" size="small" tabindex="-1" class="danger" @click="topFavorDeleteAll"><i
-              class="fa-solid fa-crown" />清空收藏夹</a-button>
+      <a-button type="text" size="small" tabindex="-1" class="danger" @click="topFavorDeleteAll"><i class="fa-solid fa-trash-can" />清空收藏夹</a-button>
     </div>
-    <div v-show="panfileStore.SelectDirType == 'search' && !panfileStore.IsListSelected" class="toppanbtn">
-      <a-input-search
-        class="searchpan"
-        style="width: 240px"
-        :loading="panfileStore.ListLoading"
-        placeholder="输入关键字，搜索整个网盘"
-        button-text="搜索"
-        search-button
-        :input-attrs="{ id: 'searchpanInput' }"
-        @search="(val:string)=>topSearchAll(val)"
-        @press-enter="($event:any)=>topSearchAll($event.srcElement.value as string)"
-        @keydown.esc=";($event.target as any).blur()" />
-      <a-button type="text" size="small" tabindex="-1" style="border: none" @click="() => topSearchAll('topSearchAll高级搜索')">高级搜索</a-button>
-    </div>
+
+    <!--    <div class="toppanbtn">-->
+<!--      <a-button type="text"  tabindex="-1" :disabled="panfileStore.ListLoading" title="后退 Back Space" @click="handleBack">-->
+<!--        <template #icon>-->
+<!--            <i class="fa-solid fa-filter"></i>-->
+<!--        </template>-->
+<!--      </a-button>-->
+<!--      <a-button type="text" tabindex="-1" :loading="panfileStore.ListLoading" title="刷新 F5" @click="handleRefresh">-->
+<!--        <template #icon>-->
+<!--          <i class="fa-solid fa-refresh" />-->
+<!--        </template>-->
+<!--      </a-button>-->
+<!--      <a-button type="text" tabindex="-1" :disabled="panfileStore.ListLoading" title="定位 F6" @click="handleDingWei">-->
+<!--        <template #icon>-->
+<!--          <i class="fa-solid fa-location-crosshairs" />-->
+<!--        </template>-->
+<!--      </a-button>-->
+<!--    </div>-->
+<!--    <div v-show="panfileStore.SelectDirType == 'search' && !panfileStore.IsListSelected" class="toppanbtn">-->
+<!--      <a-input-search-->
+<!--        class="searchpan"-->
+<!--        style="width: 240px"-->
+<!--        :loading="panfileStore.ListLoading"-->
+<!--        placeholder="输入关键字，搜索整个网盘"-->
+<!--        button-text="搜索"-->
+<!--        search-button-->
+<!--        :input-attrs="{ id: 'searchpanInput' }"-->
+<!--        @search="(val:string)=>topSearchAll(val)"-->
+<!--        @press-enter="($event:any)=>topSearchAll($event.srcElement.value as string)"-->
+<!--        @keydown.esc=";($event.target as any).blur()" />-->
+<!--      <a-button type="text" size="small" tabindex="-1" style="border: none" @click="() => topSearchAll('topSearchAll高级搜索')"><i class="fa-solid fa-search" /></a-button>-->
+<!--    </div>-->
 
     <PanTopbtn :dirtype="panfileStore.SelectDirType" :isselected="panfileStore.IsListSelected" />
     <FileTopbtn :dirtype="panfileStore.SelectDirType" :isselected="panfileStore.IsListSelected" :isvideo="menuShowVideo" :isselectedmulti="panfileStore.IsListSelectedMulti" :isallfavored="panfileStore.IsListSelectedFavAll" />
     <TrashTopbtn :dirtype="panfileStore.SelectDirType" :isselected="panfileStore.IsListSelected" />
-
-    <div style="flex-grow: 1"></div>
-    <div class="toppanbtn">
-      <a-input-search
-        ref="inputsearch"
-        :model-value="panfileStore.ListSearchKey"
-        :input-attrs="{ tabindex: '-1' }"
-        size="small"
-        title="Ctrl+F / F3 / Space"
-        placeholder="快速筛选"
-        draggable="false"
-        @dragenter.stop="() => false"
-        @input="(val:any)=>handleSearchInput(val as string)"
-        @press-enter="handleSearchEnter"
-        @keydown.esc=";($event.target as any).blur()" />
-    </div>
-    <div></div>
   </div>
   <div style="height: 9px"></div>
   <div class="toppanarea" tabindex="-1">
     <div style="margin: 0 3px">
       <AntdTooltip title="点击全选" placement="left">
         <a-button shape="circle" type="text" tabindex="-1" class="select all" title="Ctrl+A" @click="handleSelectAll">
-          <i :class="panfileStore.IsListSelectedAll ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
+          <i :class="panfileStore.IsListSelectedAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
         </a-button>
       </AntdTooltip>
     </div>
@@ -529,10 +549,29 @@ const onPanDragEnd = (ev: any) => {
         </template>
       </AntdTooltip>
     </div>
+      <div style="flex-grow: 600"></div>
+      <div class="toppanbtn">
+          <a-input-search
+                  class="toppanbtn-search"
+                  ref="inputsearch"
+                  :model-value="panfileStore.ListSearchKey"
+                  :input-attrs="{ tabindex: '-1' }"
+                  size="small"
+                  title="Ctrl+F / F3 / Space"
+                  placeholder="搜索当前目录"
+                  draggable="false"
+                  @dragenter.stop="() => false"
+                  @input="(val:any)=>handleSearchInput(val as string)"
+                  @press-enter="handleSearchEnter"
+                  @keydown.esc=";($event.target as any).blur()" />
+      </div>
     <div style="flex-grow: 1"></div>
     <div class="fileorder">
       <a-dropdown trigger="hover" position="bl" @select="(val:any)=>handleFileListOrder(val as string)">
-        <a-button type="text" size="small" tabindex="-1" :disabled="panfileStore.ListLoading"><i class="iconfont iconpaixu1" />{{ panfileStore.FileOrderDesc }} <i class="iconfont icondown" /></a-button>
+        <a-button type="text" size="small" tabindex="-1" :disabled="panfileStore.ListLoading">
+            <i :class="sortIcon(panfileStore.FileOrderDesc)" />
+            {{ panfileStore.FileOrderDesc }}
+        </a-button>
 
         <template #content>
           <a-doption value="name asc">
@@ -557,19 +596,9 @@ const onPanDragEnd = (ev: any) => {
       </a-dropdown>
     </div>
     <div>
-      <AntdTooltip title="列表模式" placement="bottom">
-        <a-button shape="square" type="text" tabindex="-1" :class="settingStore.uiFileListMode === 'list' ? 'select active' : 'select'" @click="() => handleListGridMode('list')">
-          <i class="iconfont iconliebiaomoshi" />
-        </a-button>
-      </AntdTooltip>
-      <AntdTooltip title="缩略图模式" placement="bottom">
-        <a-button shape="square" type="text" tabindex="-1" :class="settingStore.uiFileListMode === 'image' ? 'select active' : 'select'" @click="() => handleListGridMode('image')">
-          <i class="iconfont iconxiaotumoshi" />
-        </a-button>
-      </AntdTooltip>
-      <AntdTooltip title="大图模式" placement="bottom">
-        <a-button shape="square" type="text" tabindex="-1" :class="settingStore.uiFileListMode === 'bigimage' ? 'select active' : 'select'" @click="() => handleListGridMode('bigimage')">
-          <i class="iconfont iconsuoluetumoshi" />
+      <AntdTooltip title="切换模式" placement="bottom">
+        <a-button shape="square" type="text" tabindex="-1" :class="settingStore.uiFileListMode === 'list' ? 'select list-mode' : 'select image-mode'" @click="handleListGridMode(settingStore.uiFileListMode === 'list' ? 'image' : 'list')">
+          <i :class="{'fa-solid fa-list': settingStore.uiFileListMode === 'list', 'fa-solid fa-image': settingStore.uiFileListMode === 'image'}" />
         </a-button>
       </AntdTooltip>
     </div>
@@ -633,11 +662,11 @@ const onPanDragEnd = (ev: any) => {
             @dragleave="onRowItemDragLeave">
             <div :class="'rangselect ' + (rangSelectFiles[item.file_id] ? (rangSelectStart == item.file_id ? 'rangstart' : rangSelectEnd == item.file_id ? 'rangend' : 'rang') : '')">
               <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index" @click.prevent.stop="handleSelect(item.file_id, $event, true)">
-                <i :class="panfileStore.ListSelected.has(item.file_id) ? (item.starred ? 'iconfont iconcrown3' : 'iconfont iconrsuccess') : item.starred ? 'iconfont iconcrown' : 'iconfont iconpic2'" />
+                <i :class="panfileStore.ListSelected.has(item.file_id) ? (item.starred ? 'fa-regular fa-square-check' : 'fa-regular fa-square-check') : item.starred ? 'fa-regular fa-square' : 'fa-regular fa-square'" />
               </a-button>
             </div>
             <div class="fileicon">
-              <i :class="'iconfont ' + item.icon" aria-hidden="true"></i>
+              <i :class="'fa-solid ' + item.icon" aria-hidden="true"></i>
             </div>
             <div class="filename" droppable="false">
               <div @click="handleOpenFile($event, item)">
@@ -646,11 +675,11 @@ const onPanDragEnd = (ev: any) => {
             </div>
             <div class="filebtn">
               <a-button v-if="item.description" type="text" tabindex="-1" class="label" title="标记">
-                <i class="iconfont iconwbiaoqian" :class="item.description" />
+                <i class="fa-solid fa-tags" :class="item.description" />
               </a-button>
               <a-popover v-if="item.thumbnail" content-class="popimg" position="lt">
                 <a-button type="text" tabindex="-1" class="gengduo" title="缩略图">
-                  <i class="iconfont icongengduo" />
+                  <i class="fa-solid fa-caret-square-down" />
                 </a-button>
                 <template #content>
                   <div class="preimg">
@@ -676,11 +705,11 @@ const onPanDragEnd = (ev: any) => {
             @dragend="onRowItemDragEnd">
             <div :class="'rangselect ' + (rangSelectFiles[item.file_id] ? (rangSelectStart == item.file_id ? 'rangstart' : rangSelectEnd == item.file_id ? 'rangend' : 'rang') : '')">
               <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index" @click.prevent.stop="handleSelect(item.file_id, $event, true)">
-                <i :class="panfileStore.ListSelected.has(item.file_id) ? (item.starred ? 'iconfont iconcrown3' : 'iconfont iconrsuccess') : item.starred ? 'iconfont iconcrown' : 'iconfont iconpic2'" />
+                <i :class="panfileStore.ListSelected.has(item.file_id) ? (item.starred ? 'fa-regular fa-square-check' : 'fa-regular fa-square-check') : item.starred ? 'fa-regular fa-square' : 'fa-regular fa-square'" />
               </a-button>
             </div>
             <div class="fileicon">
-              <i :class="'iconfont ' + item.icon" aria-hidden="true"></i>
+              <i :class="'fa-solid ' + item.icon" aria-hidden="true"></i>
             </div>
             <div class="filename" droppable="false">
               <div @click="handleOpenFile($event, item)">
@@ -689,11 +718,11 @@ const onPanDragEnd = (ev: any) => {
             </div>
             <div class="filebtn">
               <a-button v-if="item.description" type="text" tabindex="-1" class="label" title="标记">
-                <i class="iconfont iconwbiaoqian" :class="item.description" />
+                <i class="fa-solid fa-tags" :class="item.description" />
               </a-button>
               <a-popover v-if="item.thumbnail" content-class="popimg" position="lt">
                 <a-button type="text" tabindex="-1" class="gengduo">
-                  <i class="iconfont icontupianyulan" />
+                  <i class="fa-solid fa-image" />
                 </a-button>
                 <template #content>
                   <div class="preimg">
@@ -752,7 +781,7 @@ const onPanDragEnd = (ev: any) => {
                 @dragenter="onRowItemDragEnter"
                 @dragleave="onRowItemDragLeave">
                 <div class="gridicon">
-                  <i :class="'iconfont ' + grid.icon" aria-hidden="true" role="img"></i>
+                  <i :class="'fa-solid ' + grid.icon" aria-hidden="true" role="img"></i>
                 </div>
                 <div class="gridicon"><img v-if="grid.thumbnail" :src="grid.thumbnail" @error="(e) => {(e.currentTarget! as any).style.display = 'none'}" /></div>
 
@@ -775,10 +804,10 @@ const onPanDragEnd = (ev: any) => {
 
                 <div :class="'rangselect ' + (rangSelectFiles[grid.file_id] ? (rangSelectStart == grid.file_id ? 'rangstart' : rangSelectEnd == grid.file_id ? 'rangend' : 'rang') : '')">
                   <a-button shape="circle" type="text" tabindex="-1" class="select" :title="(index * listGridColumn + gindex).toString()" @click.prevent.stop="handleSelect(grid.file_id, $event, true)">
-                    <i :class="panfileStore.ListSelected.has(grid.file_id) ? (grid.starred ? 'iconfont iconcrown3' : 'iconfont iconrsuccess') : grid.starred ? 'iconfont iconcrown' : 'iconfont iconpic2'" />
+                    <i :class="panfileStore.ListSelected.has(grid.file_id) ? (grid.starred ? 'fa-regular fa-square-check' : 'fa-regular fa-square-check') : grid.starred ? 'fa-regular fa-square' : 'fa-regular fa-square'" />
                   </a-button>
                   <a-button v-if="grid.description" type="text" tabindex="-1" class="label" title="标记">
-                    <i class="iconfont iconwbiaoqian" :class="grid.description" />
+                    <i class="fa-solid fa-tags" :class="grid.description" />
                   </a-button>
                 </div>
               </div>
@@ -792,7 +821,7 @@ const onPanDragEnd = (ev: any) => {
                 @dragstart="(ev) => onRowItemDragStart(ev, grid.file_id)"
                 @dragend="onRowItemDragEnd">
                 <div class="gridicon">
-                  <i :class="'iconfont ' + grid.icon" aria-hidden="true" role="img"></i>
+                  <i :class="'fa-solid ' + grid.icon" aria-hidden="true" role="img"></i>
                 </div>
                 <div class="gridicon"><img v-if="grid.thumbnail" :src="grid.thumbnail" @error="(e) => {(e.currentTarget! as any).style.display = 'none'}" /></div>
 
@@ -815,10 +844,10 @@ const onPanDragEnd = (ev: any) => {
 
                 <div :class="'rangselect ' + (rangSelectFiles[grid.file_id] ? (rangSelectStart == grid.file_id ? 'rangstart' : rangSelectEnd == grid.file_id ? 'rangend' : 'rang') : '')">
                   <a-button shape="circle" type="text" tabindex="-1" class="select" :title="(index * listGridColumn + gindex).toString()" @click.prevent.stop="handleSelect(grid.file_id, $event, true)">
-                    <i :class="panfileStore.ListSelected.has(grid.file_id) ? (grid.starred ? 'iconfont iconcrown3' : 'iconfont iconrsuccess') : grid.starred ? 'iconfont iconcrown' : 'iconfont iconpic2'" />
+                    <i :class="panfileStore.ListSelected.has(grid.file_id) ? (grid.starred ? 'fa-regular fa-square-check' : 'fa-regular fa-square-check') : grid.starred ? 'fa-regular fa-square' : 'fa-regular fa-square'" />
                   </a-button>
                   <a-button v-if="grid.description" type="text" tabindex="-1" class="label" title="标记">
-                    <i class="iconfont iconwbiaoqian" :class="grid.description" />
+                    <i class="fa-solid fa-tags" :class="grid.description" />
                   </a-button>
                 </div>
               </div>
@@ -865,7 +894,7 @@ const onPanDragEnd = (ev: any) => {
                 @dragenter="onRowItemDragEnter"
                 @dragleave="onRowItemDragLeave">
                 <div class="gridicon">
-                  <i :class="'iconfont ' + grid.icon" aria-hidden="true" role="img"></i>
+                  <i :class="'fa-solid ' + grid.icon" aria-hidden="true" role="img"></i>
                 </div>
                 <div class="gridicon"><img v-if="grid.thumbnail" :src="grid.thumbnail" @error="(e) => {(e.currentTarget! as any).style.display = 'none'}" /></div>
 
@@ -888,11 +917,11 @@ const onPanDragEnd = (ev: any) => {
 
                 <div :class="'rangselect ' + (rangSelectFiles[grid.file_id] ? (rangSelectStart == grid.file_id ? 'rangstart' : rangSelectEnd == grid.file_id ? 'rangend' : 'rang') : '')">
                   <a-button shape="circle" type="text" tabindex="-1" class="select" :title="(index * listGridColumn + gindex).toString()" @click.prevent.stop="handleSelect(grid.file_id, $event, true)">
-                    <i :class="panfileStore.ListSelected.has(grid.file_id) ? (grid.starred ? 'iconfont iconcrown3' : 'iconfont iconrsuccess') : grid.starred ? 'iconfont iconcrown' : 'iconfont iconpic2'" />
+                    <i :class="panfileStore.ListSelected.has(grid.file_id) ? (grid.starred ? 'fa-regular fa-square-check' : 'fa-regular fa-square-check') : grid.starred ? 'fa-regular fa-square' : 'fa-regular fa-square'" />
                   </a-button>
 
                   <a-button v-if="grid.description" type="text" tabindex="-1" class="label" title="标记">
-                    <i class="iconfont iconwbiaoqian" :class="grid.description" />
+                    <i class="fa-solid fa-tags" :class="grid.description" />
                   </a-button>
                 </div>
               </div>
@@ -906,7 +935,7 @@ const onPanDragEnd = (ev: any) => {
                 @dragstart="(ev) => onRowItemDragStart(ev, grid.file_id)"
                 @dragend="onRowItemDragEnd">
                 <div class="gridicon">
-                  <i :class="'iconfont ' + grid.icon" aria-hidden="true" role="img"></i>
+                  <i :class="'fa-solid ' + grid.icon" aria-hidden="true" role="img"></i>
                 </div>
                 <div class="gridicon"><img v-if="grid.thumbnail" :src="grid.thumbnail" @error="(e) => {(e.currentTarget! as any).style.display = 'none'}" /></div>
 
@@ -929,10 +958,10 @@ const onPanDragEnd = (ev: any) => {
 
                 <div :class="'rangselect ' + (rangSelectFiles[grid.file_id] ? (rangSelectStart == grid.file_id ? 'rangstart' : rangSelectEnd == grid.file_id ? 'rangend' : 'rang') : '')">
                   <a-button shape="circle" type="text" tabindex="-1" class="select" :title="(index * listGridColumn + gindex).toString()" @click.prevent.stop="handleSelect(grid.file_id, $event, true)">
-                    <i :class="panfileStore.ListSelected.has(grid.file_id) ? (grid.starred ? 'iconfont iconcrown3' : 'iconfont iconrsuccess') : grid.starred ? 'iconfont iconcrown' : 'iconfont iconpic2'" />
+                    <i :class="panfileStore.ListSelected.has(grid.file_id) ? (grid.starred ? 'fa-regular fa-square-check' : 'fa-regular fa-square-check') : grid.starred ? 'fa-regular fa-square' : 'fa-regular fa-square'" />
                   </a-button>
                   <a-button v-if="grid.description" type="text" tabindex="-1" class="label" title="标记">
-                    <i class="iconfont iconwbiaoqian" :class="grid.description" />
+                    <i class="fa-solid fa-tags" :class="grid.description" />
                   </a-button>
                 </div>
               </div>
@@ -948,7 +977,7 @@ const onPanDragEnd = (ev: any) => {
 
   <div id="PanRightShowUpload" :style="{ display: showDragUpload ? '' : 'none' }" @drop="onPanDrop" @dragover="onPanDragOver" @dragleave="onPanDragLeave" @dragend="onPanDragEnd">
     <div class="ShowUpload">
-      <i class="iconfont iconyouxian" style="font-size: 64px" />
+      <i class="fa-solid fa-arrow-up-from-bracket" style="font-size: 64px" />
       <div class="ShowUploadTitle">
         <span class="link">上传到：{{ panfileStore.DirName }}</span>
       </div>
@@ -957,6 +986,12 @@ const onPanDragEnd = (ev: any) => {
 </template>
 
 <style>
+.toppanbtn-search {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+}
+
 .arco-dropdown-option-icon {
   margin-right: 2px !important;
   width: 20px;
@@ -964,7 +999,7 @@ const onPanDragEnd = (ev: any) => {
   flex-shrink: 0;
   align-items: center;
 }
-.arco-dropdown-option-icon .iconfont {
+.arco-dropdown-option-icon .fa-solid {
   font-size: 18px;
 }
 
@@ -1001,7 +1036,7 @@ const onPanDragEnd = (ev: any) => {
   border-radius: 4px;
 }
 
-.arco-btn.gengduo .iconfont {
+.arco-btn.gengduo .fa-solid {
   font-size: 20px;
   line-height: 20px;
 }
@@ -1017,7 +1052,7 @@ const onPanDragEnd = (ev: any) => {
   border-radius: 4px;
   cursor: default;
 }
-.arco-btn.label .iconfont {
+.arco-btn.label .fa-solid {
   font-size: 20px;
   line-height: 20px;
 }
@@ -1082,14 +1117,14 @@ const onPanDragEnd = (ev: any) => {
 }
 #PanRightShowUpload .ShowUpload .link {
   overflow: hidden;
-  color: #1976d2;
+  color: #52c4f6;
   font-size: 14px;
   white-space: nowrap !important;
   text-overflow: ellipsis;
   word-break: keep-all !important;
 }
-#PanRightShowUpload .ShowUpload .iconfont {
-  color: rgb(120, 115, 245);
+#PanRightShowUpload .ShowUpload .fa-solid {
+  color: #52c4f6;
 }
 .fileorder .arco-btn-size-small {
   padding: 0 4px;
@@ -1097,7 +1132,7 @@ const onPanDragEnd = (ev: any) => {
   align-items: center;
   min-width: 102px;
 }
-.fileorder .iconfont {
+.fileorder .fa-solid {
   font-size: 18px;
   line-height: 24px;
 }
@@ -1119,5 +1154,39 @@ const onPanDragEnd = (ev: any) => {
 
 .arco-skeleton-animation .arco-skeleton-line-row {
   opacity: 0.35;
+}
+
+.iconsize {
+  font-size: 1.5em !important;
+}
+
+.iconsize-small {
+  font-size: 25px !important;
+}
+
+.search-box-container {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.toppanbtn-fa-search {
+  position: absolute;
+  right: 60px;
+}
+
+
+.filesize {
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  padding-right: 5px !important;
+}
+
+.filetime {
+  width: 120px !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  margin-left: 10px;
 }
 </style>

@@ -223,7 +223,7 @@ export default class DownDAL {
       };
       AriaStopList([downitem.Info.GID]).then(r => {})
       AriaDeleteList([downitem.Info.GID]).then(r => {})
-      if (downitem.Info.ariaRemote && !downitem.Info.isDir) downitem.Info.icon = 'iconfont iconcloud-download';
+      if (downitem.Info.ariaRemote && !downitem.Info.isDir) downitem.Info.icon = 'fa-solid fa-cloud-download-alt';
       downlist.push(downitem);
     }
 

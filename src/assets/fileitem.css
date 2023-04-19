@@ -45,12 +45,11 @@ body[arco-theme='dark'] .fileitem.focus {
   font-size: 22px;
   position: relative;
 }
-.fileicon .iconfile-folder {
-  color: #0078D7 !important;
+.fileicon .fa-folder {
+  color: #52c4f6 !important;
 }
 
-.iconfile_video,
-.iconfile-video,
+.fa-file-video,
 .iconfile-mkv,
 .iconfile-avi,
 .iconfile-flv,
@@ -60,8 +59,9 @@ body[arco-theme='dark'] .fileitem.focus {
 .iconfile-wmv,
 .iconfile-ts,
 .iconfile-rmvb {
-  color: #3482f0 !important;
+  color: #52c4f6 !important;
 }
+.fa-file-audio,
 .iconfile-audio,
 .iconfile-flac,
 .iconfile-ape,
@@ -69,8 +69,9 @@ body[arco-theme='dark'] .fileitem.focus {
 .iconfile-cue,
 .iconfile-ogg,
 .iconfile-mp3 {
-  color: #565bf5 !important;
+  color: #52c4f6 !important;
 }
+.fa-file-image,
 .iconfile-image {
   color: #b6aea0 !important;
 }
@@ -87,6 +88,8 @@ body[arco-theme='dark'] .fileitem.focus {
   color: #fa8d11 !important;
 }
 
+.fa-file-text,
+.fa-file-pdf,
 .iconfile_txt2,
 .iconfile-txt,
 .iconfile-pdf,
@@ -94,16 +97,21 @@ body[arco-theme='dark'] .fileitem.focus {
   color: #8bc755 !important;
 }
 
+.fa-file-word,
 .iconfile-doc {
   color: #282698 !important;
 }
+.fa-file-excel,
 .iconfile-xsl {
   color: #269840 !important;
 }
+.fa-file-powerpoint,
 .iconfile-ppt {
   color: #d84a25 !important;
 }
 
+.fa-file-archive,
+.fa-file-archive,
 .iconfile-rar,
 .iconfile-zip,
 .iconfile-tar {
@@ -130,7 +138,9 @@ body[arco-theme='dark'] .fileitem.focus {
   text-align: center;
 }
 
-.fileicon .iconwenjian,
+
+.fileicon .fa-file,
+.fa-file,
 .iconfile-apk,
 .iconfile-exe,
 .iconfile-xci,
@@ -365,7 +375,7 @@ body[arco-theme='dark'] .griditem .select:hover {
   line-height: 24px !important;
   border: none !important;
 }
-.griditem .select .iconfont {
+.griditem .select .fa-solid {
   line-height: 24px !important;
 }
 
@@ -392,8 +402,8 @@ body[arco-theme='dark'] .griditem .select:hover {
   font-size: 56px;
   opacity: 0.75;
 }
-.gridicon .iconfile-folder {
-  color: #0078D7 !important;
+.gridicon .fa-folder {
+  color: #52c4f6 !important;
 }
 
 .gridicon img {
@@ -486,7 +496,6 @@ body[arco-theme='dark'] .griditem .select:hover {
   padding: 0 !important;
   border-radius: 8px !important;
 }
-
 .rangselect {
   height: 49px;
   margin: 2px 2px 2px 1px;

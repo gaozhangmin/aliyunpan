@@ -124,36 +124,34 @@ const handleSearchEnter = (event: any) => {
   <div class="toppanbtns" style="height: 26px">
     <div class="toppanbtn">
       <a-button type="text" size="small" tabindex="-1" :loading="myfollowingStore.ListLoading" title="F5" @click="handleRefresh"
-        ><template #icon> <i class="iconfont iconreload-1-icon" /> </template
+        ><template #icon> <i class="fa-solid fa-refresh" /> </template
       ></a-button>
     </div>
     <div class="toppanbtn">
-      <a-button type="text" size="small" tabindex="-1" title="Ctrl+N" @click="handleDaoRuLink"><i class="iconfont iconlink2" />导入订阅</a-button>
+      <a-button type="text" size="small" tabindex="-1" title="Ctrl+N" @click="handleDaoRuLink"><i
+              class="fa-solid fa-link iconsize" />导入订阅</a-button>
     </div>
     <div v-show="myfollowingStore.IsListSelected" class="toppanbtn">
-      <a-button type="text" size="small" tabindex="-1" title="Ctrl+C" @click="handleCopySelectedLink"><i class="iconfont iconcopy" />复制链接</a-button>
-      <a-button type="text" size="small" tabindex="-1" title="Ctrl+B" @click="handleBrowserLink"><i class="iconfont iconchrome" />浏览器</a-button>
-      <a-button type="text" size="small" tabindex="-1" title="Ctrl+Delete" @click="handleDeleteSelectedLink"><i class="iconfont icondelete" />取消订阅</a-button>
+      <a-button type="text" size="small" tabindex="-1" title="Ctrl+C" @click="handleCopySelectedLink"><i class="fa-solid fa-copy iconsize" />复制链接</a-button>
+      <a-button type="text" size="small" tabindex="-1" title="Ctrl+B" @click="handleBrowserLink"><i class="fa-brands fa-chrome iconsize" />浏览器</a-button>
+      <a-button type="text" size="small" tabindex="-1" title="Ctrl+Delete" @click="handleDeleteSelectedLink"><i class="fa-solid fa-trash iconsize" />取消订阅</a-button>
     </div>
-    <div style="flex-grow: 1"></div>
-    <div class="toppanbtn">
-      <a-input-search ref="inputsearch" tabindex="-1" size="small" title="Ctrl+F / F3 / Space" placeholder="快速筛选" :model-value="myfollowingStore.ListSearchKey" @input="(val :any)=>handleSearchInput(val as string)" @press-enter="handleSearchEnter" @keydown.esc=";($event.target as any).blur()" />
-    </div>
-    <div></div>
+
   </div>
   <div style="height: 9px"></div>
   <div class="toppanarea">
     <div style="margin: 0 3px">
       <AntdTooltip title="点击全选" placement="left">
         <a-button shape="circle" type="text" tabindex="-1" class="select all" title="Ctrl+A" @click="handleSelectAll">
-          <i :class="myfollowingStore.IsListSelectedAll ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
+          <i :class="myfollowingStore.IsListSelectedAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
         </a-button>
       </AntdTooltip>
     </div>
     <div class="selectInfo">{{ myfollowingStore.ListDataSelectCountInfo }}</div>
-
-    <div style="flex-grow: 1"></div>
-    <div class="cell pr"></div>
+      <div style="flex-grow: 50"></div>
+      <div class="toppanbtn">
+          <a-input-search ref="inputsearch" tabindex="-1" size="small" title="Ctrl+F / F3 / Space" placeholder="快速筛选" :model-value="myfollowingStore.ListSearchKey" @input="(val :any)=>handleSearchInput(val as string)" @press-enter="handleSearchEnter" @keydown.esc=";($event.target as any).blur()" />
+      </div>
   </div>
   <div class="toppanlist" @keydown.space.prevent="() => true">
     <a-list
@@ -287,5 +285,9 @@ const handleSearchEnter = (event: any) => {
 .arco-avatar-square {
   box-shadow: 0 4px 6px rgb(0 0 0 / 12%) !important;
   border-radius: 10.5px !important;
+}
+
+.iconsize {
+    font-size: 1em !important;
 }
 </style>

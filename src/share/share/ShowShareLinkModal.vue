@@ -36,7 +36,7 @@ export interface CheckNode {
 
 const iconfolder = h('i', { class: 'fa-solid fa-folder' })
 const foldericonfn = () => iconfolder
-const fileiconfn = (icon: string) => h('i', { class: 'iconfont ' + icon })
+const fileiconfn = (icon: string) => h('i', { class: 'fa-solid ' + icon })
 
 export default defineComponent({
   components: {
@@ -436,7 +436,7 @@ async function getNodeAllFiles(share_id: string, share_token: string, file_id: s
   border: 1px solid var(--color-neutral-3);
   padding: 4px;
 }
-.sharetree .ant-tree-icon__customize .iconfont {
+.sharetree .ant-tree-icon__customize .fa-solid {
   font-size: 18px;
   margin-right: 2px;
 }

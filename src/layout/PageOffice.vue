@@ -43,12 +43,12 @@ export default defineComponent({
     <a-layout-header id="xbyhead" draggable="false">
       <div id="xbyhead2" class="q-electron-drag">
         <a-button type="text" tabindex="-1">
-          <i class="iconfont iconfile-wps"></i>
+          <i class="fa-solid fa-file-word"></i>
         </a-button>
         <div class="title">{{ appStore.pageOffice?.file_name || '文档在线预览' }}</div>
         <div class="flexauto"></div>
         <a-button type="text" tabindex="-1" @click="handleHideClick">
-          <i class="iconfont iconclose"></i>
+          <i class="fa-solid fa-x"></i>
         </a-button>
       </div>
     </a-layout-header>

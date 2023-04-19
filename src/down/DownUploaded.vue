@@ -129,32 +129,17 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
     <div class="toppanbtn">
       <a-button type="text" size="small" tabindex="-1" :loading="uploadedStore.ListLoading" title="F5" @click="handleRefresh">
         <template #icon>
-          <i class="iconfont iconreload-1-icon" />
+          <i class="fa-solid fa-refresh" />
         </template>
       </a-button>
     </div>
 
     <div v-if="uploadedStore.IsListSelected" class="toppanbtn">
-      <a-button type="text" size="small" tabindex="-1" @click="() => UploadDAL.UploadedDelete(false)"><i class="iconfont icondelete" />清除选中</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="() => UploadDAL.UploadedDelete(false)"><i class="fa-solid fa-trash" />清除选中</a-button>
     </div>
 
-    <div class="toppanbtn">
-      <a-button type="text" size="small" tabindex="-1" @click="() => UploadDAL.UploadedDelete(true)"><i class="iconfont iconrest" />清空全部已上传</a-button>
-    </div>
-
-    <div style="flex-grow: 1"></div>
-    <div class="toppanbtn">
-      <a-input-search
-          tabindex="-1"
-          ref="inputsearch"
-          size="small"
-          title="Ctrl+F / F3 / Space"
-          placeholder="快速筛选"
-          :model-value="uploadedStore.ListSearchKey"
-          @input="(val:any)=>handleSearchInput(val as string)"
-          @press-enter="handleSearchEnter"
-          @keydown.esc="($event.target as any).blur()"
-      />
+    <div v-else="uploadedStore.IsListSelected" class="toppanbtn">
+      <a-button type="text" size="small" tabindex="-1" @click="() => UploadDAL.UploadedDelete(true)"><i class="fa-solid fa-trash-can" />清空</a-button>
     </div>
   </div>
   <div style="height: 9px"></div>
@@ -162,7 +147,7 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
     <div style="margin: 0 3px">
       <AntdTooltip title="点击全选" placement="left">
         <a-button shape="circle" type="text" tabindex="-1" class="select all" title="Ctrl+A" @click="handleSelectAll">
-          <i :class="uploadedStore.IsListSelectedAll ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
+          <i :class="uploadedStore.IsListSelectedAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
         </a-button>
       </AntdTooltip>
     </div>
@@ -171,6 +156,20 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
     <div style="flex-grow: 1"></div>
 
     <div class="cell pr"></div>
+      <div style="flex-grow: 1"></div>
+      <div class="toppanbtn">
+          <a-input-search
+                  tabindex="-1"
+                  ref="inputsearch"
+                  size="small"
+                  title="Ctrl+F / F3 / Space"
+                  placeholder="快速筛选"
+                  :model-value="uploadedStore.ListSearchKey"
+                  @input="(val:any)=>handleSearchInput(val as string)"
+                  @press-enter="handleSearchEnter"
+                  @keydown.esc="($event.target as any).blur()"
+          />
+      </div>
   </div>
   <div class="toppanlist" :style="{ height: winStore.GetListHeight }" @keydown.space.prevent="() => true">
     <a-list
@@ -200,11 +199,11 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
             @contextmenu="(event:MouseEvent)=>handleRightClick({event,node:{key:item.TaskID}} )">
             <div style="margin: 2px">
               <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index" @click.prevent.stop="handleSelect(item.TaskID, $event, true)">
-                <i :class="uploadedStore.ListSelected.has(item.TaskID) ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
+                <i :class="uploadedStore.ListSelected.has(item.TaskID) ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
               </a-button>
             </div>
             <div class="fileicon">
-              <i :class="'iconfont ' + (item.isDir ? 'iconfile-folder' : 'iconwenjian')" aria-hidden="true"></i>
+              <i :class="'fa-solid ' + (item.isDir ? 'fa-folder' : 'fa-file')" aria-hidden="true"></i>
             </div>
             <div class="filename">
               <div class="nopoint" :title="item.localFilePath">
@@ -214,16 +213,16 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
             <div class="downsize">{{ humanSize(item.ChildTotalSize) }}</div>
             <div className="downedbtn">
               <a-button type="text" tabindex="-1" title="定位到网盘" @click.prevent.stop="onSelectFile(item, 'pan')">
-                <i class="iconfont iconcloud" />
+                <i class="fa-solid fa-cloud iconsize" />
               </a-button>
               <a-button type="text" tabindex="-1" title="打开文件" @click.prevent.stop="onSelectFile(item, 'file')">
-                <i class="iconfont iconwenjian" />
+                <i class="fa-solid fa-file iconsize" />
               </a-button>
               <a-button type="text" tabindex="-1" title="打开文件夹" @click.prevent.stop="onSelectFile(item, 'dir')">
-                <i class="fa-solid fa-folder" />
+                <i class="fa-solid fa-folder iconsize" />
               </a-button>
               <a-button type="text" tabindex="-1" title="删除上传记录" @click.prevent.stop="onSelectFile(item, 'delete')">
-                <i class="iconfont icondelete" />
+                <i class="fa-solid fa-trash iconsize" />
               </a-button>
             </div>
           </div>
@@ -233,11 +232,11 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
     <a-dropdown id="rightuploadedmenu" class="rightmenu" :popup-visible="true" tabindex="-1" :draggable="false" style="z-index: -1; left: -200px; opacity: 0">
       <template #content>
         <a-doption @click="() => onSelectFile(undefined, 'pan')">
-          <template #icon> <i class="iconfont iconcloud" /> </template>
+          <template #icon> <i class="fa-solid fa-cloud" /> </template>
           <template #default>定位到网盘</template>
         </a-doption>
         <a-doption @click="() => onSelectFile(undefined, 'file')">
-          <template #icon> <i class="iconfont iconwenjian" /> </template>
+          <template #icon> <i class="fa-solid fa-file" /> </template>
           <template #default>打开文件</template>
         </a-doption>
         <a-doption @click="() => onSelectFile(undefined, 'dir')">
@@ -245,7 +244,7 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
           <template #default>打开文件夹</template>
         </a-doption>
         <a-doption @click="() => onSelectFile(undefined, 'delete')">
-          <template #icon> <i class="iconfont icondelete" /> </template>
+          <template #icon> <i class="fa-solid fa-trash" /> </template>
           <template #default>删除上传记录</template>
         </a-doption>
       </template>
@@ -272,7 +271,7 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
   border: none !important;
   margin: 0 1px;
 }
-.downedbtn > button .iconfont {
+.downedbtn > button .fa-solid {
   font-size: 24px;
   line-height: 30px;
 }
@@ -293,8 +292,11 @@ body[arco-theme='dark'] .downedbtn > button:active {
   color: rgb(var(--primary-6)) !important;
 }
 
-.downedbtn > button:hover .iconfont,
-.downedbtn > button:active .iconfont {
+.downedbtn > button:hover .fa-solid,
+.downedbtn > button:active .fa-solid {
   color: rgb(var(--primary-6)) !important;
+}
+.iconsize {
+  font-size: 1em !important;
 }
 </style>

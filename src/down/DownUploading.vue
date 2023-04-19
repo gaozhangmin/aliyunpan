@@ -62,7 +62,7 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
     <div style="min-height: 26px; max-width: 100%; flex-shrink: 0; flex-grow: 0">
       <div class="toppannav">
         <div class="toppannavitem" title="上传中">
-          <span @click="() => UploadingDAL.mUploadingShowTaskBack()"> 上传中 </span>
+          <span @click="() => UploadingDAL.mUploadingShowTaskBack()">  </span>
         </div>
         <div v-if="uploadingStore.showTaskID" class="toppannavitem" :title="uploadingStore.ShowTaskName">
           <span> {{ uploadingStore.ShowTaskName }} </span>
@@ -72,29 +72,30 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
   </div>
   <div style="height: 14px"></div>
   <div class="toppanbtns" style="height: 26px">
-    <div class="toppanbtn">
-      <a-button type="text" size="small" tabindex="-1" :disabled="uploadingStore.ListLoading" title="后退 Back Space" @click="handleBack">
-        <template #icon>
-          <i class="iconfont iconarrow-left-2-icon" />
-        </template>
-      </a-button>
-      <a-button type="text" size="small" tabindex="-1" :loading="uploadingStore.ListLoading" title="F5" @click="handleRefresh">
-        <template #icon>
-          <i class="iconfont iconreload-1-icon" />
-        </template>
-      </a-button>
-    </div>
+<!--    <div class="toppanbtn">-->
+<!--      <a-button type="text" size="small" tabindex="-1" :disabled="uploadingStore.ListLoading" title="后退 Back Space" @click="handleBack">-->
+<!--        <template #icon>-->
+<!--            <i class="fa-solid fa-arrow-circle-left" />-->
+<!--        </template>-->
+<!--      </a-button>-->
+<!--      <a-button type="text" size="small" tabindex="-1" :loading="uploadingStore.ListLoading" title="F5" @click="handleRefresh">-->
+<!--        <template #icon>-->
+<!--            <i class="fa-solid fa-refresh" />-->
+
+<!--        </template>-->
+<!--      </a-button>-->
+<!--    </div>-->
 
     <div v-if="uploadingStore.IsListSelected" class="toppanbtn">
-      <a-button type="text" size="small" tabindex="-1" @click="() => UploadingDAL.aUploadingStart(false, true)"><i class="iconfont iconstart" />开始</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="() => UploadingDAL.aUploadingStart(false, false)"><i class="iconfont iconpause" />暂停</a-button>
-      <a-button v-show="menuShowDir" type="text" size="small" tabindex="-1" @click="() => UploadingDAL.mUploadingShowTask()"><i class="iconfont icongengduo1" />查看</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="() => UploadingDAL.aUploadingDelete(false)"><i class="iconfont icondelete" />清除</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="() => UploadingDAL.aUploadingStart(false, true)"><i class="fa-solid fa-play-circle" />开始选中</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="() => UploadingDAL.aUploadingStart(false, false)"><i class="fa-solid fa-circle-pause" />开始选中</a-button>
+      <a-button v-show="menuShowDir" type="text" size="small" tabindex="-1" @click="() => UploadingDAL.mUploadingShowTask()"><i class="fa-solid fa-angles-right" />开始选中</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="() => UploadingDAL.aUploadingDelete(false)"><i class="fa-solid fa-trash" />开始选中</a-button>
     </div>
-    <div class="toppanbtn">
-      <a-button type="text" size="small" tabindex="-1" @click="() => UploadingDAL.aUploadingStart(true, true)"><i class="iconfont iconstart" />开始全部</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="() => UploadingDAL.aUploadingStart(true, false)"><i class="iconfont iconpause" />暂停全部</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="() => UploadingDAL.aUploadingDelete(true)"><i class="iconfont iconrest" />清空全部</a-button>
+    <div v-else="uploadingStore.IsListSelected" class="toppanbtn">
+      <a-button type="text" size="small" tabindex="-1" @click="() => UploadingDAL.aUploadingStart(true, true)"><i class="fa-solid fa-play-circle" />开始全部</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="() => UploadingDAL.aUploadingStart(true, false)"><i class="fa-solid fa-circle-pause" />开始全部</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="() => UploadingDAL.aUploadingDelete(true)"><i class="fa-solid fa-trash" />开始全部</a-button>
     </div>
   </div>
   <div style="height: 9px"></div>
@@ -102,7 +103,7 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
     <div style="margin: 0 3px">
       <AntdTooltip title="点击全选" placement="left">
         <a-button shape="circle" type="text" tabindex="-1" class="select all" title="Ctrl+A" @click="handleSelectAll">
-          <i :class="uploadingStore.IsListSelectedAll ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
+          <i :class="uploadingStore.IsListSelectedAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
         </a-button>
       </AntdTooltip>
     </div>
@@ -139,11 +140,11 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
             @contextmenu="(event:MouseEvent)=>handleRightClick({event,node:{key:item.UploadID}} )">
             <div style="margin: 2px">
               <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index" @click.prevent.stop="handleSelect(item.UploadID, $event, true)">
-                <i :class="uploadingStore.ListSelected.has(item.UploadID) ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
+                <i :class="uploadingStore.ListSelected.has(item.UploadID) ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
               </a-button>
             </div>
             <div class="fileicon">
-              <i :class="'iconfont ' + item.icon" aria-hidden="true"></i>
+              <i :class="'fa-solid ' + item.icon" aria-hidden="true"></i>
             </div>
             <div class="filename">
               <div v-if="item.isDir && menuShowTask" :title="item.localFilePath" @click.stop="UploadingDAL.mUploadingShowTask(item.TaskID)">
@@ -172,22 +173,22 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
     <a-dropdown id="rightuploadingmenu" class="rightmenu" :popup-visible="true" tabindex="-1" :draggable="false" style="z-index: -1; left: -200px; opacity: 0">
       <template #content>
         <a-doption @click="() => UploadingDAL.aUploadingStart(false, true)">
-          <template #icon> <i class="iconfont iconstart" /> </template>
+          <template #icon> <i class="fa-solid fa-play-circle" /> </template>
           <template #default>开始上传</template>
         </a-doption>
 
         <a-doption @click="() => UploadingDAL.aUploadingStart(false, false)">
-          <template #icon> <i class="iconfont iconpause" /> </template>
+          <template #icon> <i class="fa-solid fa-circle-pause" /> </template>
           <template #default>暂停上传</template>
         </a-doption>
 
         <a-doption v-show="menuShowDir" @click="() => UploadingDAL.mUploadingShowTask()">
-          <template #icon> <i class="iconfont icongengduo1" /> </template>
+          <template #icon> <i class="fa-solid fa-angles-right" /> </template>
           <template #default>查看详情</template>
         </a-doption>
 
         <a-doption @click="() => UploadingDAL.aUploadingDelete(false)">
-          <template #icon> <i class="iconfont icondelete" /> </template>
+          <template #icon> <i class="fa-solid fa-trash" /> </template>
           <template #default>清除上传</template>
         </a-doption>
       </template>
@@ -213,7 +214,7 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
   text-align: center;
   opacity: 0.5;
 }
-.downHideTip .iconfont {
+.downHideTip .fa-solid {
   color: #ccc;
   font-size: 80px;
 }

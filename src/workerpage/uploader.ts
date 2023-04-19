@@ -15,7 +15,6 @@ import fspromises from 'fs/promises'
 import AliUploadOpenApi from '../aliapi/uploadOpenApi'
 import AliUpload from '../aliapi/upload'
 
-
 export async function StartUpload(fileui: IUploadingUI): Promise<void> {
   
   const token = await UserDAL.GetUserTokenFromDB(fileui.user_id)

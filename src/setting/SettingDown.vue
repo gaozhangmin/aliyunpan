@@ -44,7 +44,7 @@ const handleSelectDownSavePath = () => {
     <div class="settingrow">
       <MySwitch :value="settingStore.downSavePathFull" @update:value="cb({ downSavePathFull: $event })"> </MySwitch>
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">开启</span>
@@ -59,7 +59,7 @@ const handleSelectDownSavePath = () => {
     <div class="settingrow">
       <MySwitch :value="settingStore.downSaveBreakWeiGui" @update:value="cb({ downSaveBreakWeiGui: $event })"> </MySwitch>
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">开启</span>
@@ -99,7 +99,7 @@ const handleSelectDownSavePath = () => {
         <a-option :value="16">16个线程</a-option>
       </a-select>
       <a-popover position="right">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">4个线程</span>
@@ -121,7 +121,7 @@ const handleSelectDownSavePath = () => {
         <a-radio tabindex="-1" value="KB">KB/s</a-radio>
       </a-radio-group>
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div :style="{ width: '360px' }">
             默认：<span class="opred">0 (不限速，满速下载)</span>

@@ -207,19 +207,18 @@ const handleShowNoShare = () => {
           查找
           <template #icon>
             <MyLoading v-if="scanLoading" />
-            <i v-else class="iconfont iconrsearch" />
           </template>
         </a-step>
         <a-step description="勾选 需要删除的">
           勾选
           <template #icon>
-            <i class="iconfont iconedit-square" />
+            <i class="fa-solid fa-check-double iconsize" />
           </template>
         </a-step>
         <a-step description="删除 放入回收站">
           删除
           <template #icon>
-            <i class="iconfont icondelete" />
+            <i class="fa-solid fa-trash iconsize" />
           </template>
         </a-step>
       </a-steps>
@@ -279,10 +278,15 @@ const handleShowNoShare = () => {
       </a-spin>
       <a-empty v-else class="beginscan">
         <template #image>
-          <i class="iconfont iconrsearch" />
+          <i class="fa-solid fa-search" />
         </template>
         请点击上方 开始扫描 按钮
       </a-empty>
     </div>
   </div>
 </template>
+<style>
+.iconsize {
+    font-size: 1em !important;
+}
+</style>

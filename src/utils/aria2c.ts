@@ -187,6 +187,7 @@ export async function CreatLocalAria2c(aria2cPath:string, aria2cConfPath:string)
   try {
     if (!existsSync(aria2cPath)) {
       message.error('找不到Aria程序文件 ' + aria2cPath)
+      DebugLog.mSaveDanger('找不到Aria程序文件 ' + aria2cPath)
       return 0
     }
     const options:SpawnOptions = { shell: true, windowsVerbatimArguments: true}
@@ -203,7 +204,7 @@ export async function CreatLocalAria2c(aria2cPath:string, aria2cConfPath:string)
       async (error, stdout, stderr) => {
         if (error) {
           SetAriaOnline(false, 'local')
-          message.error(`启动本地aria2c失败 : ${error}`);
+          DebugLog.mSaveDanger(`启动本地aria2c失败 : ${error}`)
           return;
         } else {
           await relaunchLocalAria(port);
@@ -226,6 +227,7 @@ async function relaunchLocalAria(port:number) {
     Aria2EngineLocal.on('close', () => {
       IsAria2cOnlineLocal = false
       if (useSettingStore().AriaIsLocal) {
+        DebugLog.mSaveDanger('Aria2本地连接已断开')
         SetAriaOnline(false, 'local')
       }
     })
@@ -269,7 +271,7 @@ export async function AriaChangeToLocal() {
     Aria2EngineLocal.on('close', () => {
       IsAria2cOnlineLocal = false
       if (useSettingStore().AriaIsLocal) {
-        message.error('Aria2本地连接已断开')
+        console.log("ariaerror1")
         SetAriaOnline(false, 'local')
       }
     })
@@ -280,8 +282,8 @@ export async function AriaChangeToLocal() {
         SetAriaOnline(true, 'local')
       })
       .catch(async () => {
+        console.log("ariaerror2")
         Aria2EngineLocal=undefined
-        SetAriaOnline(false, 'local')
         Aria2cLocalRelanchTime++
         if (Aria2cLocalRelanchTime < 2) {
           message.info('正在尝试重启Aria进程中。。。')

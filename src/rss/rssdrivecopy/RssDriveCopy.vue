@@ -127,20 +127,17 @@ const handleRightUser = (driveType: any) => {
       <a-steps>
         <a-step description="选择 网盘/相册">
           选择
-          <template #icon>
-            <i class="iconfont iconedit-square" />
-          </template>
         </a-step>
         <a-step description="勾选 文件/文件夹">
           勾选
           <template #icon>
-            <i class="iconfont iconedit-square" />
+            <i class="fa-solid fa-check-double iconsize" />
           </template>
         </a-step>
         <a-step description="开始复制">
           复制
           <template #icon>
-            <i class="iconfont icondelete" />
+            <i class="fa-solid fa-trash iconsize" />
           </template>
         </a-step>
       </a-steps>
@@ -167,9 +164,9 @@ const handleRightUser = (driveType: any) => {
       <a-split :style="{ height: treeHeight + 36 + 'px', width: '100%' }" min="300px" max="0.8">
         <template #first>
           <div class="rsscopymenu">
-            <a-button type="text" size="small" tabindex="-1" title="根目录" @click="handleLeftTreeSelect(['root'])"><i class="iconfont iconhome" /></a-button>
-            <a-button type="text" size="small" tabindex="-1" title="返回上级" @click="handleLeftTreeSelect(['back'])"><i class="iconfont iconarrow-top-2-icon-copy" /></a-button>
-            <a-button type="text" size="small" tabindex="-1" title="刷新" @click="handleLeftTreeSelect(['refresh'])"><i class="iconfont iconreload-1-icon" /></a-button>
+            <a-button type="text" size="small" tabindex="-1" title="根目录" @click="handleLeftTreeSelect(['root'])"><i class="fa-solid fa-home iconsize" /></a-button>
+            <a-button type="text" size="small" tabindex="-1" title="返回上级" @click="handleLeftTreeSelect(['back'])"><i class="fa-solid fa-arrow-left iconsize" /></a-button>
+            <a-button type="text" size="small" tabindex="-1" title="刷新" @click="handleLeftTreeSelect(['refresh'])"><i class="fa-solid fa-refresh iconsize" /></a-button>
             <AntdCheckbox tabindex="-1" :disabled="TreeState.LeftInfo.loading" :checked="TreeState.LeftCheckedKeys.length > 0 && TreeState.LeftTreeData.length == TreeState.LeftCheckedKeys.length" style="margin-left: 7px" @click.stop.prevent="handleSelectAll">全选</AntdCheckbox>
 
             <span class="checkedInfo" style="margin-left: 8px">已选中 {{ TreeState.LeftCheckedKeys.length }}</span>
@@ -201,9 +198,9 @@ const handleRightUser = (driveType: any) => {
         </template>
         <template #second>
           <div class="rsscopymenu">
-            <a-button type="text" size="small" tabindex="-1" title="根目录" @click="handleRightTreeSelect(['root'])"><i class="iconfont iconhome" /></a-button>
-            <a-button type="text" size="small" tabindex="-1" title="返回上级" @click="handleRightTreeSelect(['back'])"><i class="iconfont iconarrow-top-2-icon-copy" /></a-button>
-            <a-button type="text" size="small" tabindex="-1" title="刷新" @click="handleRightTreeSelect(['refresh'])"><i class="iconfont iconreload-1-icon" /></a-button>
+            <a-button type="text" size="small" tabindex="-1" title="根目录" @click="handleRightTreeSelect(['root'])"><i class="fa-solid fa-home iconsize" /></a-button>
+            <a-button type="text" size="small" tabindex="-1" title="返回上级" @click="handleRightTreeSelect(['back'])"><i class="fa-solid fa-arrow-left iconsize" /></a-button>
+            <a-button type="text" size="small" tabindex="-1" title="刷新" @click="handleRightTreeSelect(['refresh'])"><i class="fa-solid fa-refresh iconsize" /></a-button>
             <span class="checkedInfo" style="margin-left: 8px; color: rgb(var(--success-6))">复制到 {{ TreeState.RightInfo.dirName }}</span>
           </div>
           <a-spin :loading="TreeState.RightInfo.loading" :style="{ width: 'calc(100% + 10px)', height: treeHeight + 'px', overflow: 'hidden', marginLeft: '-18px' }">
@@ -255,5 +252,8 @@ body[arco-theme='dark'] .rsscopymenu {
   white-space: nowrap;
   word-break: keep-all;
   text-overflow: ellipsis;
+}
+.iconsize {
+    font-size: 1em !important;
 }
 </style>

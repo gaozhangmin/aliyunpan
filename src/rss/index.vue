@@ -20,40 +20,40 @@ const appStore = useAppStore()
       <div class="headdesc">好玩的插件</div>
       <a-menu :style="{ width: '100%' }" class="xbyleftmenu" :selected-keys="[appStore.GetAppTabMenu]" @update:selected-keys="appStore.toggleTabMenu('rss', $event[0])">
         <a-menu-item key="AppSame">
-          <template #icon><i class="iconfont iconcopy" /></template>
+          <template #icon><i class="fa-solid fa-copy" /></template>
           重复文件清理
         </a-menu-item>
         <a-menu-item key="RssXiMa">
-          <template #icon><i class="iconfont iconcameraadd" /></template>
-          视频文件洗码
+          <template #icon><i class="fa-solid fa-video-camera" /></template>
+          视频洗码
         </a-menu-item>
 <!--        <a-menu-item key="RssJiaMi">-->
 <!--          <template #icon><i class="iconfont iconsafebox" /></template>-->
 <!--          文件加密 x-->
 <!--        </a-menu-item>-->
         <a-menu-item key="RssScanClean">
-          <template #icon><i class="iconfont iconclear" /></template>
+          <template #icon><i class="fa-solid fa-broom" /></template>
           扫描大文件
         </a-menu-item>
         <a-menu-item key="RssScanSame">
-          <template #icon><i class="iconfont iconcopy" /></template>
+          <template #icon><i class="fa-solid fa-copy" /></template>
           扫描重复文件
         </a-menu-item>
         <a-menu-item key="RssScanPunish">
-          <template #icon><i class="iconfont iconweixiang" /></template>
+          <template #icon><i class="fa-solid fa-ban" /></template>
           扫描违规文件
         </a-menu-item>
         <a-menu-item key="RssScanEnmpty">
-          <template #icon><i class="iconfont iconempty" /></template>
+          <template #icon><i class="fa-solid fa-folder-blank" /></template>
           扫描空文件夹
         </a-menu-item>
         <a-menu-item key="RssDriveCopy">
-          <template #icon><i class="iconfont iconchuanshu2" /></template>
-          网盘相册间复制
+          <template #icon><i class="fa-solid fa-images" /></template>
+          相册复制
         </a-menu-item>
         <a-menu-item key="RssUserCopy">
-          <template #icon><i class="iconfont iconyonghu" /></template>
-          帐号间复制 x
+          <template #icon><i class="fa-solid fa-users" /></template>
+          帐号复制
         </a-menu-item>
       </a-menu>
     </a-layout-sider>

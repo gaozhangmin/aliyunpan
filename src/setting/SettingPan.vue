@@ -13,7 +13,7 @@ const cb = (val: any) => {
     <div class="settingrow">
       <MySwitch :value="settingStore.uiShowPanPath" @update:value="cb({ uiShowPanPath: $event })"></MySwitch>
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div style="min-width: 400px">在顶部显示完整的文件夹路径</div>
         </template>
@@ -24,7 +24,7 @@ const cb = (val: any) => {
     <div class="settingrow">
       <MySwitch :value="settingStore.uiFolderSize" @update:value="cb({ uiFolderSize: $event })"></MySwitch>
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">开启</span>
@@ -60,7 +60,7 @@ const cb = (val: any) => {
       <a-input-number tabindex="-1" :style="{ width: '100px', marginLeft: '16px', marginTop: '-1px' }" :min="1" :model-value="settingStore.uiTimeFolderIndex" @update:model-value="cb({ uiTimeFolderIndex: $event })" />
 
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div style="min-width: 400px">
             默认：<span class="opred">默认yyyy-MM-dd HH-mm-ss</span>(2021-08-08 12-30-00)
@@ -100,7 +100,7 @@ const cb = (val: any) => {
       </a-radio-group>
 
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">永久</span>，<span class="opred">随机</span>
@@ -128,7 +128,7 @@ const cb = (val: any) => {
       <a-input tabindex="-1" :style="{ width: '257px' }" placeholder="「NAME」URL 提取码：PWD" allow-clear :model-value="settingStore.uiShareFormate" @update:model-value="cb({ uiShareFormate: $event })" />
 
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div style="min-width: 400px">
             默认：<span class="opred">「NAME」URL 提取码：PWD</span> <br />
@@ -152,7 +152,7 @@ const cb = (val: any) => {
     <div class="settinghead">
       文件标记
       <a-popover position="right">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             给文件打上标签，便于分类和快速访问<br />
@@ -168,7 +168,7 @@ const cb = (val: any) => {
     <div class="settingrow">
       <a-row class="grid-demo">
         <a-col v-for="item in settingStore.uiFileColorArray" :key="item.key" flex="210px">
-          <span style="width: 82px; display: inline-block"><i class="iconfont iconcheckbox-full" :style="{ color: item.key }" />{{ item.key }}</span>
+          <span style="width: 82px; display: inline-block"><i class="fa-solid fa-square" :style="{ color: item.key }" />{{ item.key }}</span>
           <a-input :style="{ width: '120px' }" allow-clear :model-value="item.title" @update:model-value="(val:string)=>settingStore.updateFileColor(item.key,val)"> </a-input>
         </a-col>
       </a-row>

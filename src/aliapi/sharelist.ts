@@ -56,11 +56,11 @@ export default class AliShareList {
         for (let i = 0, maxi = resp.body.items.length; i < maxi; i++) {
           const item = resp.body.items[i] as IAliShareItem
           if (dir.itemsKey.has(item.share_id)) continue
-          let icon = 'iconwenjian'
+          let icon = 'fa-file'
           let first_file
           if (item.first_file) {
             first_file = AliDirFileList.getFileInfo(item.first_file, downUrl)
-            icon = first_file.icon || 'iconwenjian'
+            icon = first_file.icon || 'fa-file'
           }
           const add = Object.assign({}, item, { first_file, icon }) as IAliShareItem
           if (!add.share_msg) add.share_msg = ''

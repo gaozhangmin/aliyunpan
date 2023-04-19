@@ -182,7 +182,7 @@ export default defineComponent({
       <div class="h16"></div>
 
       <a-row>
-        <a-col flex="110px"> 文件大小： <i class="iconfont iconchakan link" title="点击切换格式" @click="handleSize"></i></a-col>
+        <a-col flex="110px"> 文件大小： <i class="fa-solid fa-eye link" title="点击切换格式" @click="handleSize"></i></a-col>
         <a-col flex="auto"></a-col>
         <a-col flex="170px"> 创建日期：</a-col>
         <a-col flex="auto"></a-col>
@@ -209,7 +209,7 @@ export default defineComponent({
           <a-col flex="auto"></a-col>
           <a-col flex="170px"> mime_type：</a-col>
           <a-col flex="auto"></a-col>
-          <a-col flex="180px"> crc64：<i class="iconfont iconchakan link" title="点击切换格式" @click="handleCRC"></i></a-col>
+          <a-col flex="180px"> crc64：<i class="fa-solid fa-eye link" title="点击切换格式" @click="handleCRC"></i></a-col>
         </a-row>
         <a-row>
           <a-col flex="110px">

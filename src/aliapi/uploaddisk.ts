@@ -48,8 +48,8 @@ export default class AliUploadDisk {
         fileui.Info.up_file_id = ''
         fileui.Info.up_upload_id = ''
         if (isSuccess) {
-          if (useSettingStore().downFinishAudio && !sound.playing()) {
-            console.log("cccccc")
+          console.log("cccccc", useSettingStore().downFinishAudio, )
+          if (useSettingStore().downFinishAudio  && !sound.playing()) {
             sound.play()
           }
           return 'success'
@@ -134,7 +134,12 @@ export default class AliUploadDisk {
 
     return AliUpload.UploadFileComplete(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo.sha1)
       .then((isSuccess) => {
-        if (isSuccess) return 'success'
+        if (isSuccess) {
+          if (useSettingStore().downFinishAudio && !sound.playing()) {
+            sound.play()
+          }
+          return 'success'
+        }
         else return '合并文件时出错，请重试'
       })
       .catch((err: any) => {

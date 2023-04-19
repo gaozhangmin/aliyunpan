@@ -264,7 +264,7 @@ export default defineComponent({
           <div id="loginframediverror">
             <a-row align="stretch">
               <a-col flex="none">
-                <a-avatar :size="36"><i class="iconfont iconwifi" style="font-size: 24px" /></a-avatar>
+                <a-avatar :size="36"><i class="fa-solid fa-wifi" style="font-size: 24px" /></a-avatar>
               </a-col>
               <a-col flex="auto">
                 <p style="font-size: 13px; margin: 0; text-align: left">

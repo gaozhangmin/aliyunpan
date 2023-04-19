@@ -19,7 +19,7 @@ import { treeSelectToExpand } from '../../utils/antdtree'
 
 const iconfolder = h('i', { class: 'fa-solid fa-folder' })
 const foldericonfn = () => iconfolder
-const fileiconfn = (icon: string) => h('i', { class: 'iconfont ' + icon })
+const fileiconfn = (icon: string) => h('i', { class: 'fa-solid ' + icon })
 
 export default defineComponent({
   components: { MySwitchTab, AntdTree },
@@ -892,8 +892,8 @@ export default defineComponent({
           <div style="height: 20px"></div>
           <div class="toppanbtns" style="height: 26px" tabindex="-1">
             <div class="toppanbtn">
-              <a-button type="text" size="small" tabindex="-1" :disabled="okLoading" @click="onRunReplaceName()"> <i class="iconfont iconreload-1-icon" />刷新 </a-button>
-              <a-button type="text" size="small" tabindex="-1" :disabled="okLoading" @click="handleContextMenu('all', '')"> <i class="iconfont iconfangkuang" />全选 </a-button>
+              <a-button type="text" size="small" tabindex="-1" :disabled="okLoading" @click="onRunReplaceName()"> <i class="fa-solid fa-refresh" />刷新 </a-button>
+              <a-button type="text" size="small" tabindex="-1" :disabled="okLoading" @click="handleContextMenu('all', '')"> <i class="fa-regular fa-square" />全选 </a-button>
             </div>
             <div style="padding-top: 3px; color: rgb(var(--primary-6)); flex-shrink: 0">{{ checkInfo }}</div>
             <div style="flex-grow: 1"></div>
@@ -1005,7 +1005,7 @@ export default defineComponent({
   font-size: 12px;
 }
 
-.toppanbtn .iconfont.iconwenjian {
+.toppanbtn .fa-solid.fa-file {
   color: unset !important;
 }
 .renametree .ant-tree-title .match {
@@ -1051,7 +1051,7 @@ export default defineComponent({
   border: 1px solid var(--color-neutral-3);
   padding: 4px;
 }
-.renametree .ant-tree-icon__customize .iconfont {
+.renametree .ant-tree-icon__customize .fa-solid {
   font-size: 18px;
   margin-right: 2px;
 }

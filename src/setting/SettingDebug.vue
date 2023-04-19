@@ -19,7 +19,7 @@ const userData = getUserData()
         <template #suffix> 个文件 </template>
       </a-input-number>
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">3000</span> (3000-10000)
@@ -39,7 +39,7 @@ const userData = getUserData()
           <template #suffix> 个文件 </template>
         </a-input-number>
         <a-popover position="bottom">
-          <i class="iconfont iconbulb" />
+          <i class="fa-solid fa-lightbulb" />
           <template #content>
             <div>
               默认：<span class="opred">1000</span> (1000-3000)
@@ -59,7 +59,7 @@ const userData = getUserData()
           <template #suffix> 条记录 </template>
         </a-input-number>
         <a-popover position="bottom">
-          <i class="iconfont iconbulb" />
+          <i class="fa-solid fa-lightbulb" />
           <template #content>
             <div>
               默认：<span class="opred">5000</span> (1000-50000)
@@ -76,7 +76,7 @@ const userData = getUserData()
     <div class="settingrow">
       <MySwitch :value="settingStore.yinsiLinkPassword" @update:value="cb({ yinsiLinkPassword: $event })"></MySwitch>
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">关闭</span>
@@ -95,7 +95,7 @@ const userData = getUserData()
     <div class="settingrow">
       <MySwitch :value="settingStore.yinsiZipPassword" @update:value="cb({ yinsiZipPassword: $event })"></MySwitch>
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">关闭</span>

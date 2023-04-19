@@ -27,62 +27,62 @@ export default defineComponent({
       <a-dsubmenu id="leftpansubzhankai" class="rightmenu" trigger="hover">
         <template #default>
           <div @click.stop="() => {}">
-            <span class="arco-dropdown-option-icon"><i class="iconfont iconfenzhi1"></i></span>目录
+            <span class="arco-dropdown-option-icon"><i class="fa-solid fa-folder-open"></i></span>目录
           </div>
         </template>
         <template #content>
           <a-doption @click="handleRefresh">
-            <template #icon> <i class="iconfont iconreload-1-icon" /> </template>
+            <template #icon> <i class="fa-solid fa-refresh" /> </template>
             <template #default>刷新</template>
           </a-doption>
           <a-doption @click="() => handleExpandAll(true)">
-            <template #icon> <i class="iconfont iconArrow-Down2" /> </template>
+            <template #icon> <i class="fa-solid fa-plus" /> </template>
             <template #default>展开全部</template>
           </a-doption>
           <a-doption @click="() => handleExpandAll(false)">
-            <template #icon> <i class="iconfont iconArrow-Right2" /> </template>
+            <template #icon> <i class="fa-solid fa-minus" /> </template>
             <template #default>折叠全部</template>
           </a-doption>
         </template>
       </a-dsubmenu>
       <a-doption @click="() => menuDownload(istree)">
-        <template #icon> <i class="iconfont icondownload" /> </template>
+        <template #icon> <i class="fa-solid fa-download" /> </template>
         <template #default>下载</template>
       </a-doption>
       <a-doption @click="() => menuCreatShare(istree, 'pan')">
-        <template #icon> <i class="iconfont iconfenxiang" /> </template>
+        <template #icon> <i class="fa-solid fa-share-square" /> </template>
         <template #default>分享</template>
       </a-doption>
 
       <a-dsubmenu id="leftpansubmove" class="rightmenu" trigger="hover">
         <template #default>
           <div @click.stop="() => {}">
-            <span class="arco-dropdown-option-icon"><i class="iconfont iconmoveto" style="opacity: 0.8"></i></span>移动
+            <span class="arco-dropdown-option-icon"><i class="fa-solid fa-file-export" style="opacity: 0.8"></i></span>移动
           </div>
         </template>
         <template #content>
           <a-doption @click="() => menuCopySelectedFile(istree, 'cut')">
-            <template #icon> <i class="iconfont iconscissor" /> </template>
-            <template #default>移动到...</template>
+            <template #icon> <i class="fa-solid fa-file-import" /> </template>
+            <template #default>移动到</template>
           </a-doption>
           <a-doption @click="() => menuCopySelectedFile(istree, 'copy')">
-            <template #icon> <i class="iconfont iconcopy" /> </template>
-            <template #default>复制到...</template>
+            <template #icon> <i class="fa-solid fa-copy" /> </template>
+            <template #default>复制到</template>
           </a-doption>
           <a-doption class="danger" @click="() => menuTrashSelectFile(istree, false)">
-            <template #icon> <i class="iconfont icondelete" /> </template>
+            <template #icon> <i class="fa-solid fa-trash" /> </template>
             <template #default>回收站</template>
           </a-doption>
         </template>
       </a-dsubmenu>
 
       <a-doption @click="() => modalRename(istree, false)">
-        <template #icon> <i class="iconfont iconedit-square" /> </template>
+        <template #icon> <i class="fa-solid fa-book" /> </template>
         <template #default>重命名</template>
       </a-doption>
 
       <a-doption @click="() => modalShuXing(istree, false)">
-        <template #icon> <i class="iconfont iconshuxing" /> </template>
+        <template #icon> <i class="fa-solid fa-tags" /> </template>
         <template #default>属性</template>
       </a-doption>
     </template>

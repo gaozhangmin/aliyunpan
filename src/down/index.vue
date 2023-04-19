@@ -16,29 +16,29 @@ const appStore = useAppStore()
       <div class="headdesc">上传下载文件</div>
       <a-menu :style="{ width: '100%' }" class="xbyleftmenu" :selected-keys="[appStore.GetAppTabMenu]" @update:selected-keys="appStore.toggleTabMenu('down', $event[0])">
         <a-menu-item key="DowningRight">
-          <template #icon><i class="iconfont icondownload" /></template>
+          <template #icon><i class="fa-solid fa-download" /></template>
           下载中
         </a-menu-item>
         <a-menu-item key="DownedRight">
-          <template #icon><i class="iconfont icondesktop" /></template>
-          已下载完
+          <template #icon><i class="fa-solid  fa-cloud-download-alt" /></template>
+          已下载
         </a-menu-item>
         <a-menu-item key="UploadingRight">
-          <template #icon><i class="iconfont iconcloud-upload" /></template>
+          <template #icon><i class="fa-solid fa-upload" /></template>
           上传中
         </a-menu-item>
         <a-menu-item key="UploadedRight">
-          <template #icon><i class="iconfont iconcloud_success" /></template>
-          已上传完
+          <template #icon><i class="fa-solid fa-cloud-upload-alt" /></template>
+          已上传
         </a-menu-item>
-        <a-menu-item key="SyncRight">
-          <template #icon><i class="iconfont iconcloud-sync" /></template>
-          文件夹同步 x
-        </a-menu-item>
-        <a-menu-item key="M3U8Right">
-          <template #icon><i class="iconfont iconluxiang" /></template>
-          M3U8视频 x
-        </a-menu-item>
+<!--        <a-menu-item key="SyncRight">-->
+<!--          <template #icon><i class="fa-solid fa-sync-alt" /></template>-->
+<!--          文件夹同步-->
+<!--        </a-menu-item>-->
+<!--        <a-menu-item key="M3U8Right">-->
+<!--          <template #icon><i class="fa-solid fa-video-camera" /></template>-->
+<!--          M3U8视频-->
+<!--        </a-menu-item>-->
       </a-menu>
     </a-layout-sider>
     <a-layout-content class="xbyright">

@@ -42,7 +42,7 @@ const cb = async (val: any) => {
               <a-option value="refuse">保留网盘内文件，不上传了</a-option>
           </a-select>
           <a-popover position="bottom">
-              <i class="iconfont iconbulb" />
+              <i class="fa-solid fa-lightbulb" />
               <template #content>
                   <div>
                       默认：<span class="opred">删除网盘内文件，继续上传</span>
@@ -78,7 +78,7 @@ const cb = async (val: any) => {
         <a-radio tabindex="-1" value="KB">KB/s</a-radio>
       </a-radio-group>
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div :style="{ width: '360px' }">
             默认：<span class="opred">0 (不限速，满速上传)</span>
@@ -95,7 +95,7 @@ const cb = async (val: any) => {
     <div class="settingrow">
       <MySwitch :value="settingStore.downUploadBreakFile" @update:value="cb({ downUploadBreakFile: $event })"></MySwitch>
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">关闭</span>
@@ -111,7 +111,7 @@ const cb = async (val: any) => {
     <div class="settingrow">
       <MySwitch :value="settingStore.downAutoShutDown > 0" @update:value="cb({ downAutoShutDown: $event ?  1 : 0 })"></MySwitch>
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">关闭</span>
@@ -127,7 +127,7 @@ const cb = async (val: any) => {
     <div class="settingrow">
       <MySwitch :value="settingStore.downFinishAudio" @update:value="cb({ downFinishAudio: $event })"></MySwitch>
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">关闭</span>
@@ -142,7 +142,7 @@ const cb = async (val: any) => {
     <div class="settingrow">
       <MySwitch :value="settingStore.downSmallFileFirst" @update:value="cb({ downSmallFileFirst: $event })"></MySwitch>
       <a-popover position="right">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">关闭</span>
@@ -158,7 +158,7 @@ const cb = async (val: any) => {
     <div class="settingrow">
       <MySwitch :value="settingStore.downSaveShowPro" @update:value="cb({ downSaveShowPro: $event })"> </MySwitch>
       <a-popover position="right">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">开启</span>
@@ -175,7 +175,7 @@ const cb = async (val: any) => {
     <div class="settingrow">
       <MyTags :value="settingStore.downIngoredList" :maxlen="20" @update:value="cb({ downIngoredList: $event })" />
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             上传/下载时可以根据文件名结尾去过滤文件(不上传/下载)

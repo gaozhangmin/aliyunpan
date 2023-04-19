@@ -240,7 +240,7 @@ export default class AliShare {
     
     if (AliHttp.IsSuccess(resp.code)) {
       const item = resp.body as IAliShareItem
-      const add: IAliShareItem = Object.assign({}, item, { first_file: undefined, icon: 'iconwenjian' })
+      const add: IAliShareItem = Object.assign({}, item, { first_file: undefined, icon: 'fa-file' })
       if (item.created_at) add.created_at = humanDateTime(item.created_at)
       if (item.updated_at) add.updated_at = humanDateTime(item.updated_at)
       add.share_msg = humanExpiration(item.expiration)

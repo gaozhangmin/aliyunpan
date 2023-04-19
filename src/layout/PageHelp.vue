@@ -41,7 +41,7 @@ export default defineComponent({
         <a-button type="text" tabindex="-1" title="关闭 Alt+F4" @click="handleCreatMap"> CreatMap </a-button>
         <a-button type="text" tabindex="-1" title="关闭 Alt+F4" @click="handleCreatObject"> CreatObject </a-button>
         <a-button type="text" tabindex="-1" title="关闭 Alt+F4" @click="handleHideClick">
-          <i class="iconfont iconclose"></i>
+          <i class="fa-solid fa-x"></i>
         </a-button>
       </div>
     </a-layout-header>

@@ -170,19 +170,18 @@ const scanType = ref('video')
           查找
           <template #icon>
             <MyLoading v-if="scanLoading" />
-            <i v-else class="iconfont iconrsearch" />
           </template>
         </a-step>
         <a-step description="勾选 需要删除的">
           勾选
           <template #icon>
-            <i class="iconfont iconedit-square" />
+              <i class="fa-solid fa-check-double iconsize" />
           </template>
         </a-step>
         <a-step description="删除 放入回收站">
           删除
           <template #icon>
-            <i class="iconfont icondelete" />
+            <i class="fa-solid fa-trash iconsize" />
           </template>
         </a-step>
       </a-steps>
@@ -241,7 +240,7 @@ const scanType = ref('video')
       </a-spin>
       <a-empty v-else class="beginscan">
         <template #image>
-          <i class="iconfont iconrsearch" />
+          <i class="fa-solid fa-search" />
         </template>
         请点击上方 开始扫描 按钮
       </a-empty>
@@ -253,7 +252,7 @@ const scanType = ref('video')
   margin-top: 15%;
   width: 100%;
 }
-.beginscan .iconfont {
+.beginscan .fa-solid {
   font-size: 48px;
 }
 
@@ -285,5 +284,8 @@ const scanType = ref('video')
   color: var(--color-text-3);
   flex-shrink: 0;
   flex-grow: 0;
+}
+.iconsize {
+    font-size: 1em !important;
 }
 </style>

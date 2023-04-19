@@ -35,7 +35,7 @@ export interface CheckNode {
 }
 
 const folderIconFn = () => h('i', { class: 'fa-solid fa-folder' })
-const fileIconFn = () => h('i', { class: 'iconfont iconwenjian' })
+const fileIconFn = () => h('i', { class: 'fa-solid fa-file' })
 
 function getDirSize(sizeInfo: { size: number; dirCount: number; fileCount: number }, treeData: TreeNodeData[], linkList: ILinkTxt[], dirMap: Set<string>) {
   for (let n = 0; n < linkList.length; n++) {
@@ -314,7 +314,7 @@ export default defineComponent({
   border: 1px solid var(--color-neutral-3);
   padding: 4px;
 }
-.sharetree .ant-tree-icon__customize .iconfont {
+.sharetree .ant-tree-icon__customize .fa-solid {
   font-size: 18px;
   margin-right: 2px;
 }

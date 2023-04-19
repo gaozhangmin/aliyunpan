@@ -281,12 +281,12 @@ export default defineComponent({
     <a-layout-header id="xbyhead" draggable="false">
       <div id="xbyhead2" class="q-electron-drag">
         <a-button type="text" tabindex="-1">
-          <i class="iconfont iconfile_video"></i>
+          <i class="fa-solid fa-file-video"></i>
         </a-button>
         <div class="title">视频雪碧图 {{ appStore.pageVideoXBT?.file_name || '' }}</div>
         <div class="flexauto"></div>
         <a-button type="text" tabindex="-1" @click="handleHideClick">
-          <i class="iconfont iconclose"></i>
+          <i class="fa-solid fa-x"></i>
         </a-button>
       </div>
     </a-layout-header>
@@ -302,13 +302,13 @@ export default defineComponent({
 
           <div style="margin-right: 12px"></div>
 
-          <a-button type="outline" size="small" tabindex="-1" :loading="loading" title="下载雪碧图到本地" @click="handleSaveImageClick"> <i class="iconfont icondownload"></i>保存雪碧图 </a-button>
+          <a-button type="outline" size="small" tabindex="-1" :loading="loading" title="下载雪碧图到本地" @click="handleSaveImageClick"> <i class="fa-solid fa-download"></i>保存雪碧图 </a-button>
 
           <div style="flex-grow: 1"></div>
-          <a-button v-if="false" type="outline" size="small" tabindex="-1" title="复制M3U8链接" @click="handleCopyM3U8Click"> <i class="iconfont iconlink2"></i>M3U8链接 </a-button>
+          <a-button v-if="false" type="outline" size="small" tabindex="-1" title="复制M3U8链接" @click="handleCopyM3U8Click"> <i class="fa-solid fa-link"></i>M3U8链接 </a-button>
 
           <div style="margin-right: 12px"></div>
-          <a-button v-if="false" type="outline" size="small" tabindex="-1" title="复制原文件链接" @click="handleCopyDownClick"> <i class="iconfont iconlink2"></i>下载链接 </a-button>
+          <a-button v-if="false" type="outline" size="small" tabindex="-1" title="复制原文件链接" @click="handleCopyDownClick"> <i class="fa-solid fa-link"></i>下载链接 </a-button>
 
           <div style="margin-right: 12px"></div>
         </div>

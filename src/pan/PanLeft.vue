@@ -51,7 +51,7 @@ watchEffect(() => {
     key: 'video',
     title: '放映室',
     namesearch: 'ca760ef',
-    icon: fileiconfn('iconrss_video'),
+    icon: fileiconfn('fa-video'),
     children: [],
     isLeaf: true
   } as TreeNodeData)
@@ -192,7 +192,7 @@ const handleQuickSelect = (index: number) => {
             @right-click="handleTreeRightClick"
             @scroll="onHideRightMenuScroll">
             <template #switcherIcon>
-              <i class="ant-tree-switcher-icon iconfont Arrow" />
+              <i class="fa-solid fa-caret-down" />
             </template>
             <template #icon>
               <i class="fa-solid fa-folder" />
@@ -219,7 +219,7 @@ const handleQuickSelect = (index: number) => {
             :tree-data="colorTreeData"
             @select="(_:any[],e:any)=>pantreeStore.mTreeSelected(e.node.key)">
             <template #icon="{ dataRef }">
-              <i class="iconfont iconwbiaoqian" :class="dataRef.namesearch" />
+              <i class="fa-solid fa-tags" :class="dataRef.namesearch" />
             </template>
             <template #title="{ dataRef }">
               <span :class="'dirtitle ' + dataRef.namesearch">标记 · {{ dataRef.title }}</span>
@@ -265,39 +265,52 @@ const handleQuickSelect = (index: number) => {
 .dirtree {
   height: 100%;
 }
-.dirtree .iconfont,
-.sharetree .iconfont,
-.quicktree .iconfont,
-.videotree .iconfont {
+.dirtree .fa-solid,
+.sharetree .fa-solid,
+.quicktree .fa-solid,
+.videotree .fa-solid {
   font-size: 20px;
 }
-.dirtree .iconfont.iconfile-folder,
-.sharetree .iconfont.iconfile-folder,
-.quicktree .iconfont.iconfile-folder,
-.videotree .iconfont.iconfile-folder {
-  color: #0078D7;
+.dirtree .fa-solid.fa-folder,
+.sharetree .fa-solid.fa-folder,
+.quicktree .fa-solid.fa-folder,
+.videotree .fa-solid.fa-folder {
+  color: #52c4f6;
   font-size: 20px;
 }
-.colortree .iconfont {
+.colortree .fa-solid {
   font-size: 20px;
 }
 
-.dirtree .iconfont.iconrecover {
-  color: #13c2c2;
+.dirtree .fa-solid.fa-trash-restore {
+  color: #52c4f6;
+  font-size: 1.5em !important;
 }
-.dirtree .iconfont.icondelete {
+.dirtree .fa-solid.fa-trash {
   color: #ff4d4fd9;
+  font-size: 1.5em !important;
 }
-.dirtree .iconfont.iconsearch {
-  color: #1890ff;
+.dirtree .fa-solid.fa-crown {
+  color: #52c4f6;
+  font-size: 1.5em !important;
+}
+.dirtree .fa-solid.fa-search {
+  color: #52c4f6;
+  font-size: 1.5em !important;
 }
 
-.colortree .iconfont.iconrss_video {
+.colortree .fa-solid.fa-video-camera {
+  color: #a760ef;
+  font-size: 1.5em !important;
+}
+
+.colortree .fa-solid .fa-video {
   color: #a760ef;
 }
-.ant-tree .iconfile-folder {
-  color: #0078D7;
-  font-size: 20px;
+
+.ant-tree .fa-folder {
+  color: #52c4f6;
+  font-size: 1.5em !important;
 }
 
 .dirtitle {
@@ -313,6 +326,7 @@ const handleQuickSelect = (index: number) => {
   flex-wrap: nowrap !important;
   flex-shrink: 0 !important;
   display: flex;
+  margin-bottom: 12px;
 }
 
 .dirtree .ant-tree-list-holder {
@@ -321,6 +335,7 @@ const handleQuickSelect = (index: number) => {
 
 .dirtree .ant-tree-title {
   flex-grow: 1;
+    margin-left: 10px !important;
 }
 
 .ant-tree-node-selected .ant-tree-title,
@@ -387,7 +402,7 @@ body[arco-theme='dark'] .ant-tree-node-selected .ant-tree-title > span {
   line-height: 1.3;
 }
 
-.quicktree .ant-tree-icon__customize .iconfont {
+.quicktree .ant-tree-icon__customize .fa-solid {
   font-size: 18px;
   margin-right: 2px;
 }

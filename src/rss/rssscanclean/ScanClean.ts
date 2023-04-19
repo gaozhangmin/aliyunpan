@@ -155,7 +155,7 @@ async function ApiBatchDirFileList(user_id: string, drive_id: string, dirList: I
   }
   return false
 }
-const fileiconfn = (icon: string) => h('i', { class: 'iconfont ' + icon })
+const fileiconfn = (icon: string) => h('i', { class: 'fa-solid ' + icon })
 
 export function GetTreeNodes(PanData: IScanDriverModel, parent_file_id: string, treeDataMap: Map<string, TreeNodeData>) {
   const data: TreeNodeData[] = []
@@ -166,7 +166,7 @@ export function GetTreeNodes(PanData: IScanDriverModel, parent_file_id: string, 
     item = dirList[i]
     if (item.description != '' || PanData.CleanDirMap.has(item.file_id)) {
       
-      const isDir = item.description == 'iconfile-folder' || !item.description
+      const isDir = item.description == 'fa-folder' || !item.description
       data.push({
         key: item.file_id,
         title: item.name,

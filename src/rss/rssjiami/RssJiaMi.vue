@@ -109,7 +109,7 @@ const handleDecryption = async () => {
         <div class="settingrow">
           <MyTags :value="matchExtList" :maxlen="20" @update:value="handleAddExtList" />
           <a-popover position="bottom">
-            <i class="iconfont iconbulb" />
+            <i class="fa-solid fa-lightbulb" />
             <template #content>
               <div>
                 默认：<span class="opred">全部</span>
@@ -125,7 +125,7 @@ const handleDecryption = async () => {
         <div class="settingrow">
           <a-input v-model="passwored" tabindex="-1" :style="{ width: '120px', height: '30px'}" placeholder="" allow-clear />
           <a-popover position="bottom">
-            <i class="iconfont iconbulb" />
+            <i class="fa-solid fa-lightbulb" />
             <template #content>
               <div>
                 默认：<span class="opred">为空</span>
@@ -143,7 +143,7 @@ const handleDecryption = async () => {
         <div class="settingrow">
           <a-input v-model="passwored" tabindex="-1" :style="{ width: '120px', height: '30px'}" placeholder="没有则不填" allow-clear />
           <a-popover position="bottom">
-            <i class="iconfont iconbulb" />
+            <i class="fa-solid fa-lightbulb" />
             <template #content>
               <div>
                 如果文件加密时设置了密码，则解密必须提供密码

@@ -6,7 +6,16 @@ import AliTrash from '../../aliapi/trash'
 import { IPageVideoXBT } from '../../store/appstore'
 import DebugLog from '../../utils/debuglog'
 import message from '../../utils/message'
-import { modalCopyFileTree, modalCreatNewShareLink, modalDLNAPlayer, modalDownload, modalM3U8Download, modalSearchPan, modalSelectPanDir, modalUpload } from '../../utils/modal'
+import {
+  modalCopyFileTree,
+  modalCreatNewShareLink,
+  modalDLNAPlayer,
+  modalDownload,
+  modalM3U8Download,
+  modalSearchPan,
+  modalSelectPanDir,
+  modalUpload
+} from '../../utils/modal'
 import { ArrayKeyList } from '../../utils/utils'
 import PanDAL from '../pandal'
 import usePanFileStore from '../panfilestore'
@@ -378,7 +387,7 @@ export function menuCreatShare(istree: boolean, shareby: string) {
         namesearch: dir.namesearch,
         ext: '',
         category: '',
-        icon: 'iconfile-folder',
+        icon: 'fa-folder',
         size: 0,
         sizeStr: '',
         time: 0,
@@ -536,13 +545,12 @@ export async function topRecoverSelectedFile() {
   topbtnLock.delete('topRecoverSelectedFile')
 }
 
-
 export async function topSearchAll(word: string) {
-
   if (word == 'topSearchAll高级搜索') {
     modalSearchPan()
     return
   }
+
 
   const pantreeStore = usePanTreeStore()
   if (!pantreeStore.user_id || !pantreeStore.drive_id || !pantreeStore.selectDir.file_id) {

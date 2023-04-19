@@ -173,19 +173,19 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
   <div class="toppanbtns" style="height: 26px">
     <div class="toppanbtn">
       <a-button type="text" size="small" tabindex="-1" :loading="myshareStore.ListLoading" title="F5" @click="handleRefresh"
-        ><template #icon> <i class="iconfont iconreload-1-icon" /> </template
+        ><template #icon> <i class="fa-solid fa-refresh" /> </template
       ></a-button>
     </div>
     <div v-show="myshareStore.IsListSelected" class="toppanbtn">
-      <a-button type="text" size="small" tabindex="-1" title="F2 / Ctrl+E" @click="handleEdit"><i class="iconfont iconedit-square" />修改</a-button>
-      <a-button type="text" size="small" tabindex="-1" title="Ctrl+O" @click="handleOpenLink"><i class="iconfont iconchakan" />查看</a-button>
-      <a-button type="text" size="small" tabindex="-1" title="Ctrl+C" @click="handleCopySelectedLink"><i class="iconfont iconcopy" />复制链接</a-button>
-      <a-button type="text" size="small" tabindex="-1" title="Ctrl+B" @click="handleBrowserLink"><i class="iconfont iconchrome" />浏览器</a-button>
-      <a-button type="text" size="small" tabindex="-1" class="danger" title="Ctrl+Delete" @click="handleDeleteSelectedLink('selected')"><i class="iconfont icondelete" />取消分享</a-button>
+      <a-button type="text" size="small" tabindex="-1" title="F2 / Ctrl+E" @click="handleEdit"><i class="fa-solid fa-pencil iconsize" />修改</a-button>
+      <a-button type="text" size="small" tabindex="-1" title="Ctrl+O" @click="handleOpenLink"><i class="fa-solid fa-eye iconsize" />查看</a-button>
+      <a-button type="text" size="small" tabindex="-1" title="Ctrl+C" @click="handleCopySelectedLink"><i class="fa-solid fa-copy iconsize" />复制链接</a-button>
+      <a-button type="text" size="small" tabindex="-1" title="Ctrl+B" @click="handleBrowserLink"><i class="fa-brands fa-chrome iconsize" />浏览器</a-button>
+      <a-button type="text" size="small" tabindex="-1" class="danger" title="Ctrl+Delete" @click="handleDeleteSelectedLink('selected')"><i class="fa-solid fa-cancel" />取消分享</a-button>
     </div>
     <div v-show="!myshareStore.IsListSelected" class="toppanbtn">
       <a-dropdown trigger="hover" position="bl" @select="handleDeleteSelectedLink">
-        <a-button type="text" size="small" tabindex="-1"><i class="iconfont iconrest" />清理全部 <i class="iconfont icondown" /></a-button>
+        <a-button type="text" size="small" tabindex="-1"><i class="fa-solid fa-trash" />清理全部</a-button>
 
         <template #content>
           <a-doption :value="'expired'" class="danger">删除全部 过期已失效</a-doption>
@@ -193,44 +193,42 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
         </template>
       </a-dropdown>
     </div>
-    <div style="flex-grow: 1"></div>
-    <div class="toppanbtn">
-      <a-input-search ref="inputsearch" tabindex="-1" size="small" title="Ctrl+F / F3 / Space" placeholder="快速筛选" :model-value="myshareStore.ListSearchKey" @input="(val:any)=>handleSearchInput(val as string)" @press-enter="handleSearchEnter" @keydown.esc=";($event.target as any).blur()" />
-    </div>
-    <div></div>
+<!--    <div style="flex-grow: 1"></div>-->
+<!--    <div class="toppanbtn">-->
+<!--      <a-input-search ref="inputsearch" tabindex="-1" size="small" title="Ctrl+F / F3 / Space" placeholder="快速筛选" :model-value="myshareStore.ListSearchKey" @input="(val:any)=>handleSearchInput(val as string)" @press-enter="handleSearchEnter" @keydown.esc=";($event.target as any).blur()" />-->
+<!--    </div>-->
+<!--    <div></div>-->
   </div>
   <div style="height: 9px"></div>
   <div class="toppanarea">
     <div style="margin: 0 3px">
       <AntdTooltip title="点击全选" placement="left">
         <a-button shape="circle" type="text" tabindex="-1" class="select all" title="Ctrl+A" @click="handleSelectAll">
-          <i :class="myshareStore.IsListSelectedAll ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
+          <i :class="myshareStore.IsListSelectedAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
         </a-button>
       </AntdTooltip>
     </div>
     <div class="selectInfo" style="min-width: 266px">{{ myshareStore.ListDataSelectCountInfo }}</div>
 
     <div style="flex-grow: 1"></div>
+      <div class="toppanbtn">
+          <a-input-search ref="inputsearch" tabindex="-1" size="small" title="Ctrl+F / F3 / Space" placeholder="快速筛选" :model-value="myshareStore.ListSearchKey" @input="(val:any)=>handleSearchInput(val as string)" @press-enter="handleSearchEnter" @keydown.esc=";($event.target as any).blur()" />
+      </div>
     <div class="cell tiquma">提取码</div>
     <div :class="'cell sharestate order ' + (myshareStore.ListOrderKey == 'state' ? 'active' : '')" @click="handleOrder('state')">
       状态
-      <i class="iconfont iconxia" />
     </div>
     <div :class="'cell count order ' + (myshareStore.ListOrderKey == 'preview' ? 'active' : '')" @click="handleOrder('preview')">
       浏览
-      <i class="iconfont iconxia" />
     </div>
     <div :class="'cell count order ' + (myshareStore.ListOrderKey == 'download' ? 'active' : '')" @click="handleOrder('download')">
       下载
-      <i class="iconfont iconxia" />
     </div>
     <div :class="'cell count order ' + (myshareStore.ListOrderKey == 'save' ? 'active' : '')" @click="handleOrder('save')">
       转存
-      <i class="iconfont iconxia" />
     </div>
     <div :class="'cell sharetime order ' + (myshareStore.ListOrderKey == 'time' ? 'active' : '')" @click="handleOrder('time')">
       创建时间
-      <i class="iconfont iconxia" />
     </div>
     <div class="cell pr"></div>
   </div>
@@ -259,11 +257,11 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
           <div :class="'fileitem' + (myshareStore.ListSelected.has(item.share_id) ? ' selected' : '') + (myshareStore.ListFocusKey == item.share_id ? ' focus' : '')" @click="handleSelect(item.share_id, $event)" @contextmenu="(event:MouseEvent)=>handleRightClick({event,node:{key:item.share_id}} )">
             <div style="margin: 2px">
               <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index" @click.prevent.stop="handleSelect(item.share_id, $event, true)">
-                <i :class="myshareStore.ListSelected.has(item.share_id) ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
+                <i :class="myshareStore.ListSelected.has(item.share_id) ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
               </a-button>
             </div>
             <div class="fileicon">
-              <i :class="'iconfont ' + item.icon" aria-hidden="true"></i>
+              <i :class="'fa-solid ' + item.icon" aria-hidden="true"></i>
             </div>
             <div class="filename">
               <div :title="'https://www.aliyundrive.com/s/' + item.share_id" @click="handleClickName(item)">
@@ -287,25 +285,25 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
     <a-dropdown id="rightmysharemenu" class="rightmenu" :popup-visible="true" style="z-index: -1; left: -200px; opacity: 0">
       <template #content>
         <a-doption @click="handleEdit">
-          <template #icon> <i class="iconfont iconedit-square" /> </template>
+          <template #icon> <i class="fa-solid fa-check-double" /> </template>
           <template #default>修改</template>
         </a-doption>
         <a-doption @click="handleOpenLink">
-          <template #icon> <i class="iconfont iconchakan" /> </template>
+          <template #icon> <i class="fa-solid fa-eye" /> </template>
           <template #default>查看</template>
         </a-doption>
 
         <a-doption @click="handleCopySelectedLink">
-          <template #icon> <i class="iconfont iconcopy" /> </template>
+          <template #icon> <i class="fa-solid fa-copy" /> </template>
           <template #default>复制链接</template>
         </a-doption>
         <a-doption @click="handleBrowserLink">
-          <template #icon> <i class="iconfont iconchrome" /> </template>
+          <template #icon> <i class="fa-brands fa-chrome" /> </template>
           <template #default>浏览器</template>
         </a-doption>
 
         <a-doption class="danger" @click="handleDeleteSelectedLink('selected')">
-          <template #icon> <i class="iconfont icondelete" /> </template>
+          <template #icon> <i class="fa-solid fa-cancel" /> </template>
           <template #default>取消分享</template>
         </a-doption>
       </template>
@@ -384,5 +382,8 @@ body[arco-theme='dark'] .toppanarea .cell {
 }
 .toppanarea .cell.order:hover {
   color: rgb(var(--primary-6));
+}
+.iconsize {
+  font-size: 1em !important;
 }
 </style>

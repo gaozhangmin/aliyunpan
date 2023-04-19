@@ -26,23 +26,23 @@ appStore.$subscribe((mutation) => {
       <div class="headdesc">阿里云盘分享</div>
       <a-menu :selected-keys="[appStore.GetAppTabMenu]" :style="{ width: '100%' }" class="xbyleftmenu" @update:selected-keys="appStore.toggleTabMenu('share', $event[0])">
         <a-menu-item key="OtherShareRight">
-          <template #icon><i class="iconfont iconfenxiang1" /></template>
-          导入过的分享
+          <template #icon><i class="fa-solid fa-share-square" /></template>
+          导入的分享
         </a-menu-item>
         <a-menu-item key="MyShareRight">
-          <template #icon><i class="iconfont iconfenxiang" /></template>
-          我创建的分享
+          <template #icon><i class="fa-solid fa-share-nodes" /></template>
+          创建的分享
         </a-menu-item>
         <a-menu-item key="MyFollowingRight">
-          <template #icon><i class="iconfont icondingyue" /></template>
-          我订阅的公众号
+          <template #icon><i class="fa-solid fa-heart" /></template>
+          订阅公众号
         </a-menu-item>
         <a-menu-item key="OtherFollowingRight">
-          <template #icon><i class="iconfont icontuijian" /></template>
+          <template #icon><i class="fa-solid fa-thumbs-up" /></template>
           公众号推荐
         </a-menu-item>
         <a-menu-item key="ShareSiteRight">
-          <template #icon><i class="iconfont iconrvip" /></template>
+          <template #icon><i class="fa-brands fa-chrome iconsize" /></template>
           资源分享网站
         </a-menu-item>
       </a-menu>
@@ -59,4 +59,8 @@ appStore.$subscribe((mutation) => {
   </a-layout>
 </template>
 
-<style></style>
+<style>
+.iconsize {
+    font-size: 1.5em !important;
+}
+</style>

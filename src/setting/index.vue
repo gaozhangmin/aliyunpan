@@ -53,43 +53,43 @@ onUnmounted(() => {
       <div class="headdesc">APP 设置项</div>
       <a-menu :selected-keys="[appStore.GetAppTabMenu]" :style="{ width: '100%' }" class="xbyleftmenu" @update:selected-keys="appStore.toggleTabMenu('setting', $event[0])">
         <a-menu-item key="SettingUI">
-          <template #icon><i class="iconfont iconui" /></template>
+          <template #icon><i class="fa-brands fa-apple" /></template>
           APP
         </a-menu-item>
         <a-menu-item key="SettingDown">
-          <template #icon><i class="iconfont icondownload" /></template>
+          <template #icon><i class="fa-solid fa-download" /></template>
           下载
         </a-menu-item>
         <a-menu-item key="SettingUpload">
-          <template #icon><i class="iconfont iconupload" /></template>
+          <template #icon><i class="fa-solid fa-upload" /></template>
           上传
         </a-menu-item>
         <a-menu-item key="SettingPlay">
-          <template #icon><i class="iconfont iconshipin" /></template>
+          <template #icon><i class="fa-solid fa-video" /></template>
           在线播放
         </a-menu-item>
         <a-menu-item key="SettingPan">
-          <template #icon><i class="fa-solid fa-folder" /></template>
+          <template #icon><i class="fa-solid fa-cloud" /></template>
           网盘
         </a-menu-item>
         <a-menu-item key="SettingDebug">
-          <template #icon><i class="iconfont iconlogoff" /></template>
+          <template #icon><i class="fa-solid fa-users-gear" /></template>
           高级选项
         </a-menu-item>
 	      <a-menu-item key="SettingProxy">
-          <template #icon><i class="iconfont iconyuanduanfuzhi" /></template>
+          <template #icon><i class="fa-solid fa-network-wired" /></template>
           网络代理
         </a-menu-item>
         <a-menu-item key="SettingAria">
-          <template #icon><i class="iconfont iconchuanshu" /></template>
+          <template #icon><i class="fa-solid fa-cloud-upload" /></template>
           远程Aria
         </a-menu-item>
         <a-menu-item key="SettingLocalAria">
-            <template #icon><i class="iconfont iconchuanshu" /></template>
+            <template #icon><i class="fa-solid fa-cloud-download" /></template>
             本地Aria
         </a-menu-item>
         <a-menu-item key="SettingLog">
-          <template #icon><i class="iconfont icondebug" /></template>
+          <template #icon><i class="fa-solid fa-code" /></template>
           运行日志
         </a-menu-item>
       </a-menu>

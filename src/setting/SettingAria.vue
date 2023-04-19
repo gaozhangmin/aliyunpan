@@ -99,7 +99,7 @@ const handleAriaOff = (tip: boolean) => {
     <div class="settingrow">
       <a-input tabindex="-1" :disabled="!settingStore.AriaIsLocal" :style="{ width: '300px' }" placeholder="粘贴远程电脑上的文件夹路径" v-model:model-value="ariaSavePath" />
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             这里是远程电脑上的，下载文件的保存路径，需要你手动填写
@@ -120,7 +120,7 @@ const handleAriaOff = (tip: boolean) => {
       </a-input>
 
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             例如：<span class="opblue">43.211.17.85:6800</span> 手动输入，只填IP和端口号，IP:Port <br />
@@ -138,7 +138,7 @@ const handleAriaOff = (tip: boolean) => {
     <div class="settingrow">
       <a-input tabindex="-1" :disabled="!settingStore.AriaIsLocal" :style="{ width: '300px' }" placeholder="Aria2连接密码" v-model:model-value="ariaPwd" />
       <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             例如：<span class="opblue">S4znWTaZYQi3cpRN</span> <br />
@@ -154,7 +154,7 @@ const handleAriaOff = (tip: boolean) => {
       <AntdCheckbox tabindex="-1" :checked="settingStore.ariaHttps" @change="(e:any)=>cb({ ariaHttps: e.target.checked })">使用ssl链接(wss 或 https)</AntdCheckbox>
 
       <a-popover position="right">
-        <i class="iconfont iconbulb" />
+        <i class="fa-solid fa-lightbulb" />
         <template #content>
           <div>
             默认：<span class="opred">不勾选</span><br />

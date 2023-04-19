@@ -150,7 +150,7 @@ export default defineComponent({
           <div class="arco-upload-list-item-content">
             <div class="arco-upload-list-item-name">
               <span class="arco-upload-list-item-file-icon">
-                <i class="iconfont iconluxiang"></i>
+                <i class="fa-solid fa-video-camera"></i>
               </span>
               <a class="arco-upload-list-item-name-link" @click.stop="() => handleCopyUrl(item)">{{ file_name }}</a>
             </div>

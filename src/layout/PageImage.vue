@@ -276,12 +276,12 @@ export default defineComponent({
     <a-layout-header v-show="!isPlaying" id="xbyhead" draggable="false">
       <div id="xbyhead2" class="q-electron-drag">
         <a-button type="text" tabindex="-1">
-          <i class="iconfont iconfile-img"></i>
+          <i class="fa-solid fa-file-image"></i>
         </a-button>
         <div class="title">{{ showName }}</div>
         <div class="flexauto"></div>
         <a-button type="text" tabindex="-1" @click="handleHideClick">
-          <i class="iconfont iconclose"></i>
+          <i class="fa-solid fa-x"></i>
         </a-button>
       </div>
     </a-layout-header>
@@ -292,11 +292,11 @@ export default defineComponent({
           <a-button type="text" tabindex="-1" @click="modeChange('fill')"> 相册模式 </a-button>
         </div>
         <div class="toppanbtn">
-          <a-button type="text" tabindex="-1" @click="goRefreshImage"> <i class="iconfont iconreload-1-icon"></i>刷新 </a-button>
+          <a-button type="text" tabindex="-1" @click="goRefreshImage"> <i class="fa-solid fa-refresh"></i>刷新 </a-button>
         </div>
         <div class="toppanbtn">
-          <a-button type="text" tabindex="-1" @click="goLastImage"> <i class="iconfont iconarrow-left-2-icon"></i>上一张 </a-button>
-          <a-button type="text" tabindex="-1" @click="goNextImage"> <i class="iconfont iconarrow-right-2-icon"></i>下一张 </a-button>
+          <a-button type="text" tabindex="-1" @click="goLastImage"> <i class="fa-solid fa-arrow-circle-left"></i>上一张 </a-button>
+          <a-button type="text" tabindex="-1" @click="goNextImage"> <i class="iconarrow-right-2-icon"></i>下一张 </a-button>
         </div>
       </div>
       <div id="doc-preview" class="doc-preview" style="width: 100%; height: calc(100% - 26px - 8px)">

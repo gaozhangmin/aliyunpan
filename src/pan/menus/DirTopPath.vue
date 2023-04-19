@@ -78,7 +78,7 @@ export default defineComponent({
 .toppannavitem::before {
   color: var(--color-text-3);
   font-size: 16px;
-  font-family: 'iconfont' !important;
+  font-family: 'fa-solid' !important;
   font-style: normal;
   vertical-align: bottom;
   content: '\e660';

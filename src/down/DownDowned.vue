@@ -70,42 +70,37 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
   <div style="height: 14px"></div>
   <div class="toppanbtns" style="height: 26px">
     <div class="toppanbtn" v-show="downedStore.IsListSelected">
-      <a-button type="text" size="small" tabindex="-1" @click="handleOpenFile(null)"><i class="iconfont iconwenjian" />打开文件</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="handleOpenDir(null)"><i class="iconfont iconfolder" />打开目录</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="handleDelete"><i class="iconfont icondelete" />删除</a-button>
-      <a-button type="text" size="small" tabindex="-1"><i class="iconfont icondian" /></a-button>
-
-      <a-button type="text" size="small" tabindex="-1" @click="handleDeleteAll"><i class="iconfont icondelete" />清除全部下载记录</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="handleOpenFile(null)"><i class="fa-solid fa-file" />打开文件</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="handleOpenDir(null)"><i class="fa-solid fa-folder" />打开目录</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="handleDelete"><i class="fa-solid fa-trash" />删除选中</a-button>
     </div>
     <div class="toppanbtn" v-show="!downedStore.IsListSelected">
-      <a-button type="text" size="small" tabindex="-1" @click="handleDeleteAll"><i class="iconfont icondelete" />清除全部下载记录</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="handleDeleteAll"><i class="fa-solid fa-trash-can" />清空全部</a-button>
     </div>
-    <div style="flex-grow: 1"></div>
-    <div class="toppanbtn">
-      <a-input-search
-        tabindex="-1"
-        ref="inputsearch"
-        size="small"
-        title="Ctrl+F / F3 / Space"
-        placeholder="快速筛选"
-        :model-value="downedStore.ListSearchKey"
-        @input="(val:any)=>handleSearchInput(val as string)"
-        @press-enter="handleSearchEnter"
-        @keydown.esc="($event.target as any).blur()"
-      />
-    </div>
-    <div></div>
   </div>
   <div style="height: 9px"></div>
   <div class="toppanarea">
     <div style="margin: 0 3px">
       <AntdTooltip title="点击全选" placement="left">
         <a-button shape="circle" type="text" tabindex="-1" class="select all" @click="handleSelectAll" title="Ctrl+A">
-          <i :class="downedStore.IsListSelectedAll ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
+          <i :class="downedStore.IsListSelectedAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
         </a-button>
       </AntdTooltip>
     </div>
     <div class="selectInfo" style="min-width: 266px">{{ downedStore.ListDataSelectCountInfo }}</div>
+      <div style="flex-grow: 1"></div>
+      <div class="toppanbtn">
+          <a-input-search
+              tabindex="-1"
+              ref="inputsearch"
+              size="small"
+              title="Ctrl+F / F3 / Space"
+              placeholder="快速筛选"
+              :model-value="downedStore.ListSearchKey"
+              @input="(val:any)=>handleSearchInput(val as string)"
+              @press-enter="handleSearchEnter"
+              @keydown.esc="($event.target as any).blur()"/>
+      </div>
   </div>
   <div class="toppanlist" @keydown.space.prevent="() => true">
     <a-list
@@ -135,11 +130,11 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
           >
             <div style="margin: 2px">
               <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index" @click.prevent.stop="handleSelect(item.DownID, { ctrlKey: true, shiftKey: false })">
-                <i :class="downedStore.ListSelected.has(item.DownID) ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
+                <i :class="downedStore.ListSelected.has(item.DownID) ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
               </a-button>
             </div>
             <div class="fileicon">
-              <i :class="'iconfont ' + item.Info.icon" aria-hidden="true"></i>
+              <i :class="'fa-solid ' + item.Info.icon" aria-hidden="true"></i>
             </div>
             <div class="filename">
               <div :title="item.Info.localFilePath">
@@ -148,9 +143,9 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
             </div>
             <div class="cell filesize">{{ item.Info.sizestr }}</div>
             <div class='toppanbtn'>
-              <a title='打开文件' v-if='!item.Info.ariaRemote' @click="handleOpenFile(item)"><i class="iconfont iconwenjian" /></a>&nbsp;&nbsp;
-              <a title='打开目录' v-if='!item.Info.ariaRemote' @click="handleOpenDir(item)"><i class="iconfont iconfolder" /></a>&nbsp;&nbsp;
-              <a title='删除' @click="handleDelete"><i class="iconfont icondelete" /></a>&nbsp;&nbsp;
+              <a title='打开文件' v-if='!item.Info.ariaRemote' @click="handleOpenFile(item)"><i class="fa-solid fa-file" /></a>&nbsp;&nbsp;
+              <a title='打开目录' v-if='!item.Info.ariaRemote' @click="handleOpenDir(item)"><i class="fa-solid fa-folder" /></a>&nbsp;&nbsp;
+              <a title='删除' @click="handleDelete"><i class="fa-solid fa-trash" /></a>&nbsp;&nbsp;
             </div>
           </div>
         </div>
@@ -159,15 +154,15 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
     <a-dropdown id="downedrightmenu" class="rightmenu" :popup-visible="true" tabindex="-1" :draggable="false" style="z-index: -1; left: -200px; opacity: 0">
       <template #content>
         <a-doption @click="handleOpenFile(null)">
-          <template #icon> <i class="iconfont iconwenjian" /> </template>
+          <template #icon> <i class="fa-solid fa-file" /> </template>
           <template #default>打开文件</template>
         </a-doption>
         <a-doption @click="handleOpenDir(null)">
-          <template #icon> <i class="iconfont iconfolder" /> </template>
+          <template #icon> <i class="fa-solid fa-folder" /> </template>
           <template #default>打开目录</template>
         </a-doption>
         <a-doption @click="handleDelete" class="danger">
-          <template #icon> <i class="iconfont icondelete" /> </template>
+          <template #icon> <i class="fa-solid fa-trash" /> </template>
           <template #default>删除</template>
         </a-doption>
       </template>

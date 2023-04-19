@@ -79,47 +79,42 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
   <div style="height: 14px"></div>
   <div class="toppanbtns" style="height: 26px">
     <div class="toppanbtn" v-show="downingStore.IsListSelected">
-      <a-button type="text" size="small" tabindex="-1" @click="handleStart"><i class="iconfont iconstart" />开始</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="handleStop"><i class="iconfont iconpause" />暂停</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="handleTop"><i class="iconfont iconyouxian" />优先传输</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="handleDelete"><i class="iconfont icondelete" />删除</a-button>
-      <a-button type="text" size="small" tabindex="-1"><i class="iconfont icondian" /></a-button>
-
-      <a-button type="text" size="small" tabindex="-1" @click="handleStartAll"><i class="iconfont iconstart" />开始全部</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="handleStopAll"><i class="iconfont iconpause" />暂停全部</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="handleDeleteAll"><i class="iconfont icondelete" />删除全部</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="handleStart"><i class="fa-solid fa-play-circle" />开始</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="handleStop"><i class="fa-solid fa-circle-pause" />暂停</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="handleTop"><i class="fa-solid fa-arrow-up-from-bracket" />优先传输</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="handleDelete"><i class="fa-solid fa-trash" />删除</a-button>
     </div>
     <div class="toppanbtn" v-show="!downingStore.IsListSelected">
-      <a-button type="text" size="small" tabindex="-1" @click="handleStartAll"><i class="iconfont iconstart" />开始全部</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="handleStopAll"><i class="iconfont iconpause" />暂停全部</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="handleDeleteAll"><i class="iconfont icondelete" />删除全部</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="handleStartAll"><i class="fa-solid fa-play-circle" />开始全部</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="handleStopAll"><i class="fa-solid fa-circle-pause" />暂停全部</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="handleDeleteAll"><i class="fa-solid fa-trash" />删除全部</a-button>
     </div>
-    <div style="flex-grow: 1"></div>
-    <div class="toppanbtn">
-      <a-input-search
-        tabindex="-1"
-        ref="inputsearch"
-        size="small"
-        title="Ctrl+F / F3 / Space"
-        placeholder="快速筛选"
-        :model-value="downingStore.ListSearchKey"
-        @input="(val:any)=>handleSearchInput(val as string)"
-        @press-enter="handleSearchEnter"
-        @keydown.esc="($event.target as any).blur()"
-      />
-    </div>
-    <div></div>
   </div>
   <div style="height: 9px"></div>
   <div class="toppanarea">
     <div style="margin: 0 3px">
       <AntdTooltip title="点击全选" placement="left">
         <a-button shape="circle" type="text" tabindex="-1" class="select all" @click="handleSelectAll" title="Ctrl+A">
-          <i :class="downingStore.IsListSelectedAll ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
+          <i :class="downingStore.IsListSelectedAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
         </a-button>
       </AntdTooltip>
     </div>
     <div class="selectInfo" style="min-width: 266px">{{ downingStore.ListDataSelectCountInfo }}</div>
+      <div style="flex-grow: 1"></div>
+      <div class="toppanbtn">
+          <a-input-search
+                  tabindex="-1"
+                  ref="inputsearch"
+                  size="small"
+                  title="Ctrl+F / F3 / Space"
+                  placeholder="快速筛选"
+                  :model-value="downingStore.ListSearchKey"
+                  @input="(val:any)=>handleSearchInput(val as string)"
+                  @press-enter="handleSearchEnter"
+                  @keydown.esc="($event.target as any).blur()"
+          />
+      </div>
+      <div></div>
   </div>
   <div class="toppanlist" @keydown.space.prevent="() => true">
     <a-list
@@ -149,11 +144,11 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
           >
             <div style="margin: 2px">
               <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index" @click.prevent.stop="handleSelect(item.DownID, { ctrlKey: true, shiftKey: false })">
-                <i :class="downingStore.ListSelected.has(item.DownID) ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
+                <i :class="downingStore.ListSelected.has(item.DownID) ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
               </a-button>
             </div>
             <div class="fileicon">
-              <i :class="'iconfont ' + item.Info.icon" aria-hidden="true"></i>
+              <i :class="'fa-solid ' + item.Info.icon" aria-hidden="true"></i>
             </div>
             <div class="filename">
               <div :title="item.Info.localFilePath">
@@ -181,19 +176,19 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
     <a-dropdown id="downingrightmenu" class="rightmenu" :popup-visible="true" tabindex="-1" :draggable="false" style="z-index: -1; left: -200px; opacity: 0">
       <template #content>
         <a-doption @click="handleStart">
-          <template #icon> <i class="iconfont iconstart" /> </template>
+          <template #icon> <i class="fa-solid fa-play-circle" /> </template>
           <template #default>开始</template>
         </a-doption>
         <a-doption @click="handleStop">
-          <template #icon> <i class="iconfont iconpause" /> </template>
+          <template #icon> <i class="fa-solid fa-circle-pause" /> </template>
           <template #default>暂停</template>
         </a-doption>
         <a-doption @click="handleTop">
-          <template #icon> <i class="iconfont iconyouxian" /> </template>
+          <template #icon> <i class="fa-solid fa-arrow-up-from-bracket" /> </template>
           <template #default>优先传输</template>
         </a-doption>
         <a-doption @click="handleDelete" class="danger">
-          <template #icon> <i class="iconfont icondelete" /> </template>
+          <template #icon> <i class="fa-solid fa-trash" /> </template>
           <template #default>删除</template>
         </a-doption>
       </template>

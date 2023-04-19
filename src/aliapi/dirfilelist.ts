@@ -75,7 +75,7 @@ export default class AliDirFileList {
       size: size,
       sizeStr: humanSize(size),
       timeStr: y + '-' + m + '-' + d + ' ' + h + ':' + minute + ':' + second ,
-      icon: 'iconfile-folder',
+      icon: 'fa-folder',
       isDir: isDir,
       thumbnail: '',
       description: item.description || ''

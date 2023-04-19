@@ -29,7 +29,7 @@ export interface PanTreeState {
 let treeDataMap = new Map<string, TreeNodeData>()
 type State = PanTreeState
 
-export const fileiconfn = (icon: string) => h('i', { class: 'iconfont ' + icon })
+export const fileiconfn = (icon: string) => h('i', { class: 'fa-solid ' + icon})
 
 const usePanTreeStore = defineStore('pantree', {
   state: (): State => ({
@@ -49,11 +49,11 @@ const usePanTreeStore = defineStore('pantree', {
     },
     selectDirPath: [],
     treeData: [
-      { __v_skip: true, title: '文件恢复', namesearch: '', key: 'recover', icon: () => fileiconfn('iconrecover'), isLeaf: true, children: [] },
-      { __v_skip: true, title: '回收站', namesearch: '', key: 'trash', icon: () => fileiconfn('icondelete'), isLeaf: true, children: [] },
-      { __v_skip: true, title: '收藏夹', namesearch: '', key: 'favorite', icon: () => fileiconfn('iconcrown'), isLeaf: true, children: [] },
-      { __v_skip: true, title: '全盘搜索', namesearch: '', key: 'search', icon: () => fileiconfn('iconsearch'), isLeaf: true, children: [] },
-      { __v_skip: true, title: '放映室', namesearch: '', key: 'video', icon: () => fileiconfn('iconhistory'), isLeaf: true, children: [] },
+      { __v_skip: true, title: '文件恢复', namesearch: '', key: 'recover', icon: () => fileiconfn('fa-trash-restore'), isLeaf: true, children: [] },
+      { __v_skip: true, title: '回收站', namesearch: '', key: 'trash', icon: () => fileiconfn('fa-trash'), isLeaf: true, children: [] },
+      { __v_skip: true, title: '收藏夹', namesearch: '', key: 'favorite', icon: () => fileiconfn('fa-crown'), isLeaf: true, children: [] },
+      // { __v_skip: true, title: '全盘搜索', namesearch: '', key: 'search', icon: () => fileiconfn('fa-search'), isLeaf: true, children: [] },
+      { __v_skip: true, title: '放映室', namesearch: '', key: 'video', icon: () => fileiconfn('fa-video-camera'), isLeaf: true, children: [] },
       { __v_skip: true, title: '根目录', namesearch: '', key: 'root', children: [] }
     ],
     treeExpandedKeys: ['root'],

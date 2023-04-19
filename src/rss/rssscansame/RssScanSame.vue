@@ -187,19 +187,18 @@ const scanType = ref('video')
           查找
           <template #icon>
             <MyLoading v-if="scanLoading" />
-            <i v-else class="iconfont iconrsearch" />
           </template>
         </a-step>
         <a-step description="勾选 需要删除的">
           勾选
           <template #icon>
-            <i class="iconfont iconedit-square" />
+            <i class="fa-solid fa-check-double iconsize" />
           </template>
         </a-step>
         <a-step description="删除 放入回收站">
           删除
           <template #icon>
-            <i class="iconfont icondelete" />
+            <i class="fa-solid fa-trash iconsize" />
           </template>
         </a-step>
       </a-steps>
@@ -254,7 +253,7 @@ const scanType = ref('video')
                     <AntdCheckbox tabindex="-1" :checked="check(file.file_id)" @click.stop.prevent="handleCheck(file.file_id)"></AntdCheckbox>
                   </div>
                   <div class="fileicon">
-                    <i :class="'iconfont ' + file.icon" aria-hidden="true"></i>
+                    <i :class="'fa-solid ' + file.icon" aria-hidden="true"></i>
                   </div>
                   <div class="samename">
                     <div :title="file.name" @click.stop.prevent="handleCheck(file.file_id)">
@@ -271,7 +270,7 @@ const scanType = ref('video')
       </a-spin>
       <a-empty v-else class="beginscan">
         <template #image>
-          <i class="iconfont iconrsearch" />
+          <i class="fa-solid fa-search" />
         </template>
         请点击上方 开始扫描 按钮
       </a-empty>
@@ -335,5 +334,8 @@ const scanType = ref('video')
   word-break: keep-all;
   text-overflow: ellipsis;
   margin-bottom: 6px;
+}
+.iconsize {
+    font-size: 1em !important;
 }
 </style>

@@ -75,7 +75,7 @@ const handleClickXiMa = async () => {
       <div class="settingrow">
         <MyTags :value="matchExtList" :maxlen="20" @update:value="handleAddExtList" />
         <a-popover position="bottom">
-          <i class="iconfont iconbulb" />
+          <i class="fa-solid fa-lightbulb" />
           <template #content>
             <div>
               默认：<span class="opred">全部</span>
@@ -90,7 +90,7 @@ const handleClickXiMa = async () => {
       <div class="settingrow">
         <a-button type="primary" tabindex="-1" status="danger" :loading="ximaLoading" @click="handleClickXiMa">执行洗码</a-button>
         <a-popover position="bottom">
-          <i class="iconfont iconbulb" />
+          <i class="fa-solid fa-lightbulb" />
           <template #content>
             <div>
               默认：<span class="opred">全部</span>
