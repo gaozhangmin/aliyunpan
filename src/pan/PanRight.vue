@@ -449,22 +449,23 @@ const onPanDragEnd = (ev: any) => {
     <div class="toppanbtn">
       <a-button type="text" size="small" tabindex="-1" :disabled="panfileStore.ListLoading" title="后退 Back Space" @click="handleBack">
         <template #icon>
-          <i class="iconfont iconarrow-left-2-icon" />
+            <i class="fa-solid fa-arrow-circle-left"></i>
         </template>
       </a-button>
       <a-button type="text" size="small" tabindex="-1" :loading="panfileStore.ListLoading" title="刷新 F5" @click="handleRefresh">
         <template #icon>
-          <i class="iconfont iconreload-1-icon" />
+          <i class="fa-solid fa-refresh" />
         </template>
       </a-button>
       <a-button type="text" size="small" tabindex="-1" :disabled="panfileStore.ListLoading" title="定位 F6" @click="handleDingWei">
         <template #icon>
-          <i class="iconfont icondingwei" />
+          <i class="fa-solid fa-location-crosshairs" />
         </template>
       </a-button>
     </div>
     <div v-show="panfileStore.SelectDirType == 'favorite'" class="toppanbtn">
-      <a-button type="text" size="small" tabindex="-1" class="danger" @click="topFavorDeleteAll"><i class="iconfont iconcrown2" />清空收藏夹</a-button>
+      <a-button type="text" size="small" tabindex="-1" class="danger" @click="topFavorDeleteAll"><i
+              class="fa-solid fa-crown" />清空收藏夹</a-button>
     </div>
     <div v-show="panfileStore.SelectDirType == 'search' && !panfileStore.IsListSelected" class="toppanbtn">
       <a-input-search
