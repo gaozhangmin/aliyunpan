@@ -134,15 +134,13 @@ function timeEvent() {
 
 
   chkTokenTime++
-  if (nowTime - runTime > 10 && chkTokenTime >= 600) {
-    chkTokenTime = 0
-    UserDAL.aRefreshAllUserToken().catch((err: any) => {
-      DebugLog.mSaveDanger('aRefreshAllUserToken', err)
-    })
-    UserDAL.aRefreshAllUserSession().catch((err: any) => {
-      DebugLog.mSaveDanger('aRefreshAllUserSession', err)
-    })
-  }
+  chkTokenTime = 0
+  UserDAL.aRefreshAllUserToken().catch((err: any) => {
+    DebugLog.mSaveDanger('aRefreshAllUserToken', err)
+  })
+  UserDAL.aRefreshAllUserSession().catch((err: any) => {
+    DebugLog.mSaveDanger('aRefreshAllUserSession', err)
+  })
 
   chkTaskTime++
   if (nowTime - runTime > 6 && chkTaskTime >= 2) {
