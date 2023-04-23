@@ -271,7 +271,6 @@ export async function AriaChangeToLocal() {
     Aria2EngineLocal.on('close', () => {
       IsAria2cOnlineLocal = false
       if (useSettingStore().AriaIsLocal) {
-        console.log("ariaerror1")
         SetAriaOnline(false, 'local')
       }
     })
@@ -282,7 +281,6 @@ export async function AriaChangeToLocal() {
         SetAriaOnline(true, 'local')
       })
       .catch(async () => {
-        console.log("ariaerror2")
         Aria2EngineLocal=undefined
         Aria2cLocalRelanchTime++
         if (Aria2cLocalRelanchTime < 2) {

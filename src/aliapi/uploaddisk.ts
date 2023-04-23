@@ -14,8 +14,10 @@ import {useSettingStore} from "../store";
 import {Howl} from "howler";
 import AliUpload from './upload'
 
+
+
 const sound = new Howl({
-  src: ['upload_finished.mp3'], // 音频文件路径
+  src: ['./audio/upload_finished.mp3'], // 音频文件路径
   autoplay: false, // 是否自动播放
   volume: 1.0, // 音量，范围 0.0 ~ 1.0
 });

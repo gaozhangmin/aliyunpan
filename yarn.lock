@@ -3543,16 +3543,6 @@ vite@^3.1.0:
   optionalDependencies:
     fsevents "~2.3.2"
 
-vue-avatar@^2.3.3:
-  version "2.3.3"
-  resolved "https://registry.npmmirror.com/vue-avatar/-/vue-avatar-2.3.3.tgz"
-  integrity sha512-Z57ILRTkFIAuCH9JiFBxX74C5zua5ub/jRDM/KZ+QKXNfscvmUOgWBs3kA2+wrpZMowIvfLHIT0gvQu1z+zpLg==
-
-vue-boring-avatars@^1.3.0:
-  version "1.3.0"
-  resolved "https://registry.npmmirror.com/vue-boring-avatars/-/vue-boring-avatars-1.3.0.tgz"
-  integrity sha512-X0Ur6+aYE8jXjKyY/LaWKrZ+FeJmc4xsirdz/lLuvm68wiokJc26Y9WpYPDuS1L2GwbvRDqLrnd9F2eL46buzA==
-
 vue-demi@*:
   version "0.13.11"
   resolved "https://registry.npmmirror.com/vue-demi/-/vue-demi-0.13.11.tgz"
