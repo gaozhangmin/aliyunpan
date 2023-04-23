@@ -24,7 +24,6 @@ export default class UserDAL {
     let defaultUserAdd = false
     UserTokenMap.clear()
     if (defaultUser) {
-
       try {
         for (let i = 0, maxi = tokenList.length; i < maxi; i++) {
           const token = tokenList[i]
@@ -49,12 +48,11 @@ export default class UserDAL {
         if (token.user_id != defaultUser && token.user_id) {
           const isLogin = await AliUser.ApiTokenRefreshAccount(token, false)
           if (isLogin) {
-            if (defaultUserAdd == false) {
-
+            if (!defaultUserAdd) {
               defaultUserAdd = true
-              await this.UserLogin(token).catch(() => {
-              })
             }
+            await this.UserLogin(token).catch(() => {
+            })
           }
         }
       } catch (err: any) {
@@ -62,8 +60,7 @@ export default class UserDAL {
       }
     }
     console.log('defaultUserAdd', defaultUserAdd)
-    if (defaultUserAdd == false) {
-
+    if (!defaultUserAdd) {
       useUserStore().userShowLogin = true
     }
   }
@@ -76,9 +73,7 @@ export default class UserDAL {
       const token = tokenList[i]
       try {
         const expire_time = new Date(token.expire_time).getTime()
-
         if (expire_time - dateNow < 1800000) await AliUser.ApiTokenRefreshAccount(token, false)
-
       } catch (err: any) {
         DebugLog.mSaveDanger('aRefreshAllUserToken', err)
       }
@@ -178,7 +173,7 @@ export default class UserDAL {
     // 加载用户信息
     await Promise.all([
         AliUser.ApiUserInfo(token),
-        AliUser.ApiUserPic(token),
+        // AliUser.ApiUserPic(token),
         AliUser.ApiUserVip(token)
     ])
     // 刷新session
@@ -271,7 +266,7 @@ export default class UserDAL {
     time = time / 1000
 
     if (!force || time < 600) {
-      await Promise.all([AliUser.ApiUserInfo(token), AliUser.ApiUserPic(token), AliUser.ApiUserVip(token)])
+      await Promise.all([AliUser.ApiUserInfo(token), AliUser.ApiUserVip(token)])
       UserDAL.SaveUserToken(token)
       return true
     } else {
@@ -280,7 +275,7 @@ export default class UserDAL {
       const isSession = token.user_id && (await AliUser.ApiSessionRefreshAccount(token, true))
       if (!isToken || !isSession) return false
       // 刷新用户信息
-      await Promise.all([AliUser.ApiUserInfo(token), AliUser.ApiUserPic(token), AliUser.ApiUserVip(token)])
+      await Promise.all([AliUser.ApiUserInfo(token), AliUser.ApiUserVip(token)])
       useUserStore().userLogin(token.user_id)
       UserDAL.SaveUserToken(token)
       return true

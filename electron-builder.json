@@ -24,6 +24,7 @@
       { "from": "./static/images/app.ico", "to": "."},
       { "from": "./static/images/app.png", "to": "."},
       { "from": "./static/images/icon.png", "to": "."}
+
     ],
     "target": [
       { "target": "dmg", "arch": [ "x64", "arm64" ] }

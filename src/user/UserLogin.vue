@@ -181,7 +181,6 @@ export default defineComponent({
           try {
             const result = JSON.parse(jsonstr).pds_login_result
             const tk = UserDAL.GetUserToken(result.userId)
-            console.log("tk", tk)
             // if (tk?.user_id === result.userId) {
             //   console.log('该账号已经登录过了')
             //   return
@@ -316,7 +315,7 @@ export default defineComponent({
 
 <template>
   <a-modal v-model:visible="useUser.userShowLogin" :mask-closable="false" unmount-on-close :footer="false" class="userloginmodal" @before-open="handleOpen">
-    <template #title> 登录阿里云盘(登录两遍) </template>
+    <template #title> 登录阿里云盘(手动录入token) </template>
     <div id="logindiv">
       <div class="logincontent">
         <div class="loginframe">

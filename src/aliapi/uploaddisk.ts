@@ -15,7 +15,7 @@ import {Howl} from "howler";
 import AliUpload from './upload'
 
 const sound = new Howl({
-  src: ["../../electron/assets/upload_finished.mp3"], // 音频文件路径
+  src: ['upload_finished.mp3'], // 音频文件路径
   autoplay: false, // 是否自动播放
   volume: 1.0, // 音量，范围 0.0 ~ 1.0
 });
@@ -48,7 +48,6 @@ export default class AliUploadDisk {
         fileui.Info.up_file_id = ''
         fileui.Info.up_upload_id = ''
         if (isSuccess) {
-          console.log("cccccc", useSettingStore().downFinishAudio, )
           if (useSettingStore().downFinishAudio  && !sound.playing()) {
             sound.play()
           }

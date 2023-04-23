@@ -81,7 +81,7 @@ export let DownInExeMap = new Map<string, IStateDownFile>()
 export let DownInQueues: IStateDownFile[] = []
 
 const sound = new Howl({
-  src: ["../../electron/assets/down_finished.mp3"], // 音频文件路径
+  src: ['down_finished.mp3'], // 音频文件路径
   autoplay: false, // 是否自动播放
   volume: 1.0, // 音量，范围 0.0 ~ 1.0
 });

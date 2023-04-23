@@ -83,52 +83,90 @@ export default class AliUser {
     // const respV2 = await this.ApiTokenRefreshAccountV2(token)
     TokenLockMap.delete(token.user_id)
     if (AliHttp.IsSuccess(resp.code)) {
+      const dateNow = new Date().getTime()
+      const expire_time = new Date(token.expire_time).getTime()
+      if (expire_time - dateNow < 1800000) {
+        Swal.fire({
+          title: 'access_token过期',
+          html: '<input id="accessToken" class="swal2-input" placeholder="重新输入access_token">',
+          focusConfirm: false,
+          preConfirm: () => {
+            const accessTokenV2 = (document.getElementById('accessToken') as HTMLInputElement).value
+            // 在用户输入了 token1 和 token2 后，调用 loginbizExt 方法，并将 token1 和 token2 作为参数传入
+            if (accessTokenV2) {
+              TokenReTimeMap.set(resp.body.user_id, Date.now())
+              token.tokenfrom = 'account'
+              token.access_token = resp.body.access_token
+              token.refresh_token = resp.body.refresh_token
+              token.expires_in = resp.body.expires_in
+              token.token_type = resp.body.token_type
 
-      Swal.fire({
-        title: 'access_token过期',
-        html: '<input id="accessToken" class="swal2-input" placeholder="重新输入access_token">',
-        focusConfirm: false,
-        preConfirm: () => {
-          const accessTokenV2 = (document.getElementById('accessToken') as HTMLInputElement).value
-          // 在用户输入了 token1 和 token2 后，调用 loginbizExt 方法，并将 token1 和 token2 作为参数传入
-          if (accessTokenV2) {
-            TokenReTimeMap.set(resp.body.user_id, Date.now())
-            token.tokenfrom = 'account'
-            token.access_token = resp.body.access_token
-            token.refresh_token = resp.body.refresh_token
-            token.expires_in = resp.body.expires_in
-            token.token_type = resp.body.token_type
+              token.refresh_token_v2 = "respV2.body.refresh_token"
+              token.access_token_v2 = accessTokenV2
+              token.expires_in_v2 = 7200
+              token.token_type_v2 = "Bearer"
 
-            token.refresh_token_v2 = "respV2.body.refresh_token"
-            token.access_token_v2 = accessTokenV2
-            token.expires_in_v2 = 7200
-            token.token_type_v2 = "Bearer"
+              token.user_id = resp.body.user_id
+              token.user_name = resp.body.user_name
+              token.avatar = resp.body.avatar
+              token.nick_name = resp.body.nick_name
+              token.default_drive_id = resp.body.default_drive_id
+              token.default_sbox_drive_id = resp.body.default_sbox_drive_id
+              token.role = resp.body.role
+              token.status = resp.body.status
+              token.expire_time = resp.body.expire_time
+              token.state = resp.body.state
+              token.pin_setup = resp.body.pin_setup
+              token.is_first_login = resp.body.is_first_login
+              token.need_rp_verify = resp.body.need_rp_verify
+              token.device_id = getUuid(resp.body.user_id.toString(), 5)
+              window.WebUserToken({
+                user_id: token.user_id,
+                name: token.user_name,
+                access_token: token.access_token,
+                refresh: true
+              })
+              UserDAL.SaveUserToken(token)
+              return true
+            } else {
+              TokenReTimeMap.set(resp.body.user_id, Date.now())
+              token.tokenfrom = 'account'
+              token.access_token = resp.body.access_token
+              token.refresh_token = resp.body.refresh_token
+              token.expires_in = resp.body.expires_in
+              token.token_type = resp.body.token_type
 
-            token.user_id = resp.body.user_id
-            token.user_name = resp.body.user_name
-            token.avatar = resp.body.avatar
-            token.nick_name = resp.body.nick_name
-            token.default_drive_id = resp.body.default_drive_id
-            token.default_sbox_drive_id = resp.body.default_sbox_drive_id
-            token.role = resp.body.role
-            token.status = resp.body.status
-            token.expire_time = resp.body.expire_time
-            token.state = resp.body.state
-            token.pin_setup = resp.body.pin_setup
-            token.is_first_login = resp.body.is_first_login
-            token.need_rp_verify = resp.body.need_rp_verify
-            token.device_id = getUuid(resp.body.user_id.toString(), 5)
-            window.WebUserToken({
-              user_id: token.user_id,
-              name: token.user_name,
-              access_token: token.access_token,
-              refresh: true
-            })
-            UserDAL.SaveUserToken(token)
-            return true
+              token.user_id = resp.body.user_id
+              token.user_name = resp.body.user_name
+              token.avatar = resp.body.avatar
+              token.nick_name = resp.body.nick_name
+              token.default_drive_id = resp.body.default_drive_id
+              token.default_sbox_drive_id = resp.body.default_sbox_drive_id
+              token.role = resp.body.role
+              token.status = resp.body.status
+              token.expire_time = resp.body.expire_time
+              token.state = resp.body.state
+              token.pin_setup = resp.body.pin_setup
+              token.is_first_login = resp.body.is_first_login
+              token.need_rp_verify = resp.body.need_rp_verify
+              token.device_id = getUuid(resp.body.user_id.toString(), 5)
+              window.WebUserToken({
+                user_id: token.user_id,
+                name: token.user_name,
+                access_token: token.access_token,
+                refresh: true
+              })
+              UserDAL.SaveUserToken(token)
+              return true
+
+            }
           }
-        }
-      })
+        })
+      } else {
+        return true
+      }
+
+
     } else {
       if (resp.body?.code != 'InvalidParameter.RefreshToken') {
         DebugLog.mSaveWarning('ApiTokenRefreshAccount err=' + (resp.code || '') + ' ' + (resp.body?.code || ''))
@@ -155,6 +193,7 @@ export default class AliUser {
       token.used_size = spaceResp.body.personal_space_info.used_size
       token.total_size = spaceResp.body.personal_space_info.total_size
       token.spaceinfo = humanSize(token.used_size) + ' / ' + humanSize(token.total_size)
+      token.pic_drive_id = 'unknown'
       return true
     } else {
       DebugLog.mSaveWarning('getSpaceInfo err=' + (resp.code || ''))
