@@ -8,8 +8,7 @@
 见 源码开发打包帮助.md
 
 # 入群
-![image](https://user-images.githubusercontent.com/9278488/233854924-2101d22a-a4e9-4da0-9195-00c4d9cc3b6f.png)
-
+https://t.me/+wjdFeQ7ZNNE1NmM1
 
 # 功能说明
 1. 登录: 阿里云Open API相比之前的版本功能受限，只开放了很少量的功能，如果完全弃用旧版API,小白羊的功能会大打折扣。
