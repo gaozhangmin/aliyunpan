@@ -1,17 +1,18 @@
-# 小白羊云盘Open API版本
+## 小白羊云盘Open API版本
 
+### 说明：
 基于 https://github.com/liupan1890/aliyunpan 仓库。使用新版API，支持阿里云盘的所有功能。
-原作者 [liupan1890](https://github.com/liupan1890) 已停止维护，
-既然是开源项目而且没有LICENSE问题，所有人都可以基于此来做2次开发，没有任何法律和道德的问题，不要来我的地盘撒野。
+
+原作者 [liupan1890](https://github.com/liupan1890) 已停止维护。既然是开源项目而且没有LICENSE问题，所有人都可以基于此来做2次开发，没有任何法律和道德的问题，不要来我的地盘撒野。
 
 
-# 使用方法
+### 使用方法
 见 源码开发打包帮助.md
 
-# 入群
+### 入群
 https://t.me/+wjdFeQ7ZNNE1NmM1
 
-# 功能说明
+### 功能说明
 1. 登录: 阿里云Open API相比之前的版本功能受限，只开放了很少量的功能，如果完全弃用旧版API,小白羊的功能会大打折扣。
 因此，项目基于两套阿里云API。
 2. 最近放映室：新增了最近播放列表菜单，可以查询最近播放视频，并支持保存观看进度。
@@ -41,17 +42,17 @@ https://t.me/+wjdFeQ7ZNNE1NmM1
 26. 修复mac下不能自定义播放器播放bug。
 
 
-# 注意事项
+### 注意事项
 如果在使用过程中遇到问题，欢迎大家提出issue，我会长期维护该项目。
 
-# License
+### License
 [LICENSE](./LICENSE)
 
 
-# Star History
+### Star History
 [![Star History Chart](https://api.star-history.com/svg?repos=gaozhangmin/aliyunpan&type=Date)](https://star-history.com/#gaozhangmin/aliyunpan&Date)
 
-# 免责声明
+### 免责声明
 
 1.本程序为免费开源项目，旨在分享网盘文件，方便下载以及学习electron，使用时请遵守相关法律法规，请勿滥用；
 
