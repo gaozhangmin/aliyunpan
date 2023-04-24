@@ -1,8 +1,9 @@
 # 小白羊云盘Open API版本
 
-基于 https://github.com/liupan1890/aliyunpan 仓库。
-原作者 @liupan1890已停止维护，开源的项目，而且没有LICENSE问题，每个人都可以基于此来做2次开发，没有任何法律和道德的问题，不要来我的地盘撒野。
-使用新版API，支持阿里云盘的所有功能。
+基于 https://github.com/liupan1890/aliyunpan 仓库。使用新版API，支持阿里云盘的所有功能。
+原作者 [liupan1890](https://github.com/liupan1890) 已停止维护，
+既然是开源项目而且没有LICENSE问题，所有人都可以基于此来做2次开发，没有任何法律和道德的问题，不要来我的地盘撒野。
+
 
 # 使用方法
 见 源码开发打包帮助.md
