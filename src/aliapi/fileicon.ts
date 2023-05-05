@@ -52,11 +52,11 @@ export default function getFileIcon(category: string | undefined, ext: string | 
 
   
   if (';.apng.avif.ico.webp.gif.'.indexOf(ext) > 0) {
-    return ['image2', 'iconfile-img'] 
+    return ['image2', 'iconfile-img']
   }
 
   if (category == 'image') {
-    return ['image', 'iconfile-img'] 
+    return ['image', 'iconfile-img']
   }
 
   if (mime.startsWith('image/')) return ['image3', 'iconfile-image']
@@ -67,7 +67,7 @@ export default function getFileIcon(category: string | undefined, ext: string | 
   if ((mimext.startsWith('.txt') || mimext.startsWith('.doc') || mimext.startsWith('.ppt')) && ';.dps.dpt.potm.potx.pps.ppsm.ppsx.ppt.pptm.pptx.'.indexOf(ext) > 0) return ['doc', 'iconfile-ppt']
   if ((mimext.startsWith('.txt') || mimext.startsWith('.xls')) && ';.xls.xlsx.et.xlsm.xlt.xltm.xltx.'.indexOf(ext) > 0) return ['doc', 'iconfile-xsl']
 
-  if (mime.startsWith('text/')) return ['others', 'iconfile_txt2'] 
+  if (mime.startsWith('text/')) return ['others', 'iconfile_txt2']
   if (ext == '.json.') return ['others', 'iconfile_txt2']
 
   if (category == 'video') {

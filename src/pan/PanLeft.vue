@@ -275,7 +275,7 @@ const handleQuickSelect = (index: number) => {
 .sharetree .iconfont.iconfile-folder,
 .quicktree .iconfont.iconfile-folder,
 .videotree .iconfont.iconfile-folder {
-  color: #0078D7;
+  color: #ffb74d;
   font-size: 20px;
 }
 .colortree .iconfont {
@@ -296,8 +296,8 @@ const handleQuickSelect = (index: number) => {
   color: #a760ef;
 }
 .ant-tree .iconfile-folder {
-  color: #0078D7;
-  font-size: 20px;
+  color: #52c4f6;
+  font-size: 1.5em !important;
 }
 
 .dirtitle {
@@ -313,6 +313,7 @@ const handleQuickSelect = (index: number) => {
   flex-wrap: nowrap !important;
   flex-shrink: 0 !important;
   display: flex;
+  margin-bottom: 12px;
 }
 
 .dirtree .ant-tree-list-holder {
@@ -321,6 +322,7 @@ const handleQuickSelect = (index: number) => {
 
 .dirtree .ant-tree-title {
   flex-grow: 1;
+    margin-left: 10px !important;
 }
 
 .ant-tree-node-selected .ant-tree-title,

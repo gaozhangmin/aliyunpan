@@ -34,7 +34,7 @@ app.commandLine.appendSwitch('ignore-certificate-errors')
 app.commandLine.appendSwitch('proxy-bypass-list', '<local>')
 app.commandLine.appendSwitch('wm-window-animations-disabled')
 
-app.setAppUserModelId('com.github.liupan1890')
+app.setAppUserModelId('gaozhangmin')
 app.name = 'alixby3'
 const DEBUGGING = !app.isPackaged
 
@@ -95,7 +95,7 @@ app.on('will-quit', () => {
 })
 
 app.setAboutPanelOptions({
-  applicationName: '小白羊阿里云盘',
+  applicationName: '小白羊云盘',
   copyright: 'Zhangmin Gao',
   website: 'https://github.com/gaozhangmin/aliyunpan',
   iconPath: getResourcesPath('app.png'),
@@ -153,6 +153,8 @@ app
         writeFileSync(versionFile, app.getVersion(), 'utf-8')
       }
     } else {
+      session.defaultSession.clearCache()
+      session.defaultSession.clearAuthCache()
       writeFileSync(versionFile, app.getVersion(), 'utf-8')
     }
 
@@ -428,7 +430,7 @@ ipcMain.on('WebRelaunch', (event, data) => {
 })
 
 ipcMain.handle('WebRelaunchAria', async (event, data) => {
-  return await creatAria()
+  return await startAria2c()
 })
 
 ipcMain.on('WebSetProgressBar', (event, data) => {
@@ -540,25 +542,21 @@ ipcMain.on('WebOpenUrl', (event, data) => {
   })
 })
 
-async function creatAria() {
+async function startAria2c() {
   try {
     let basePath = getStaticPath('engine')
     let confPath = path.join(basePath, 'aria2.conf')
-    if (!existsSync(confPath)) {
-      mkAriaConf(confPath)
-    }
+    if (!existsSync(confPath)) mkAriaConf(confPath)
     let ariaPath = ''
     if (process.platform === 'win32') {
       ariaPath = 'aria2c.exe'
-    } else if (process.platform === 'darwin') {
-      ariaPath = 'aria2c'
-    } else if (process.platform === 'linux') {
+    } else {
       ariaPath = 'aria2c'
     }
-    basePath = path.join(basePath, DEBUGGING ? process.platform : '')
-    let ariaPath2 = path.join(basePath, ariaPath)
-    if (!existsSync(ariaPath2)) {
-      ShowError('找不到Aria程序文件', '找不到Aria程序文件 ' + ariaPath2)
+    basePath = path.join(basePath, DEBUGGING ? path.join(process.platform, process.arch): '')
+    let ariaFullPath = path.join(basePath, ariaPath)
+    if (!existsSync(ariaFullPath)) {
+      ShowError('找不到Aria程序文件', ariaFullPath)
       return 0
     }
 
@@ -570,17 +568,15 @@ async function creatAria() {
         [
           '--stop-with-process=' + process.pid,
           '-D',
-          '--rpc-listen-port=' + port,
-          '--conf-path=' + '"' + confPath + '"'
+          '--conf-path=' + '\"'+ confPath + '\"',
+          '--rpc-listen-port=' + port
         ],
         options,
-        (error, stdout, stderr) => {
+        (error) => {
           if (error) {
-            console.error(`execFile error: ${error}`);
-            return;
+            return 0
           }
-        }
-    );
+        })
     return port
   } catch (e: any) {
     console.log(e)

@@ -61,6 +61,14 @@ export default class AliUser {
 
   }
 
+  static async ApiTokenRefreshAccountV2_TMP(token: ITokenInfo): Promise<IUrlRespData> {
+    const postData = {
+      refresh_token: token.refresh_token_v2,
+      grant_type: 'refresh_token'
+    }
+    return  await AliHttp._Post(Config.tmpUrl, postData, '', '')
+  }
+
   static async ApiTokenRefreshAccount(token: ITokenInfo, showMessage: boolean): Promise<boolean> {
     if (!token.refresh_token) return false
     while (true) {
@@ -79,7 +87,7 @@ export default class AliUser {
 
     const postData = { refresh_token: token.refresh_token, grant_type: 'refresh_token' }
     const resp = await AliHttp.Post(url, postData, '', '')
-    const respV2 = await this.ApiTokenRefreshAccountV2(token)
+    const respV2 = await this.ApiTokenRefreshAccountV2_TMP(token)
     TokenLockMap.delete(token.user_id)
     if (AliHttp.IsSuccess(resp.code) && AliHttp.IsSuccess(respV2.code)) {
       TokenReTimeMap.set(resp.body.user_id, Date.now())

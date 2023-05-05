@@ -385,7 +385,7 @@ export default class AliHttp {
       })
   }
 
-  private static _Post(url: string, postData: any, user_id: string, share_token: string): Promise<IUrlRespData> {
+   static _Post(url: string, postData: any, user_id: string, share_token: string): Promise<IUrlRespData> {
     return UserDAL.GetUserTokenFromDB(user_id).then((token) => {
       const headers: any = {}
       if (url.includes('aliyundrive')) {

@@ -68,7 +68,7 @@ export interface IAliFileItem {
   thumbnail?: string
   mime_extension: string
   mime_type: string
-  play_cursor: number
+  play_cursor?: number
   video_media_metadata?: {
     duration?: string | number
     height?: number
