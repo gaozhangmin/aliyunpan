@@ -2,8 +2,8 @@ name: Build
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*.*.*'
 
 jobs:
   create-release:
@@ -38,6 +38,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
+
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout Git repository
@@ -77,24 +80,13 @@ jobs:
           npm install -g yarn
           yarn install
 
-      - name: Build Electron App
-        run: yarn run build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Cleanup Artifacts for Linux
-        if: matrix.os == 'ubuntu-latest'
+      - name: Make Aria2c Executable
+        if: matrix.os != 'windows-latest'
         run: |
-          npx rimraf "release/!(*.AppImage)"
+          chmod -R 777 ./static/engine/
 
-      - name: Cleanup Artifacts for MacOS
-        if: matrix.os == 'macos-latest'
-        run: |
-          npx rimraf "release/!(*.dmg)"
-
-      - name: upload artifacts
-        uses: actions/upload-artifact@v3
+      - name: Build Electron app
+        uses: samuelmeuli/action-electron-builder@v1.6.0
         with:
-          name: ${{ matrix.os }}
-          path: |
-            release/**
+          release: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          github_token: ${{ secrets.github_token }}
