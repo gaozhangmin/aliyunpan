@@ -217,11 +217,22 @@ export async function CreatLocalAria2c(aria2cPath:string, aria2cConfPath:string)
 async function relaunchLocalAria(port:number) {
   CloseRemote()
   try {
-    if (Aria2EngineLocal != undefined) {
-      await Aria2EngineLocal.close()
-    }
     const options = { host: '127.0.0.1', port, secure: false, secret: localPwd, path: '/jsonrpc' }
     Aria2EngineLocal = new Aria2({ WebSocket: global.WebSocket, fetch: global.fetch, ...options })
+    await Sleep(500)
+    await Aria2EngineLocal.open()
+        .then(() => {
+          Aria2cLocalRelaunchTime = 0
+          SetAriaOnline(true, 'local')
+        })
+        .catch(async () => {
+          await window.WebRelaunchAria()
+          SetAriaOnline(false, 'local')
+          Aria2cLocalRelaunchTime++
+          if (Aria2cLocalRelaunchTime < 2) {
+            DebugLog.mSaveDanger('正在尝试重启Aria进程中。。。')
+          }
+        })
     Aria2EngineLocal.on('close', () => {
       IsAria2cOnlineLocal = false
       if (useSettingStore().AriaIsLocal) {
@@ -229,24 +240,11 @@ async function relaunchLocalAria(port:number) {
         SetAriaOnline(false, 'local')
       }
     })
-    await Sleep(500)
-    await Aria2EngineLocal.open()
-      .then(() => {
-        Aria2cLocalRelaunchTime = 0
-        SetAriaOnline(true, 'local')
-      })
-      .catch(async () => {
-        await window.WebRelaunchAria()
-        SetAriaOnline(false, 'local')
-        Aria2cLocalRelaunchTime++
-        if (Aria2cLocalRelaunchTime < 2) {
-          message.info('正在尝试重启Aria进程中。。。')
-        }
-      })
+
 
     if (!IsAria2cOnlineLocal) {
       const url = '127.0.0.1:16800 secret=' + localPwd
-      if (Aria2cLocalRelaunchTime < 2) message.error('无法连接到本地Aria2 ' + url)
+      if (Aria2cLocalRelaunchTime < 2) DebugLog.mSaveDanger('无法连接到本地Aria2 ' + url)
     } else {
       await AriaGlobalDownSpeed()
     }
@@ -261,22 +259,10 @@ export async function AriaChangeToLocal() {
   CloseRemote()
   if (Aria2cLocalRelaunchTime < 10) {
     try {
-      if (Aria2EngineLocal != undefined) {
-        await Aria2EngineLocal.close()
-      }
       let port = 16800
       port = window.WebRelaunchAria ? await window.WebRelaunchAria() : 16800
       const options = {host: '127.0.0.1', port, secure: false, secret: localPwd, path: '/jsonrpc'}
       Aria2EngineLocal = new Aria2({WebSocket: global.WebSocket, fetch: window.fetch.bind(window), ...options})
-      Aria2EngineLocal.on('close', () => {
-        IsAria2cOnlineLocal = false
-        if (useSettingStore().AriaIsLocal) {
-          if (Aria2cLocalRelaunchTime < 2) {
-            message.error('Aria2本地连接已断开')
-          }
-          SetAriaOnline(false, 'local')
-        }
-      })
       await Sleep(1000)
       await Aria2EngineLocal.open()
           .then(() => {
@@ -290,6 +276,16 @@ export async function AriaChangeToLocal() {
               message.info('正在尝试重启Aria进程中。。。')
             }
           })
+      Aria2EngineLocal.on('close', () => {
+        IsAria2cOnlineLocal = false
+        if (useSettingStore().AriaIsLocal) {
+          if (Aria2cLocalRelaunchTime < 2) {
+            message.error('Aria2本地连接已断开')
+          }
+          SetAriaOnline(false, 'local')
+        }
+      })
+
 
       if (!IsAria2cOnlineLocal) {
         const url = `127.0.0.1:${port} secret=${localPwd}`
