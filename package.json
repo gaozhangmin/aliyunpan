@@ -10,7 +10,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build && electron-builder"
+    "build": "vue-tsc --noEmit && vite build && electron-builder -m"
   },
   "engines": {
     "node": ">=14.17.0"
@@ -61,6 +61,7 @@
     "vite-plugin-resolve": "^2.1.2",
     "vue": "^3.2.38",
     "electron-updater":"^5.3.0",
+    "electron-notification": "^1.0.0",
     "vue-tsc": "^1.2.0"
   },
   "debug": {

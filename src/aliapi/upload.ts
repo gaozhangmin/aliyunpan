@@ -20,7 +20,6 @@ export default class AliUpload {
       return result
     }
 
-
     const url = 'adrive/v2/file/createWithFolders'
     const postData: {
       drive_id: string

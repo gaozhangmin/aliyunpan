@@ -1605,6 +1605,20 @@ electron-builder@^23.3.3:
     update-notifier "^5.1.0"
     yargs "^17.0.1"
 
+electron-main-notification@^1.0.0:
+  version "1.0.1"
+  resolved "https://registry.npmmirror.com/electron-main-notification/-/electron-main-notification-1.0.1.tgz#79a57790084c20e2bece6162e4e9545517aee8ac"
+  integrity sha512-6pOyYui7LI9SDQtaTiqyzZQcOvojfVS++qHrPEL3LN5zTbZ8F1MMWzfbRe0w3ZKmfwawNzeo5K2/AsmF2wRW6g==
+  dependencies:
+    uuid "^2.0.2"
+
+electron-notification@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.npmmirror.com/electron-notification/-/electron-notification-1.0.0.tgz#80abd1311bae92e4cb742b866c6ffb7ddaaee2ae"
+  integrity sha512-lK5Tf/FBVPs0Xvy899g8jAMVh4sjwQcgAw3UIbmmtwmXJZbzjEsZ1a/bQfDO+T5s+LwBQgCbBgP/SfhBcZuWBA==
+  dependencies:
+    electron-main-notification "^1.0.0"
+
 electron-osx-sign@^0.6.0:
   version "0.6.0"
   resolved "https://registry.npmmirror.com/electron-osx-sign/-/electron-osx-sign-0.6.0.tgz"
@@ -3556,6 +3570,11 @@ uuid-by-string@^4.0.0:
   dependencies:
     js-md5 "^0.7.3"
     js-sha1 "^0.6.0"
+
+uuid@^2.0.2:
+  version "2.0.3"
+  resolved "https://registry.npmmirror.com/uuid/-/uuid-2.0.3.tgz#67e2e863797215530dff318e5bf9dcebfd47b21a"
+  integrity sha512-FULf7fayPdpASncVy4DLh3xydlXEJJpvIELjYjNeQWYUZ9pclcpvCZSr2gkmN2FrrGcI7G/cJsIEwk5/8vfXpg==
 
 uuid@^9.0.0:
   version "9.0.0"

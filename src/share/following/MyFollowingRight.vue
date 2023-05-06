@@ -179,8 +179,7 @@ const handleSearchEnter = (event: any) => {
             <a-avatar :size="80" shape="square">
               <img alt="avatar" :src="item.avatar" />
             </a-avatar>
-
-              <div class="followingmessages">
+            <div class="followingmessages">
               <div class="followingname" @click="handleOpenLink(item.user_id)">{{ item.nick_name }} <a-badge v-if="item.has_unread_message" status="processing"></a-badge></div>
               <div v-for="msg in item.latest_messages" :key="msg.sequence_id" class="followingmessage" @click="handleOpenShare(msg.content.share.share_id, msg.content.share.share_pwd, msg.content.file_id_list)">{{ msg.createdstr }} : {{ msg.display_action }}</div>
             </div>

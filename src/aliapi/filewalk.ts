@@ -2,7 +2,6 @@ import DebugLog from '../utils/debuglog'
 import AliHttp, { IUrlRespData } from './alihttp'
 import { IAliFileItem } from './alimodels'
 import AliDirFileList, { IAliFileResp } from './dirfilelist'
-import AliFile from "./file";
 
 export default class AliFileWalk {
   static async ApiWalkFileList(user_id: string, drive_id: string, dirID: string, dirName: string, order: string, type: string = '', max: number = 3000): Promise<IAliFileResp> {

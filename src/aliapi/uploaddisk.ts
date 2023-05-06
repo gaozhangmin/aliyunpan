@@ -3,24 +3,24 @@ import DebugLog from '../utils/debuglog'
 import { OpenFileHandle } from '../utils/filehelper'
 import { FileHandle, FileReadResult } from 'fs/promises'
 import { IUploadInfo } from './models'
+import AliUpload from './upload'
+/*import HttpsProxyAgent from 'https-proxy-agent'
+import { SocksProxyAgent } from 'socks-proxy-agent'
+import { useSettingStore } from '../store'*/
 import DBCache from '../utils/dbcache'
 import UserDAL from '../user/userdal'
 import { Sleep } from '../utils/format'
 import AliUploadHashPool from './uploadhashpool'
 import nodehttps from 'https'
 import path from 'path'
-import AliUploadOpenApi from "./uploadOpenApi";
-import {useSettingStore} from "../store";
-import {Howl} from "howler";
-import AliUpload from './upload'
-
-
+import { Howl } from 'howler'
+import { useSettingStore } from '../store'
 
 const sound = new Howl({
   src: ['./audio/upload_finished.mp3'], // 音频文件路径
   autoplay: false, // 是否自动播放
   volume: 1.0, // 音量，范围 0.0 ~ 1.0
-});
+})
 
 const filePosMap = new Map<number, number>()
 let UploadSpeedTotal = 0
@@ -43,15 +43,14 @@ export default class AliUploadDisk {
     if (fileHandle.handle) await fileHandle.handle.close()
 
 
-    return AliUploadOpenApi.UploadFileComplete(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo.sha1)
+    return AliUpload.UploadFileComplete(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo.sha1)
       .then((isSuccess) => {
         fileui.File.uploaded_file_id = fileui.Info.up_file_id
         fileui.File.uploaded_is_rapid = false
         fileui.Info.up_file_id = ''
         fileui.Info.up_upload_id = ''
         if (isSuccess) {
-          if (useSettingStore().downFinishAudio && !sound.playing()) {
-            console.log("cccccc")
+          if (useSettingStore().downFinishAudio  && !sound.playing()) {
             sound.play()
           }
           return 'success'
@@ -92,7 +91,7 @@ export default class AliUploadDisk {
 
         if (lastTime < 5 * 60) {
 
-          await AliUploadOpenApi.UploadFilePartUrl(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo).catch(() => {})
+          await AliUpload.UploadFilePartUrl(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo).catch(() => {})
           if (uploadInfo.part_info_list.length == 0) return '获取分片信息失败，请重试'
           part = uploadInfo.part_info_list[i]
         }
@@ -134,7 +133,7 @@ export default class AliUploadDisk {
     }
 
 
-    return AliUploadOpenApi.UploadFileComplete(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo.sha1)
+    return AliUpload.UploadFileComplete(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo.sha1)
       .then((isSuccess) => {
         if (isSuccess) {
           if (useSettingStore().downFinishAudio && !sound.playing()) {

@@ -9,6 +9,7 @@ import { exec, spawn } from 'child_process'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import path from 'path'
 import fixPath from 'fix-path'
+import {autoUpdater} from "electron-updater";
 
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()
 fixPath()
@@ -141,9 +142,29 @@ ipcMain.on('AutoLanuchAtStartup', (event, shouldAutoLaunch) => {
   }
 });
 
+
+// 设置自动更新的服务器地址
+autoUpdater.setFeedURL({
+  provider: 'github',
+  owner: 'gaozhangmin',
+  repo: 'https://github.com/gaozhangmin/test_repo',
+  // headers: {
+  //   Authorization: 'Bearer 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'
+  // }
+});
+
+// 当更新可用时触发该事件
+autoUpdater.on('update-available', () => {
+  // 发送一个事件给渲染进程，通知有更新可用
+  AppWindow.mainWindow.webContents.send('update-available');
+});
+
 app
   .whenReady()
   .then(() => {
+   autoUpdater.checkForUpdates().then((res) => {
+     console.log("res", res)
+   })
     const versionFile = getUserDataPath('version')
     if (versionFile && existsSync(versionFile)) {
       const version = readFileSync(versionFile, 'utf-8')

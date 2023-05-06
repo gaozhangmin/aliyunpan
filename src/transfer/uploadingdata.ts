@@ -7,8 +7,7 @@ import { humanSize, humanSizeSpeed, humanTime, humanTimeFM } from '../utils/form
 import { MapValueToArray } from '../utils/utils'
 import { throttle } from '../utils/debounce'
 import { SetProgressBar } from '../utils/electronhelper'
-import AliFileCmd from '../aliapi/filecmd'
-import path from 'path'
+const path = window.require('path')
 
 const UploadingTaskList = new Map<number, IStateUploadTask>()
 
@@ -657,7 +656,7 @@ export default class UploadingData {
   }
 
 
-  static async UploadingEventSendList(RunningKeys: number[], LoadingKeys: number[]): Promise<IUploadingUI[]> {
+  static UploadingEventSendList(RunningKeys: number[], LoadingKeys: number[]): IUploadingUI[] {
     let sendList: IUploadingUI[] = []
     const time = Date.now()
 
@@ -665,29 +664,13 @@ export default class UploadingData {
       _UploadingSendTime = time
       const settingStore = useSettingStore()
       const uploadFileMax = settingStore.uploadFileMax
-      if (settingStore.downSmallFileFirst) sendList = await UploadingData._GetSendList(RunningKeys, LoadingKeys, time, uploadFileMax, true)
-      sendList = sendList.length > 0 ? sendList.concat(await UploadingData._GetSendList(RunningKeys, LoadingKeys, time, uploadFileMax, false)) : await UploadingData._GetSendList(RunningKeys, LoadingKeys, time, uploadFileMax, false)
+      if (settingStore.downSmallFileFirst) sendList = UploadingData._GetSendList(RunningKeys, LoadingKeys, time, uploadFileMax, true)
+      sendList = sendList.length > 0 ? sendList.concat(UploadingData._GetSendList(RunningKeys, LoadingKeys, time, uploadFileMax, false)) : UploadingData._GetSendList(RunningKeys, LoadingKeys, time, uploadFileMax, false)
     }
     return sendList
   }
 
-  private static async createFolderHierarchy(folderPath: string, user_id:string, driver_id:string, parent_fileid:string, createdDirs:Record<string, string>): Promise<string> {
-    const foldersSplitor = folderPath.split(path.sep);
-    let parent_file_id = parent_fileid;
-    for (let i = 1; i < foldersSplitor.length-1; i++) {
-      const folderName = foldersSplitor[i];
-      if (createdDirs[folderName + parent_file_id] === parent_file_id) {
-        continue;
-      }
-      createdDirs[folderName + parent_file_id] = parent_file_id
-
-      const result = await AliFileCmd.ApiCreatNewForder(user_id, driver_id, parent_file_id, folderName);
-      parent_file_id = result.file_id; // 更新父目录为当前目录
-    }
-    return parent_file_id;
-  }
-
-  private static async _GetSendList(RunningKeys: number[], LoadingKeys: number[], time: number, uploadFileMax: number, downSmallFileFirst: boolean): Promise<IUploadingUI[]> {
+  private static _GetSendList(RunningKeys: number[], LoadingKeys: number[], time: number, uploadFileMax: number, downSmallFileFirst: boolean): IUploadingUI[] {
     const sendList: IUploadingUI[] = []
     const values = UploadingTaskList.values()
     for (let i = 0, maxi = UploadingTaskList.size; i < maxi; i++) {
@@ -698,12 +681,8 @@ export default class UploadingData {
       const childrenList = task.Children
       let dirCount = 0
       let fileCount = 0
-      const createdDirs:Record<string, string> = {}
-      for (let j2 = 0; j2 < childrenList.length; j2++) {
-        const fileItem = childrenList[j2]
-        if (!fileItem) {
-          continue
-        }
+      for (let j = 0, maxj = childrenList.length; j < maxj; j++) {
+        const fileItem = childrenList[j]
         if (UploadingInfoStop.has(fileItem.UploadID)) continue
         if (fileItem.isDir) {
           dirCount++
@@ -742,32 +721,15 @@ export default class UploadingData {
           if (info.uploadState == '排队中' && (downSmallFileFirst == false || fileItem.size < 100 * 1024 * 1024)) {
             RunningKeys.push(fileItem.UploadID)
             info.uploadState = 'running'
-            const pathSplitor = fileItem.partPath.split(path.sep);
-            const pathString = pathSplitor.slice(1, pathSplitor.length-1).join(path.sep)
-            let parent_file_id = task.TaskFileID ? task.TaskFileID : task.parent_file_id;
-            if (pathSplitor.length > 2) {
-              const result = await AliFileCmd.ApiCreatNewForder(task.user_id, task.drive_id, parent_file_id, pathString);
-              parent_file_id = result.file_id
-            }
-            const uploadingItems = {
-              IsRunning: true, TaskID: task.TaskID,
-              UploadID: fileItem.UploadID, user_id: task.user_id,
-              parent_file_id: parent_file_id, drive_id: task.drive_id,
-              check_name_mode: task.check_name_mode, localFilePath: task.localFilePath,
-              File: fileItem, Info: info
-            } as IUploadingUI
-            sendList.push(uploadingItems)
+            sendList.push({ IsRunning: true, TaskID: task.TaskID, UploadID: fileItem.UploadID, user_id: task.user_id, parent_file_id: task.parent_file_id, drive_id: task.drive_id, check_name_mode: task.check_name_mode, localFilePath: task.localFilePath, File: fileItem, Info: info } as IUploadingUI)
           }
         }
       }
 
       if (LoadingKeys.length < 2 && dirCount > 0 && fileCount < 2000 && downSmallFileFirst == false) {
 
-        for (let j1 = 0; j1 < childrenList.length; j1++) {
-          const fileItem = childrenList[j1]
-          if (!fileItem) {
-            continue
-          }
+        for (let j = 0, maxj = childrenList.length; j < maxj; j++) {
+          const fileItem = childrenList[j]
           if (UploadingInfoStop.has(fileItem.UploadID)) continue
           if (fileItem.isDir) {
             let info = UploadingInfoList.get(fileItem.UploadID)
@@ -802,7 +764,7 @@ export default class UploadingData {
             if (info.uploadState == '排队中') {
               RunningKeys.push(fileItem.UploadID)
               info.uploadState = 'running'
-              const uploadItems = {
+              sendList.push({
                 IsRunning: true,
                 TaskID: task.TaskID,
                 UploadID: fileItem.UploadID,
@@ -813,9 +775,7 @@ export default class UploadingData {
                 localFilePath: task.localFilePath,
                 File: fileItem,
                 Info: info
-              } as IUploadingUI
-              console.log("uploadItems", uploadItems, task)
-              sendList.push(uploadItems)
+              } as IUploadingUI)
               break
             }
           }

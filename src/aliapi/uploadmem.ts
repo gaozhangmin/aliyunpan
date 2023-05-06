@@ -3,7 +3,6 @@ import DebugLog from '../utils/debuglog'
 import axios from 'axios'
 import AliUpload from './upload'
 import AliUploadHashPool from './uploadhashpool'
-import AliUploadOpenApi from "./uploadOpenApi";
 
 export default class AliUploadMem {
   
@@ -21,7 +20,7 @@ export default class AliUploadMem {
     }
     const size = buff.length
 
-    const upinfo = await AliUploadOpenApi.UploadCreatFileWithFolders(user_id, drive_id, parent_file_id, CreatFileName, size, hash, proof, 'refuse')
+    const upinfo = await AliUpload.UploadCreatFileWithFolders(user_id, drive_id, parent_file_id, CreatFileName, size, hash, proof, 'refuse')
     if (upinfo.errormsg != '') {
       return upinfo.errormsg
     }
@@ -41,7 +40,7 @@ export default class AliUploadMem {
       .catch(function (err: any) {
         DebugLog.mSaveDanger('UploadMemError', err)
       })
-    const result = await AliUploadOpenApi.UploadFileComplete(user_id, drive_id, upinfo.file_id, upinfo.upload_id, size, hash)
+    const result = await AliUpload.UploadFileComplete(user_id, drive_id, upinfo.file_id, upinfo.upload_id, size, hash)
     if (result) return 'success'
     else return '合并文件失败'
   }

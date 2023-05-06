@@ -1,4 +1,5 @@
 import Electron, { ipcRenderer } from 'electron'
+import Notification from 'electron-notification'
 
 window.Electron = Electron
 process.noAsar = true
@@ -25,6 +26,23 @@ ipcRenderer.on('MainSendToken', function (event, arg) {
     window.postMessage(arg)
   } catch {}
 })
+
+// 监听有更新可用的事件
+ipcRenderer.on('update-available', () => {
+  // 弹出通知框或显示更新提示给用户
+  // 例如使用 electron-notification 模块
+  const notification = new Notification({
+    title: '检测到新版本',
+    body: '新的更新可用，请前往"https://github.com/gaozhangmin/aliyunpan_private/releases"' +
+        ' 或微信公众号"小白羊网盘"自行下载安装更新',
+    // onClick: () => {
+    //   // 用户点击通知框时，开始下载更新
+    //   autoUpdater.downloadUpdate();
+    // }
+  });
+
+  notification.show();
+});
 
 window.WebSpawnSync = function (data: any, callback: any) {
   try {
