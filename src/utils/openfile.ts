@@ -186,7 +186,11 @@ async function Video(drive_id: string, file_id: string, parent_file_id: string, 
         return
       }
     } else if (window.platform == 'darwin') {
-      command = "open -a '" + command + "'" + " --args "
+      if (command.includes("mpv.app")) {
+        command = "open -a '" + command + "'" + " --args "
+      } else {
+        command = "open -a '" + command + "'"
+      }
       args = ["'" + url + "'"] //mac 单引号包裹
       if (url.indexOf('x-oss-additional-headers=referer') > 0) {
         message.error('用户token已过期，请点击头像里退出按钮后重新登录账号')

@@ -398,6 +398,7 @@ ipcMain.on('WebExecSync', (event, data) => {
     if (data.args) cmdArguments.push(...data.args)
 
     const finalCmd = cmdArguments.join(' ')
+    console.log("finalCmd", finalCmd)
 
     exec(finalCmd, (err: any) => {
       event.returnValue = err
