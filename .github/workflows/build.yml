@@ -30,6 +30,7 @@ jobs:
           tag: ${{ steps.get_version.outputs.version }}
           body: "${{ steps.tag.outputs.message }}"
   release:
+    needs: create-release
     name: build and release
     runs-on: ${{ matrix.os }}
 
