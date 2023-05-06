@@ -1,6 +1,6 @@
 {
-  "name": "XBY-Driver",
-  "description": "XBY-Driver",
+  "name": "xbyyunpan",
+  "description": "小白羊云盘",
   "version": "3.11.5",
   "main": "dist/electron/main/index.js",
   "author": {
@@ -60,6 +60,7 @@
     "vite-plugin-electron": "^0.9.2",
     "vite-plugin-resolve": "^2.1.2",
     "vue": "^3.2.38",
+    "electron-updater":"^5.3.0",
     "vue-tsc": "^1.2.0"
   },
   "debug": {
