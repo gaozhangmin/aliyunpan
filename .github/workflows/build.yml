@@ -21,14 +21,6 @@ jobs:
         id: get_version
         uses: battila7/get-version-action@v2
 
-      - name: Get tag message
-        id: tag
-        run: |
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-          echo "message<<EOF" >> $GITHUB_OUTPUT
-          echo "$(git tag -l --format='%(contents)' ${{ steps.get_version.outputs.version }})" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
       - name: Create Release
         id: create-release
         uses: ncipollo/release-action@v1
