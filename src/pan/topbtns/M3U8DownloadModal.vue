@@ -1,15 +1,18 @@
 <script lang="ts">
 import AliFile from '../../aliapi/file'
 import { IVideoPreviewUrl } from '../../aliapi/models'
-import { usePanFileStore, usePanTreeStore } from '../../store'
+import {usePanFileStore, usePanTreeStore, useSettingStore} from '../../store'
 import { copyToClipboard } from '../../utils/electronhelper'
-import { humanTime } from '../../utils/format'
+import {humanSize, humanTime} from '../../utils/format'
 import message from '../../utils/message'
 import { modalCloseAll } from '../../utils/modal'
 import { defineComponent, ref } from 'vue'
 import AliHttp from "../../aliapi/alihttp";
 import {IAliGetFileModel} from "../../aliapi/alimodels";
 import M3u8DownloadDAL from "../../down/m3u8/M3u8DownloadDAL";
+import path from "path";
+import fs from "fs";
+import ffmpeg from 'fluent-ffmpeg'
 
 export default defineComponent({
   props: {
@@ -112,7 +115,40 @@ export default defineComponent({
         if (baseUrl) {
             const urls = await parseM3U8Url(url, baseUrl)
             if (urls && urls.length > 0) {
-                M3u8DownloadDAL.aAddDownload(fileItem, urls)
+                const settingStore = useSettingStore()
+                const savePath = settingStore.AriaIsLocal ? settingStore.downSavePath : settingStore.ariaSavePath
+                const fullSavePath = savePath + path.sep + fileItem.name
+                const fileList: IAliGetFileModel[] = []
+                let m3u8FileNames = ''
+                for (let i = 0; i < urls.length; i++) {
+                    m3u8FileNames += 'file ' + fullSavePath + path.sep + (i + '.ts') + '\n'
+                    const url = urls[i];
+                    fileList.push({
+                        __v_skip: true,
+                        drive_id: fileItem.drive_id,
+                        file_id: fileItem.file_id + i,
+                        parent_file_id: fileItem.parent_file_id,
+                        name: i + '.ts',
+                        namesearch: fileItem.namesearch,
+                        ext: "ts",
+                        category: fileItem.category,
+                        icon: fileItem.icon,
+                        size: fileItem.size / urls.length,
+                        sizeStr: humanSize(fileItem.size / urls.length),
+                        time: fileItem.time,
+                        timeStr: fileItem.timeStr,
+                        starred: fileItem.starred,
+                        isDir: false,
+                        thumbnail: fileItem.thumbnail,
+                        description: fileItem.description,
+                        download_url: url,
+                        m3u8_total_file_nums: urls.length,
+                        m3u8_parent_file_name: fileItem.name,
+                    })
+                }
+
+                M3u8DownloadDAL.aAddDownload(fileList, fullSavePath, false, true)
+
             }
         }
     }

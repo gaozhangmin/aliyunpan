@@ -15,8 +15,8 @@ import path from 'path'
 import fsPromises from 'fs/promises'
 import fs, { existsSync } from 'fs'
 import { execFile, SpawnOptions } from 'child_process'
-import net from "net";
-import M3u8DownloadDAL from "../down/m3u8/M3u8DownloadDAL";
+import net from "net"
+import M3u8DownloadDAL from "../down/m3u8/M3u8DownloadDAL"
 
 const localPwd = 'S4znWTaZYQi3cpRNb'
 
@@ -264,19 +264,6 @@ export async function AriaChangeToLocal() {
       port = window.WebRelaunchAria ? await window.WebRelaunchAria() : 16800
       const options = {host: '127.0.0.1', port, secure: false, secret: localPwd, path: '/jsonrpc'}
       Aria2EngineLocal = new Aria2({WebSocket: global.WebSocket, fetch: window.fetch.bind(window), ...options})
-      await Sleep(1000)
-      await Aria2EngineLocal.open()
-          .then(() => {
-            Aria2cLocalRelaunchTime = 0
-            SetAriaOnline(true, 'local')
-          })
-          .catch(() => {
-            SetAriaOnline(false, 'local')
-            Aria2cLocalRelaunchTime++
-            if (Aria2cLocalRelaunchTime < 2) {
-              message.info('正在尝试重启Aria进程中。。。')
-            }
-          })
       Aria2EngineLocal.on('close', () => {
         IsAria2cOnlineLocal = false
         if (useSettingStore().AriaIsLocal) {
@@ -286,6 +273,19 @@ export async function AriaChangeToLocal() {
           SetAriaOnline(false, 'local')
         }
       })
+      await Sleep(1000)
+      await Aria2EngineLocal.open()
+        .then(() => {
+          Aria2cLocalRelaunchTime = 0
+          SetAriaOnline(true, 'local')
+        })
+        .catch(() => {
+          SetAriaOnline(false, 'local')
+          Aria2cLocalRelaunchTime++
+          if (Aria2cLocalRelaunchTime < 2) {
+            message.info('正在尝试重启Aria进程中。。。')
+          }
+        })
 
 
       if (!IsAria2cOnlineLocal) {

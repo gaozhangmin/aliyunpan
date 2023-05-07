@@ -96,7 +96,7 @@ export default class AliHttp {
             'DeviceSessionSignatureInvalid',
           ]
           if (errCode.includes(data.code)) isNeedLog = false
-          if (data.code == 'AccessTokenInvalid') {
+          if (data.code == 'AccessTokenInvalid' || data.code == 'AccessTokenExpired') {
             if (token && window.IsMainPage) {
               return await AliUser.ApiTokenRefreshAccount(token, true).then((isLogin: boolean) => {
                 return { code: 401, header: '', body: 'NetError 账号需要重新登录' } as IUrlRespData

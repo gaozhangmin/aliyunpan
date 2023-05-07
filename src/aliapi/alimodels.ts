@@ -274,4 +274,6 @@ export interface IAliGetFileModel {
   media_height?: number
   media_duration?: string
   media_time?: string
+  m3u8_total_file_nums?:number
+  m3u8_parent_file_name?:string
 }

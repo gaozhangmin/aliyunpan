@@ -150,7 +150,6 @@ export default class AliUser {
       token.used_size = spaceResp.body.personal_space_info.used_size
       token.total_size = spaceResp.body.personal_space_info.total_size
       token.spaceinfo = humanSize(token.used_size) + ' / ' + humanSize(token.total_size)
-      return true
     } else {
       DebugLog.mSaveWarning('getSpaceInfo err=' + (resp.code || ''))
     }

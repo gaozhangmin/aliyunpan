@@ -6,10 +6,10 @@ import {execFile, SpawnOptions} from 'child_process'
 import { portIsOccupied } from './utils'
 import { app, BrowserWindow, dialog, Menu, MenuItem, ipcMain, shell, session } from 'electron'
 import { exec, spawn } from 'child_process'
-import { existsSync, readFileSync, writeFileSync } from 'fs'
+import { existsSync, readFileSync, writeFileSync, rmdirSync } from 'fs'
 import path from 'path'
 import fixPath from 'fix-path'
-import {autoUpdater} from "electron-updater";
+import { autoUpdater } from "electron-updater"
 
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()
 fixPath()
@@ -142,29 +142,49 @@ ipcMain.on('AutoLanuchAtStartup', (event, shouldAutoLaunch) => {
   }
 });
 
-
-// 设置自动更新的服务器地址
 autoUpdater.setFeedURL({
   provider: 'github',
   owner: 'gaozhangmin',
-  repo: 'https://github.com/gaozhangmin/test_repo',
-  // headers: {
-  //   Authorization: 'Bearer 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'
-  // }
+  repo: 'aliyunpan',
 });
 
-// 当更新可用时触发该事件
-autoUpdater.on('update-available', () => {
-  // 发送一个事件给渲染进程，通知有更新可用
-  AppWindow.mainWindow.webContents.send('update-available');
-});
+function checkForUpdates() {
+  autoUpdater.checkForUpdates().then((updateCheckResult) => {
+    if (updateCheckResult.updateInfo.version !== autoUpdater.currentVersion.version) {
+      // 有新版本可用，显示提示框
+      dialog.showMessageBox({
+        type: 'question',
+        buttons: ['Yes', 'No'],
+        title: '应用有新版本可用',
+        message: '是否立即安装新版本？',
+        detail: '新版本已经准备好，是否立即安装？',
+      }).then((result) => {
+        // 根据用户选择的按钮执行相应操作
+        if (result.response === 0) {
+          shell.openExternal('https://github.com/gaozhangmin/aliyunpan_private/releases');
+        }
+      });
+    } else {
+      // 当前已经是最新版本
+      dialog
+        .showMessageBox({
+          type: 'error',
+          buttons: ['ok'],
+          title: "version",
+          message: 'version: ' + updateCheckResult.updateInfo.version + autoUpdater.currentVersion.version
+        })
+        .then((_) => {})
+    }
+  }).catch((error) => {
+    // 更新检查失败
+    ShowError('更新检查失败', error);
+  });
+}
 
 app
   .whenReady()
   .then(() => {
-   autoUpdater.checkForUpdates().then((res) => {
-     console.log("res", res)
-   })
+    checkForUpdates()
     const versionFile = getUserDataPath('version')
     if (versionFile && existsSync(versionFile)) {
       const version = readFileSync(versionFile, 'utf-8')
@@ -398,7 +418,6 @@ ipcMain.on('WebExecSync', (event, data) => {
     if (data.args) cmdArguments.push(...data.args)
 
     const finalCmd = cmdArguments.join(' ')
-    console.log("finalCmd", finalCmd)
 
     exec(finalCmd, (err: any) => {
       event.returnValue = err
@@ -581,24 +600,24 @@ async function startAria2c() {
       ShowError('找不到Aria程序文件', ariaFullPath)
       return 0
     }
-
     process.chdir(basePath)
-    const options:SpawnOptions = { cwd: basePath, shell: true, windowsVerbatimArguments: true}
+    const options:SpawnOptions = { cwd: basePath, shell: true, windowsVerbatimArguments: true }
     const port = await portIsOccupied(16800)
     const subprocess = execFile(
-        ariaPath,
-        [
-          '--stop-with-process=' + process.pid,
-          '-D',
-          '--conf-path=' + '\"'+ confPath + '\"',
-          '--rpc-listen-port=' + port
-        ],
-        options,
-        (error) => {
-          if (error) {
-            return 0
-          }
-        })
+      '\"'+ ariaFullPath + '\"',
+      [
+        '--stop-with-process=' + process.pid,
+        '-D',
+        '--conf-path=' + '\"'+ confPath + '\"',
+        '--rpc-listen-port=' + port
+      ],
+      options,
+      (error) => {
+        if (error) {
+          ShowError("启动Aria2c失败", error.message)
+          return 0
+        }
+      })
     return port
   } catch (e: any) {
     console.log(e)

@@ -115,6 +115,8 @@ export interface SettingState {
   localAria2cPath: string
   localAria2cConfPath:string
 
+  ffmpegPath:string
+
 
 
   debugCacheSize: string
@@ -226,7 +228,8 @@ const setting: SettingState = {
 
   localAria2cConfPath: '',
   localAria2cPath:'',
-  launchAtStartup:false
+  launchAtStartup:false,
+  ffmpegPath:'ffmpegPath'
 }
 function _loadSetting(val: any) {
 
@@ -304,6 +307,7 @@ function _loadSetting(val: any) {
   setting.proxyPassword = defaultString(val.proxyPassword, '')
   setting.localAria2cPath = defaultString(val.localAria2cPath, '')
   setting.localAria2cConfPath = defaultString(val.localAria2cConfPath, '')
+  setting.ffmpegPath = defaultString(val.ffmpegPath, '')
 }
 let settingstr = ''
 
@@ -394,7 +398,6 @@ const useSettingStore = defineStore('setting', {
       SaveSetting()
       window.WinMsgToUpload({ cmd: 'SettingRefresh' })
       window.WinMsgToDownload({ cmd: 'SettingRefresh' })
-      console.log("useSettingStore().downFinishAudio", useSettingStore().downFinishAudio)
     },
 
     updateFileColor(key: string, title: string) {

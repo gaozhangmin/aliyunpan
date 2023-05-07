@@ -1,5 +1,5 @@
 export default class Config {
-  static appVersion = 'v3.11.5'
+  static appVersion = 'v3.11.6'
   static referer = 'https://www.aliyundrive.com/'
   static downAgent = 'okhttp/4.2.2'
   static userAgent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) aDrive/4.1.0 Chrome/108.0.5359.215 Electron/22.3.1 Safari/537.36'
@@ -11,4 +11,6 @@ export default class Config {
   static listFile = 'adrive/v1.0/openFile/list'
   static recentPlayListUrl = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/video/recentList'
   static tmpUrl = 'https://api.nn.ci/alist/ali_open/token'
+  static tmpQrCodeUrl = 'http://159.75.208.47/cloudisk/api/oauth/authorize/qrcode'
+  static tmpTokenUrl = 'http://159.75.208.47/cloudisk/api/oauth/accessToken?alphaTestNum=&authCode='
 }

@@ -25,6 +25,24 @@ function handleSelectPlayer() {
     )
   }
 }
+
+const handleSelectFFmpeg = () => {
+  if (window.WebShowOpenDialogSync) {
+    window.WebShowOpenDialogSync(
+        {
+          title: '选择FFmpeg可执行程序路径',
+          buttonLabel: '选择',
+          properties: ['openFile'],
+          defaultPath: settingStore.ffmpegPath
+        },
+        (result: string[] | undefined) => {
+          if (result && result[0]) {
+            settingStore.updateStore({ ffmpegPath: result[0] })
+          }
+        }
+    )
+  }
+}
 </script>
 
 <template>
@@ -105,8 +123,8 @@ function handleSelectPlayer() {
       </a-popover>
     </div>
 
-    <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'darwin' ? '' : 'none', marginTop: '8px' }">
-      <a-input-search tabindex="-1" style="max-width: 200px" :readonly="true" button-text="选择播放软件" search-button :model-value="settingStore.uiVideoPlayerPath" @search="handleSelectPlayer" />
+      <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'darwin' ? '' : 'none', marginTop: '20px' }">
+      <a-input-search tabindex="-1" style="max-width: 300px" :readonly="true" button-text="播放器" search-button :model-value="settingStore.uiVideoPlayerPath" @search="handleSelectPlayer" />
       <a-popover position="bottom">
         <i class="iconfont iconbulb" />
         <template #content>
@@ -141,6 +159,11 @@ function handleSelectPlayer() {
           </div>
         </template>
       </a-popover>
+    </div>
+    <div class="settingspace"></div>
+    <div class="settinghead">FFmpeg路径</div>
+    <div class="settingrow">
+      <a-input-search tabindex="-1" style="max-width: 300px" :readonly="true" button-text="FFMpeg" search-button :model-value="settingStore.ffmpegPath" @search="handleSelectFFmpeg" />
     </div>
     <div class="settingspace"></div>
     <div class="settinghead">自动标记视频</div>
