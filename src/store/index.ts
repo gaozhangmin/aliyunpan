@@ -29,6 +29,8 @@ import useDowningStore from '../down/DowningStore'
 
 import useFootStore from './footstore'
 import type { AsyncModel } from './footstore'
+import useM3u8DownloadingStore from '../down/m3u8/M3u8DownloadingStore'
+import useM3u8DownloadedStore from '../down/m3u8/M3u8DownloadedStore'
 
 const pinia = createPinia()
 export {
@@ -58,6 +60,8 @@ export {
   useUploadingStore,
   useUploadedStore,
   useDowningStore,
-  useDownedStore
+  useDownedStore,
+  useM3u8DownloadingStore,
+  useM3u8DownloadedStore
 }
 export default pinia

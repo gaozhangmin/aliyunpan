@@ -7,6 +7,9 @@ import { humanTime } from '../../utils/format'
 import message from '../../utils/message'
 import { modalCloseAll } from '../../utils/modal'
 import { defineComponent, ref } from 'vue'
+import AliHttp from "../../aliapi/alihttp";
+import {IAliGetFileModel} from "../../aliapi/alimodels";
+import M3u8DownloadDAL from "../../down/m3u8/M3u8DownloadDAL";
 
 export default defineComponent({
   props: {
@@ -22,6 +25,7 @@ export default defineComponent({
     const drive_id = ref('')
     const file_id = ref('')
     const file_name = ref('')
+    const fileItem = ref<IAliGetFileModel>()
 
     const m3u8List = ref<string[]>([])
     const m3u8Info = ref('')
@@ -29,6 +33,7 @@ export default defineComponent({
     const handleOpen = async () => {
       okLoading.value = true
       const first = usePanFileStore().GetSelectedFirst()!
+      fileItem.value = first
       user_id.value = usePanTreeStore().user_id
       drive_id.value = first.drive_id
       file_id.value = first.file_id
@@ -69,23 +74,23 @@ export default defineComponent({
       url: string;
     }
 
-    function parseM3U8(m3u8String: string, baseUrl:string): string[] {
-      const lines = m3u8String.split('\n');
-      const urls: string[] = [];
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-
-        // 解析出以 "#EXTINF:" 开头的行，其下一行为 URL
-        if (line.startsWith('#EXTINF:')) {
-          const nextLine = lines[i + 1]?.trim();
-          if (nextLine) {
-            urls.push(baseUrl + "/" + nextLine);
-          }
+    async function parseM3U8Url(m3u8FileDownloadUrl: string, baseUrl: string): Promise<string[]> {
+        const resp = await AliHttp.GetString(m3u8FileDownloadUrl, '', 0, -1)
+        const urls: string[] = [];
+        if (AliHttp.IsSuccess(resp.code)) {
+            const lines = resp.body.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                // 解析出以 "#EXTINF:" 开头的行，其下一行为 URL
+                if (line.startsWith('#EXTINF:')) {
+                    const nextLine = lines[i + 1]?.trim();
+                    if (nextLine) {
+                        urls.push(baseUrl + nextLine);
+                    }
+                }
+            }
         }
-      }
-
-      return urls;
+        return urls;
     }
 
     function parseBaseUrl(url: string): string | null {
@@ -97,9 +102,19 @@ export default defineComponent({
       return null;
     }
 
-    const handleDownload = async (item: string) => {
-      message.error('当前版本M3U8视频下载功能尚不可用，可以自行使用其他m3u8下载软件下载', 5)
-      handleCopyUrl(item)
+    const handleDownload = async (item: string, fileItem:IAliGetFileModel) => {
+        let url = ''
+        if (item == '1080P') url = videoPreview.value?.urlFHD || ''
+        if (item == '720P') url = videoPreview.value?.urlHD || ''
+        if (item == '540P') url = videoPreview.value?.urlSD || ''
+        if (item == '480P') url = videoPreview.value?.urlLD || ''
+        const baseUrl = parseBaseUrl(url);
+        if (baseUrl) {
+            const urls = await parseM3U8Url(url, baseUrl)
+            if (urls && urls.length > 0) {
+                M3u8DownloadDAL.aAddDownload(fileItem, urls)
+            }
+        }
     }
 
     const handleCopyUrl = (item: string) => {
@@ -124,7 +139,7 @@ export default defineComponent({
       file_name.value = ''
       if (okLoading.value) okLoading.value = false
     }
-    return { okLoading, handleOpen, handleClose, file_name, m3u8Info, m3u8List, handleDownload, handleCopyUrl }
+    return { okLoading, handleOpen, handleClose, file_name, m3u8Info, m3u8List, fileItem, handleDownload, handleCopyUrl }
   },
   methods: {
     handleHide() {
@@ -163,7 +178,7 @@ export default defineComponent({
           <span class="arco-upload-list-item-operation">
             <a-button-group>
               <a-button type="outline" size="small" @click="() => handleCopyUrl(item)">复制</a-button>
-              <a-button disabled type="outline" size="small" @click="() => handleDownload(item)">下载</a-button>
+              <a-button type="outline" size="small" @click="() => handleDownload(item, fileItem)">下载</a-button>
             </a-button-group>
           </span>
         </div>

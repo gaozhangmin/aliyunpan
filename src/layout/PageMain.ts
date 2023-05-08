@@ -10,6 +10,7 @@ import DebugLog from '../utils/debuglog'
 import PanDAL from '../pan/pandal'
 import UploadingDAL from '../transfer/uploadingdal'
 import { Sleep } from '../utils/format'
+import M3u8DownloadDAL from "../down/m3u8/M3u8DownloadDAL";
 
 export function PageMain() {
   if (window.WinMsg) return
@@ -153,6 +154,10 @@ function timeEvent() {
 
   DownDAL.aSpeedEvent().catch((err: any) => {
     DebugLog.mSaveDanger('aSpeedEvent', err)
+  })
+
+  M3u8DownloadDAL.aSpeedEvent().catch((err: any) => {
+    DebugLog.mSaveDanger('M3u8DownloadDAL aSpeedEvent', err)
   })
 
   // 没有下载和上传时触发自动关闭

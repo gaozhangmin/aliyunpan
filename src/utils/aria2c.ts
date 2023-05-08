@@ -16,6 +16,7 @@ import fsPromises from 'fs/promises'
 import fs, { existsSync } from 'fs'
 import { execFile, SpawnOptions } from 'child_process'
 import net from "net";
+import M3u8DownloadDAL from "../down/m3u8/M3u8DownloadDAL";
 
 const localPwd = 'S4znWTaZYQi3cpRNb'
 
@@ -374,6 +375,32 @@ export async function AriaGetDowningList() {
       arr = result[2][0]
       list = list.concat(arr)
       DownDAL.mSpeedEvent(list)
+      SetAriaOnline(true)
+    }
+  } catch (e: any) {
+    DebugLog.mSaveLog('danger', 'AriaGetDowningList' + (e.message || ''), e)
+    SetAriaOnline(false)
+  }
+}
+
+
+export async function AriaGetM3u8DowningList() {
+  const multicall = [
+    ['aria2.tellActive', ['gid', 'status', 'totalLength', 'completedLength', 'downloadSpeed', 'errorCode', 'errorMessage']],
+    ['aria2.tellWaiting', 0, 1000, ['gid', 'status', 'totalLength', 'completedLength', 'downloadSpeed', 'errorCode', 'errorMessage']],
+    ['aria2.tellStopped', 0, 1000, ['gid', 'status', 'totalLength', 'completedLength', 'downloadSpeed', 'errorCode', 'errorMessage']]
+  ]
+  try {
+    const result: any = await GetAria()?.multicall(multicall)
+    if (result) {
+      let list: IAriaDownProgress[] = []
+      let arr = result[0][0]
+      list = list.concat(arr)
+      arr = result[1][0]
+      list = list.concat(arr)
+      arr = result[2][0]
+      list = list.concat(arr)
+      M3u8DownloadDAL.mSpeedEvent(list)
       SetAriaOnline(true)
     }
   } catch (e: any) {
