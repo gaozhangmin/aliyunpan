@@ -27,12 +27,14 @@ export default class UserDAL {
       try {
         for (let i = 0, maxi = tokenList.length; i < maxi; i++) {
           const token = tokenList[i]
-          if (token.user_id == defaultUser && token.user_id) {
+          if (token.user_id && token.user_id == defaultUser) {
             const expire_time = new Date(token.expire_time).getTime()
+            let isLogin
             if (expire_time - new Date().getTime() > 1800000) {
-              break;
+              isLogin = true
+            } else {
+              isLogin = await AliUser.ApiTokenRefreshAccount(token, false)
             }
-            const isLogin = await AliUser.ApiTokenRefreshAccount(token, false)
             if (isLogin) {
               defaultUserAdd = true
               await this.UserLogin(token).catch(() => {
@@ -51,10 +53,12 @@ export default class UserDAL {
       try {
         if (token.user_id != defaultUser && token.user_id) {
           const expire_time = new Date(token.expire_time).getTime()
-          if (expire_time - new Date().getTime() > 1800000) {
-            break;
+          let isLogin
+          if (expire_time - new Date().getTime() < 1800000) {
+            isLogin = true
+          } else {
+            isLogin = await AliUser.ApiTokenRefreshAccount(token, false)
           }
-          const isLogin = await AliUser.ApiTokenRefreshAccount(token, false)
           if (isLogin) {
             if (!defaultUserAdd) {
               defaultUserAdd = true
