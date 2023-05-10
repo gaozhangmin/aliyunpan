@@ -22,7 +22,6 @@ import {ClearFileName} from "../../utils/filehelper";
 import TreeStore from "../../store/treestore";
 import fs from "fs";
 import { execFile } from 'child_process'
-import { ShowError } from '../../../electron/main/window'
 
 export interface IStateDownFile {
   DownID: string

@@ -380,6 +380,11 @@ const useSettingStore = defineStore('setting', {
     }
   },
   actions: {
+
+    checkUpdate() {
+      window.CheckUpdate()
+
+    },
     updateStore(partial: Partial<SettingState>) {
       if (partial.uiTimeFolderFormate) partial.uiTimeFolderFormate = partial.uiTimeFolderFormate.replace('mm-dd', 'MM-dd').replace('HH-MM', 'HH-mm')
       this.$patch(partial)

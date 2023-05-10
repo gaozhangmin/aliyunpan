@@ -30,6 +30,7 @@ declare global {
     WinMsgToDownload: any
     WinMsgToMain: any
     AutoLanuchAtStartup: any
+    CheckUpdate: any
     IsMainPage: boolean
     WebSetProxy: any
     speedLimte: number

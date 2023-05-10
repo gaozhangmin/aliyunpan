@@ -140,6 +140,13 @@ window.AutoLanuchAtStartup = function (data: { launchAtStartup: string }) {
   } catch {}
 }
 
+
+window.CheckUpdate = function () {
+  try {
+    ipcRenderer.send('CheckUpdate')
+  } catch {}
+}
+
 function createRightMenu() {
   window.addEventListener(
     'contextmenu',

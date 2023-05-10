@@ -142,6 +142,12 @@ ipcMain.on('AutoLanuchAtStartup', (event, shouldAutoLaunch) => {
   }
 });
 
+
+ipcMain.on('CheckUpdate', () => {
+  console.log("CheckUpdate")
+  checkForUpdates()
+});
+
 autoUpdater.setFeedURL({
   provider: 'github',
   owner: 'gaozhangmin',
@@ -150,7 +156,7 @@ autoUpdater.setFeedURL({
 
 function checkForUpdates() {
   autoUpdater.checkForUpdates().then((updateCheckResult) => {
-    if (updateCheckResult.updateInfo.version !== autoUpdater.currentVersion.version) {
+    if (updateCheckResult && updateCheckResult.updateInfo.version !== autoUpdater.currentVersion.version) {
       // 有新版本可用，显示提示框
       dialog.showMessageBox({
         type: 'question',
@@ -161,7 +167,7 @@ function checkForUpdates() {
       }).then((result) => {
         // 根据用户选择的按钮执行相应操作
         if (result.response === 0) {
-          shell.openExternal('https://github.com/gaozhangmin/aliyunpan_private/releases');
+          shell.openExternal('https://github.com/gaozhangmin/aliyunpan/releases');
         }
       });
     } else {

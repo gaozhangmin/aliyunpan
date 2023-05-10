@@ -11,8 +11,6 @@ import AliHttp from "../../aliapi/alihttp";
 import {IAliGetFileModel} from "../../aliapi/alimodels";
 import M3u8DownloadDAL from "../../down/m3u8/M3u8DownloadDAL";
 import path from "path";
-import fs from "fs";
-import ffmpeg from 'fluent-ffmpeg'
 
 export default defineComponent({
   props: {
