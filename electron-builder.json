@@ -1,6 +1,6 @@
 {
   "appId": "com.xby.app",
-  "productName": "XBYDriver",
+  "productName": "小白羊云盘",
   "copyright": "copyright ©2023 Zhangmin gao",
   "asar": true,
   "compression": "maximum",
@@ -9,7 +9,7 @@
   "mac": {
     "icon": "./static/images/icon.png",
     "type": "distribution",
-    "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
+    "artifactName": "XBYDriver-${version}-mac-${arch}.${ext}",
     "darkModeSupport": true,
     "hardenedRuntime": true,
     "category": "public.app-category.utilities",
@@ -29,7 +29,7 @@
   "linux": {
     "icon": "./static/images/icon.png",
     "category": "Network",
-    "artifactName": "${productName}-${version}-linux-${arch}.${ext}",
+    "artifactName": "XBYDriver-${version}-linux-${arch}.${ext}",
     "extraResources": [
       { "from": "./static/engine/linux/${arch}", "to": "./engine"},
       { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
@@ -45,7 +45,7 @@
   },
   "win": {
     "icon": "./static/images/icon.png",
-    "artifactName": "${productName}-${version}-win-${arch}.${ext}",
+    "artifactName": "XBYDriver-${version}-win-${arch}.${ext}",
     "extraResources": [
       { "from": "./static/engine/win32/${arch}", "to": "./engine"},
       { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
@@ -67,11 +67,11 @@
     ]
   },
   "portable": {
-    "artifactName": "${productName}-${version}-portable-${arch}.${ext}"
+    "artifactName": "XBYDriver-${version}-portable-${arch}.${ext}"
   },
   "nsis": {
     "oneClick": false,
-    "artifactName": "${productName}-Setup-${version}.${ext}",
+    "artifactName": "XBYDriver-Setup-${version}.${ext}",
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": false
   },
