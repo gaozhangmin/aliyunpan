@@ -13,11 +13,12 @@ import { humanSize, Sleep } from '../utils/format'
 import { RuningList } from './uiupload'
 import path from 'path'
 import fspromises from 'fs/promises'
+import AliUploadOpenApi from "../aliapi/uploadOpenApi";
 
 export async function StartUpload(fileui: IUploadingUI): Promise<void> {
   
   const token = await UserDAL.GetUserTokenFromDB(fileui.user_id)
-  if (!token || token.user_id !== fileui.user_id) {
+  if (!token || token.user_id !== fileui.user_id || !token.access_token || !token.access_token_v2) {
     fileui.Info.uploadState = 'error'
     fileui.Info.failedCode = 402
     fileui.Info.failedMessage = '找不到账号,无法继续'
@@ -40,7 +41,7 @@ export async function StartUpload(fileui: IUploadingUI): Promise<void> {
 
   const uploadInfo: IUploadInfo = {
     token_type: token.token_type,
-    access_token: token.access_token,
+    access_token: token.access_token_v2,
     sha1: '',
     isexist: false,
     israpid: false,
@@ -219,7 +220,7 @@ async function AddFiles(addFileList: IStateUploadTaskFile[], fileList: string[],
             TaskID: readConfig.TaskID,
             UploadID: readConfig.filetime,
             partPath: path.join(parentDirPartPath, fileName),
-            name: parentDirName + '/' + fileName,
+            name: path.join(parentDirName, fileName),
             size: stat ? stat.size : 1,
             sizeStr: humanSize(stat ? stat.size : 1),
             mtime: stat ? stat.mtime.getTime() : 0 ,
@@ -401,10 +402,10 @@ async function reloadUploadUrl(uploadInfo: IUploadInfo, fileui: IUploadingUI): P
   
   uploadInfo.part_info_list = []
   
-  let isOk = await AliUpload.UploadFilePartUrl(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo).catch(() => {})
+  let isOk = await AliUploadOpenApi.UploadFilePartUrl(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo).catch(() => {})
   if (isOk != 'success') return isOk || 'codeerror'
   if (uploadInfo.part_info_list.length > 0) {
-    isOk = await AliUpload.UploadFileListUploadedParts(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, 0, uploadInfo).catch(() => {})
+    isOk = await AliUploadOpenApi.UploadFileListUploadedParts(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, 0, uploadInfo).catch(() => {})
     if (isOk == 'success') {
       const part_info_list = uploadInfo.part_info_list
       let isUpload = true
@@ -439,9 +440,8 @@ async function checkPreHashAndGetPartlist(uploadInfo: IUploadInfo, fileui: IUplo
       fileui.Info.failedMessage = prehash.substring('error'.length)
       return false 
     } else {
-      const matched = await AliUpload.UploadCreatFileWithPreHash(fileui.user_id, fileui.drive_id, fileui.parent_file_id, fileui.File.name, fileui.File.size, prehash, fileui.check_name_mode)
+      const matched = await AliUploadOpenApi.UploadCreatFileWithPreHash(fileui.user_id, fileui.drive_id, fileui.parent_file_id, fileui.File.name, fileui.File.size, prehash, fileui.check_name_mode)
       if (!matched.errormsg) {
-        
         fileui.Info.up_upload_id = matched.upload_id
         fileui.Info.up_file_id = matched.file_id
         uploadInfo.part_info_list = matched.part_info_list
@@ -476,7 +476,7 @@ async function checkPreHashAndGetPartlist(uploadInfo: IUploadInfo, fileui: IUplo
 
   uploadInfo.sha1 = proof.sha1
 
-  const miaoChuan = await AliUpload.UploadCreatFileWithFolders(fileui.user_id, fileui.drive_id, fileui.parent_file_id, fileui.File.name, fileui.File.size, proof.sha1, proof.proof_code, fileui.check_name_mode)
+  const miaoChuan = await AliUploadOpenApi.UploadCreatFileWithFolders(fileui.user_id, fileui.drive_id, fileui.parent_file_id, fileui.File.name, fileui.File.size, proof.sha1, proof.proof_code, fileui.check_name_mode)
   if (miaoChuan.errormsg != '') {
     fileui.Info.uploadState = 'error'
     fileui.Info.failedCode = 504

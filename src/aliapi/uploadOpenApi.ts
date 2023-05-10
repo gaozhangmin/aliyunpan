@@ -1,6 +1,8 @@
 import DebugLog from '../utils/debuglog'
 import AliHttp from './alihttp'
 import { IUploadCreat, IUploadInfo } from './models'
+import path from "path";
+import AliFileCmd from "./filecmd";
 
 export default class AliUploadOpenApi {
 
@@ -19,11 +21,18 @@ export default class AliUploadOpenApi {
       result.errormsg = '创建文件失败(数据错误)'
       return result
     }
-    if (check_name_mode != 'overwrite'
-      && check_name_mode != 'auto_rename'
+    if (check_name_mode != 'auto_rename'
       && check_name_mode != 'refuse'
       && check_name_mode != 'ignore') {
       check_name_mode = 'refuse'
+    }
+
+    const pathSplitor = name.split(path.sep);
+    if (pathSplitor.length > 1) {
+      const dirFullName = pathSplitor.slice(0, pathSplitor.length - 1).join(path.sep);
+      name = pathSplitor[pathSplitor.length-1]
+      const resp = await AliFileCmd.ApiCreatNewForder(user_id, drive_id, parent_file_id, dirFullName);
+      parent_file_id = resp.file_id
     }
 
     const url = 'adrive/v1.0/openFile/create'
@@ -112,7 +121,9 @@ export default class AliUploadOpenApi {
     }
   }
 
-  static async UploadCreatFileWithFolders(user_id: string, drive_id: string, parent_file_id: string, name: string, fileSize: number, hash: string, proof_code: string, check_name_mode: string): Promise<IUploadCreat> {
+  static async UploadCreatFileWithFolders(user_id: string, drive_id: string,
+                                          parent_file_id: string, name: string, fileSize: number,
+                                          hash: string, proof_code: string, check_name_mode: string): Promise<IUploadCreat> {
     const result: IUploadCreat = {
       user_id,
       drive_id,
@@ -128,11 +139,18 @@ export default class AliUploadOpenApi {
       return result
     }
 
-    if (check_name_mode != 'overwrite'
-      && check_name_mode != 'auto_rename'
+    if (check_name_mode != 'auto_rename'
       && check_name_mode != 'refuse'
       && check_name_mode != 'ignore') {
       check_name_mode = 'refuse'
+    }
+
+    const pathSplitor = name.split(path.sep);
+    if (pathSplitor.length > 1) {
+      name = pathSplitor[pathSplitor.length-1]
+      const dirFullName = pathSplitor.slice(0, pathSplitor.length - 1).join(path.sep);
+      const resp = await AliFileCmd.ApiCreatNewForder(user_id, drive_id, parent_file_id, dirFullName);
+      parent_file_id = resp.file_id
     }
 
     const url = 'adrive/v1.0/openFile/create'

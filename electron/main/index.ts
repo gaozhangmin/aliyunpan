@@ -37,6 +37,7 @@ app.commandLine.appendSwitch('wm-window-animations-disabled')
 
 app.setAppUserModelId('gaozhangmin')
 app.name = 'alixby3'
+const downloadPageUrl = 'https://github.com/gaozhangmin/aliyunpan/releases'
 const DEBUGGING = !app.isPackaged
 
 const userData = getResourcesPath('userdir.config')
@@ -144,7 +145,6 @@ ipcMain.on('AutoLanuchAtStartup', (event, shouldAutoLaunch) => {
 
 
 ipcMain.on('CheckUpdate', () => {
-  console.log("CheckUpdate")
   checkForUpdates()
 });
 
@@ -167,19 +167,9 @@ function checkForUpdates() {
       }).then((result) => {
         // 根据用户选择的按钮执行相应操作
         if (result.response === 0) {
-          shell.openExternal('https://github.com/gaozhangmin/aliyunpan/releases');
+          shell.openExternal(downloadPageUrl);
         }
       });
-    } else {
-      // 当前已经是最新版本
-      dialog
-        .showMessageBox({
-          type: 'error',
-          buttons: ['ok'],
-          title: "version",
-          message: 'version: ' + updateCheckResult.updateInfo.version + autoUpdater.currentVersion.version
-        })
-        .then((_) => {})
     }
   }).catch((error) => {
     // 更新检查失败
