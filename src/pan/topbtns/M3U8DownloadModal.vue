@@ -103,14 +103,14 @@ export default defineComponent({
       return null;
     }
 
-    const handleDownload = async (item: string, fileItem:IAliGetFileModel) => {
+    const handleDownload = async (item: string, fileItem:IAliGetFileModel|undefined) => {
         let url = ''
         if (item == '1080P') url = videoPreview.value?.urlFHD || ''
         if (item == '720P') url = videoPreview.value?.urlHD || ''
         if (item == '540P') url = videoPreview.value?.urlSD || ''
         if (item == '480P') url = videoPreview.value?.urlLD || ''
         const baseUrl = parseBaseUrl(url);
-        if (baseUrl) {
+        if (baseUrl && fileItem) {
             const urls = await parseM3U8Url(url, baseUrl)
             if (urls && urls.length > 0) {
                 const settingStore = useSettingStore()
