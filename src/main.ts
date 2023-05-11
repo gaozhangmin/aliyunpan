@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import App from './App.vue'
+import ArcoVue from '@arco-design/web-vue'
 import store, { useAppStore, useSettingStore } from './store'
 import '@arco-design/web-vue/dist/arco.css'
 import message from './utils/message'
@@ -56,6 +57,7 @@ app.config.errorHandler = function (err: any, vm, info) {
   } catch {}
   return true
 }
+app.use(ArcoVue, {})
 app.use(store)
 app.mount('#app')
 

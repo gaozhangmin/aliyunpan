@@ -12,7 +12,7 @@ export default defineComponent({
       const arr: string[] = []
       value?.forEach((val: string) => {
         if (val != delVal) {
-          if (arr.includes(val as string) == false) {
+          if (!arr.includes(val as string)) {
             arr.push(val as string)
           }
         }
@@ -27,9 +27,9 @@ export default defineComponent({
       const value = props.value
       const arr: string[] = []
       value?.forEach((val) => {
-        if (arr.includes(val as string) == false) arr.push(val as string)
+        if (!arr.includes(val as string)) arr.push(val as string)
       })
-      if (arr.includes(val) == false) arr.push(val)
+      if (!arr.includes(val)) arr.push(val)
       addVal.value = ''
       context.emit('update:value', arr)
     }

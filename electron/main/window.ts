@@ -90,7 +90,16 @@ export function createMainWindow() {
     AppWindow.mainWindow!.webContents.send('setPage', { page: 'PageMain' })
     AppWindow.mainWindow!.webContents.send('setTheme', { dark: nativeTheme.shouldUseDarkColors })
     AppWindow.mainWindow!.setTitle('小白羊云盘')
-    AppWindow.mainWindow!.show()
+    if (process.platform === 'win32'
+        && process.argv && process.argv.join(' ').indexOf('--openAsHidden') < 0) {
+      AppWindow.mainWindow!.show()
+    } else if (process.platform === 'darwin'
+        && !app.getLoginItemSettings().wasOpenedAsHidden){
+      AppWindow.mainWindow!.show()
+    }
+    if (process.platform !== 'win32' && process.platform !== 'darwin'){
+      AppWindow.mainWindow!.show()
+    }
     creatUploadPort()
     creatDownloadPort()
   })

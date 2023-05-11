@@ -91,9 +91,9 @@ const handleDelete = () => {
   }
   delLoading.value = true
   AliFileCmd.ApiTrashBatch(user.user_id, user.default_drive_id, checkedKeys.value).then((success: string[]) => {
-    delLoading.value = false
-    DB.saveValueNumber('AllDir_' + user.default_drive_id, 0) 
-    handleReset()
+      delLoading.value = false
+      DB.saveValueNumber('AllDir_' + user.default_drive_id, 0)
+      RefreshTree()
   })
 }
 

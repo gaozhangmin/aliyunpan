@@ -134,11 +134,11 @@ window.WebSetProxy = function (data: { proxyUrl: string }) {
   } catch {}
 }
 
-window.AutoLanuchAtStartup = function (data: { launchAtStartup: string }) {
-  try {
-    ipcRenderer.send('AutoLanuchAtStartup', data)
-  } catch {}
-}
+// window.AutoLanuchAtStartup = function (data: { launchAtStartup: string }) {
+//   try {
+//     ipcRenderer.send('AutoLanuchAtStartup', data)
+//   } catch {}
+// }
 
 
 window.CheckUpdate = function () {

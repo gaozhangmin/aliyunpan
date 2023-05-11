@@ -120,28 +120,28 @@ ipcMain.on('WebUserToken', (event, data) => {
   }
 })
 
-ipcMain.on('AutoLanuchAtStartup', (event, shouldAutoLaunch) => {
-  if (shouldAutoLaunch) {
-    app.setLoginItemSettings({
-      openAtLogin: true,
-      openAsHidden: true,
-      path: process.execPath,
-      args: [
-        '--processStart', `${process.execPath}`,
-        '--process-start-args', `"--hidden"`
-      ]
-    });
-  } else {
-    app.setLoginItemSettings({
-      openAtLogin: false,
-      path: process.execPath,
-      args: [
-        '--processStart', `${process.execPath}`,
-        '--process-start-args', `"--hidden"`
-      ]
-    });
-  }
-});
+// ipcMain.on('AutoLanuchAtStartup', (event, shouldAutoLaunch) => {
+//   if (shouldAutoLaunch) {
+//     app.setLoginItemSettings({
+//       openAtLogin: true,
+//       openAsHidden: true,
+//       path: process.execPath,
+//       args: [
+//         '--processStart', `${process.execPath}`,
+//         '--process-start-args', `"--hidden"`
+//       ]
+//     });
+//   } else {
+//     app.setLoginItemSettings({
+//       openAtLogin: false,
+//       path: process.execPath,
+//       args: [
+//         '--processStart', `${process.execPath}`,
+//         '--process-start-args', `"--hidden"`
+//       ]
+//     });
+//   }
+// });
 
 
 ipcMain.on('CheckUpdate', () => {
@@ -285,6 +285,28 @@ ipcMain.on('WebToElectron', (event, data) => {
     if (menuEdit) menuEdit.popup()
   } else if (data.cmd && data.cmd === 'menucopy') {
     if (menuCopy) menuCopy.popup()
+  } else if (data.cmd && (Object.hasOwn(data.cmd, 'launchStartUp')
+      || Object.hasOwn(data.cmd, 'launchStartUpShow'))) {
+    console.log("data.cmd", data.cmd)
+    const launchStart = data.cmd.launchStartUp
+    const launchStartShow = data.cmd.launchStartUpShow
+    const appName = path.basename(process.execPath)
+    // 设置开机自启
+    const settings: Electron.Settings = {
+      openAtLogin: launchStart,
+      path: process.execPath
+    }
+    // 显示主窗口
+    if (process.platform === 'darwin') {
+      settings.openAsHidden = !launchStartShow
+    } else {
+      settings.args = [
+        '--processStart', `${appName}`,
+        '--process-start-args', `"--hidden"`
+      ]
+      !launchStartShow && settings.args.push('--openAsHidden')
+    }
+    app.setLoginItemSettings(settings)
   } else {
     event.sender.send('ElectronToWeb', 'mainsenddata')
   }
@@ -596,11 +618,11 @@ async function startAria2c() {
       ShowError('找不到Aria程序文件', ariaFullPath)
       return 0
     }
-    process.chdir(basePath)
-    const options:SpawnOptions = { cwd: basePath, shell: true, windowsVerbatimArguments: true }
+    // process.chdir(basePath)
+    const options:SpawnOptions = { shell: true, windowsVerbatimArguments: true }
     const port = await portIsOccupied(16800)
     const subprocess = execFile(
-      '\"'+ ariaFullPath + '\"',
+       '\"'+ ariaFullPath + '\"',
       [
         '--stop-with-process=' + process.pid,
         '-D',
@@ -608,12 +630,12 @@ async function startAria2c() {
         '--rpc-listen-port=' + port
       ],
       options,
-      (error) => {
-        if (error) {
-          ShowError("启动Aria2c失败", error.message)
-          return 0
-        }
-      })
+        (error) => {
+          if (error) {
+            ShowError("启动Aria2c失败", error.message)
+            return 0
+          }
+        })
     return port
   } catch (e: any) {
     console.log(e)

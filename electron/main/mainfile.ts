@@ -172,7 +172,6 @@ const ariaconf = `# debug, info, notice, warn or error
  enable-rpc=true
  rpc-allow-origin-all=true
  rpc-listen-all=false
- rpc-listen-port=16800
  rpc-secret=S4znWTaZYQi3cpRNb
  rpc-secure=false
  pause-metadata=true

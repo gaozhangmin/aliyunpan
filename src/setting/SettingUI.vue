@@ -4,6 +4,7 @@ import useSettingStore from './settingstore'
 import MySwitch from '../layout/MySwitch.vue'
 import Config from '../utils/config'
 import ServerHttp from '../aliapi/server'
+import os from 'os'
 
 const settingStore = useSettingStore()
 const cb = (val: any) => {
@@ -51,17 +52,32 @@ const handleCheckVer = () => {
         </template>
       </a-popover>
     </div>
+<!--    <div class="settingspace"></div>-->
+<!--    <div class="settinghead">开机自启动</div>-->
+<!--    <div class="settingrow">-->
+<!--        <MySwitch :value="settingStore.launchAtStartup" @update:value="cb({ launchAtStartup: $event })"></MySwitch>-->
+<!--    </div>-->
     <div class="settingspace"></div>
-    <div class="settinghead">开机自启动</div>
+    <div class="settinghead">自动签到</div>
     <div class="settingrow">
-        <MySwitch :value="settingStore.launchAtStartup" @update:value="cb({ launchAtStartup: $event })"></MySwitch>
+        <MySwitch :value="settingStore.uiLaunchAutoSign" @update:value="cb({ uiLaunchAutoSign: $event })">自动签到</MySwitch>
     </div>
+    <template v-if="['win32', 'darwin'].includes(os.platform())">
+        <div class="settingspace"></div>
+        <div class="settinghead">开机自启</div>
+        <div class="settingrow">
+            <a-row class="grid-demo">
+                <a-col flex="180px">
+                    <MySwitch :value="settingStore.uiLaunchStart" @update:value="cb({ uiLaunchStart: $event })">开机启动</MySwitch>
+                </a-col>
+                <a-col flex="180px">
+                    <MySwitch :value="settingStore.uiLaunchStartShow" @update:value="cb({ uiLaunchStartShow: $event })">显示主窗口</MySwitch>
+                </a-col>
+            </a-row>
+        </div>
+    </template>
   </div>
-  <div class="settingspace"></div>
-  <div class="settinghead">:启动时自动签到</div>
-  <div class="settingrow">
-      <MySwitch :value="settingStore.uiLaunchAutoSign" @update:value="cb({ uiLaunchAutoSign: $event })">自动签到</MySwitch>
-  </div>
+
 </template>
 
 <style scoped>

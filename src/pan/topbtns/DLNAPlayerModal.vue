@@ -22,7 +22,7 @@ export default defineComponent({
       okLoading.value = true
       dlnacasts = window.require('dlnacasts2')()
       dlnacasts.on('update', function (player: any) {
-        playerList.value.push(player) 
+        playerList.value.push(player)
       })
 
       setTimeout(() => {
@@ -60,7 +60,7 @@ export default defineComponent({
         // playercurr.stop()
         // await Sleep(2000)
         playercurr.play(
-            previewData?.url,
+          info?.download_url,
           {
             title: info.name,
             type: 'video/mp4',
@@ -72,7 +72,7 @@ export default defineComponent({
         )
       } else {
         
-        const preview = await AliFile.ApiVideoPreviewUrlOpenApi(user_id, first.drive_id, first.file_id)
+        const preview = await AliFile.ApiVideoPreviewUrl(user_id, first.drive_id, first.file_id)
         if (preview) {
           const subtitles: string[] = []
           if (preview.subtitles.length > 0) {
@@ -123,9 +123,11 @@ export default defineComponent({
     </template>
     <div class="modalbody" style="width: 440px">
       <div v-if="okLoading" style="width: 100%; display: flex; justify-content: center">
-        <a-spin dot tip="正在查找可投屏设备..." />
+        <a-spin dot tip="正在查找可投屏的设备..." />
       </div>
-
+      <div v-if="!okLoading && playerList.length === 0" style="width: 100%; display: flex; justify-content: center">
+          <a-empty description="找不到可投屏的设备" />
+      </div>
       <div class="arco-upload-list arco-upload-list-type-text">
         <div v-for="(item, index) in playerList" :key="'P' + index" class="arco-upload-list-item arco-upload-list-item-done">
           <div class="arco-upload-list-item-content">
@@ -144,8 +146,8 @@ export default defineComponent({
             </span>
           </div>
           <span class="arco-upload-list-item-operation">
-            <a-button type="outline" size="small" @click="() => handlePlay(index, 'm3u8')">播放转码</a-button>
-            <a-button type="outline" size="small" @click="() => handlePlay(index, 'raw')">播放原始</a-button>
+            <a-button type="outline" size="small" @click="handlePlay(index, 'm3u8')">播放转码</a-button>
+            <a-button type="outline" size="small" @click="handlePlay(index, 'raw')">播放原始</a-button>
           </span>
         </div>
       </div>

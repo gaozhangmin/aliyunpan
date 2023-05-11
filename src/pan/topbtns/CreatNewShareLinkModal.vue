@@ -29,6 +29,7 @@ export default defineComponent({
   },
   setup(props) {
     const okLoading = ref(false)
+    const okBatchLoading = ref(false)
     const formRef = ref()
     const settingStore = useSettingStore()
     const form = reactive({
@@ -55,10 +56,10 @@ export default defineComponent({
     }
 
     const handleClose = () => {
-      
       if (okLoading.value) okLoading.value = false
+      if (okBatchLoading.value) okBatchLoading.value = false
     }
-    return { okLoading, handleOpen, handleClose, formRef, form, dayjs }
+    return { okLoading, okBatchLoading, handleOpen, handleClose, formRef, form, dayjs }
   },
   methods: {
     handleHide() {
@@ -90,12 +91,11 @@ export default defineComponent({
       const user_id = pantreeStore.user_id
       const drive_id = pantreeStore.drive_id
       const file_id_list = ArrayKeyList<string>('file_id', this.filelist)
-      this.okLoading = true
-      
+
       localStorage.setItem('share_pwd', share_pwd)
       if (!multi) {
+        this.okLoading = true
         const result = await AliShare.ApiCreatShare(user_id, drive_id, expiration, share_pwd, share_name, file_id_list)
-
         if (typeof result == 'string') {
           this.okLoading = false
           message.error(result)
@@ -112,27 +112,28 @@ export default defineComponent({
         this.okLoading = false
         modalCloseAll()
       } else {
-        let url = ''
-        let successfullySharedCount = 0
-        let share_id = ''
-        for (let i = 0; i < file_id_list.length; i++) {
-          const result = await AliShare.ApiCreatShare(user_id, drive_id, expiration, share_pwd, share_name, file_id_list.slice(i, i + 1))
-          if (typeof result == 'string') {
-            this.okLoading = false
-            message.error(result)
-            continue
+          this.okBatchLoading = true
+          let url = ''
+          let sharedCount = 0
+          let share_id = ''
+          for (let i = 0; i < file_id_list.length; i++) {
+              const result = await AliShare.ApiCreatShare(user_id, drive_id, expiration, share_pwd, share_name, file_id_list.slice(i, i + 1))
+              if (typeof result == 'string') {
+                  this.okBatchLoading = false
+                  message.error(result)
+                  continue
+              }
+              sharedCount += 1
+              if (share_id === '') {
+                  share_id = result.share_id
+              }
+              url += GetShareUrlFormate(result.share_name, result.share_url, result.share_pwd) + '\n'
           }
-          successfullySharedCount += 1
-          if (share_id === '') {
-            share_id = result.share_id
-          }
-          url += GetShareUrlFormate(result.share_name, result.share_url, result.share_pwd) + '\n'
-        }
-        copyToClipboard(url)
-        await ShareDAL.aReloadMyShareUntilShareID(user_id, share_id)
-        message.success('创建 ' + successfullySharedCount + '条 分享链接成功，分享链接已复制到剪切板')
-        this.okLoading = false
-        modalCloseAll()
+          copyToClipboard(url)
+          await ShareDAL.aReloadMyShareUntilShareID(user_id, share_id)
+          message.success('创建 ' + sharedCount + '条 分享链接成功，分享链接已复制到剪切板')
+          this.okBatchLoading = false
+          modalCloseAll()
       }
     }
   }
@@ -142,9 +143,7 @@ export default defineComponent({
 <template>
   <a-modal :visible="visible" modal-class="modalclass" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>
-      <span class="modaltitle"
-        >创建分享链接<span class="titletips"> (已选择{{ filelist.length }}个文件) </span></span
-      >
+      <span class="modaltitle">创建分享链接<span class="titletips"> (已选择{{ filelist.length }}个文件) </span></span>
     </template>
     <div class="modalbody" style="width: 440px">
       <a-form ref="formRef" :model="form" layout="vertical">
@@ -207,7 +206,7 @@ export default defineComponent({
       </a-form>
     </div>
     <div class="modalfoot">
-      <a-button type="outline" size="small" :loading="okLoading" @click="() => handleOK(true)">为每个文件单独创建</a-button>
+      <a-button type="outline" size="small" :loading="okBatchLoading" @click="() => handleOK(true)">为每个文件单独创建</a-button>
       <div style="flex-grow: 1"></div>
       <a-button v-if="!okLoading" type="outline" size="small" @click="handleHide">取消</a-button>
       <a-button type="primary" size="small" :loading="okLoading" @click="() => handleOK(false)">创建分享链接</a-button>

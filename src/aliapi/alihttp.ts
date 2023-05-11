@@ -36,9 +36,9 @@ function BlobToBuff(body: Blob): Promise<ArrayBuffer | undefined> {
 
 function HttpCodeBreak(code: number): Boolean {
   if (code >= 200 && code <= 300) return true
-  // if (code == 400) return true
+  if (code == 400) return true
   // if (code == 401) return true
-  if (code >= 402 && code <= 428) return true
+  if (code >= 402 && code <= 429) return true
   // if (code == 403) return true
   if (code == 404) return true
   if (code == 409) return true
@@ -106,12 +106,18 @@ export default class AliHttp {
             }
           }
 
+          if (data.code == 'Too Many Requests') {
+            message.error('获取OpenApiAccessToken失败，请勿重复请求')
+            return { code: 429, header: '', body: '获取OpenApiAccessToken失败，请勿重复请求' } as IUrlRespData
+          }
+
+          // 自动刷新Session
           if (data.code == 'UserDeviceIllegality'
               || data.code == 'UserDeviceOffline'
               || data.code == 'DeviceSessionSignatureInvalid') {
             if (token) {
               return await AliUser.ApiSessionRefreshAccount(token,  true).then((isLogin: boolean) => {
-                return { code: 403, header: '', body: '刷新Session失败' } as IUrlRespData
+                return { code: 401, header: '', body: '刷新Session失败' } as IUrlRespData
               })
             } else {
               return { code: 402, header: '', body: 'NetError 账号需要重新登录' } as IUrlRespData

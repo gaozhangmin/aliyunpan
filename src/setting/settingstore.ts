@@ -30,7 +30,9 @@ export interface SettingState {
 
   uiExitOnClose: boolean
 
-  launchAtStartup:boolean
+  uiLaunchStart: boolean
+
+  uiLaunchStartShow: boolean
 
   uiLaunchAutoSign: boolean
 
@@ -171,7 +173,6 @@ const setting: SettingState = {
   uiShareFormate: '「NAME」URL\n提取码: PWD',
   uiXBTNumber: 36,
   uiXBTWidth: 960,
-  uiLaunchAutoSign: false,
   uiFileListOrder: 'name asc',
   uiFileListMode: 'list',
   uiFileColorArray: [
@@ -229,8 +230,10 @@ const setting: SettingState = {
 
   localAria2cConfPath: '',
   localAria2cPath:'',
-  launchAtStartup:false,
-  ffmpegPath:'ffmpegPath'
+  uiLaunchAutoSign:false,
+  ffmpegPath:'ffmpegPath',
+  uiLaunchStart: false,
+  uiLaunchStartShow: false,
 }
 function _loadSetting(val: any) {
 
@@ -310,6 +313,8 @@ function _loadSetting(val: any) {
   setting.localAria2cConfPath = defaultString(val.localAria2cConfPath, '')
   setting.ffmpegPath = defaultString(val.ffmpegPath, '')
   setting.uiLaunchAutoSign = defaultBool(val.uiLaunchAutoSign, false)
+  setting.uiLaunchStart = defaultBool(val.uiLaunchStart, false)
+  setting.uiLaunchStartShow = defaultBool(val.uiLaunchStartShow, false)
 }
 let settingstr = ''
 
@@ -390,12 +395,16 @@ const useSettingStore = defineStore('setting', {
     updateStore(partial: Partial<SettingState>) {
       if (partial.uiTimeFolderFormate) partial.uiTimeFolderFormate = partial.uiTimeFolderFormate.replace('mm-dd', 'MM-dd').replace('HH-MM', 'HH-mm')
       this.$patch(partial)
+      console.log("uiLaunchAutoSign", this.uiLaunchAutoSign)
+      if (Object.hasOwn(partial, 'uiLaunchStart') || Object.hasOwn(partial, 'uiLaunchStartShow')) {
+        window.WebToElectron({ cmd: { launchStartUp: this.uiLaunchStart, launchStartUpShow: this.uiLaunchStartShow } })
+      }
       if (Object.hasOwn(partial, 'proxyUseProxy')) {
         this.WebSetProxy()
       }
-      if (Object.hasOwn(partial, 'launchAtStartup')) {
-        window.AutoLanuchAtStartup({launchAtStartup: setting.launchAtStartup})
-      }
+      // if (Object.hasOwn(partial, 'launchAtStartup')) {
+      //   window.AutoLanuchAtStartup({launchAtStartup: setting.launchAtStartup})
+      // }
       if (Object.hasOwn(partial, 'uiTheme')) {
         useAppStore().toggleTheme(setting.uiTheme)
       }

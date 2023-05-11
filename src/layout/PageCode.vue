@@ -34,9 +34,9 @@ export default defineComponent({
           lang.value = 'language-json'
         }
 
-        const nofromate = pageCode.file_size > 150 * 1024 || fext == 'plain'
+        const nofromate = pageCode.file_size > 512 * 1024 || fext == 'plain'
         codeString.value = data
-        format.value = !nofromate
+        format.value = nofromate
 
         if (nofromate) return
         setTimeout(() => {

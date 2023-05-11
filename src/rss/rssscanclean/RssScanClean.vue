@@ -25,8 +25,10 @@ const scanLoaded = ref(false)
 const delLoading = ref(false)
 const Processing = ref(0)
 const scanCount = ref(0)
+const fileSize = ref(100)
 const totalDirCount = ref(0)
 const totalFileCount = ref(0)
+const scanType = ref('size')
 
 const ScanPanData = NewScanDriver('')
 
@@ -65,7 +67,6 @@ const handleReset = () => {
 watch(userStore.$state, handleReset)
 
 const RefreshTree = (checkall: boolean) => {
-  
   const expandedkeys: string[] = []
   const checkedkeys: string[] = []
   let checkedsize = 0
@@ -85,14 +86,14 @@ const RefreshTree = (checkall: boolean) => {
     else if (checkall && node.icon != foldericonfn) {
       checkedkeys.push(node.key as string) 
       checkedsize += node.size
+      scanCount.value += 1
     }
   }
   Object.freeze(expandedkeys)
   expandedKeys.value = expandedkeys
   checkedKeys.value = checkedkeys
   checkedSize.value = checkedsize
-  checkedKeysBak = checkedkeys.concat() 
-  scanCount.value = checkedkeys.length
+  checkedKeysBak = checkedkeys.concat()
 }
 
 const handleDelete = () => {
@@ -104,15 +105,10 @@ const handleDelete = () => {
   delLoading.value = true
   AliFileCmd.ApiTrashBatch(user.user_id, user.default_drive_id, checkedKeys.value).then((success: string[]) => {
     delLoading.value = false
-    if (checkedKeys.value.length == checkedKeysBak.length) {
-      handleReset() 
-    } else {
-      
-      DeleteFromScanClean(ScanPanData, checkedKeys.value)
-      checkedKeys.value = []
-      checkedSize.value = 0
-      RefreshTree(false)
-    }
+    DeleteFromScanClean(ScanPanData, checkedKeys.value)
+    checkedKeys.value = []
+    checkedSize.value = 0
+    RefreshTree(false)
   })
 }
 
@@ -135,7 +131,6 @@ const handleScan = () => {
 
   const refresh = () => {
     if (scanLoading.value) {
-      
       RefreshTree(false)
       setTimeout(refresh, 3000)
     }
@@ -144,14 +139,12 @@ const handleScan = () => {
 
   LoadScanDir(user.user_id, user.default_drive_id, totalDirCount, Processing, ScanPanData)
     .then(() => {
-      
-      return GetCleanFile(user.user_id, ScanPanData, Processing, scanCount, totalFileCount, scanType.value)
+      return GetCleanFile(user.user_id, ScanPanData, Processing, scanCount, totalFileCount, scanType.value, fileSize.value)
     })
     .catch((err: any) => {
       message.error(err.message || '扫描失败')
     })
     .then(() => {
-      
       scanLoading.value = false
       RefreshTree(true)
       scanLoaded.value = true
@@ -159,7 +152,6 @@ const handleScan = () => {
     })
 }
 
-const scanType = ref('video')
 </script>
 
 <template>
@@ -199,6 +191,7 @@ const scanType = ref('video')
 
         <a-button v-if="scanLoaded" size="small" tabindex="-1" style="margin-right: 12px" @click="handleReset">取消</a-button>
         <a-select v-else v-model:model-value="scanType" size="small" tabindex="-1" style="width: 136px; flex-shrink: 0; margin-right: 12px" :disabled="scanLoading">
+          <a-option value="size">自定义</a-option>
           <a-option value="video">视频>1G</a-option>
           <a-option value="doc">文档>1G</a-option>
           <a-option value="zip">压缩包>1G</a-option>
@@ -207,6 +200,10 @@ const scanType = ref('video')
           <a-option value="size1000">全部>1G</a-option>
           <a-option value="size100">全部>100MB</a-option>
         </a-select>
+        <a-input-number v-if="scanType === 'size'" tabindex="-1" v-model="fileSize" size="small" style="width: 180px;margin-right: 10px" placeholder="文件大小" :min="100" :max="100000" :step="100">
+            <template #prefix>大于</template>
+            <template #suffix>MB</template>
+        </a-input-number>
         <a-button v-if="scanLoaded" type="primary" size="small" tabindex="-1" status="danger" :loading="delLoading" style="margin-right: 12px" title="把选中的文件放入回收站" @click="handleDelete">删除选中</a-button>
         <a-button v-else type="primary" size="small" tabindex="-1" :loading="scanLoading" @click="handleScan">开始扫描大文件</a-button>
       </a-row>

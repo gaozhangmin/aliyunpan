@@ -31,7 +31,7 @@ export default defineComponent({
     }
 
     const handleOK = () => {
-      menuDownload(props.istree)
+      menuDownload(props.istree, true)
       modalCloseAll()
     }
 

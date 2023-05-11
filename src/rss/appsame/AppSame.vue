@@ -50,7 +50,6 @@ const handleReset = () => {
 watch(userStore.$state, handleReset)
 
 const RefreshTree = () => {
-  
   let showData: FileNodeData[] = []
   const entries = ScanPanData.SameDirMap.entries()
   for (let i = 0, maxi = ScanPanData.SameDirMap.size; i < maxi; i++) {
@@ -110,7 +109,7 @@ const handleScan = () => {
   scanLoading.value = true
 
   const add = () => {
-    if (Processing.value < 50) {
+    if (Processing.value < 100) {
       Processing.value++
       setTimeout(add, 1500)
     }
@@ -119,7 +118,6 @@ const handleScan = () => {
 
   const refresh = () => {
     if (scanLoading.value) {
-      
       RefreshTree()
       setTimeout(refresh, 3000)
     }
@@ -128,15 +126,15 @@ const handleScan = () => {
 
   LoadScanDir(user.user_id, user.default_drive_id, totalDirCount, Processing, ScanPanData)
     .then(() => {
-      
       return GetSameFile(user.user_id, ScanPanData, Processing, scanCount, totalFileCount, scanType.value)
     })
     .catch((err: any) => {
       message.error(err.message)
+      Processing.value = 0
+      scanLoading.value = false
       return false
     })
     .then((data) => {
-      
       scanLoading.value = false
       RefreshTree()
       scanLoaded.value = data
@@ -178,8 +176,7 @@ const scanType = ref('all')
     <div class="settingcard scanauto" style="padding: 4px; margin-top: 4px">
       <a-row justify="space-between" align="center" style="margin: 12px; height: 28px; flex-grow: 0; flex-shrink: 0; flex-wrap: nowrap; overflow: hidden">
         <span v-if="scanLoaded" class="checkedInfo">已选中 {{ checkedCount }} 个文件 {{ humanSize(checkedSize) }}</span>
-
-        <span v-else-if="totalDirCount > 0" class="checkedInfo">正在列出文件 {{ Processing }} </span>
+        <span v-else-if="scanLoading" class="checkedInfo">正在列出文件 {{ Processing }} </span>
         <span v-else class="checkedInfo">手机APP--容量管理--重复文件清理(仅阿里云盘会员可用)</span>
         <div style="flex: auto"></div>
 

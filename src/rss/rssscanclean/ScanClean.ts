@@ -9,7 +9,7 @@ import { h, Ref } from 'vue'
 import { foldericonfn, IScanDriverModel, TreeNodeData } from '../ScanDAL'
 
 
-export async function GetCleanFile(user_id: string, PanData: IScanDriverModel, Processing: Ref<number>, scanCount: Ref<number>, totalFileCount: Ref<number>, scanType: string) {
+export async function GetCleanFile(user_id: string, PanData: IScanDriverModel, Processing: Ref<number>, scanCount: Ref<number>, totalFileCount: Ref<number>, scanType: string, fileSize?: number) {
   scanCount.value = 0
   const keys = PanData.DirMap.keys() 
   let dirList: IAliDirBatchResp[] = []
@@ -27,7 +27,7 @@ export async function GetCleanFile(user_id: string, PanData: IScanDriverModel, P
     if (dirList.length == 0) break
     if (!PanData.drive_id) break 
 
-    const isGet = await ApiBatchDirFileList(user_id, PanData.drive_id, dirList, scanType)
+    const isGet = await ApiBatchDirFileList(user_id, PanData.drive_id, dirList, scanType, fileSize)
     if (isGet) {
       const list: IAliDirBatchResp[] = []
       for (let i = 0, maxi = dirList.length; i < maxi; i++) {
@@ -87,14 +87,15 @@ export async function GetCleanFile(user_id: string, PanData: IScanDriverModel, P
   Processing.value = PanData.DirMap.size
 }
 
-async function ApiBatchDirFileList(user_id: string, drive_id: string, dirList: IAliDirBatchResp[], scanType: string) {
+async function ApiBatchDirFileList(user_id: string, drive_id: string, dirList: IAliDirBatchResp[], scanType: string, fileSize?: number) {
   if (!user_id || !drive_id || dirList.length == 0) return false
   let postData = '{"requests":['
   for (let i = 0, maxi = dirList.length; i < maxi; i++) {
     if (i > 0) postData = postData + ','
     
     let query = 'parent_file_id="' + dirList[i].dirID + '"'
-    if (scanType == 'size10') query += ' and size > 10485760'
+    if (scanType == 'size') query += ` and size > ${ 1048576 * (fileSize || 100)}`
+    else if (scanType == 'size10') query += ' and size > 10485760'
     else if (scanType == 'size100') query += ' and size > 104857600'
     else if (scanType == 'size1000') query += ' and size > 1048576000'
     else if (scanType == 'size5000') query += ' and size > 5242880000'

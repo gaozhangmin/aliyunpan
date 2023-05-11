@@ -43,7 +43,7 @@ export function handleUpload(uploadType: string) {
 }
 
 
-export function menuDownload(istree: boolean) {
+export function menuDownload(istree: boolean, tips: boolean = false) {
   const selectedData = PanDAL.GetPanSelectedData(istree)
   if (selectedData.isError) {
     message.error('下载操作失败 父文件夹错误')
@@ -66,11 +66,10 @@ export function menuDownload(istree: boolean) {
     const savePath = settingStore.AriaIsLocal ? settingStore.downSavePath : settingStore.ariaSavePath
     const savePathFull = settingStore.downSavePathFull
     const downSavePathDefault = settingStore.downSavePathDefault
-    if (downSavePathDefault && savePath) {
-      // 直接下载
+    !savePath && message.error('未设置保存路径')
+    if(downSavePathDefault || tips) {
       DownDAL.aAddDownload(files, savePath, savePathFull, true)
     } else {
-      message.error('未设置保存路径')
       modalDownload(istree)
     }
   } catch (err: any) {
