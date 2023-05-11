@@ -22,10 +22,12 @@ import { throttle } from '../utils/debounce'
 import ServerHttp from '../aliapi/server'
 import { Radio } from '@arco-design/web-vue';
 import Config from '../utils/config'
+import SponsorInfo from '../user/SponsorInfo.vue'
 
 
 
 const panVisible = ref(true)
+const InfoVisible = ref(false)
 const appStore = useAppStore()
 const winStore = useWinStore()
 const keyboardStore = useKeyboardStore()
@@ -34,6 +36,13 @@ const footStore = useFootStore()
 
 const handlePanVisible = () => {
   panVisible.value = !panVisible.value
+}
+const openInfoModal = () => {
+  InfoVisible.value = true
+}
+
+const closeInfoModal = () =>{
+  InfoVisible.value = false
 }
 
 const handleHideClick = (_e: any) => {
@@ -167,6 +176,7 @@ const handleCheckVer = () => {
         <ShutDown />
         <UserInfo />
         <UserLogin />
+        <SponsorInfo />
         <a-button type="text" tabindex="-1" title="设置 Alt+6" :class="appStore.appTab == 'setting' ? 'active' : ''" @click="appStore.toggleTab('setting')">
           <i class="iconfont iconsetting"></i>
         </a-button>
@@ -276,6 +286,26 @@ const handleCheckVer = () => {
 </template>
 
 <style>
+.modal {
+  /* 模态框的样式 */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* 半透明黑色背景 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  /* 模态框内容的样式 */
+  background-color: #fff;
+  padding: 20px;
+  text-align: center;
+}
+
 #xbyhead {
   z-index: 2;
   height: 42px !important;

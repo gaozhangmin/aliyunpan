@@ -1,7 +1,7 @@
 {
   "name": "xbyyunpan",
   "description": "小白羊云盘",
-  "version": "3.11.6",
+  "version": "3.11.5",
   "main": "dist/electron/main/index.js",
   "author": {
     "name": "gaozhangmin",

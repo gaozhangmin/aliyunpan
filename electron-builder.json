@@ -16,12 +16,11 @@
     "extraResources": [
       { "from": "./static/engine/darwin/${arch}", "to": "./engine" },
       { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
-      { "from": "./static/images/qrcode_1280.jpg", "to": "./images/qrcode_1280.jpg"},
+      { "from": "./public/images/qrcode_1280.jpg", "to": "./images/qrcode_1280.jpg"},
       { "from": "./static/crx", "to": "./crx"},
-      { "from": "./static/images/app.ico", "to": "."},
-      { "from": "./static/images/app.png", "to": "."},
-      { "from": "./static/images/icon.png", "to": "."},
-      { "from": "./static/images/icon.png", "to": "."}
+      { "from": "./static/images/app.ico", "to": "./images/app.ico"},
+      { "from": "./static/images/app.png", "to": "./images/app.png"},
+      { "from": "./static/images/icon.png", "to": "./images/icon.png"}
 
     ],
     "target": [
@@ -35,11 +34,11 @@
     "extraResources": [
       { "from": "./static/engine/linux/${arch}", "to": "./engine"},
       { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
-      { "from": "./static/images/qrcode_1280.jpg", "to": "./images/qrcode_1280.jpg"},
+      { "from": "./public/images/qrcode_1280.jpg", "to": "./images/qrcode_1280.jpg"},
       { "from": "./static/crx", "to": "./crx"},
-      { "from": "./static/images/app.ico", "to": "."},
-      { "from": "./static/images/app.png", "to": "."},
-      { "from": "./static/images/icon.png", "to": "."}
+      { "from": "./static/images/app.ico", "to": "./images/app.ico"},
+      { "from": "./static/images/app.png", "to": "./images/app.png"},
+      { "from": "./static/images/icon.png", "to": "./images/icon.png"}
     ],
     "target": [
       { "target": "AppImage", "arch": [  "x64", "arm64", "armv7l" ] },
@@ -52,11 +51,11 @@
     "extraResources": [
       { "from": "./static/engine/win32/${arch}", "to": "./engine"},
       { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
-      { "from": "./static/images/qrcode_1280.jpg", "to": "./images/qrcode_1280.jpg"},
+      { "from": "./public/images/qrcode_1280.jpg", "to": "./images/qrcode_1280.jpg"},
       { "from": "./static/crx", "to": "./crx"},
-      { "from": "./static/images/app.ico", "to": "."},
-      { "from": "./static/images/app.png", "to": "."},
-      { "from": "./static/images/icon.png", "to": "."}
+      { "from": "./static/images/app.ico", "to": "./images/app.ico"},
+      { "from": "./static/images/app.png", "to": "./images/app.png"},
+      { "from": "./static/images/icon.png", "to": "./images/icon.png"}
     ],
     "target": [
       { "target": "nsis", "arch": [ "x64", "ia32" ] },

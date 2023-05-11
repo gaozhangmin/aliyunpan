@@ -1,4 +1,4 @@
-import { getCrxPath, getResourcesPath, getStaticPath, getUserDataPath, mkAriaConf } from './mainfile'
+import {getCrxPath, getResourcesPath, getStaticPath, getUserDataPath, mkAriaConf} from './mainfile'
 import { release } from 'os'
 import { AppWindow, creatElectronWindow, createMainWindow, createTray, Referer, ShowError, ShowErrorAndExit, ua } from './window'
 import Electron, { nativeImage } from 'electron'
@@ -37,10 +37,9 @@ app.commandLine.appendSwitch('wm-window-animations-disabled')
 
 app.setAppUserModelId('gaozhangmin')
 app.name = 'alixby3'
-const downloadPageUrl = 'https://github.com/gaozhangmin/aliyunpan/releases'
+const downloadPageUrl = 'https://github.com/gaozhangmin/aliyunpan/releases/latest'
 const DEBUGGING = !app.isPackaged
-const staticBasePath = getStaticPath('images')
-const qrCodePath = path.join(staticBasePath, 'qrcode_1280.jpg')
+const qrCodePath = getStaticPath(path.join('images', 'qrcode_1280.jpg'))
 const qrCodeImage = nativeImage.createFromPath(qrCodePath);
 
 const userData = getResourcesPath('userdir.config')
@@ -103,7 +102,7 @@ app.setAboutPanelOptions({
   applicationName: '小白羊云盘',
   copyright: 'Zhangmin Gao',
   website: 'https://github.com/gaozhangmin/aliyunpan',
-  iconPath: getResourcesPath('app.png'),
+  iconPath: getStaticPath(path.join("images", "app.png")),
   applicationVersion: '30'
 })
 
@@ -147,21 +146,25 @@ ipcMain.on('WebUserToken', (event, data) => {
 // });
 
 
+ipcMain.on('CheckUpdate', () => {
+  checkForUpdates()
+});
+
 autoUpdater.setFeedURL({
   provider: 'github',
   owner: 'gaozhangmin',
-  repo: 'aliyunpan',
+  repo: 'aliyunpan_private',
 });
 
 function checkForUpdates() {
   autoUpdater.checkForUpdates().then((updateCheckResult) => {
     if (updateCheckResult && updateCheckResult.updateInfo.version !== autoUpdater.currentVersion.version) {
-      // 有新版本可用，显示提示框
+      //有新版本可用，显示提示框
       dialog.showMessageBox({
         type: 'question',
         buttons: ['Yes', 'No'],
         title: '应用有新版本可用',
-        message: '检测到新版本，请扫码获取最新版本',
+        message: `检测到新版本: ${updateCheckResult.updateInfo.version} , 扫码获取`,
         detail: '是否立即安装新版本？',
         icon: qrCodeImage
       }).then((result) => {
@@ -572,7 +575,7 @@ ipcMain.on('WebOpenUrl', (event, data) => {
     center: true,
     minWidth: 680,
     minHeight: 500,
-    icon: getResourcesPath('app.ico'),
+    icon: getStaticPath(path.join("images", "app.ico")),
     useContentSize: true,
     frame: true,
     hasShadow: true,

@@ -21,7 +21,7 @@ const handleCheckVer = () => {
 <template>
   <div class="settingcard">
     <div class="appver"></div>
-        <div class="settinghead">外观</div>
+        <div class="settinghead">检查更新</div>
         <div class="settingrow">
             <a-button type="outline" size="mini" tabindex="-1" :loading="verLoading" @click="handleCheckVer">检查更新</a-button>
         </div>
@@ -111,17 +111,17 @@ const handleCheckVer = () => {
 /*}*/
 
 .system-theme {
-  background-image: url('../../electron/assets/follow_button.png');
+  background-image: url('../../public/images/follow_button.png');
   background-color: #888;
 }
 
 .light-theme {
-  background-image: url('../../electron/assets/light_button.png');
+  background-image: url('../../public/images/light_button.png');
   background-color: #eee;
 }
 
 .dark-theme {
-  background-image: url('../../electron/assets/dark_button.png');
+  background-image: url('../../public/images/dark_button.png');
   background-color: #333;
 }
 .settinghead, .settingrow {
