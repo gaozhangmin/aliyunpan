@@ -1,7 +1,7 @@
 import { getCrxPath, getResourcesPath, getStaticPath, getUserDataPath, mkAriaConf } from './mainfile'
 import { release } from 'os'
 import { AppWindow, creatElectronWindow, createMainWindow, createTray, Referer, ShowError, ShowErrorAndExit, ua } from './window'
-import Electron from 'electron'
+import Electron, { nativeImage } from 'electron'
 import {execFile, SpawnOptions} from 'child_process'
 import { portIsOccupied } from './utils'
 import { app, BrowserWindow, dialog, Menu, MenuItem, ipcMain, shell, session } from 'electron'
@@ -39,6 +39,9 @@ app.setAppUserModelId('gaozhangmin')
 app.name = 'alixby3'
 const downloadPageUrl = 'https://github.com/gaozhangmin/aliyunpan/releases'
 const DEBUGGING = !app.isPackaged
+const staticBasePath = getStaticPath('images')
+const qrCodePath = path.join(staticBasePath, 'qrcode_1280.jpg')
+const qrCodeImage = nativeImage.createFromPath(qrCodePath);
 
 const userData = getResourcesPath('userdir.config')
 try {
@@ -158,8 +161,9 @@ function checkForUpdates() {
         type: 'question',
         buttons: ['Yes', 'No'],
         title: '应用有新版本可用',
-        message: '是否立即安装新版本？',
-        detail: '新版本已经准备好，是否立即安装？',
+        message: '检测到新版本，请扫码获取最新版本',
+        detail: '是否立即安装新版本？',
+        icon: qrCodeImage
       }).then((result) => {
         // 根据用户选择的按钮执行相应操作
         if (result.response === 0) {
