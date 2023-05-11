@@ -7,7 +7,7 @@ const appStore = useAppStore()
 
 const switchValues = [
   { key: 'allpic', title: '全部照片', alt: '' },
-  { key: 'xiangce', title: '我的相册', alt: '' }
+  { key: 'xiangce', title: '我的相簿', alt: '' }
 ]
 </script>
 
