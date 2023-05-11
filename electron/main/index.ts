@@ -144,10 +144,6 @@ ipcMain.on('WebUserToken', (event, data) => {
 // });
 
 
-ipcMain.on('CheckUpdate', () => {
-  checkForUpdates()
-});
-
 autoUpdater.setFeedURL({
   provider: 'github',
   owner: 'gaozhangmin',

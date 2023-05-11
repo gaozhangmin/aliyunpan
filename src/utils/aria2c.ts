@@ -218,6 +218,10 @@ export async function CreatLocalAria2c(aria2cPath:string, aria2cConfPath:string)
 async function relaunchLocalAria(port:number) {
   CloseRemote()
   try {
+    if (Aria2EngineLocal !== undefined) {
+      Aria2EngineLocal.close()
+      Aria2EngineLocal = undefined
+    }
     const options = { host: '127.0.0.1', port, secure: false, secret: localPwd, path: '/jsonrpc' }
     Aria2EngineLocal = new Aria2({ WebSocket: global.WebSocket, fetch: global.fetch, ...options })
     await Sleep(500)
@@ -241,7 +245,6 @@ async function relaunchLocalAria(port:number) {
         SetAriaOnline(false, 'local')
       }
     })
-
 
     if (!IsAria2cOnlineLocal) {
       const url = '127.0.0.1:16800 secret=' + localPwd
