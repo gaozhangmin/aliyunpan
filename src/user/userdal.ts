@@ -9,7 +9,7 @@ import {
   useMyFollowingStore,
   useOtherFollowingStore,
   useAppStore,
-  useFootStore
+  useFootStore, useSettingStore
 } from '../store'
 import PanDAL from '../pan/pandal'
 import DebugLog from '../utils/debuglog'
@@ -214,8 +214,14 @@ export default class UserDAL {
 
     PanDAL.aReLoadDrive(token.user_id, token.default_drive_id)
     PanDAL.aReLoadQuickFile(token.user_id)
-    // PanDAL.aReLoadDirSizeFromDB(token.user_id, token.pic_drive_id)
-    // PanDAL.GetAllDirList(token.user_id, token.pic_drive_id)
+    if (token.user_id && useSettingStore().uiLaunchAutoSign) {
+      const signInCount = await DB.getValueNumber('uiAutoSign')
+      if (signInCount !== new Date().getDay()) {
+        await this.UserSign(token.user_id).then(async signInCount => {
+          signInCount != -1 && await DB.saveValueNumber('uiAutoSign', signInCount)
+        })
+      }
+    }
 
     message.success('加载用户成功!', 2, loadingKey)
   }
@@ -300,10 +306,10 @@ export default class UserDAL {
     }
   }
 
-  static async UserSign(user_id: string): Promise<boolean> {
+  static async UserSign(user_id: string): Promise<number> {
     const token = UserDAL.GetUserToken(user_id)
     if (!token || !token.access_token) {
-      return false
+      return -1
     }
     return AliUser.ApiUserSign(token)
   }

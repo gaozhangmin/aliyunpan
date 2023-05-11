@@ -3,7 +3,6 @@ import { getAsarPath, getResourcesPath, getUserDataPath } from './mainfile'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 
 const DEBUGGING = !app.isPackaged
-const DEVTOOL = DEBUGGING
 
 export const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36 Edg/102.0.1245.33'
 export const Referer = 'https://www.aliyundrive.com/'
@@ -216,7 +215,7 @@ export function createTray() {
 
 export function creatUpload() {
   if (AppWindow.uploadWindow && AppWindow.uploadWindow.isDestroyed() == false) return
-  AppWindow.uploadWindow = creatElectronWindow(10, 10, false, 'main', 'dark')
+  AppWindow.uploadWindow = creatElectronWindow(10, 10, false, 'main', 'dark', false)
 
   AppWindow.uploadWindow.on('ready-to-show', function () {
     creatUploadPort()
@@ -238,7 +237,7 @@ export function creatUpload() {
 
 export function creatDownload() {
   if (AppWindow.downloadWindow && AppWindow.downloadWindow.isDestroyed() == false) return
-  AppWindow.downloadWindow = creatElectronWindow(10, 10, false, 'main', 'dark')
+  AppWindow.downloadWindow = creatElectronWindow(10, 10, false, 'main', 'dark', false)
 
   AppWindow.downloadWindow.on('ready-to-show', function () {
     creatDownloadPort()
@@ -260,7 +259,7 @@ export function creatDownload() {
   AppWindow.downloadWindow.hide()
 }
 
-export function creatElectronWindow(width: number, height: number, center: boolean, page: string, theme: string) {
+export function creatElectronWindow(width: number, height: number, center: boolean, page: string, theme: string, devTools: boolean = true) {
   const win = new BrowserWindow({
     show: false,
     width: width,
@@ -277,7 +276,7 @@ export function creatElectronWindow(width: number, height: number, center: boole
     backgroundColor: theme && theme == 'dark' ? '#23232e' : '#ffffff',
     webPreferences: {
       spellcheck: false,
-      devTools: DEVTOOL,
+      devTools: DEBUGGING,
       webviewTag: true,
       nodeIntegration: true,
       nodeIntegrationInWorker: true,
@@ -302,10 +301,10 @@ export function creatElectronWindow(width: number, height: number, center: boole
     })
   }
 
-  if (DEVTOOL) {
+  if (DEBUGGING && devTools) {
     if (width < 100) win.setSize(800, 600)
     win.show()
-    win.webContents.openDevTools()
+    win.webContents.openDevTools({ mode: 'detach' })
   } else {
     win.webContents.on('devtools-opened', () => {
       if (win) win.webContents.closeDevTools()

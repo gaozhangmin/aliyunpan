@@ -57,6 +57,11 @@ const handleCheckVer = () => {
         <MySwitch :value="settingStore.launchAtStartup" @update:value="cb({ launchAtStartup: $event })"></MySwitch>
     </div>
   </div>
+  <div class="settingspace"></div>
+  <div class="settinghead">:启动时自动签到</div>
+  <div class="settingrow">
+      <MySwitch :value="settingStore.uiLaunchAutoSign" @update:value="cb({ uiLaunchAutoSign: $event })">自动签到</MySwitch>
+  </div>
 </template>
 
 <style scoped>

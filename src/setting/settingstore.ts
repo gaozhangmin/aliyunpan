@@ -32,7 +32,7 @@ export interface SettingState {
 
   launchAtStartup:boolean
 
-
+  uiLaunchAutoSign: boolean
 
   uiFolderSize: boolean
 
@@ -171,6 +171,7 @@ const setting: SettingState = {
   uiShareFormate: '「NAME」URL\n提取码: PWD',
   uiXBTNumber: 36,
   uiXBTWidth: 960,
+  uiLaunchAutoSign: false,
   uiFileListOrder: 'name asc',
   uiFileListMode: 'list',
   uiFileColorArray: [
@@ -308,6 +309,7 @@ function _loadSetting(val: any) {
   setting.localAria2cPath = defaultString(val.localAria2cPath, '')
   setting.localAria2cConfPath = defaultString(val.localAria2cConfPath, '')
   setting.ffmpegPath = defaultString(val.ffmpegPath, '')
+  setting.uiLaunchAutoSign = defaultBool(val.uiLaunchAutoSign, false)
 }
 let settingstr = ''
 

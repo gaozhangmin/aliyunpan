@@ -6,12 +6,9 @@ import AliFile from '../aliapi/file'
 import { useAppStore } from '../store'
 import { onBeforeUnmount, onMounted } from 'vue'
 import { ICompilationList, IVideoPreviewUrl } from '../aliapi/models'
-import { SettingOption } from "artplayer/types/setting"
 import AliDirFileList from '../aliapi/dirfilelist'
+import { type SettingOption } from 'artplayer/types/setting'
 
-/**
- * @type {import("artplayer")}
- */
 const appStore = useAppStore()
 const pageVideo = appStore.pageVideo!
 let ArtPlayerRef: Artplayer
