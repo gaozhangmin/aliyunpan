@@ -619,7 +619,7 @@ async function startAria2c() {
       return 0
     }
     // process.chdir(basePath)
-    const options:SpawnOptions = { shell: true, windowsVerbatimArguments: true }
+    const options:SpawnOptions = { cwd: basePath, shell: true, windowsVerbatimArguments: true }
     const port = await portIsOccupied(16800)
     const subprocess = execFile(
        '\"'+ ariaFullPath + '\"',
