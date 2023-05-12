@@ -153,7 +153,7 @@ ipcMain.on('CheckUpdate', () => {
 autoUpdater.setFeedURL({
   provider: 'github',
   owner: 'gaozhangmin',
-  repo: 'aliyunpan_private',
+  repo: 'aliyunpan',
 });
 
 function checkForUpdates() {
