@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
 import DebugLog from '../utils/debuglog'
 import { getResourcesPath, getUserDataPath } from '../utils/electronhelper'
-import { useAppStore } from '../store'
+import {useAppStore, useUserStore} from '../store'
 import PanDAL from '../pan/pandal'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
+import UserDAL from "../user/userdal";
+import DB from "../utils/db";
 
 declare type ProxyType = 'none' | 'http' | 'https' | 'socks4' | 'socks4a' | 'socks5' | 'socks5h'
 
@@ -395,7 +397,6 @@ const useSettingStore = defineStore('setting', {
     updateStore(partial: Partial<SettingState>) {
       if (partial.uiTimeFolderFormate) partial.uiTimeFolderFormate = partial.uiTimeFolderFormate.replace('mm-dd', 'MM-dd').replace('HH-MM', 'HH-mm')
       this.$patch(partial)
-      console.log("uiLaunchAutoSign", this.uiLaunchAutoSign)
       if (Object.hasOwn(partial, 'uiLaunchStart') || Object.hasOwn(partial, 'uiLaunchStartShow')) {
         window.WebToElectron({ cmd: { launchStartUp: this.uiLaunchStart, launchStartUpShow: this.uiLaunchStartShow } })
       }
@@ -405,6 +406,9 @@ const useSettingStore = defineStore('setting', {
       // if (Object.hasOwn(partial, 'launchAtStartup')) {
       //   window.AutoLanuchAtStartup({launchAtStartup: setting.launchAtStartup})
       // }
+      if (Object.hasOwn(partial, 'uiLaunchAutoSign') && this.uiLaunchAutoSign) {
+        UserDAL.UserSign(useUserStore().user_id)
+      }
       if (Object.hasOwn(partial, 'uiTheme')) {
         useAppStore().toggleTheme(setting.uiTheme)
       }

@@ -164,7 +164,7 @@ function checkForUpdates() {
         type: 'question',
         buttons: ['Yes', 'No'],
         title: '应用有新版本可用',
-        message: `检测到新版本: ${updateCheckResult.updateInfo.version} , 扫码获取`,
+        message: `检测到新版本: ${updateCheckResult.updateInfo.version} , 扫码关注小白羊网盘获取`,
         detail: '是否立即安装新版本？',
         icon: qrCodeImage
       }).then((result) => {

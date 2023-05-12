@@ -166,7 +166,7 @@ const handleCheckVer = () => {
 
         <a-menu mode="horizontal" :selected-keys="[appStore.appTab]" @update:selected-keys="appStore.toggleTab($event[0])">
           <a-menu-item key="pan" title="Alt+1">网盘</a-menu-item>
-          <a-menu-item key="pic" title="Alt+2">相册</a-menu-item>
+<!--          <a-menu-item key="pic" title="Alt+2">相册</a-menu-item>-->
           <a-menu-item key="down" title="Alt+3">传输</a-menu-item>
           <a-menu-item key="share" title="Alt+4">分享</a-menu-item>
           <a-menu-item key="rss" title="Alt+5">插件</a-menu-item>
