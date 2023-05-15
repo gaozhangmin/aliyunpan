@@ -30,7 +30,7 @@
     "@vitejs/plugin-vue-jsx": "^2.0.1",
     "ant-design-vue": "^3.2.12",
     "aria2-lib": "1.0.1",
-    "artplayer": "^5.0.6",
+    "artplayer": "^5.0.9",
     "axios": "^0.27.2",
     "crypto-js": "^4.1.1",
     "dayjs": "^1.11.5",

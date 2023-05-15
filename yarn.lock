@@ -521,13 +521,6 @@
   resolved "https://registry.npmjs.org/@types/estree/-/estree-1.0.0.tgz"
   integrity sha512-WulqXMDUTYAXCjZnk6JtIHPigp55cVtDgDrO2gHRwhyJto21+1zbVCtOYB2L1F9w4qCQ0rOGWBnBe0FNTiEJIQ==
 
-"@types/fluent-ffmpeg@^2.1.21":
-  version "2.1.21"
-  resolved "https://registry.npmmirror.com/@types/fluent-ffmpeg/-/fluent-ffmpeg-2.1.21.tgz#8f2f80370d36b09cae9c144cf9283f40c8cb7bfc"
-  integrity sha512-+n3dy/Tegt6n+YwGZUiGq6i8Jrnt8+MoyPiW1L6J5EWUl7GSt18a/VyReecfCsvTTNBXNMIKOMHDstiQM8nJLA==
-  dependencies:
-    "@types/node" "*"
-
 "@types/fs-extra@^9.0.11":
   version "9.0.13"
   resolved "https://registry.npmmirror.com/@types/fs-extra/-/fs-extra-9.0.13.tgz"
@@ -947,10 +940,10 @@ array-tree-filter@^2.1.0:
   resolved "https://registry.npmmirror.com/array-tree-filter/-/array-tree-filter-2.1.0.tgz"
   integrity sha512-4ROwICNlNw/Hqa9v+rk5h22KjmzB1JGTMVKP2AKJBOCgb0yL0ASf0+YvCcLNNwquOHNX48jkeZIJ3a+oOQqKcw==
 
-artplayer@^5.0.6:
-  version "5.0.6"
-  resolved "https://registry.npmmirror.com/artplayer/-/artplayer-5.0.6.tgz#a8e605e4b1731cea026a8587df5eb58302aa047d"
-  integrity sha512-GHmtNC/edMtBRQQ74REFL6KsvB1mk/BMh0frsB5eqlVeUEUbUzbgeqVoPH2R1IkoNZVIqQSvMd+sD5IuIKjIUQ==
+artplayer@^5.0.9:
+  version "5.0.9"
+  resolved "https://registry.npmmirror.com/artplayer/-/artplayer-5.0.9.tgz#bb1a5d3fd9b28aef94b8a0de679332a9520f805b"
+  integrity sha512-IM/DShYdmKFEA9jl08LYbTK2Jfz9s7qIjEH0xWjnxvVArUKZZKcoqwr6i54U0c4grtc/Uvb4wtCd78kvtSVlgw==
   dependencies:
     option-validator "^2.0.6"
 
