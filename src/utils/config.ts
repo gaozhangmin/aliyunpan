@@ -11,4 +11,6 @@ export default class Config {
   static listFile = 'adrive/v1.0/openFile/list'
   static recentPlayListUrl = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/video/recentList'
   static tmpUrl = 'https://api.nn.ci/alist/ali_open/token'
+  static tmpQrCodeUrl = 'https://api.nn.ci/alist/ali_open/qr'
+  static tokenUrl = 'https://api.nn.ci/alist/ali_open/code'
 }
