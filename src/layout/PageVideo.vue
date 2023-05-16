@@ -11,7 +11,7 @@ import { type SettingOption } from 'artplayer/types/setting'
 
 const appStore = useAppStore()
 const pageVideo = appStore.pageVideo!
-let autoPlayNumber = 0
+let autoNextPlayNumber = 0
 let ArtPlayerRef: Artplayer
 
 const options = {
@@ -112,6 +112,7 @@ const createVideo = async (name: string) => {
   })
   // 获取用户配置
   const storage = ArtPlayerRef.storage
+  if (!storage.get('curDirList')) storage.set('curDirList', true)
 
   const volume = storage.get('videoVolume')
   if (volume) ArtPlayerRef.volume = parseFloat(volume)
@@ -120,39 +121,53 @@ const createVideo = async (name: string) => {
   // 视频播放完毕
   ArtPlayerRef.on('video:ended', () => {
     updateVideoTime()
-    if (storage.get('autoPlayNext') === 'true') {
-        const autoPlayNext = () => {
-            const item = playList[++autoPlayNumber]
-            if (autoPlayNumber >= playList.length) {
-                ArtPlayerRef.notice.show = '视频播放完毕'
-                return
-            }
-            if (item.file_id !== pageVideo.file_id) {
-                refreshSetting(ArtPlayerRef, item)
-                getVideoPlayList(ArtPlayerRef, item.file_id)
-            } else {
-                autoPlayNext()
-            }
-        }
+    const autoPlayNext = () => {
+      const currentVideoIndex = getCurrentVideoIndex();
+      if (currentVideoIndex + 1 >= playList.length) {
+        ArtPlayerRef.notice.show = '视频播放完毕'
+        return
+      }
+      const item = playList[currentVideoIndex + 1]
+      if (item.file_id !== pageVideo.file_id) {
+        refreshSetting(ArtPlayerRef, item)
+        getVideoPlayList(ArtPlayerRef, item.file_id)
+      } else {
         autoPlayNext()
+      }
     }
-})
+    autoPlayNext()
+  })
+  // 视频跳转
+  ArtPlayerRef.on('ready', () => {
+    ArtPlayerRef.seek = storage.get('autoSkip')
+  })
 // 视频跳转
-ArtPlayerRef.on('video:seeked', () => {
+  ArtPlayerRef.on('video:seeked', () => {
     updateVideoTime()
-})
+  })
 // 播放已暂停
-ArtPlayerRef.on('video:pause', () => {
+  ArtPlayerRef.on('video:pause', () => {
     updateVideoTime()
-})
+  })
 // 音量发生变化
-ArtPlayerRef.on('video:volumechange', () => {
+  ArtPlayerRef.on('video:volumechange', () => {
     storage.set('videoVolume', ArtPlayerRef.volume)
     storage.set('videoMuted', ArtPlayerRef.muted ? 'true' : 'false')
-})
+  })
+
+  ArtPlayerRef.on('video:timeupdate', () => {
+    const totalDuration = pageVideo.duration
+    const endDuration = storage.get('autoSkipEnd')
+    if (totalDuration
+        && totalDuration - ArtPlayerRef.currentTime > 0
+        && totalDuration - ArtPlayerRef.currentTime <= endDuration) {
+      console.log("autoSkipEnd")
+      ArtPlayerRef.seek = totalDuration
+    }
+  });
 }
 
-const getCurDirList = async (parent_file_id: string, filter?: RegExp): Promise<any[]> => {
+const getCurDirList = async (parent_file_id: string, category: string = '', filter?: RegExp): Promise<any[]> => {
   const dir = await AliDirFileList.ApiDirFileList(pageVideo.user_id, pageVideo.drive_id, parent_file_id, '', 'name asc', '')
   const fileList: any[] = []
   if (!dir.next_marker) {
@@ -160,18 +175,24 @@ const getCurDirList = async (parent_file_id: string, filter?: RegExp): Promise<a
       let fileModel = dir.items[i]
       if (fileModel.isDir) continue
       else fileList.push({
-        html: '在线:  ' + fileModel.name,
+        html: (category ? '' : '在线:  ') + fileModel.name,
+        category: fileModel.category,
         name: fileModel.name,
         file_id: fileModel.file_id,
         ext: fileModel.ext
       })
     }
   }
+  if (category) {
+    return fileList.filter(file => file.category === category)
+  }
   return filter ? fileList.filter(file => filter.test(file.ext)) : fileList
 }
 
 
+
 const refreshSetting = async (art: Artplayer, item: selectorItem) => {
+  if (pageVideo.file_id === item.file_id) return
   // 刷新文件
   pageVideo.file_name = item.html
   pageVideo.file_id = item.file_id || ''
@@ -180,31 +201,53 @@ const refreshSetting = async (art: Artplayer, item: selectorItem) => {
 }
 
 const defaultSetting = async (art: Artplayer) => {
+  art.setting.add(
+      {
+        name: 'autoSkipBegin',
+        width: 250,
+        html: '跳过片头',
+        tooltip:  art.storage.get('autoSkipBegin') + 's',
+        range: [0, 0, 10, 1],
+        onChange(item: SettingOption) {
+          art.storage.set('autoSkipBegin', item.range*10)
+          return item.range*10 + 's'
+        }
+      }
+  )
+  art.setting.add(
+      {
+        name: 'autoSkipEnd',
+        width: 250,
+        html: '跳过片尾',
+        tooltip: art.storage.get('autoSkipEnd') + 's',
+        range: [0, 0, 10, 1],
+        onChange(item: SettingOption) {
+          art.storage.set('autoSkipEnd', item.range*10)
+          return item.range*10 + 's'
+        }
+      }
+  )
   art.setting.add({
-    name: 'autoPlayNext',
+    name: 'playListMode',
     width: 250,
-    html: '自动连播',
-    tooltip: '关闭',
-    switch: false,
-    onSwitch: (item: SettingOption) => {
-      item.tooltip = item.switch ? '关闭' : '开启'
-      art.subtitle.show = !item.switch
-      art.notice.show = '自动连播' + item.tooltip
-      art.storage.set('autoPlayNext', item.switch ? 'false' : 'true')
-      return !item.switch
+    html: '列表模式',
+    tooltip: art.storage.get('curDirList') ? '同文件夹' : '同专辑',
+    selector: [
+      {
+        default: true,
+        html: '同文件夹',
+      },
+      {
+        html: '同专辑',
+      }
+    ],
+    onSelect: async (item: SettingOption) => {
+      item.tooltip = item.html
+      art.storage.set('curDirList', item.html === '同文件夹')
+      await getVideoPlayList(art)
+      return item.html
     }
   })
-	art.setting.add({
-		name: 'autoSkip',
-		width: 250,
-		html: '跳过头尾',
-		tooltip: '0s',
-		range: [0, 0, 100, 1],
-		onChange(item: SettingOption) {
-			art.storage.set('autoSkip', item.range)
-			return item.range + 's'
-		}
-	})
 }
 
 const getVideoInfo = async (art: Artplayer, play_cursor?: number) => {
@@ -212,6 +255,7 @@ const getVideoInfo = async (art: Artplayer, play_cursor?: number) => {
   const data: IVideoPreviewUrl | undefined =
     await AliFile.ApiVideoPreviewUrl(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id)
   if (data) {
+    pageVideo.duration = data.duration
     // 画质
     const qualitySelector: selectorItem[] = []
     if (data.urlQHD) qualitySelector.push({ url: data.urlQHD, html: '原画' })
@@ -240,19 +284,31 @@ const getVideoInfo = async (art: Artplayer, play_cursor?: number) => {
   }
 }
 
-const playList: selectorItem[] = []
+let playList: selectorItem[] = []
+
+const getCurrentVideoIndex = () => {
+  return playList.findIndex((item) => item.file_id === pageVideo.file_id)
+}
 const getVideoPlayList = async (art: Artplayer, file_id?: string) => {
   if (!file_id) {
-    const data: ICompilationList[] | undefined = await AliFile.ApiListByFileInfo(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id, 100)
-    if (data && data.length > 1) {
-      for (let i = 0; i < data.length; i++) {
+    let fileList: any
+    if (!art.storage.get('curDirList')) {
+      fileList = await AliFile.ApiListByFileInfo(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id, 100)
+      console.log(" AliFile.ApiListByFileInfo", fileList)
+    } else {
+      fileList = await getCurDirList(pageVideo.parent_file_id, 'video') || []
+      console.log("getCurDirList", fileList)
+    }
+    playList = []
+    if (fileList && fileList.length > 1) {
+      for (let i = 0; i < fileList.length; i++) {
         playList.push({
-          url: data[i].url,
-          html: data[i].name,
-          name: data[i].name,
-          file_id: data[i].file_id,
-          play_cursor: data[i].play_cursor,
-          default: i == 0
+          url: fileList[i].url,
+          html: fileList[i].name,
+          name: fileList[i].name,
+          file_id: fileList[i].file_id,
+          play_cursor: fileList[i].play_cursor,
+          default: fileList[i].file_id === pageVideo.file_id
         })
       }
     }
@@ -264,16 +320,12 @@ const getVideoPlayList = async (art: Artplayer, file_id?: string) => {
       }
     }
   }
-  let file_name = ''
-  if(pageVideo.file_name.length > 30) {
-    file_name = pageVideo.file_name.substring(0, 30) + '...'
-  }
   art.controls.update({
     name: 'playList',
     index: 10,
     position: 'right',
     style: { padding: '0 10px' },
-    html: file_name,
+    html: pageVideo.file_name.length > 20 ? pageVideo.file_name.substring(0, 20) + '...' : pageVideo.file_name,
     selector: playList,
     onSelect: async (item: selectorItem) => {
       await refreshSetting(art, item)
@@ -287,13 +339,27 @@ const getVideoCursor = async (art: Artplayer, play_cursor?: number) => {
     art.currentTime = play_cursor
   } else {
     const info = await AliFile.ApiFileInfoOpenApi(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id)
+    const autoSkipBegin  = art.storage.get('autoSkipBegin')
+    console.log("autoSkipBegin", autoSkipBegin)
     if (info?.play_cursor) {
-      art.currentTime = info?.play_cursor
+      if (autoSkipBegin > info?.play_cursor) {
+        art.currentTime = autoSkipBegin
+      } else {
+        art.currentTime = info?.play_cursor
+      }
     } else if (info?.user_meta) {
       const meta = JSON.parse(info?.user_meta)
       if (meta.play_cursor) {
-        art.currentTime = parseFloat(meta.play_cursor)
+        if (parseFloat(meta.play_cursor) > autoSkipBegin) {
+          art.currentTime = parseFloat(meta.play_cursor)
+        } else {
+          art.currentTime = autoSkipBegin
+        }
+      } else {
+        art.currentTime = autoSkipBegin
       }
+    } else {
+      art.currentTime = autoSkipBegin
     }
   }
   await art.play()
@@ -317,7 +383,7 @@ const getSubTitleList = async (art: Artplayer, subtitles: { language: string; ur
     Artplayer.utils.setStyle(subtitle, 'fontSize', subtitleSize)
   }
   // 尝试加载当前文件夹字幕文件
-  const dir = await getCurDirList(pageVideo.parent_file_id, /srt|vtt|ass/) || []
+  const dir = await getCurDirList(pageVideo.parent_file_id, '',/srt|vtt|ass/) || []
   subSelector.push(...dir)
   subSelector.length === 0 && subSelector.push({ html: '无可用字幕', name: '', url: '', default: true })
   const subDefault = subSelector.find((item) => item.default) || subSelector[0]
@@ -372,17 +438,6 @@ const getSubTitleList = async (art: Artplayer, subtitles: { language: string; ur
           return size
         }
       },
-      // {
-      //   html: '自定义',
-      //   tooltip: '当前文件夹',
-      //   switch: true,
-      //   onSwitch: (item: SettingOption) => {
-      //     const nextState = item.switch
-      //     selectPanDirVisible.value = nextState
-      //     item.tooltip = nextState ? '自定义文件夹' : '当前文件夹'
-      //     return !nextState
-      //   }
-      // },
       ...subSelector
     ],
     onSelect: async (item: SettingOption, element: HTMLDivElement) => {
@@ -415,27 +470,22 @@ const getSubTitleList = async (art: Artplayer, subtitles: { language: string; ur
 }
 
 const updateVideoTime = () => {
-    return AliFile.ApiUpdateVideoTimeOpenApi(
-        pageVideo.user_id,
-        pageVideo.drive_id,
-        pageVideo.file_id,
-        ArtPlayerRef.currentTime
-    )
+  return AliFile.ApiUpdateVideoTimeOpenApi(
+    pageVideo.user_id,
+    pageVideo.drive_id,
+    pageVideo.file_id,
+    ArtPlayerRef.currentTime
+  )
 }
 const handleHideClick = () => {
-    updateVideoTime().then(() => {
-        window.close()
-    })
+  updateVideoTime().then(() => {
+    window.close()
+  })
 }
 
 onBeforeUnmount(() => {
-    ArtPlayerRef && ArtPlayerRef.destroy(false)
+  ArtPlayerRef && ArtPlayerRef.destroy(false)
 })
-
-onBeforeUnmount(() => {
-    ArtPlayerRef && ArtPlayerRef.destroy(false)
-})
-
 
 
 </script>
