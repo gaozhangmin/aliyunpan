@@ -314,7 +314,7 @@ export function creatElectronWindow(width: number, height: number, center: boole
   if (DEBUGGING && devTools) {
     if (width < 100) win.setSize(800, 600)
     win.show()
-    win.webContents.openDevTools({ mode: 'detach' })
+    win.webContents.openDevTools()
   } else {
     win.webContents.on('devtools-opened', () => {
       if (win) win.webContents.closeDevTools()

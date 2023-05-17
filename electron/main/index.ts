@@ -164,7 +164,7 @@ function checkForUpdates() {
         type: 'question',
         buttons: ['Yes', 'No'],
         title: '应用有新版本可用',
-        message: `检测到新版本: ${updateCheckResult.updateInfo.version} , 扫码关注小白羊网盘获取`,
+        message: `检测到新版本: ${updateCheckResult.updateInfo.version} , 扫码关注小白羊网盘下载更新`,
         detail: '是否立即安装新版本？',
         icon: qrCodeImage
       }).then((result) => {
@@ -176,7 +176,6 @@ function checkForUpdates() {
     }
   }).catch((error) => {
     // 更新检查失败
-    ShowError('更新检查失败', error);
   });
 }
 
@@ -440,6 +439,8 @@ ipcMain.on('WebExecSync', (event, data) => {
 
     const finalCmd = cmdArguments.join(' ')
 
+    console.log(finalCmd)
+
     exec(finalCmd, (err: any) => {
       event.returnValue = err
     })
@@ -622,7 +623,7 @@ async function startAria2c() {
       return 0
     }
     // process.chdir(basePath)
-    const options:SpawnOptions = { cwd: basePath, shell: true, windowsVerbatimArguments: true }
+    const options = { shell: true, windowsVerbatimArguments: true }
     const port = await portIsOccupied(16800)
     const subprocess = execFile(
        '\"'+ ariaFullPath + '\"',
