@@ -9,9 +9,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gaozhangmin/staticResource/blob/master/images/wechat_public_account.png" target="_blank">
+<!--   <a href="https://github.com/gaozhangmin/staticResource/blob/master/images/wechat_public_account.png" target="_blank">
     <img src="https://img.shields.io/badge/-微信关注“小白羊网盘”公众号-orange.svg" alt="#" align="right">
-  </a>
+  </a> -->
   <a href="LICENSE" target="_blank">
     <img alt="MIT License" src="https://img.shields.io/github/license/gaozhangmin/aliyunpan?style=flat-square&logoColor=white" />
   </a>
@@ -33,9 +33,20 @@
   <a href="https://github.com/gaozhangmin/aliyunpan/releases" target="_blank">
     <img alt="Linux" src="https://img.shields.io/badge/-Linux-yellow?style=flat-square&logo=linux&logoColor=white" />
   </a>  
+
+  <a href="https://github.com/gaozhangmin/aliyunpan/stargazers" target="_blank">
+    <img alt="Star" src="https://img.shields.io/github/stars/gaozhangmin/aliyunpan?style=social" />
+  </a>
+
+  <a href="https://github.com/gaozhangmin/aliyunpan/releases/latest" target="_blank">
+    <img alt="Star" src="https://img.shields.io/github/downloads/gaozhangmin/aliyunpan/total?style=social" />
+  </a>
+
 </p>
 
-[![](https://img.shields.io/badge/-%E5%8A%9F%E8%83%BD-blue)](#功能-) [![](https://img.shields.io/badge/-%E7%95%8C%E9%9D%A2-blue)](#界面-) [![](https://img.shields.io/badge/-%E5%AE%89%E8%A3%85-blue)](#安装-) [![](https://img.shields.io/badge/-%E4%BA%A4%E6%B5%81%E7%A4%BE%E5%8C%BA-blue)](#交流社区-) [![](https://img.shields.io/badge/-%E9%B8%A3%E8%B0%A2-blue)](#鸣谢-) [![](https://img.shields.io/badge/-%E8%AF%B7%E5%96%9D%E5%92%96%E5%95%A1-blue)](#请作者喝一杯咖啡-) [![](https://img.shields.io/badge/-Star-blue)](#Star-) [![](https://img.shields.io/badge/-%E5%A3%B0%E6%98%8E-blue)](#免责声明-)
+
+[![](https://img.shields.io/badge/-%E5%8A%9F%E8%83%BD-blue)](#功能-) [![](https://img.shields.io/badge/-%E7%95%8C%E9%9D%A2-blue)](#界面-) [![](https://img.shields.io/badge/-%E5%AE%89%E8%A3%85-blue)](#安装-) [![](https://img.shields.io/badge/-%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7-blue)](#小白羊公众号-) [![](https://img.shields.io/badge/-%E4%BA%A4%E6%B5%81%E7%A4%BE%E5%8C%BA-blue)](#交流社区-) [![](https://img.shields.io/badge/-%E9%B8%A3%E8%B0%A2-blue)](#鸣谢-) [![](https://img.shields.io/badge/-%E8%AF%B7%E5%96%9D%E5%92%96%E5%95%A1-blue)](#请作者喝一杯咖啡-) [![](https://img.shields.io/badge/-Star-blue)](#Star-) [![](https://img.shields.io/badge/-%E5%A3%B0%E6%98%8E-blue)](#免责声明-)
+
 
 # 功能 [![](https://img.shields.io/badge/-%E5%8A%9F%E8%83%BD-blue)](#功能-)
 1.根据阿里云盘Open平台api开发的网盘客户端，支持win7-11，macOS，linux <br>
@@ -106,16 +117,16 @@
 
 ### 故障排除
 
--   "小白羊云盘" can’t be opened because the developer cannot be verified.
+-   "小白羊网盘" can’t be opened because the developer cannot be verified.
 
     <p align="center">
-      <img width="300" src="https://user-images.githubusercontent.com/1206493/223916804-45ce3f34-6a4a-4baf-a0c1-4ab5c54c521f.png" />
+      <img width="300" src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/a850d1ed-f177-47a3-a61e-b82d46c6c47d" />
     </p>
 
     -   点击 `Cancel` 按钮，然后去 `设置` -> `隐私与安全性` 页面，点击 `仍要打开` 按钮，然后在弹出窗口里点击 `打开` 按钮即可，以后就再也不会有任何弹窗告警了 🎉
 
         <p align="center">
-          <img width="500" src="https://user-images.githubusercontent.com/1206493/223916970-9c99f15e-cf61-4770-b92d-4a78f980bb26.png" /> <img width="200" src="https://user-images.githubusercontent.com/1206493/223917449-ed1ac19f-c43d-4b13-9888-79ba46ceb862.png" />
+          <img width="500" src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/53743a9f-0b0e-49e2-9331-aabc93483f73" /> <img width="200" src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/0d97a636-7018-4b9a-bd68-27c1c17f6cd8" />
         </p>
 
     -   如果在 `隐私与安全性` 中找不到以上选项，或启动时提示文件损坏（Apple Silicon版本）。打开 `Terminal.app`，并输入以下命令（中途可能需要输入密码），然后重启 `小白羊云盘` 即可：
@@ -123,23 +134,16 @@
         ```sh
         sudo xattr -d com.apple.quarantine /Applications/小白羊云盘.app
         ```
-
-
-# 交流社区 [![](https://img.shields.io/badge/-%E4%BA%A4%E6%B5%81%E7%A4%BE%E5%8C%BA-blue)](#交流社区-)
-
-#### Telegram
-[![Telegram-group](https://img.shields.io/badge/Telegram-%E7%BE%A4%E7%BB%84-blue)](https://t.me/+wjdFeQ7ZNNE1NmM1)
 <a href="#readme">
-<img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
+    <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
 </a>
 
-
-
-# 鸣谢 [![](https://img.shields.io/badge/-%E9%B8%A3%E8%B0%A2-blue)](#鸣谢-)
-本项目基于 https://github.com/liupan1890/aliyunpan 仓库继续开发。
-感谢作者 [liupan1890](https://github.com/liupan1890)
+# 小白羊公众号 [![](https://img.shields.io/badge/-%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7-blue)](#小白羊公众号-)
+<p align="center">
+  <img height="360" src="https://github.com/gaozhangmin/staticResource/blob/master/images/qrcode_search_white.png" />
+</p>
 <a href="#readme">
-<img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
+    <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
 </a>
 
 # 请作者喝一杯咖啡 [![](https://img.shields.io/badge/-%E8%AF%B7%E5%96%9D%E5%92%96%E5%95%A1-blue)](#请作者喝一杯咖啡-)
@@ -147,9 +151,20 @@
   <img height="360" src="https://github.com/gaozhangmin/staticResource/blob/master/images/wechat_pay.jpeg" />
   <img height="360" src="https://github.com/gaozhangmin/staticResource/blob/master/images/alipay.jpeg" />
 </p>
+<a href="#readme">
+    <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
+</a>
 
-# Star [![](https://img.shields.io/badge/-Star-blue)](#Star-)
-[![Star History Chart](https://api.star-history.com/svg?repos=gaozhangmin/aliyunpan&type=Date)](https://star-history.com/#gaozhangmin/aliyunpan&Date)
+# 交流社区 [![](https://img.shields.io/badge/-%E4%BA%A4%E6%B5%81%E7%A4%BE%E5%8C%BA-blue)](#交流社区-)
+
+#### Telegram
+[![Telegram-group](https://img.shields.io/badge/Telegram-%E7%BE%A4%E7%BB%84-blue)](https://t.me/+wjdFeQ7ZNNE1NmM1)
+
+
+# 鸣谢 [![](https://img.shields.io/badge/-%E9%B8%A3%E8%B0%A2-blue)](#鸣谢-)
+本项目基于 https://github.com/liupan1890/aliyunpan 仓库继续开发。
+
+感谢作者 [liupan1890](https://github.com/liupan1890)
 <a href="#readme">
 <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
 </a>

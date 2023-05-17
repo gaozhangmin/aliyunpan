@@ -58,8 +58,7 @@
       { "from": "./static/images/icon.png", "to": "./images/icon.png"}
     ],
     "target": [
-      { "target": "nsis", "arch": [ "x64", "ia32" ] },
-      { "target": "portable", "arch": [ "x64", "ia32" ] }
+      { "target": "nsis", "arch": [ "x64", "ia32" ] }
     ]
   },
   "dmg": {
@@ -69,12 +68,9 @@
       { "x": 130, "y": 230, "type": "file" }
     ]
   },
-  "portable": {
-    "artifactName": "XBYDriver-${version}-portable-${arch}.${ext}"
-  },
   "nsis": {
     "oneClick": false,
-    "artifactName": "XBYDriver-Setup-${version}.${ext}",
+    "artifactName": "XBYDriver-Setup-${version}-${arch}.${ext}",
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": false
   },

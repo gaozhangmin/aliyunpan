@@ -1,5 +1,5 @@
 export default class Config {
-  static appVersion = 'v3.11.6'
+  static appVersion = '3.11.7'
   static referer = 'https://www.aliyundrive.com/'
   static downAgent = 'okhttp/4.2.2'
   static userAgent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) aDrive/4.1.0 Chrome/108.0.5359.215 Electron/22.3.1 Safari/537.36'
