@@ -44,6 +44,7 @@ export interface IPageVideo {
   parent_file_id: string
   file_name: string
   duration?: number
+  html: string
 }
 
 export interface AppState {

@@ -521,6 +521,11 @@
   resolved "https://registry.npmjs.org/@types/estree/-/estree-1.0.0.tgz"
   integrity sha512-WulqXMDUTYAXCjZnk6JtIHPigp55cVtDgDrO2gHRwhyJto21+1zbVCtOYB2L1F9w4qCQ0rOGWBnBe0FNTiEJIQ==
 
+"@types/fast-levenshtein@^0.0.2":
+  version "0.0.2"
+  resolved "https://registry.npmmirror.com/@types/fast-levenshtein/-/fast-levenshtein-0.0.2.tgz#9f618cff4469da8df46c9ee91b1c95b9af1d8f6a"
+  integrity sha512-h9AGeNlFimLtFUlEZgk+hb3LUT4tNHu8y0jzCUeTdi1BM4e86sBQs/nQYgHk70ksNyNbuLwpymFAXkb0GAehmw==
+
 "@types/fs-extra@^9.0.11":
   version "9.0.13"
   resolved "https://registry.npmmirror.com/@types/fs-extra/-/fs-extra-9.0.13.tgz"
@@ -2212,10 +2217,10 @@ hls-parser@^0.10.6:
   resolved "https://registry.npmmirror.com/hls-parser/-/hls-parser-0.10.6.tgz#760fa805ba706742a0b8421950359be52bd3ce1a"
   integrity sha512-t9bKB1fDDVajh5CY/qeZanNMnCm4hAWMroDlflnuboOskYR26z29bEyOYwQRP1MxP2Y83UC2J93DQCC1AMhBCA==
 
-hls.js@^1.3.4:
-  version "1.3.4"
-  resolved "https://registry.npmjs.org/hls.js/-/hls.js-1.3.4.tgz"
-  integrity sha512-iFEwVqtEDk6sKotcTwtJ5OMo/nuDTk9PrpB8FI2J2WYf8EriTVfR4FaK0aNyYtwbYeRSWCXJKlz23xeREdlNYg==
+hls.js@^1.4.3:
+  version "1.4.3"
+  resolved "https://registry.npmmirror.com/hls.js/-/hls.js-1.4.3.tgz#9326a680f5905631f86344d0ae155b5ef9d1bad7"
+  integrity sha512-EE1MjIYDNO+ynbmCpAWfhUwQpyG8gUcKKuGDGgYgfRmW/g+inQUQ8sVVVY5WZaCxEGxDMGLbXhXGepkmDIMvdw==
 
 hmac-drbg@^1.0.1:
   version "1.0.1"

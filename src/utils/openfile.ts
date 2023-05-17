@@ -140,7 +140,7 @@ async function Video(drive_id: string, file_id: string, parent_file_id: string, 
   }
 
   if (settingStore.uiVideoPlayer == 'web') {
-    const pageVideo: IPageVideo = { user_id: token.user_id, drive_id, file_id, parent_file_id, file_name: name }
+    const pageVideo: IPageVideo = { user_id: token.user_id, drive_id, file_id, parent_file_id, file_name: name, html: name}
     window.WebOpenWindow({ page: 'PageVideo', data: pageVideo, theme: 'dark' })
     return
   }

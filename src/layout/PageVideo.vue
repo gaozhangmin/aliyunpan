@@ -4,21 +4,22 @@ import FlvJs from 'flv.js'
 import HlsJs from 'hls.js'
 import AliFile from '../aliapi/file'
 import { useAppStore } from '../store'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { ICompilationList, IVideoPreviewUrl } from '../aliapi/models'
+import { onBeforeUnmount, onMounted } from 'vue'
+import { IVideoPreviewUrl } from '../aliapi/models'
 import AliDirFileList from '../aliapi/dirfilelist'
 import { type SettingOption } from 'artplayer/types/setting'
+import levenshtein from 'fast-levenshtein'
 
 const appStore = useAppStore()
 const pageVideo = appStore.pageVideo!
-let autoNextPlayNumber = 0
+let autoPlayNumber = 0
 let ArtPlayerRef: Artplayer
 
 const options = {
   id: 'artPlayer',
   container: '#artPlayer',
   url: '',
-  volume: 0.5,
+  volume: 1,
   autoSize: false,
   autoMini: true,
   loop: false,
@@ -44,28 +45,57 @@ const options = {
     playsInline: true
   },
   customType: {
-    flv: function(video: HTMLMediaElement, url: string) {
-      const flvPlayer = FlvJs.createPlayer(
-        {
-          type: 'flv',
-          url: url
-        },
-        { referrerPolicy: 'same-origin' }
-      )
-      flvPlayer.attachMediaElement(video)
-      flvPlayer.load()
-    },
-    m3u8: function(video: HTMLMediaElement, url: string) {
-      const hls = new HlsJs()
-      hls.loadSource(url)
-      hls.attachMedia(video)
-      if (!video.src) {
-        video.src = url
-      }
-    }
+    flv: (video: HTMLMediaElement, url: string) => playFlv(video, url, ArtPlayerRef),
+    m3u8: (video: HTMLMediaElement, url: string) => playM3U8(video, url, ArtPlayerRef)
   }
 }
 
+const playM3U8 = (video: HTMLMediaElement, url: string, art: Artplayer) => {
+  if (HlsJs.isSupported()) {
+    // @ts-ignore
+    if (art.hls) art.hls.destroy()
+    const hls = new HlsJs()
+    hls.loadSource(url)
+    hls.attachMedia(video)
+    hls.on(HlsJs.Events.ERROR, (event, data) => {
+      const errorType = data.type
+      const errorDetails = data.details
+      const errorFatal = data.fatal
+      if (errorFatal) { // 尝试修复致命错误
+        if (errorType === HlsJs.ErrorTypes.MEDIA_ERROR) {
+          hls.recoverMediaError()
+        } else if (errorType === HlsJs.ErrorTypes.NETWORK_ERROR){
+          art.emit('video:ended', data)
+        }
+      }
+    })
+    // @ts-ignore
+    art.hls = hls
+    art.on('destroy', () => hls.destroy())
+  } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = url
+  } else {
+    art.notice.show = 'Unsupported playback format: m3u8'
+  }
+}
+
+const playFlv = (video: HTMLMediaElement, url: string, art: Artplayer) => {
+  if (FlvJs.isSupported()) {
+    // @ts-ignore
+    if (art.flv) art.flv.destroy()
+    const flv = FlvJs.createPlayer(
+      { url: url, type: 'flv', withCredentials: true, cors: true },
+      { referrerPolicy: 'same-origin' }
+    )
+    flv.attachMediaElement(video)
+    flv.load()
+    // @ts-ignore
+    art.flv = flv
+    art.on('destroy', () => flv.destroy())
+  } else {
+    art.notice.show = 'Unsupported playback format: flv'
+  }
+}
 
 type selectorItem = {
   url: string;
@@ -192,6 +222,7 @@ const getCurDirList = async (parent_file_id: string, category: string = '', filt
 const refreshSetting = async (art: Artplayer, item: selectorItem) => {
   if (pageVideo.file_id === item.file_id) return
   // 刷新文件
+  pageVideo.html = item.html.length > 20 ? item.html.substring(0, 40) + '...' : item.html
   pageVideo.file_name = item.html
   pageVideo.file_id = item.file_id || ''
   // 刷新信息
@@ -318,17 +349,19 @@ const getVideoPlayList = async (art: Artplayer, file_id?: string) => {
       }
     }
   }
-  art.controls.update({
-    name: 'playList',
-    index: 10,
-    position: 'right',
-    style: { padding: '0 10px' },
-    html: pageVideo.file_name.length > 20 ? pageVideo.file_name.substring(0, 20) + '...' : pageVideo.file_name,
-    selector: playList,
-    onSelect: async (item: selectorItem) => {
-      await refreshSetting(art, item)
-    }
-  })
+  if (playList.length > 1) {
+    art.controls.update({
+      name: 'playList',
+      index: 10,
+      position: 'right',
+      style: { padding: '0 10px' },
+      html: pageVideo.html,
+      selector: playList,
+      onSelect: async (item: selectorItem) => {
+        await refreshSetting(art, item)
+      }
+    })
+  }
 }
 
 const getVideoCursor = async (art: Artplayer) => {
@@ -359,27 +392,65 @@ const getVideoCursor = async (art: Artplayer) => {
   await art.play()
 }
 
+const loadOnlineSub = async (art: Artplayer, item: any) => {
+  art.notice.show = '正在加载在线字幕中...'
+  const data = await AliFile.ApiFileDownloadUrl(pageVideo.user_id, pageVideo.drive_id, item.file_id, 14400)
+  if (typeof data !== 'string' && data.url && data.url != '') {
+    art.notice.show = `加载${item.name}字幕文件成功`
+    art.subtitle.switch(data.url, {
+      name: item.name,
+      type: item.ext,
+      encoding: 'utf-8',
+      escape: true
+    })
+    return item.html
+  } else {
+    art.notice.show = `加载${item.name}字幕文件失败`
+  }
+}
+
 const getSubTitleList = async (art: Artplayer, subtitles: { language: string; url: string }[]) => {
+  let subSelector: selectorItem[]
   // 内嵌字幕
-  const subSelector: selectorItem[] = []
+  const embedSubSelector: selectorItem[] = []
   if (subtitles.length > 0) {
     for (let i = 0; i < subtitles.length; i++) {
-      subSelector.push({
+      embedSubSelector.push({
         html: '内嵌:  ' + subtitles[i].language,
         name: subtitles[i].language,
         url: subtitles[i].url,
         default: i === 0
       })
     }
-    art.subtitle.url = subSelector[0].url
-    let subtitle = Artplayer.utils.query('.art-subtitle')
+    art.subtitle.url = embedSubSelector[0].url
     let subtitleSize = art.storage.get('subtitleSize') || '30px'
-    Artplayer.utils.setStyle(subtitle, 'fontSize', subtitleSize)
+    art.subtitle.style('fontSize', subtitleSize)
   }
   // 尝试加载当前文件夹字幕文件
-  const dir = await getCurDirList(pageVideo.parent_file_id, '',/srt|vtt|ass/) || []
-  subSelector.push(...dir)
-  subSelector.length === 0 && subSelector.push({ html: '无可用字幕', name: '', url: '', default: true })
+  let onlineSubSelector = await getCurDirList(pageVideo.parent_file_id, '', /srt|vtt|ass/) || []
+  subSelector = [...embedSubSelector, ...onlineSubSelector]
+  if (subSelector.length === 0) {
+    subSelector.push({ html: '无可用字幕', name: '', url: '', default: true })
+    art.subtitle.show = false
+  }
+  if (embedSubSelector.length === 0 && onlineSubSelector) {
+    const similarity = { distance: 999, index: 0}
+    for (let i = 0; i < subSelector.length; i++) {
+      const distance = levenshtein.get(pageVideo.file_name, subSelector[i].html, { useCollator: true })
+      if (similarity.distance > distance) {
+        similarity.distance = distance
+        similarity.index = i
+      }
+    }
+    // 自动加载同名字幕
+    if (similarity.distance !== 999) {
+      let selectorItem = subSelector[similarity.index]
+      let subtitleSize = art.storage.get('subtitleSize') || '30px'
+      art.subtitle.style('fontSize', subtitleSize)
+      selectorItem.default = true
+      await loadOnlineSub(art, selectorItem)
+    }
+  }
   const subDefault = subSelector.find((item) => item.default) || subSelector[0]
   // 字幕设置面板
   art.setting.update({
@@ -390,8 +461,8 @@ const getSubTitleList = async (art: Artplayer, subtitles: { language: string; ur
     selector: [
       {
         html: '字幕开关',
-        tooltip: '开启',
-        switch: true,
+        tooltip: subDefault.url !== '' ? '开启' : '关闭',
+        switch: subDefault.url !== '',
         onSwitch: (item: SettingOption) => {
           item.tooltip = item.switch ? '关闭' : '开启'
           art.subtitle.show = !item.switch
@@ -426,33 +497,27 @@ const getSubTitleList = async (art: Artplayer, subtitles: { language: string; ur
         range: [30, 20, 50, 5],
         onChange: (item: SettingOption) => {
           let size = item.range + 'px'
-          let subtitle = Artplayer.utils.query('.art-subtitle')
-          Artplayer.utils.setStyle(subtitle, 'fontSize', size)
           art.storage.set('subtitleSize', size)
+          art.subtitle.style('fontSize', size)
           return size
         }
       },
       ...subSelector
     ],
     onSelect: async (item: SettingOption, element: HTMLDivElement) => {
+      let subtitleSize = art.storage.get('subtitleSize') || '30px'
+      art.subtitle.style('fontSize', subtitleSize)
       if (art.subtitle.show) {
-        let subtitle = Artplayer.utils.query('.art-subtitle')
-        let subtitleSize = art.storage.get('subtitleSize') || '30px'
-        Artplayer.utils.setStyle(subtitle, 'fontSize', subtitleSize)
         if (!item.file_id) {
           art.notice.show = ''
-          art.subtitle.switch(item.url, { name: item.name })
+          art.subtitle.switch(item.url, {
+            name: item.name,
+            encoding: 'utf-8',
+            escape: true
+          })
           return item.html
         } else {
-          art.notice.show = '正在加载在线字幕中...'
-          const data = await AliFile.ApiFileDownloadUrl(pageVideo.user_id, pageVideo.drive_id, item.file_id, 14400)
-          if (typeof data !== 'string' && data.url && data.url != '') {
-            art.notice.show = `加载${item.name}字幕文件成功`
-            art.subtitle.switch(data.url, { name: item.name, type: item.ext })
-            return item.html
-          } else {
-            art.notice.show = `加载${item.name}字幕文件失败`
-          }
+          return await loadOnlineSub(art, item)
         }
       } else {
         art.notice.show = '未开启字幕'
@@ -480,7 +545,6 @@ const handleHideClick = () => {
 onBeforeUnmount(() => {
   ArtPlayerRef && ArtPlayerRef.destroy(false)
 })
-
 
 </script>
 
