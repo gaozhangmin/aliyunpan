@@ -261,7 +261,7 @@ const defaultSetting = async (art: Artplayer) => {
     name: 'playListMode',
     width: 250,
     html: '播放列表模式',
-    icon: '<i class="iconfont iconhistory"></i>',
+    icon: '<i class="iconfont iconhistory icon-playlist"></i>',
     tooltip: art.storage.get('curDirList') ? '同文件夹' : '同专辑',
     selector: [
       {
@@ -581,7 +581,7 @@ onBeforeUnmount(() => {
   font-size: 20px;
   color: #ffffff;
 }
-.iconfont.iconhistory {
+.icon-playlist {
   font-size: 20px;
   color: #ffffff;
 }
