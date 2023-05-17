@@ -206,6 +206,7 @@ export default defineComponent({
                 device_id: deviceId,
                 signature: signature
               }
+              console.log(tk2)
               UserDAL.UserLogin(tk2).then(() => {
                 useUserStore().userShowLogin = false
                 if (window.WebClearCookies) window.WebClearCookies({

@@ -113,6 +113,8 @@ const createVideo = async (name: string) => {
   // 获取用户配置
   const storage = ArtPlayerRef.storage
   if (!storage.get('curDirList')) storage.set('curDirList', true)
+  if (!storage.get('autoSkipEnd')) storage.set('autoSkipEnd', 0)
+  if (!storage.get('autoSkipBegin')) storage.set('autoSkipBegin', 0)
 
   const volume = storage.get('videoVolume')
   if (volume) ArtPlayerRef.volume = parseFloat(volume)
@@ -136,10 +138,6 @@ const createVideo = async (name: string) => {
       }
     }
     autoPlayNext()
-  })
-  // 视频跳转
-  ArtPlayerRef.on('ready', () => {
-    ArtPlayerRef.seek = storage.get('autoSkip')
   })
 // 视频跳转
   ArtPlayerRef.on('video:seeked', () => {
@@ -250,7 +248,7 @@ const defaultSetting = async (art: Artplayer) => {
   })
 }
 
-const getVideoInfo = async (art: Artplayer, play_cursor?: number) => {
+const getVideoInfo = async (art: Artplayer) => {
   // 获取视频链接
   const data: IVideoPreviewUrl | undefined =
     await AliFile.ApiVideoPreviewUrl(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id)
@@ -280,7 +278,7 @@ const getVideoInfo = async (art: Artplayer, play_cursor?: number) => {
     // 字幕
     await getSubTitleList(art, data.subtitles || [])
     // 进度
-    await getVideoCursor(art, play_cursor)
+    await getVideoCursor(art)
   }
 }
 
@@ -333,34 +331,30 @@ const getVideoPlayList = async (art: Artplayer, file_id?: string) => {
   })
 }
 
-const getVideoCursor = async (art: Artplayer, play_cursor?: number) => {
+const getVideoCursor = async (art: Artplayer) => {
   // 进度
-  if (play_cursor) {
-    art.currentTime = play_cursor
-  } else {
-    const info = await AliFile.ApiFileInfoOpenApi(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id)
-    const autoSkipBegin  = art.storage.get('autoSkipBegin')
-    console.log("autoSkipBegin", autoSkipBegin)
-    if (info?.play_cursor) {
-      if (autoSkipBegin > info?.play_cursor) {
-        art.currentTime = autoSkipBegin
-      } else {
-        art.currentTime = info?.play_cursor
-      }
-    } else if (info?.user_meta) {
-      const meta = JSON.parse(info?.user_meta)
-      if (meta.play_cursor) {
-        if (parseFloat(meta.play_cursor) > autoSkipBegin) {
-          art.currentTime = parseFloat(meta.play_cursor)
-        } else {
-          art.currentTime = autoSkipBegin
-        }
+  const info = await AliFile.ApiFileInfoOpenApi(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id)
+  const autoSkipBegin  = art.storage.get('autoSkipBegin')
+  console.log("autoSkipBegin", autoSkipBegin)
+  if (info?.play_cursor) {
+    if (autoSkipBegin > info?.play_cursor) {
+      art.currentTime = autoSkipBegin
+    } else {
+      art.currentTime = info?.play_cursor
+    }
+  } else if (info?.user_meta) {
+    const meta = JSON.parse(info?.user_meta)
+    if (meta.play_cursor) {
+      if (parseFloat(meta.play_cursor) > autoSkipBegin) {
+        art.currentTime = parseFloat(meta.play_cursor)
       } else {
         art.currentTime = autoSkipBegin
       }
     } else {
       art.currentTime = autoSkipBegin
     }
+  } else {
+    art.currentTime = autoSkipBegin
   }
   await art.play()
 }
@@ -469,12 +463,12 @@ const getSubTitleList = async (art: Artplayer, subtitles: { language: string; ur
   })
 }
 
-const updateVideoTime = () => {
-  return AliFile.ApiUpdateVideoTimeOpenApi(
-    pageVideo.user_id,
-    pageVideo.drive_id,
-    pageVideo.file_id,
-    ArtPlayerRef.currentTime
+const updateVideoTime =  () => {
+  return  AliFile.ApiUpdateVideoTimeOpenApi(
+      pageVideo.user_id,
+      pageVideo.drive_id,
+      pageVideo.file_id,
+      ArtPlayerRef.currentTime
   )
 }
 const handleHideClick = () => {
