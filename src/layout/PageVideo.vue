@@ -12,7 +12,6 @@ import levenshtein from 'fast-levenshtein'
 
 const appStore = useAppStore()
 const pageVideo = appStore.pageVideo!
-let autoPlayNumber = 0
 let ArtPlayerRef: Artplayer
 
 const options = {

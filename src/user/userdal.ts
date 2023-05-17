@@ -306,10 +306,12 @@ export default class UserDAL {
     if (!token || !token.access_token) {
       return
     }
-    const signInCount = await DB.getValueNumber('uiAutoSign')
-    if (signInCount !== new Date().getDay()) {
-      return AliUser.ApiUserSign(token).then(async signInCount => {
-        signInCount != -1 && await DB.saveValueNumber('uiAutoSign', signInCount)
+    const lastDaySign = await DB.getValueNumber('uiAutoSign')
+    if (lastDaySign !== new Date().getDate()) {
+      console.log("自动签到", lastDaySign, new Date().getDate())
+      return AliUser.ApiUserSign(token).then(async lastDay => {
+        console.log("自动签到123", lastDay)
+        lastDay != -1 && await DB.saveValueNumber('uiAutoSign', lastDay)
       })
     }
 
