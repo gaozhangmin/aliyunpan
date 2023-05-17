@@ -234,6 +234,7 @@ const defaultSetting = async (art: Artplayer) => {
         name: 'autoSkipBegin',
         width: 250,
         html: '跳过片头',
+        icon: '<i class="iconfont iconarrow-right-1-icon"></i>',
         tooltip:  art.storage.get('autoSkipBegin') + 's',
         range: [0, 0, 10, 1],
         onChange(item: SettingOption) {
@@ -248,6 +249,7 @@ const defaultSetting = async (art: Artplayer) => {
         width: 250,
         html: '跳过片尾',
         tooltip: art.storage.get('autoSkipEnd') + 's',
+        icon: '<i class="iconfont iconarrow-right-1-icon"></i>',
         range: [0, 0, 10, 1],
         onChange(item: SettingOption) {
           art.storage.set('autoSkipEnd', item.range*10)
@@ -258,7 +260,8 @@ const defaultSetting = async (art: Artplayer) => {
   art.setting.add({
     name: 'playListMode',
     width: 250,
-    html: '列表模式',
+    html: '播放列表模式',
+    icon: '<i class="iconfont iconhistory"></i>',
     tooltip: art.storage.get('curDirList') ? '同文件夹' : '同专辑',
     selector: [
       {
@@ -573,5 +576,13 @@ onBeforeUnmount(() => {
     pointer-events: none;
     background-color: transparent;
     color: #ACA899;
+}
+.iconfont.iconarrow-right-1-icon {
+  font-size: 20px;
+  color: #ffffff;
+}
+.iconfont.iconhistory {
+  font-size: 20px;
+  color: #ffffff;
 }
 </style>
