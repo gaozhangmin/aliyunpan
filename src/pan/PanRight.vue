@@ -30,8 +30,6 @@ import DirTopPath from './menus/DirTopPath.vue'
 import message from '../utils/message'
 import { menuOpenFile } from '../utils/openfile'
 import { throttle } from '../utils/debounce'
-import AliDirFileList from "../aliapi/dirfilelist";
-
 
 const viewlist = ref()
 const inputsearch = ref()
@@ -238,7 +236,6 @@ const handleListGridMode = (mode: string) => {
   settingStore.updateStore({ uiFileListMode: mode })
   panfileStore.mGridListData(mode, listGridColumn.value)
 }
-
 
 
 const rangIsSelecting = ref(false)

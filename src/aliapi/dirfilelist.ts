@@ -8,7 +8,6 @@ import { HanToPin, MapValueToArray } from '../utils/utils'
 import AliHttp, { IUrlRespData } from './alihttp'
 import { IAliFileItem, IAliGetFileModel } from './alimodels'
 import getFileIcon from './fileicon'
-import AliFile from "./file";
 
 export interface IAliFileResp {
   items: IAliGetFileModel[]
@@ -333,7 +332,7 @@ export default class AliDirFileList {
       parent_file_id: 'root'
     }
     const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
-    return await AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
+    return AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
   }
 
   private static async _ApiTrashFileListOnePage(orderby: string, order: string, dir: IAliFileResp, pageIndex: number): Promise<boolean> {
@@ -350,7 +349,7 @@ export default class AliDirFileList {
       order_direction: order.toUpperCase()
     }
     const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
-    return await AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
+    return AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
   }
 
   static async _ApiDeleteedFileListOnePage(orderby: string, order: string, dir: IAliFileResp, pageIndex: number): Promise<boolean> {
@@ -361,7 +360,7 @@ export default class AliDirFileList {
       marker: dir.next_marker
     }
     const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
-    return await AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
+    return AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
   }
 
   static async _ApiSearchFileListOnePage(orderby: string, order: string, dir: IAliFileResp, pageIndex: number): Promise<boolean> {
@@ -438,7 +437,7 @@ export default class AliDirFileList {
       order_by: orderby + ' ' + order
     }
     const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
-    return await AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
+    return AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
   }
 
   static async _ApiSearchFileListCount(dir: IAliFileResp): Promise<number> {
@@ -528,7 +527,7 @@ export default class AliDirFileList {
     const url = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/video/recentList'
     const postData = {}
     const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
-    return await AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
+    return AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
   }
 
   static async _ApiVideoListOnePage(orderby: string, order: string, dir: IAliFileResp, pageIndex: number): Promise<boolean> {
@@ -543,7 +542,7 @@ export default class AliDirFileList {
       url_expire_sec: 14400
     }
     const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
-    return await AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
+    return AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
   }
 
   static async _ApiVideoFileListOnePage(orderby: string, order: string, dir: IAliFileResp, pageIndex: number): Promise<boolean> {
@@ -559,11 +558,11 @@ export default class AliDirFileList {
       url_expire_sec: 14400
     }
     const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
-    return await AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
+    return AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
   }
 
   
-  static async _FileListOnePage(orderby: string, order: string, dir: IAliFileResp, resp: IUrlRespData, pageIndex: number, type: string = ''): Promise<boolean> {
+  static _FileListOnePage(orderby: string, order: string, dir: IAliFileResp, resp: IUrlRespData, pageIndex: number, type: string = ''): boolean {
     try {
       if (AliHttp.IsSuccess(resp.code)) {
         const dirPart: IAliFileResp = {

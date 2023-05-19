@@ -14,21 +14,6 @@ export interface IAliFileAudioMeta {
   sample_rate?: string
 }
 
-export interface IAliRecentPlayList {
-  name: string,
-  thumbnail: string,
-  extras?: string,
-  mediaCategoryEnum? : string,
-  size: number,
-  file_id: string,
-  file_extension: string,
-  drive_id: string,
-  duration: number,
-  play_cursor: number,
-  last_played_at: string,
-  compilation_id: string,
-  parent_file_id: string
-}
 
 export interface AliAlbumFileInfo {
   "trashed": false,

@@ -3,8 +3,6 @@ import { IAliGetDirModel } from '../aliapi/alimodels'
 import { h } from 'vue'
 import PanDAL from './pandal'
 import TreeStore, { TreeNodeData } from '../store/treestore'
-import AliHttp from '../aliapi/alihttp'
-import AliDirFileList from '../aliapi/dirfilelist'
 
 export interface PanTreeState {
   user_id: string

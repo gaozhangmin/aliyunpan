@@ -20,29 +20,19 @@ import MyModal from './MyModal.vue'
 import { B64decode } from '../utils/format'
 import { throttle } from '../utils/debounce'
 import ServerHttp from '../aliapi/server'
-import { Radio } from '@arco-design/web-vue';
 import Config from '../utils/config'
 import SponsorInfo from '../user/SponsorInfo.vue'
 
 
 
 const panVisible = ref(true)
-const InfoVisible = ref(false)
 const appStore = useAppStore()
 const winStore = useWinStore()
 const keyboardStore = useKeyboardStore()
 const footStore = useFootStore()
-// const leftDrawerIcon = computed(() => (!panVisible ? h('i', { class: 'iconfont iconmenuoff' }) : h('i', { class: 'iconfont iconmenuon' })))
 
 const handlePanVisible = () => {
   panVisible.value = !panVisible.value
-}
-const openInfoModal = () => {
-  InfoVisible.value = true
-}
-
-const closeInfoModal = () =>{
-  InfoVisible.value = false
 }
 
 const handleHideClick = (_e: any) => {
@@ -166,7 +156,7 @@ const handleCheckVer = () => {
 
         <a-menu mode="horizontal" :selected-keys="[appStore.appTab]" @update:selected-keys="appStore.toggleTab($event[0])">
           <a-menu-item key="pan" title="Alt+1">网盘</a-menu-item>
-<!--          <a-menu-item key="pic" title="Alt+2">相册</a-menu-item>-->
+          <a-menu-item key="pic" title="Alt+2">相册</a-menu-item>
           <a-menu-item key="down" title="Alt+3">传输</a-menu-item>
           <a-menu-item key="share" title="Alt+4">分享</a-menu-item>
           <a-menu-item key="rss" title="Alt+5">插件</a-menu-item>
@@ -286,26 +276,6 @@ const handleCheckVer = () => {
 </template>
 
 <style>
-.modal {
-  /* 模态框的样式 */
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5); /* 半透明黑色背景 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-content {
-  /* 模态框内容的样式 */
-  background-color: #fff;
-  padding: 20px;
-  text-align: center;
-}
-
 #xbyhead {
   z-index: 2;
   height: 42px !important;

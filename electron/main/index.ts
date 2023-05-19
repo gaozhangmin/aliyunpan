@@ -48,7 +48,8 @@ try {
     const configData = readFileSync(userData, 'utf-8')
     if (configData) app.setPath('userData', configData)
   }
-} catch {}
+} catch {
+}
 
 const gotTheLock = app.requestSingleInstanceLock()
 if (DEBUGGING == false) {
@@ -106,8 +107,9 @@ app.setAboutPanelOptions({
   applicationVersion: '30'
 })
 
-let userToken: { access_token: string; user_id: string; refresh: boolean } = {
+let userToken: { access_token: string; access_token_v2:string, user_id: string; refresh: boolean } = {
   access_token: '',
+  access_token_v2: '',
   user_id: '',
   refresh: false
 }
@@ -205,6 +207,7 @@ app
 
       const shouldAliReferer = !should115Referer && !shouldGieeReferer && (!details.referrer || details.referrer.trim() === '' || /(\/localhost:)|(^file:\/\/)|(\/127.0.0.1:)/.exec(details.referrer) !== null)
       const shouldToken = details.url.includes('aliyundrive') && details.url.includes('download')
+      const shouldOpenApiToken = details.url.includes('adrive/v1.0')
 
       cb({
         cancel: false,
@@ -226,6 +229,9 @@ app
           ...(shouldToken && {
             Authorization: userToken.access_token
           }),
+          // ...(shouldOpenApiToken && {
+          //   Authorization: userToken.access_token_v2
+          // }),
           'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) aDrive/4.1.0 Chrome/108.0.5359.215 Electron/22.3.1 Safari/537.36',
           'X-Canary': 'client=windows,app=adrive,version=v4.1.0',
           'Accept-Language': 'zh-CN,zh;q=0.9'
@@ -242,7 +248,6 @@ app
   .catch((err: any) => {
     console.log(err)
   })
-
 
 
 let menuEdit: Electron.Menu | undefined
@@ -272,7 +277,8 @@ ipcMain.on('WebToElectron', (event, data) => {
     }
     try {
       app.exit()
-    } catch {}
+    } catch {
+    }
   } else if (data.cmd && data.cmd === 'minsize') {
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize()
   } else if (data.cmd && data.cmd === 'maxsize') {
@@ -414,7 +420,7 @@ ipcMain.on('WebExecSync', (event, data) => {
       const basePath = path.resolve(app.getAppPath(), '..')
       if (process.platform === 'win32') {
         const exe = path.join(basePath, 'MPV', 'mpv.exe')
-        if (existsSync(exe) == false) {
+        if (!existsSync(exe)) {
           event.returnValue = { error: '找不到文件' + data.command + ' ' + exe }
           ShowError('找不到文件', data.command + ' ' + exe)
           return
@@ -422,12 +428,12 @@ ipcMain.on('WebExecSync', (event, data) => {
         cmdArguments.push('"' + exe + '"')
       } else if (process.platform === 'darwin') {
         const exe = path.join(basePath, 'mpv')
-        if (existsSync(exe) == false) {
+        if (!existsSync(exe)) {
           event.returnValue = { error: '找不到文件' + data.command + ' ' + exe }
           ShowError('找不到文件', data.command + ' ' + exe)
           return
         }
-        cmdArguments.push("'" + exe + "'")
+        cmdArguments.push('\'' + exe + '\'')
       } else {
         cmdArguments.push('mpv')
       }
@@ -451,7 +457,8 @@ ipcMain.on('WebSaveTheme', (event, data) => {
   try {
     const themeJson = getUserDataPath('theme.json')
     writeFileSync(themeJson, `{"theme":"${data.theme || ''}"}`, 'utf-8')
-  } catch {}
+  } catch {
+  }
 })
 
 ipcMain.on('WebClearCookies', (event, data) => {
@@ -486,7 +493,8 @@ ipcMain.on('WebRelaunch', (event, data) => {
   app.relaunch()
   try {
     app.exit()
-  } catch {}
+  } catch {
+  }
 })
 
 ipcMain.handle('WebRelaunchAria', async (event, data) => {
@@ -509,7 +517,8 @@ ipcMain.on('WebShutDown', (event, data) => {
       if (data.quitApp) {
         try {
           app.exit()
-        } catch {}
+        } catch {
+        }
       }
       if (err) {
         // donothing
@@ -536,7 +545,8 @@ ipcMain.on('WebShutDown', (event, data) => {
       if (data.quitApp) {
         try {
           app.exit()
-        } catch {}
+        } catch {
+        }
       }
       if (err) {
         // donothing
@@ -559,7 +569,7 @@ ipcMain.on('WebSetProxy', (event, data) => {
 ipcMain.on('WebOpenWindow', (event, data) => {
   const win = creatElectronWindow(AppWindow.winWidth, AppWindow.winHeight, true, 'main2', data.theme)
 
-  win.on('ready-to-show', function () {
+  win.on('ready-to-show', function() {
     win.webContents.send('setPage', data)
     win.setTitle('预览窗口')
     win.show()
@@ -591,7 +601,7 @@ ipcMain.on('WebOpenUrl', (event, data) => {
     }
   })
 
-  win.on('ready-to-show', function () {
+  win.on('ready-to-show', function() {
     win.setTitle('预览窗口')
     win.show()
   })

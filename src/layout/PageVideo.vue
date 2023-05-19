@@ -1,20 +1,21 @@
 <script setup lang='ts'>
+import { useAppStore } from '../store'
+import { onBeforeUnmount, onMounted } from 'vue'
 import Artplayer from 'artplayer'
 import FlvJs from 'flv.js'
 import HlsJs from 'hls.js'
 import AliFile from '../aliapi/file'
-import { useAppStore } from '../store'
-import { onBeforeUnmount, onMounted } from 'vue'
-import { IVideoPreviewUrl } from '../aliapi/models'
 import AliDirFileList from '../aliapi/dirfilelist'
-import { type SettingOption } from 'artplayer/types/setting'
 import levenshtein from 'fast-levenshtein'
+import { IVideoPreviewUrl } from '../aliapi/models'
+import { type SettingOption } from 'artplayer/types/setting'
+import { type Option } from 'artplayer/types/option'
 
 const appStore = useAppStore()
 const pageVideo = appStore.pageVideo!
 let ArtPlayerRef: Artplayer
 
-const options = {
+const options: Option = {
   id: 'artPlayer',
   container: '#artPlayer',
   url: '',
@@ -28,6 +29,7 @@ const options = {
   setting: true,
   hotkey: true,
   pip: true,
+  airplay: true,
   mutex: true,
   fullscreen: true,
   fullscreenWeb: true,
@@ -35,9 +37,6 @@ const options = {
   screenshot: true,
   miniProgressBar: false,
   playsInline: true,
-  quality: [],
-  plugins: [],
-  whitelist: [],
   moreVideoAttr: {
     // @ts-ignore
     'webkit-playsinline': true,
@@ -329,10 +328,8 @@ const getVideoPlayList = async (art: Artplayer, file_id?: string) => {
     let fileList: any
     if (!art.storage.get('curDirList')) {
       fileList = await AliFile.ApiListByFileInfo(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id, 100)
-      console.log(" AliFile.ApiListByFileInfo", fileList)
     } else {
       fileList = await getCurDirList(pageVideo.parent_file_id, 'video') || []
-      console.log("getCurDirList", fileList)
     }
     playList = []
     if (fileList && fileList.length > 1) {

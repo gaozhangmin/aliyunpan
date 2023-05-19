@@ -6,7 +6,6 @@ import ServerHttp from '../aliapi/server'
 import { useFootStore, usePanFileStore, useSettingStore, useUserStore } from '../store'
 import { IPageCode, IPageImage, IPageOffice, IPageVideo } from '../store/appstore'
 import UserDAL from '../user/userdal'
-import Config from './config'
 import { clickWait } from './debounce'
 import DebugLog from './debuglog'
 import { CleanStringForCmd } from './filehelper'
@@ -147,14 +146,14 @@ async function Video(drive_id: string, file_id: string, parent_file_id: string, 
 
   let url = ''
   let mode = ''
-  if (weifa || settingStore.uiVideoMode == 'online') {
+  if (settingStore.uiVideoMode == 'online') {
     const data = await AliFile.ApiVideoPreviewUrlOpenApi(user_id, drive_id, file_id)
     if (data && data.url != '') {
       url = data.url
-      mode = '转码视频模式_没有字幕请切换原始文件模式'
+      mode = '转码视频模式'
     }
   }
-  if (!url && weifa == false) {
+  if (!url && !weifa) {
     const data = await AliFile.ApiFileDownloadUrlOpenApi(user_id, drive_id, file_id, 14400)
     if (typeof data !== 'string' && data.url && data.url != '') {
       url = data.url
@@ -178,12 +177,17 @@ async function Video(drive_id: string, file_id: string, parent_file_id: string, 
   } else {
     let command = settingStore.uiVideoPlayerPath
     let args = ['"' + url + '"']
+    if (url.indexOf('x-oss-additional-headers=referer') > 0) {
+      message.error('用户token已过期，请点击头像里退出按钮后重新登录账号')
+      return
+    }
     if (window.platform == 'win32') {
       command = '"' + settingStore.uiVideoPlayerPath + '"'
       args = ['"' + url + '"'] //win 双引号包裹
-      if (url.indexOf('x-oss-additional-headers=referer') > 0) {
-        message.error('用户token已过期，请点击头像里退出按钮后重新登录账号')
-        return
+      if (command.toLowerCase().indexOf('potplayer') > 0) {
+        args = ['"' + url + '"', '/new', '/referer=https://www.aliyundrive.com/', '/title="' + CleanStringForCmd(title) + '"']
+      } else if (command.toLowerCase().indexOf('mpv') > 0) {
+        args = ['"' + url + '"', '--referrer=https://www.aliyundrive.com/', '--title="' + CleanStringForCmd(title) + '"']
       }
     } else if (window.platform == 'darwin') {
       if (command.includes("mpv.app")) {
@@ -192,30 +196,14 @@ async function Video(drive_id: string, file_id: string, parent_file_id: string, 
         command = "open -a '" + command + "'"
       }
       args = ["'" + url + "'"] //mac 单引号包裹
-      if (url.indexOf('x-oss-additional-headers=referer') > 0) {
-        message.error('用户token已过期，请点击头像里退出按钮后重新登录账号')
-        return
-      }
     } else if (window.platform == 'linux') {
       command = settingStore.uiVideoPlayerPath //不能加引号
       args = ["'" + url + "'"] //linux 单引号包裹
-
-      if (url.indexOf('x-oss-additional-headers=referer') > 0) {
-        message.error('用户token已过期，请点击头像里退出按钮后重新登录账号')
-        return
-      }
     } else {
       message.error('不支持的系统，操作取消')
       return
     }
-
-    window.WebExecSync(
-      {
-        command,
-        args
-      },
-      (rdata: any) => {}
-    )
+    window.WebExecSync({  command, args }, (rdata: any) => {})
   }
 }
 

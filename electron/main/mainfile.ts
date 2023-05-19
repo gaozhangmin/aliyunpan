@@ -1,7 +1,6 @@
 import { app } from 'electron'
 import path  from 'path'
 import { existsSync, mkdirSync, writeFileSync, copyFileSync, rmSync } from 'fs'
-import {ShowError} from "./window";
 const DEBUGGING = !app.isPackaged
 
 let NewCopyed = false

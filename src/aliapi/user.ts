@@ -23,7 +23,7 @@ export default class AliUser {
     }
     SessionLockMap.set(token.user_id, Date.now())
     const time = SessionReTimeMap.get(token.user_id) || 0
-    if (Date.now() - time < 1000) {
+    if (Date.now() - time < 1000 * 60) {
       SessionLockMap.delete(token.user_id)
       return true
     }
@@ -140,7 +140,7 @@ export default class AliUser {
 
 
   static async ApiUserInfo(token: ITokenInfo): Promise<boolean> {
-    if (!token.user_id) return false
+    if (!token.user_id || !token.access_token_v2) return false
     const url = 'adrive/v1.0/user/getDriveInfo'
     const spaceUrl = 'adrive/v1.0/user/getSpaceInfo'
     const postData = ''

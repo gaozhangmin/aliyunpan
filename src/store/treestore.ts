@@ -140,8 +140,6 @@ export default class TreeStore {
     if (oneDir.dirID == 'favorite' || oneDir.dirID == 'trash' || oneDir.dirID == 'recover' || oneDir.dirID.startsWith('search') || oneDir.dirID.startsWith('color') || oneDir.dirID.startsWith('video')) {
       return
     }
-    console.log('SaveOneDirFileList', oneDir.dirID)
-
     let driverData = DriverData.get(oneDir.m_drive_id)
     if (!driverData) {
 
@@ -219,9 +217,7 @@ export default class TreeStore {
 
       const driverData = DriverData.get(drive_id)
       if (driverData) {
-        console.log("SaveDirOrder")
         driverData.FileOrderMap[file_id] = order
-        console.log("driverData", driverData)
         DB.saveValueObject('DirFileOrder_' + drive_id, driverData.FileOrderMap)
       }
     } else {

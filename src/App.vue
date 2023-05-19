@@ -26,9 +26,7 @@ export default {
       if (appStore.appPage == 'PageCode') return h(PageCode)
       if (appStore.appPage == 'PageImage') return h(PageImage)
       if (appStore.appPage == 'PageVideo') return h(PageVideo)
-
       if (appStore.appPage == 'PageWorker') return h(PageWorker)
-
       return h(PageLoading)
     }
   }

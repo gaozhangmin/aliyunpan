@@ -142,7 +142,7 @@ export default class AliTrash {
     }
     const resp = await AliHttp.Post(url, postdata, dir.m_user_id, '')
     //todo:: 这里不完善
-    return await AliDirFileList._FileListOnePage(orderby, order, dir, resp, -1)
+    return AliDirFileList._FileListOnePage(orderby, order, dir, resp, -1)
     //return Promise.resolve(false)
   }
 }

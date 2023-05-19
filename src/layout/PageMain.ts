@@ -22,6 +22,7 @@ export function PageMain() {
       await ShareDAL.aLoadFromDB().catch((err: any) => {
         DebugLog.mSaveDanger('ShareDALLDB', err)
       })
+      // 加载数据库用户
       await UserDAL.aLoadFromDB().catch((err: any) => {
         DebugLog.mSaveDanger('UserDALLDB', err)
       })
@@ -140,9 +141,6 @@ function timeEvent() {
     UserDAL.aRefreshAllUserToken().catch((err: any) => {
       DebugLog.mSaveDanger('aRefreshAllUserToken', err)
     })
-    UserDAL.aRefreshAllUserSession().catch((err: any) => {
-      DebugLog.mSaveDanger('aRefreshAllUserSession', err)
-    })
   }
 
   chkTaskTime++
@@ -162,7 +160,8 @@ function timeEvent() {
 
   // 没有下载和上传时触发自动关闭
   if (settingStore.downAutoShutDown == 2) {
-    if (DownDAL.QueryIsDowning() == false && UploadingDAL.QueryIsUploading() == false) {
+    if (!DownDAL.QueryIsDowning()
+        && !UploadingDAL.QueryIsUploading()) {
       settingStore.downAutoShutDown = 0
       useAppStore().appShutDown = true
     }

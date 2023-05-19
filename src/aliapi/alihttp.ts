@@ -331,12 +331,7 @@ export default class AliHttp {
 
   static async Post(url: string, postData: any, user_id: string, share_token: string): Promise<IUrlRespData> {
     if (!url.startsWith('http') && !url.startsWith('https')) {
-      if (url.startsWith('adrive/v1.0/openFile')
-        || url.startsWith('adrive/v1.0/user')) {
-        url = AliHttp.baseOpenApi + url
-      } else {
-        url = AliHttp.baseapi + url
-      }
+      url = (url.includes('adrive/v1.0') ? AliHttp.baseOpenApi : AliHttp.baseapi) + url
     }
     for (let i = 0; i <= 5; i++) {
       const resp = await AliHttp._Post(url, postData, user_id, share_token)
@@ -412,7 +407,6 @@ export default class AliHttp {
       if (share_token) {
         headers['x-share-token'] = share_token
       }
-      if (url.includes('ali')) headers['content-type'] = 'application/json;charset-utf-8'
       let timeout = 30000
       if (url.includes('/batch')) timeout = 60000
       return axios

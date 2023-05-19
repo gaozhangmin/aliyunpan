@@ -1,10 +1,9 @@
 import { app, BrowserWindow, dialog, Menu, MessageChannelMain, nativeTheme, Tray, screen, nativeImage} from 'electron'
-import {getAsarPath, getResourcesPath, getStaticPath, getUserDataPath} from './mainfile'
+import {getAsarPath, getStaticPath, getUserDataPath} from './mainfile'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import path from "path";
 
 const DEBUGGING = !app.isPackaged
-
 export const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36 Edg/102.0.1245.33'
 export const Referer = 'https://www.aliyundrive.com/'
 
