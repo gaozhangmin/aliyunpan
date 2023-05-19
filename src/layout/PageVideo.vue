@@ -53,7 +53,10 @@ const playM3U8 = (video: HTMLMediaElement, url: string, art: Artplayer) => {
   if (HlsJs.isSupported()) {
     // @ts-ignore
     if (art.hls) art.hls.destroy()
-    const hls = new HlsJs()
+    const hls = new HlsJs({
+      maxBufferLength: 20,
+      maxBufferSize: 60 * 1000 * 1000,
+    })
     hls.loadSource(url)
     hls.attachMedia(video)
     hls.on(HlsJs.Events.ERROR, (event, data) => {
@@ -168,10 +171,10 @@ const createVideo = async (name: string) => {
     }
     autoPlayNext()
   })
-// 视频跳转
-  ArtPlayerRef.on('video:seeked', () => {
-    updateVideoTime()
-  })
+// // 视频跳转
+//   ArtPlayerRef.on('video:seeked', () => {
+//     updateVideoTime()
+//   })
 // 播放已暂停
   ArtPlayerRef.on('video:pause', () => {
     updateVideoTime()
@@ -194,28 +197,29 @@ const createVideo = async (name: string) => {
   });
 }
 
+const curDirList: any[] = []
 const getCurDirList = async (parent_file_id: string, category: string = '', filter?: RegExp): Promise<any[]> => {
-  const dir = await AliDirFileList.ApiDirFileList(pageVideo.user_id, pageVideo.drive_id, parent_file_id, '', 'name asc', '')
-  const fileList: any[] = []
-  if (!dir.next_marker) {
-    for (let i = 0, maxi = dir.items.length; i < maxi; i++) {
-      let fileModel = dir.items[i]
-      if (fileModel.isDir) continue
-      else fileList.push({
-        html: (category ? '' : '在线:  ') + fileModel.name,
-        category: fileModel.category,
-        name: fileModel.name,
-        file_id: fileModel.file_id,
-        ext: fileModel.ext
-      })
+  if (curDirList.length === 0) {
+    const dir = await AliDirFileList.ApiDirFileList(pageVideo.user_id, pageVideo.drive_id, parent_file_id, '', 'name asc', '')
+    if (!dir.next_marker) {
+      for (let i = 0, maxi = dir.items.length; i < maxi; i++) {
+        let fileModel = dir.items[i]
+        if (fileModel.isDir) continue
+        else curDirList.push({
+          html: (category ? '' : '在线:  ') + fileModel.name,
+          category: fileModel.category,
+          name: fileModel.name,
+          file_id: fileModel.file_id,
+          ext: fileModel.ext
+        })
+      }
     }
   }
   if (category) {
-    return fileList.filter(file => file.category === category)
+    return curDirList.filter(file => file.category === category)
   }
-  return filter ? fileList.filter(file => filter.test(file.ext)) : fileList
+  return filter ? curDirList.filter(file => filter.test(file.ext)) : curDirList
 }
-
 
 
 const refreshSetting = async (art: Artplayer, item: selectorItem) => {
@@ -398,7 +402,6 @@ const loadOnlineSub = async (art: Artplayer, item: any) => {
   art.notice.show = '正在加载在线字幕中...'
   const data = await AliFile.ApiFileDownloadUrl(pageVideo.user_id, pageVideo.drive_id, item.file_id, 14400)
   if (typeof data !== 'string' && data.url && data.url != '') {
-    art.notice.show = `加载${item.name}字幕文件成功`
     art.subtitle.switch(data.url, {
       name: item.name,
       type: item.ext,
@@ -407,7 +410,7 @@ const loadOnlineSub = async (art: Artplayer, item: any) => {
     })
     return item.html
   } else {
-    art.notice.show = `加载${item.name}字幕文件失败`
+    art.notice.show = `加载${item.name}字幕失败`
   }
 }
 
@@ -433,11 +436,11 @@ const getSubTitleList = async (art: Artplayer, subtitles: { language: string; ur
   subSelector = [...embedSubSelector, ...onlineSubSelector]
   if (subSelector.length === 0) {
     subSelector.push({ html: '无可用字幕', name: '', url: '', default: true })
-    art.subtitle.show = false
   }
-  if (embedSubSelector.length === 0 && onlineSubSelector) {
+  if (embedSubSelector.length === 0 && onlineSubSelector.length > 0) {
     const similarity = { distance: 999, index: 0}
     for (let i = 0; i < subSelector.length; i++) {
+      // 莱文斯坦距离算法(计算相似度)
       const distance = levenshtein.get(pageVideo.file_name, subSelector[i].html, { useCollator: true })
       if (similarity.distance > distance) {
         similarity.distance = distance
@@ -449,6 +452,7 @@ const getSubTitleList = async (art: Artplayer, subtitles: { language: string; ur
       let selectorItem = subSelector[similarity.index]
       let subtitleSize = art.storage.get('subtitleSize') || '30px'
       art.subtitle.style('fontSize', subtitleSize)
+      subSelector.forEach(v => v.default = false)
       selectorItem.default = true
       await loadOnlineSub(art, selectorItem)
     }
@@ -459,29 +463,34 @@ const getSubTitleList = async (art: Artplayer, subtitles: { language: string; ur
     name: 'Subtitle',
     width: 250,
     html: '字幕设置',
-    tooltip: subDefault.html,
+    tooltip: art.subtitle.show ? (subDefault.url !== '' ? '字幕开启' : subDefault.html) : '字幕关闭',
     selector: [
       {
         html: '字幕开关',
         tooltip: subDefault.url !== '' ? '开启' : '关闭',
         switch: subDefault.url !== '',
         onSwitch: (item: SettingOption) => {
-          item.tooltip = item.switch ? '关闭' : '开启'
-          art.subtitle.show = !item.switch
-          art.notice.show = '字幕' + item.tooltip
-          let currentItem = Artplayer.utils.queryAll('.art-setting-panel.art-current .art-setting-item:nth-of-type(n+3)')
-          if (currentItem.length > 0) {
-            currentItem.forEach((current: HTMLElement) => {
-              if (item.switch) {
-                Artplayer.utils.removeClass(current, 'art-current')
-                Artplayer.utils.addClass(current, 'disable')
-                item.$parentItem.tooltip = ''
-              } else {
-                Artplayer.utils.removeClass(current, 'disable')
-              }
-            })
+          if (subDefault.url !== '') {
+            item.tooltip = item.switch ? '关闭' : '开启'
+            art.subtitle.show = !item.switch
+            art.notice.show = '字幕' + item.tooltip
+            let currentItem = Artplayer.utils.queryAll('.art-setting-panel.art-current .art-setting-item:nth-of-type(n+3)')
+            if (currentItem.length > 0) {
+              currentItem.forEach((current: HTMLElement) => {
+                if (item.switch) {
+                  !art.subtitle.url && Artplayer.utils.removeClass(current, 'art-current')
+                  Artplayer.utils.addClass(current, 'disable')
+                  item.$parentItem.tooltip = subDefault.url !== '' ? '字幕开启' : subDefault.html
+                } else {
+                  item.$parentItem.tooltip = '字幕开启'
+                  Artplayer.utils.removeClass(current, 'disable')
+                }
+              })
+            }
+            return !item.switch
+          } else {
+            return false
           }
-          return !item.switch
         }
       },
       {
@@ -507,8 +516,6 @@ const getSubTitleList = async (art: Artplayer, subtitles: { language: string; ur
       ...subSelector
     ],
     onSelect: async (item: SettingOption, element: HTMLDivElement) => {
-      let subtitleSize = art.storage.get('subtitleSize') || '30px'
-      art.subtitle.style('fontSize', subtitleSize)
       if (art.subtitle.show) {
         if (!item.file_id) {
           art.notice.show = ''
