@@ -16,15 +16,23 @@ const verLoading = ref(false)
 const handleCheckVer = () => {
     settingStore.checkUpdate()
 }
+
+const handleCheckVer1 = () => {
+  verLoading.value = true
+  ServerHttp.CheckUpgrade().then(() => {
+    verLoading.value = false
+  })
+}
 </script>
 
 <template>
   <div class="settingcard">
     <div class="appver"></div>
-        <div class="settinghead">检查更新</div>
-        <div class="settingrow">
-            <a-button type="outline" size="mini" tabindex="-1" :loading="verLoading" @click="handleCheckVer">检查更新</a-button>
-        </div>
+    <div class="settinghead">检查更新</div>
+    <div class="settingrow">
+        <a-button type="outline" size="mini" tabindex="-1" :loading="verLoading" @click="handleCheckVer1">检查更新</a-button>
+    </div>
+    <div class="settingspace"></div>
     <div class="settinghead">外观</div>
     <div class="settingrow">
       <button class="theme-button system-theme" @click="cb({ uiTheme: 'system' })">

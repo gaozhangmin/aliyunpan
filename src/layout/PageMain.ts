@@ -96,18 +96,18 @@ function timeEvent() {
     chkDirSizeTime = 0
   }
 
-  /*if (chkUpgradeTime1 > 0 && nowTime - chkUpgradeTime1 > 360) {
+  if (chkUpgradeTime1 > 0 && nowTime - chkUpgradeTime1 > 360) {
     chkUpgradeTime1 = -1
-    ServerHttp.CheckUpgrade(false).catch((err: any) => {
-      DebugLog.mSaveDanger('CheckUpgrade', err)
+    ServerHttp.CheckConfigUpgrade().catch((err: any) => {
+      DebugLog.mSaveDanger('CheckConfigUpgrade', err)
     })
   }
   if (nowTime - chkUpgradeTime2 > 14300) {
     chkUpgradeTime2 = nowTime
-    ServerHttp.CheckUpgrade(false).catch((err: any) => {
-      DebugLog.mSaveDanger('CheckUpgrade', err)
+    ServerHttp.CheckConfigUpgrade().catch((err: any) => {
+      DebugLog.mSaveDanger('CheckConfigUpgrade', err)
     })
-  }*/
+  }
 
   if (settingStore.uiFolderSize == true
       && lockDirSizeTime == false && nowTime - runTime > 50 && chkDirSizeTime >= 10) {

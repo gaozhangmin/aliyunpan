@@ -32,7 +32,7 @@
     "ant-design-vue": "^3.2.12",
     "aria2-lib": "1.0.1",
     "artplayer": "^5.0.9",
-    "axios": "^0.27.2",
+    "axios": "^1.4.0",
     "crypto-js": "^4.1.1",
     "dayjs": "^1.11.5",
     "dexie": "^3.2.2",

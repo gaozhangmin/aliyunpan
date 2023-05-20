@@ -139,7 +139,7 @@ const verLoading = ref(false)
 
 const handleCheckVer = () => {
   verLoading.value = true
-  ServerHttp.CheckUpgrade(true).then(() => {
+  ServerHttp.CheckUpgrade().then(() => {
     verLoading.value = false
   })
 }
@@ -240,7 +240,7 @@ const handleCheckVer = () => {
             <span class="footAria" title="Aria已离线" v-else> Aria ⚯ Offline </span>
           </div>
 
-          <!--<div class="footerBar fix" style="padding: 0 8px; cursor: pointer" @click="handleCheckVer">{{ Config.appVersion }}</div>-->
+          <div class="footerBar fix" style="padding: 0 8px; cursor: pointer" @click="handleCheckVer">{{ Config.appVersion }}</div>
 
           <a-popover v-model:popup-visible="footStore.taskVisible" trigger="click" position="top" class="asynclist">
             <div class="footerBar fix" style="cursor: pointer">
