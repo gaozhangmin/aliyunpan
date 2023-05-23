@@ -73,7 +73,7 @@ export default class AliHttp {
       if (IsDebugHttp) console.log('CALLURLError ', error)
       const errorMessage = error.display_message || error.message || ''
       if (error.response) {
-        let { code, status, data = undefined, headers = undefined} = error.response
+        let { code, status, config, data = undefined, headers = undefined} = error.response
         if (code == 'ERR_NETWORK' || (status == 0 && !headers)) {
           DebugLog.mSaveWarning('HttpError0 message=' + errorMessage)
           return { code: 600, header: '', body: 'NetError 网络无法连接' } as IUrlRespData
@@ -96,19 +96,20 @@ export default class AliHttp {
             'DeviceSessionSignatureInvalid',
           ]
           if (errCode.includes(data.code)) isNeedLog = false
-          if (data.code == 'AccessTokenInvalid' || data.code == 'AccessTokenExpired') {
-            if (token && window.IsMainPage) {
-              return await AliUser.ApiTokenRefreshAccount(token, true).then((isLogin: boolean) => {
-                return { code: 401, header: '', body: 'NetError 账号需要重新登录' } as IUrlRespData
-              })
+          // 自动刷新Token
+          if (data.code == 'AccessTokenInvalid') {
+            if (token) {
+              if (window.IsMainPage) {
+                return await AliUser.ApiTokenRefreshAccount(token, true).then((isLogin: boolean) => {
+                  if (isLogin) {
+                    return { code: 401, header: '', body: '' } as IUrlRespData
+                  }
+                  return { code: 403, header: '', body: 'NetError 账号需要重新登录' } as IUrlRespData
+                })
+              }
             } else {
               return { code: 402, header: '', body: 'NetError 账号需要重新登录' } as IUrlRespData
             }
-          }
-
-          if (data.code == 'Too Many Requests') {
-            message.error('获取OpenApiAccessToken失败，请勿重复请求')
-            return { code: 429, header: '', body: '获取OpenApiAccessToken失败，请勿重复请求' } as IUrlRespData
           }
 
           // 自动刷新Session
@@ -116,8 +117,11 @@ export default class AliHttp {
               || data.code == 'UserDeviceOffline'
               || data.code == 'DeviceSessionSignatureInvalid') {
             if (token) {
-              return await AliUser.ApiSessionRefreshAccount(token,  true).then((isLogin: boolean) => {
-                return { code: 401, header: '', body: '刷新Session失败' } as IUrlRespData
+              return await AliUser.ApiSessionRefreshAccount(token,  true).then((flag: boolean) => {
+                if (flag) {
+                  return { code: 401, header: '', body: '' } as IUrlRespData
+                }
+                return { code: 403, header: '', body: '刷新Session失败' } as IUrlRespData
               })
             } else {
               return { code: 402, header: '', body: 'NetError 账号需要重新登录' } as IUrlRespData

@@ -162,7 +162,7 @@ export default class UserDAL {
       login: true
     })
     // 刷新Session
-    await AliUser.ApiSessionRefreshAccount(token, true)
+    await AliUser.ApiSessionRefreshAccount(token, false)
 
     useAppStore().resetTab()
     useMyShareStore().$reset()
@@ -257,12 +257,18 @@ export default class UserDAL {
     if (!token || !token.access_token) {
       return
     }
+
+    const nowMonth = new Date().getMonth() + 1
+    const nowDay = new Date().getDate()
+    const signData = await DB.getValueObject('uiAutoSign')
+
     const lastDaySign = await DB.getValueNumber('uiAutoSign')
-    if (lastDaySign !== new Date().getDate()) {
-      console.log("自动签到", lastDaySign, new Date().getDate())
-      return AliUser.ApiUserSign(token).then(async lastDay => {
-        console.log("自动签到123", lastDay)
-        lastDay != -1 && await DB.saveValueNumber('uiAutoSign', lastDay)
+
+    // @ts-ignore
+    if (!signData || signData.signMon !== nowMonth || signData.signDay !== nowDay) {
+    // if (lastDaySign !== new Date().getDate()) {
+      return AliUser.ApiUserSign(token).then(async signDay => {
+        signDay && await DB.saveValueObject('uiAutoSign', { signMon: nowMonth, signDay: signDay })
       })
     }
 

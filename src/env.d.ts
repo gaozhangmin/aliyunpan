@@ -58,4 +58,3 @@ declare module 'Go'
 declare module 'dom-to-image'
 declare module 'jschardet'
 declare function pinyinlite(text: string, config: any): any
-declare function videojs(ref: any, options: any, cb: any): any

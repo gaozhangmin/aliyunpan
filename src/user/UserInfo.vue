@@ -64,7 +64,7 @@ export default defineComponent({
           </a-col>
           <a-col flex="none">
             <a-button type="text" size="small" tabindex="-1" style="min-width: 46px; padding: 0 8px" title="每日签到"
-                      @click="handleSign">签到</a-button>
+                      @click="handleSign()">签到</a-button>
           </a-col>
           <a-col flex="none">
             <a-button type="text" size="small" tabindex="-1" style="min-width: 46px; padding: 0 8px" title="退出该账号" @click="handleLogOff()"> 退出 </a-button>

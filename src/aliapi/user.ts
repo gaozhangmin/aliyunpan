@@ -15,7 +15,8 @@ export const SessionLockMap = new Map<string, number>()
 export const SessionReTimeMap = new Map<string, number>()
 export default class AliUser {
 
-  static async ApiSessionRefreshAccount(token: ITokenInfo, showMessage: boolean) {
+  static async ApiSessionRefreshAccount(token: ITokenInfo, showMessage: boolean): Promise<boolean> {
+    if(!token.user_id) return false
     while (true) {
       const lock = SessionLockMap.has(token.user_id)
       if (lock) await Sleep(1000)
@@ -23,7 +24,7 @@ export default class AliUser {
     }
     SessionLockMap.set(token.user_id, Date.now())
     const time = SessionReTimeMap.get(token.user_id) || 0
-    if (Date.now() - time < 1000 * 60) {
+    if (Date.now() - time < 1000 * 60 * 5) {
       SessionLockMap.delete(token.user_id)
       return true
     }
