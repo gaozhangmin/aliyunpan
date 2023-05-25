@@ -19,8 +19,6 @@ export default class AliAlbum {
         const albums: IAliAlbumsList[] = []
 
         const userId = useUserStore().user_id
-        const drive_id = GetDriveID(userId, 'pic')
-        if (!drive_id) return albums
         let max: number = useSettingStore().debugFileListMax
         let next_marker = ''
         do {
@@ -32,14 +30,17 @@ export default class AliAlbum {
                         albums.push({
                             name: item.album_id,
                             friendly_name: item.name,
-                            preview: item.cover.list[0].download_url}
-                        )
+                            preview: item.cover.list[0].thumbnail,
+                            image_count: item.image_count
+                        })
                     })
                     next_marker = resp.body.next_marker
                 } else {
                     next_marker = ''
                 }
 
+            } else {
+                console.log("resp", resp)
             }
             if (albums.length >= max && max > 0) {
                 next_marker = ''
@@ -54,7 +55,7 @@ export default class AliAlbum {
         const url = 'adrive/v1/album/get'
         const resp = await AliHttp.Post(url, {album_id}, userId, '')
         if (AliHttp.IsSuccess(resp.code)) {
-            return resp.body.items as IAliAlubmListInfo
+            return resp.body as IAliAlubmListInfo
         } else {
             DebugLog.mSaveWarning('ApiAlbumsList err='  + (resp.code || ''))
         }

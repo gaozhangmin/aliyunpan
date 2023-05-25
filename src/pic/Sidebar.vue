@@ -18,7 +18,7 @@
     </div>
 
     <div class="listview" style="margin-top: 5px;">
-      <a :class="get_css_class_list_item('/all')" @click="on_switch_album('all', '图库')" href="javascript:void(0)"><span>图库</span></a>
+      <a :class="get_css_class_list_item('all')" @click="on_switch_album('all', '图库')" href="javascript:void(0)"><span>图库</span></a>
 <!--      <a :class="get_css_class_list_item('/recent')" @click="on_switch_album('/recent', '最近项目')" href="javascript:void(0)"><span>最近项目</span></a>-->
 <!--      <a :class="get_css_class_list_item('/fav')" @click="on_switch_album('fav', '个人收藏')" href="javascript:void(0)"><span>个人收藏</span></a>-->
     </div>
@@ -76,10 +76,7 @@ export default {
     },
     async getAlbumList() {
       this.album_list = await AliAlbum.ApiAlbumsList()
-    },
-    logout() {
-      localStorage.removeItem('password');
-      location.reload();
+      console.log("album_list", this.album_list)
     }
   }
 }

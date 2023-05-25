@@ -6,7 +6,6 @@
       </div>
       <div class="title right">
         <span style="color: #eee; margin-right: 10px;">{{ photo_count }}张图片</span>
-        <button>共享</button>
 
       </div>
       <div class="back left"   style="line-height:45px; left: 18px; top: 0" @click="raise_event_show_sidebar(true, 'mobile')">
@@ -19,7 +18,7 @@
     </div>
 
     <div>
-      <div class="photo box" v-for="(photo, i) in photo_list" :photo-name="photo.name" :key="i" :style="{ backgroundImage: `url('${ photo.download_url }')` }"
+      <div class="photo box" v-for="(photo, i) in photo_list" :photo-name="photo.name" :key="i" :style="{ backgroundImage: `url('${ photo.thumbnail }')` }"
             @click="raise_event_show_preview(photo.name, photo_list, i, photo.album_name, photo)"
       >
       </div>
@@ -32,11 +31,12 @@ import '../assets/style.css'
 import '../assets/contentview.css'
 
 import AliAlbum from '../aliapi/album'
+import PanTopbtn from "../pan/menus/PanTopbtn.vue";
 const PHOTO_PER_PAGE = 50;
 
 export default {
   name: "Content",
-  components: {},
+  components: {PanTopbtn},
   props: [ 'base_name', 'album_friendly_name', 'sidebar_shown_pc' ],
   data() {
     return {
@@ -48,23 +48,6 @@ export default {
       response_load_new: true,
     }
   },
-  // computed: {
-  //   album_common_prefix() {
-  //     if (this.base_name === '/all')
-  //       return 'get-photo-';
-  //     if (this.base_name === '/recent')
-  //       return 'get-recent-photo-';
-  //     if (this.base_name === '/fav')
-  //       return 'get-fav-photo-'; /// NOT: load from localstorage
-  //     return this.base_name + '-get-photo-';
-  //   },
-  //   album_get_count_json_name() {
-  //     return this.album_common_prefix + "count";
-  //   },
-  //   album_get_image_at_current_page_json_name() {
-  //     return this.album_common_prefix + "page-" + String(this.current_page_to_load);
-  //   },
-  // },
   watch: {
     base_name() {
       this.initialize();
@@ -89,6 +72,7 @@ export default {
       setTimeout(() => { this.response_load_new = true; }, 1000)
       if (this.current_page_to_load >= this.page_count)
         return;
+
       if (this.base_name === 'all') {
         const photos = await AliAlbum.ApiAlbumsAllPhotos()
         if (photos !== null) {
@@ -114,13 +98,28 @@ export default {
       this.response_load_new = true;
       this.initial_scroll_height = 0;
       this.photo_count = this.page_count = 0;
-
-      // load page 0 first
-      if (this.page_count > 0) {
-        this.load_image();
+      if (this.base_name === 'all') {
+        const allAlbums = await AliAlbum.ApiAlbumsList()
+        if (allAlbums.length > 0) {
+          allAlbums.forEach((album) => {
+            this.photo_count += album.image_count;
+          })
+          this.page_count = Math.ceil(this.photo_count / PHOTO_PER_PAGE);
+          if (this.page_count > 0) {
+            this.load_image();
+          }
+        }
+      } else {
+        const albumInfo = await AliAlbum.ApiAlbumGet(this.base_name)
+        if (albumInfo) {
+          this.photo_count = albumInfo.image_count;
+          this.page_count = Math.ceil(this.photo_count / PHOTO_PER_PAGE);
+          // load page 0 first
+          if (this.page_count > 0) {
+            this.load_image();
+          }
+        }
       }
-      this.photo_count = this.photo_list.length;
-      this.page_count = Math.ceil(this.photo_count / PHOTO_PER_PAGE);
     },
     handleScroll: function(el) {
       if (this.initial_scroll_height === 0)

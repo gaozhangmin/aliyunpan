@@ -1,19 +1,5 @@
-<!--<script setup lang="ts">-->
-<!--import MySplit from '../layout/MySplit.vue'-->
-<!--import PicLeft from './PicLeft.vue'-->
-<!--import PicRight from './PicRight.vue'-->
-<!--</script>-->
-
-<!--<template>-->
-<!--&lt;!&ndash;  <MySplit>&ndash;&gt;-->
-<!--&lt;!&ndash;    <template #first><PicLeft /></template>&ndash;&gt;-->
-<!--&lt;!&ndash;    <template #second><PicRight /></template>&ndash;&gt;-->
-<!--&lt;!&ndash;  </MySplit>&ndash;&gt;-->
-<!--</template>-->
-
-<!--<style></style>-->
 <template>
-  <div>
+  <div  v-show="appStore.appTab === 'pic'">
     <div :class="['content-container', sidebar_shown_on_pc_mode?'':'side-hidden-screen']">
       <ContentView :base_name="contentAlbumName" :album_friendly_name="contentFriendlyName"
                    @should-show-sidebar="(val, mode) =>  mode === 'mobile' ? sidebar_shown_on_mobile_mode = val : sidebar_shown_on_pc_mode = val"
@@ -41,6 +27,8 @@
 import Sidebar from "./Sidebar.vue";
 import ContentView from "./Content.vue";
 import Preview from './Preview.vue';
+import {useAppStore, useUserStore} from "../store";
+import {GetDriveID} from "../aliapi/utils";
 
 export default {
   name: 'App',
@@ -52,6 +40,7 @@ export default {
     content_view_shown: true,
     sidebar_shown_on_mobile_mode: false,
     sidebar_shown_on_pc_mode: true,
+    appStore: useAppStore(),
 
     preview_shown: false,
     preview_filename: '',
@@ -78,15 +67,18 @@ export default {
 
       this.contentAlbumName = "all";
       this.contentFriendlyName = "图库";
+      const intervalId = setInterval(() => {
+        if (GetDriveID(useUserStore().user_id, 'pic')) {
+          this.$refs.sidebar.getAlbumList();
+          clearInterval(intervalId);
+        }
+      }, 1000);
     }
   },
   async mounted() {
     if (window.innerWidth <= 500)
       this.sidebar_shown_on_mobile_mode = true;
-
-    window.enabled_password = false;
     this.initialize();
-
   }
 }
 </script>
@@ -101,7 +93,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
-  margin-top: 10px;
+  margin-top: 0;
 }
 
 /* TODO: Consider mobile devices */
@@ -117,7 +109,7 @@ body {
 }
 .content-container {
   position: fixed;
-  top: 0;
+  top: 2;
   right: 0;
   display: inline-block;
   width: 75%;

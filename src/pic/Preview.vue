@@ -1,8 +1,10 @@
 <template>
   <div :class="showNavBar ? 'preview-with-navbar' : 'preview-hidden-navbar'" style="width: 100%; height: 100%;">
     <span style="position: absolute; top: 45%; text-align: center; color: #888; display: block; width: 100%;">正在加载图片...</span>
-    <div class="preview-photo-base preview-bg" :style="preview_cache_img_style"></div>
-    <div class="preview-photo-high-res preview-bg" :style="preview_img_style"></div>
+    <div class="center">
+      <div class="preview-photo-base preview-bg" :style="preview_cache_img_style"></div>
+      <div class="preview-photo-high-res preview-bg" :style="preview_img_style"></div>
+    </div>
     <div class="preview-mask" @click="() => { showNavBar = !showNavBar }"></div>
     <div class="navbar" style="width: 100% !important;" v-show="showNavBar">
       <div class="nav-title">
@@ -14,9 +16,9 @@
 
       <div class="right-button-group">
         <a href="javascript:void(0)" @click="downloadPhoto()">下载</a>
+        <a-button type="text" tabindex="-1" @click="goLastImage"> <i class="iconfont iconarrow-left-2-icon"></i>上一张 </a-button>
+        <a-button type="text" tabindex="-1" @click="goNextImage"> <i class="iconfont iconarrow-right-2-icon"></i>下一张 </a-button>
       </div>
-
-
     </div>
   </div>
 </template>
@@ -24,6 +26,8 @@
 <script>
 import '../assets/style.css';
 import '../assets/preview.css';
+import message from "../utils/message";
+import {useAppStore} from "../store";
 
 export default {
   name: "Preview",
@@ -31,12 +35,15 @@ export default {
   data: () => ({
     showNavBar: true,
     preview_img_style: {},
-    preview_cache_img_style: {}
+    reactiveIndex: -1,
+    preview_cache_img_style: {},
+    photo_name: '',
+    keyDowning: false,
   }),
   computed: {
-    photo_name() {
-      return this.current_photo_filename.replace(/\.[a-z|A-Z|0-9]*$/g, "");
-    },
+    // photo_name() {
+    //   return this.current_photo_filename.replace(/\.[a-z|A-Z|0-9]*$/g, "");
+    // },
     thumbnail_path() {
       return this.current_photo.thumbnail
     },
@@ -45,6 +52,62 @@ export default {
     },
   },
   methods: {
+    onKeyDown(event) {
+      event.stopPropagation()
+      event.preventDefault()
+
+      if (this.keyDowning) return
+      this.keyDowning = true
+      setTimeout(() => {
+        this.keyDowning = false
+      }, 200)
+
+      if (event.code === 'ArrowRight') {
+        this.goNextImage()
+      } else if (event.code === 'ArrowLeft') {
+        this.goLastImage()
+      }
+    },
+    goLastImage() {
+      if (this.reactiveIndex === -1) this.reactiveIndex = this.index;
+      const fileIndex = this.reactiveIndex - 1
+      if (fileIndex < 0) {
+        message.info('已经是第一张图片了');
+      } else {
+        this.reactiveIndex = fileIndex; // Update the reactive variable
+        this.preview_img_style = {
+          backgroundImage: 'url(\''+this.image_list[fileIndex].download_url+'\')',
+          backgroundSize: this.getBackgroundSize()
+        };
+
+        this.preview_cache_img_style = {
+          backgroundImage: 'url(\''+this.image_list[fileIndex].thumbnail+'\')',
+          backgroundSize: this.getBackgroundSize()
+        };
+        this.photo_name = this.image_list[fileIndex].name.replace(/\.[a-z|A-Z|0-9]*$/g, "");
+      }
+    },
+    goNextImage() {
+      if (this.reactiveIndex === -1) this.reactiveIndex = this.index;
+      const fileIndex = this.reactiveIndex + 1
+      if (fileIndex >= this.image_list.length) {
+        message.info('已经是最后一张图片了');
+      } else {
+        this.reactiveIndex = fileIndex; // Update the reactive variable
+        this.preview_img_style = {
+          backgroundImage: 'url(\''+this.image_list[fileIndex].download_url+'\')',
+          backgroundSize: this.getBackgroundSize()
+        };
+
+        this.preview_cache_img_style = {
+          backgroundImage: 'url(\''+this.image_list[fileIndex].thumbnail+'\')',
+          backgroundSize: this.getBackgroundSize()
+        };
+        this.photo_name = this.image_list[fileIndex].name.replace(/\.[a-z|A-Z|0-9]*$/g, "");
+      }
+    },
+
+
     raise_hide_preview() {
       this.$emit('hide-preview');
     },
@@ -53,8 +116,8 @@ export default {
     },
     getBackgroundSize() {
       //current_photo.h > current_photo.w ? 'auto 100%':'100% auto'
-      let ph = this.current_photo.h;
-      let pw = this.current_photo.w;
+      let ph = this.current_photo.image_media_metadata.height;
+      let pw = this.current_photo.image_media_metadata.width;
       let wh = window.innerHeight;
       let ww = window.innerWidth;
       let pr = pw / ph;
@@ -96,9 +159,13 @@ export default {
         backgroundImage: 'url(\''+this.thumbnail_path+'\')',
         backgroundSize: this.getBackgroundSize()
       };
+
+      this.photo_name = this.current_photo_filename.replace(/\.[a-z|A-Z|0-9]*$/g, "");
     }
   },
-  mounted() {},
+  mounted() {
+    window.addEventListener('keydown', this.onKeyDown, true)
+  }
 }
 </script>
 

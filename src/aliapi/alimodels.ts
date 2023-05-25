@@ -67,6 +67,7 @@ export interface IAliAlbumsList {
   name:string
   friendly_name:string
   preview:string
+  image_count:number
 }
 
 export interface IAliAlubmListInfo {
