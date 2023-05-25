@@ -7,7 +7,7 @@ import { Tooltip as AntdTooltip } from 'ant-design-vue'
 
 import PanDAL from '../pan/pandal'
 import PanTopbtn from '../pan/menus/PanTopbtn.vue'
-import PicDAL from "./PicDAL";
+import PicDAL from './PicDAL'
 
 
 const settingStore = useSettingStore()

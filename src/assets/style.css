@@ -1,0 +1,178 @@
+* {
+    font-family: "PingFang SC", 'Microsoft YaHei', Arial, serif;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    font-size: 16px;
+}
+
+@media screen and (max-width: 500px) {
+    * {
+        font-size: 17px;
+    }
+}
+
+input, input:before, input:after {
+    -webkit-user-select: initial;
+    -moz-user-select: initial;
+    -ms-user-select: initial;
+    user-select: initial;
+}
+
+.accent-text-color {
+    color: #5555ff;
+}
+
+/* 0.1  Icons  */
+i.rarrow {
+    margin-bottom: 0px;
+    margin-left: -6px;
+    width: 5px;
+    height: 5px;
+    border-top: 2px solid #5555ff;
+    border-right: 2px solid #5555ff;
+    transform: rotate(45deg);
+    display: inline-block;
+}
+
+i.larrow {
+    margin-bottom: 0px;
+    margin-left: 0px;
+    width: 10px;
+    height: 10px;
+    border-top: 2px solid #5555ff;
+    border-right: 2px solid #5555ff;
+    transform: rotate(-135deg);
+    display: inline-block;
+}
+
+i.rarrow:active,
+i.larrow:active {
+    border-color: #8888ff;
+}
+
+/* 1. Components */
+
+/*   1.1 Texts */
+.title1 {
+    padding-left: 10px;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.title2 {
+    padding-left: 5px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+/*   1.2 Lists */
+a.list-item {
+
+}
+
+/*   1.3 Navigation Bar */
+div.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 25%;
+    height: 45px;
+    background-color: rgba(255,255,255,0.8);
+    border-bottom: 1px solid #ddd;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+@media screen and (min-width: 1400px) {
+    div.navbar {
+        width: 20%;
+    }
+}
+
+div.navbar.large {
+    border-bottom: 1px solid transparent;
+    background-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+div.navbar .nav-title {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    font-weight: bold;
+    font-size: 16px;
+    text-align: center;
+    line-height: 45px;
+}
+
+div.navbar.large .nav-title {
+    display: none;
+}
+
+div.navbar .left-button-group {
+    position: absolute;
+    left: 18px;
+    top: 0;
+    height: 45px;
+    line-height: 45px;
+    color: #5555ff;
+}
+
+div.navbar .right-button-group {
+    position: absolute;
+    right: 18px;
+    top: 0;
+    height: 45px;
+    line-height: 45px;
+    color: #5555ff;
+}
+
+div.navbar .right-button-group a,
+div.navbar .left-button-group a {
+    color: #5555ff;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+div.navbar .right-button-group a:active,
+div.navbar .left-button-group a:active {
+    color: #8888ff;
+}
+
+div.navbar .right-button-group a.disabled,
+div.navbar .left-button-group a.disabled {
+    color: #888888;
+    cursor: default;
+}
+
+div.navbar .right-button-group a.disabled:active,
+div.navbar .left-button-group a.disabled:active {
+    color: #888888;
+}
+
+/*   1.4 List */
+div.listview {
+    padding-left: 10px 0 10px 0;
+}
+
+div.listview a {
+    display: block;
+    height: 40px;
+    line-height: 40px;
+    padding-left: 13px;
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+    border-radius: 10px;
+}
+
+div.listview a.selected {
+    background: #5555ff;
+    color: aliceblue;
+}

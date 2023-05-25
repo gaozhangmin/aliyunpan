@@ -1,0 +1,155 @@
+div.cnav {
+    height: 100px;
+    position: fixed;
+    width: 100%;
+
+    /* Permalink - use to edit and share this gradient: https://colorzilla.com/gradient-editor/#000000+0,000000+24,000000+100&0.37+0,0.29+24,0+100 */
+    background: -moz-linear-gradient(top,  rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.2) 24%, rgba(0,0,0,0) 100%); /* FF3.6-15 */
+    background: -webkit-linear-gradient(top,  rgba(0,0,0,0.3) 0%,rgba(0,0,0,0.2) 24%,rgba(0,0,0,0) 100%); /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(to bottom,  rgba(0,0,0,0.3) 0%,rgba(0,0,0,0.2) 24%,rgba(0,0,0,0) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#5e000000', endColorstr='#00000000',GradientType=0 ); /* IE6-9 */
+
+    z-index: 999;
+}
+
+div.cnav .title {
+    position: absolute;
+    top: 20px;
+}
+
+div.cnav .title.left {
+    left: 20px;
+}
+
+div.cnav .title.right {
+    position: fixed;
+    right: 20px;
+}
+
+div.cnav .title-text {
+    color: #fff;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+div.cnav button{
+    border: none;
+    border-radius: 20px;
+    padding: 5px 15px 5px 15px;
+    background: rgba(180,180,180,0.5);
+    color: white;
+    border-bottom: 1px solid #ddd;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    outline: none;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+div.cnav button:active {
+    background: rgba(80,80,80,0.5);
+}
+
+div.cnav .back {
+    display: none;
+}
+
+div.cnav .back .backtext {
+    margin-left: 2px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+div.cnav .back .backtext:active {
+    color: #aaaaff;
+}
+
+div.cnav .back.sidebar-hidden {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: block;
+}
+div.cnav .title.left.sidebar-hidden {
+    top: 45px;
+    left: 15px;
+}
+
+/* Photos */
+.box {
+    position: relative;
+    width:    20%; /* desired width */
+}
+.box:before {
+    content:     "";
+    display:     block;
+    padding-top: 100%; /* initial ratio of 1:1*/
+}
+.content {
+    position: absolute;
+    top:      0;
+    left:     0;
+    bottom:   0;
+    right:    0;
+}
+.ratio2_1:before{
+    padding-top: 50%;
+}
+.ratio1_2:before{
+    padding-top: 200%;
+}
+.ratio4_3:before{
+    padding-top: 75%;
+}
+.ratio16_9:before{
+    padding-top: 56.25%;
+}
+
+div.photo {
+    display: inline-block;
+    margin-top: -5px;
+    background-color: #eee;
+    background-size:cover;
+}
+
+
+@media screen and (max-width: 1100px) {
+    div.cnav .back {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        display: block;
+    }
+
+    div.cnav .title.left {
+        top: 45px;
+        left: 15px;
+    }
+
+    .sidebar-hidden-left {
+        display: none !important;
+    }
+}
+
+@media screen and (max-width: 960px) {
+    .box {
+        position: relative;
+        width:    25%; /* desired width */
+    }
+}
+
+@media screen and (max-width: 720px) {
+    .box {
+        position: relative;
+        width:    33%; /* desired width */
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .box {
+        position: relative;
+        width:    50%; /* desired width */
+    }
+}
+

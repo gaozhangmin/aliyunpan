@@ -16,6 +16,7 @@ export interface IAliFileAudioMeta {
 
 
 export interface AliAlbumFileInfo {
+  album_name?:string
   "trashed": false,
   "drive_id": string,
   "file_id": string,
@@ -61,12 +62,11 @@ export interface AliAlbumFileInfo {
   "ex_fields_info"?: {}
 }
 
-export interface IAliAlbumResp {
-  items: IAliAlubmListInfo[]
-  itemsKey: Set<string>
-  next_marker: string
-  m_user_id: string
-  m_drive_id: string
+// [{"name": "cutecy", "friendly_name": "\u53ef\u53ef\u7231\u7231\n", "preview": ".DS_Store"}]
+export interface IAliAlbumsList {
+  name:string
+  friendly_name:string
+  preview:string
 }
 
 export interface IAliAlubmListInfo {

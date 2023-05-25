@@ -1,8 +1,8 @@
 import {
-    AliAlbumFileInfo, IAliAlbumResp,
+    AliAlbumFileInfo, IAliAlbumsList,
     IAliAlubmCreateInfo,
     IAliAlubmListInfo, IAliGetFileModel
-} from "./alimodels";
+} from './alimodels'
 import AliHttp, {IUrlRespData} from "./alihttp";
 import DebugLog from "../utils/debuglog";
 import {IAliFileResp} from "./dirfilelist";
@@ -14,50 +14,45 @@ import {GetDriveID} from "./utils";
 
 export default class AliAlbum {
 
-    static async ApiAlbumsList(drive_id: string): Promise<IAliAlbumResp> {
+    static async ApiAlbumsList(): Promise<IAliAlbumsList[]> {
         const url = 'adrive/v1/album/list'
-        const albums: IAliAlbumResp = {
-            items: [],
-            itemsKey: new Set(),
-            next_marker: '',
-            m_drive_id: drive_id,
-            m_user_id: '',
-        }
+        const albums: IAliAlbumsList[] = []
 
         const userId = useUserStore().user_id
-        if (!drive_id) drive_id = GetDriveID(userId, 'pic')
+        const drive_id = GetDriveID(userId, 'pic')
         if (!drive_id) return albums
-        albums.m_drive_id = drive_id
-        albums.m_user_id = userId
         let max: number = useSettingStore().debugFileListMax
+        let next_marker = ''
         do {
-            const resp = await AliHttp.Post(url, {next_marker: albums.next_marker}, userId, '')
+            const resp = await AliHttp.Post(url, {next_marker: next_marker}, userId, '')
             if (AliHttp.IsSuccess(resp.code)) {
                 const items = resp.body.items as IAliAlubmListInfo[]
                 if (items) {
                     items.forEach((item) => {
-                        if (!albums.itemsKey.has(item.album_id)) {
-                            albums.itemsKey.add(item.album_id)
-                            albums.items.push(item)
-                        }
+                        albums.push({
+                            name: item.album_id,
+                            friendly_name: item.name,
+                            preview: item.cover.list[0].download_url}
+                        )
                     })
-                    albums.next_marker = resp.body.next_marker
+                    next_marker = resp.body.next_marker
                 } else {
-                    albums.next_marker = ''
+                    next_marker = ''
                 }
 
             }
-            if (albums.items.length >= max && max > 0) {
-                albums.next_marker = ''
+            if (albums.length >= max && max > 0) {
+                next_marker = ''
                 break
             }
-        } while(albums.next_marker)
+        } while(next_marker)
         return albums
     }
 
-    static async ApiAlbumGet(user_id: string,  album_id: string): Promise<IAliAlubmListInfo | undefined> {
+    static async ApiAlbumGet(album_id: string): Promise<IAliAlubmListInfo | undefined> {
+        const userId = useUserStore().user_id
         const url = 'adrive/v1/album/get'
-        const resp = await AliHttp.Post(url, {album_id}, user_id, '')
+        const resp = await AliHttp.Post(url, {album_id}, userId, '')
         if (AliHttp.IsSuccess(resp.code)) {
             return resp.body.items as IAliAlubmListInfo
         } else {
@@ -66,9 +61,33 @@ export default class AliAlbum {
         return undefined
     }
 
-    static async ApiAlbumListFiles(user_id: string,  album_id: string): Promise<AliAlbumFileInfo[] | undefined> {
+    static async ApiAlbumsAllPhotos(): Promise<AliAlbumFileInfo[]> {
+        const userId = useUserStore().user_id
         const url = 'adrive/v1/album/list_files'
-        const resp = await AliHttp.Post(url, {album_id}, user_id, '')
+        const albums = await AliAlbum.ApiAlbumsList()
+        const allPhotos: AliAlbumFileInfo[] = []
+        for (const album of albums) {
+            const album_id = album.name
+            const resp = await AliHttp.Post(url, {album_id}, userId, '')
+            if (AliHttp.IsSuccess(resp.code)) {
+                const photos = resp.body.items as AliAlbumFileInfo[]
+                photos.forEach((photo) => {
+                    photo.album_name = album.friendly_name
+                })
+                allPhotos.push(...photos)
+            } else {
+                DebugLog.mSaveWarning('ApiAlbumListFiles album: ' + album.friendly_name + 'error: ' + (resp.code || ''))
+            }
+        }
+        return allPhotos
+    }
+
+
+
+    static async ApiAlbumListFiles(album_id: string): Promise<AliAlbumFileInfo[] | undefined> {
+        const userId = useUserStore().user_id
+        const url = 'adrive/v1/album/list_files'
+        const resp = await AliHttp.Post(url, {album_id}, userId, '')
         if (AliHttp.IsSuccess(resp.code)) {
             return resp.body.items as AliAlbumFileInfo[]
         } else {
