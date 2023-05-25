@@ -154,7 +154,7 @@ export default defineComponent({
     </div>
     <div class="modalfoot">
       <div style="flex-grow: 1"></div>
-      <a-button type="outline" size="small" @click="handleHide">取消</a-button>
+      <a-button type="outline" size="small" @click="handleHide()">关闭</a-button>
     </div>
   </a-modal>
 </template>

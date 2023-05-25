@@ -8,7 +8,7 @@ import { h } from 'vue'
 import { getAppNewPath, getResourcesPath, openExternal } from '../utils/electronhelper'
 import ShareDAL from '../share/share/ShareDAL'
 import DebugLog from '../utils/debuglog'
-import { writeFileSync, rmSync, existsSync } from 'fs'
+import { writeFileSync, rmSync, existsSync, readFileSync } from 'fs'
 import { execFile, SpawnOptions } from 'child_process'
 import path from 'path'
 
@@ -89,7 +89,6 @@ export default class ServerHttp {
 
   static configUrl = b64decode('aHR0cHM6Ly9hcGkuZ2l0aHViLmNvbS9yZXBvcy9nYW96aGFuZ21pbi9zdGF0aWNSZXNvdXJjZS9jb250ZW50cy9pbWFnZXMvc2hhcmVfY29uZmlnLmpzb24=')
   static updateUrl = b64decode('aHR0cHM6Ly9hcGkuZ2l0aHViLmNvbS9yZXBvcy9nYW96aGFuZ21pbi9hbGl5dW5wYW4vcmVsZWFzZXMvbGF0ZXN0')
-  static showVer = false
 
   static async CheckConfigUpgrade(): Promise<void> {
     axios
@@ -159,15 +158,21 @@ export default class ServerHttp {
           }
         }
         if (tagName) {
-          const localVer = Config.appVersion.replaceAll('v', '').trim()
+          let configVer = Config.appVersion.replaceAll('v', '').trim()
+          if (process.platform !== 'linux') {
+            let localVersion = getResourcesPath('localVersion')
+            if (localVersion && existsSync(localVersion)) {
+              configVer = readFileSync(localVersion, 'utf-8').replaceAll('v', '').trim()
+              console.log("configVer", configVer)
+            }
+          }
           const remoteVer = tagName.replaceAll('v', '').trim()
-          const fileSize = humanSize(updateData.size)
           const verInfo = this.dealText(response.data.body as string)
           let verUrl = ''
           if (updateData.url) {
             verUrl = 'https://ghproxy.com/' + updateData.url
           }
-          if (remoteVer > localVer) {
+          if (remoteVer > configVer) {
             Modal.confirm({
               mask: true,
               alignCenter: true,
@@ -178,7 +183,7 @@ export default class ServerHttp {
               }),
               content: () => h('div', {
                 innerHTML: ' <div style="display: flex; justify-content: center; align-items: center;">\n' +
-                  '                          <img src="/images/qrcode_258.jpg" alt="公众号">\n' +
+                  '                          <img src="./images/qrcode_258.jpg" alt="公众号">\n' +
                   '                      </div>\n' +
                   '                      <p style="text-indent: 40px; color: red;">Github需要代理，如果下载失败，请关注公众号从网盘下载</p>' + verInfo,
                 class: { vermodal: true }
@@ -231,16 +236,16 @@ export default class ServerHttp {
                   onClick: async () => {
                     if (asarFileUrl.length > 0 && process.platform !== 'linux') {
                       // 下载安装
-                      await this.AutoDownload(asarFileUrl, updateData.name, true)
+                      await this.AutoDownload(asarFileUrl, updateData.name, true, remoteVer)
                     }
                     return true
                   }
                 })
               ])
             })
-          } else if (remoteVer == localVer) {
+          } else if (remoteVer == configVer) {
             message.info('已经是最新版 ' + tagName, 6)
-          } else if (remoteVer < localVer) {
+          } else if (remoteVer < configVer) {
             message.info('您的本地版本 ' + Config.appVersion + ' 已高于服务器版本 ' + tagName, 6)
           }
         }
@@ -294,7 +299,7 @@ export default class ServerHttp {
     return resultTextArr.join('<br>')
   }
 
-  static async AutoDownload(appNewUrl: string, file_name: string, hot: boolean): Promise<boolean> {
+  static async AutoDownload(appNewUrl: string, file_name: string, hot: boolean, hotVer?: string): Promise<boolean> {
     let resourcesPath = hot ? getAppNewPath() : getResourcesPath(file_name)
     if (!hot && existsSync(resourcesPath)) {
       this.autoInstallNewVersion(resourcesPath)
@@ -318,7 +323,13 @@ export default class ServerHttp {
           this.Sleep(2000)
           this.autoInstallNewVersion(resourcesPath)
         } else {
-          message.info('热更新完毕，自动重启应用中...', 2)
+          // 更新本地版本号
+          if (hotVer) {
+            const localVersion = getResourcesPath('localVersion')
+            localVersion && writeFileSync(localVersion, hotVer, 'utf-8')
+          }
+          message.info('热更新完毕，自动重启应用中...', 5)
+          this.Sleep(1000)
           window.WebRelaunch()
         }
         return true

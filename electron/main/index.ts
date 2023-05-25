@@ -37,10 +37,11 @@ app.commandLine.appendSwitch('wm-window-animations-disabled')
 
 app.setAppUserModelId('gaozhangmin')
 app.name = 'alixby3'
-const downloadPageUrl = 'https://github.com/gaozhangmin/aliyunpan/releases/latest'
 const DEBUGGING = !app.isPackaged
-const qrCodePath = getStaticPath(path.join('images', 'qrcode_1280.jpg'))
-const qrCodeImage = nativeImage.createFromPath(qrCodePath);
+
+// const downloadPageUrl = 'https://github.com/gaozhangmin/aliyunpan/releases/latest'
+// const qrCodePath = getStaticPath(path.join('images', 'qrcode_1280.jpg'))
+// const qrCodeImage = nativeImage.createFromPath(qrCodePath);
 
 const userData = getResourcesPath('userdir.config')
 try {
@@ -124,87 +125,59 @@ ipcMain.on('WebUserToken', (event, data) => {
   }
 })
 
-// ipcMain.on('AutoLanuchAtStartup', (event, shouldAutoLaunch) => {
-//   if (shouldAutoLaunch) {
-//     app.setLoginItemSettings({
-//       openAtLogin: true,
-//       openAsHidden: true,
-//       path: process.execPath,
-//       args: [
-//         '--processStart', `${process.execPath}`,
-//         '--process-start-args', `"--hidden"`
-//       ]
-//     });
-//   } else {
-//     app.setLoginItemSettings({
-//       openAtLogin: false,
-//       path: process.execPath,
-//       args: [
-//         '--processStart', `${process.execPath}`,
-//         '--process-start-args', `"--hidden"`
-//       ]
-//     });
-//   }
+
+// ipcMain.on('CheckUpdate', () => {
+//   checkForUpdates()
 // });
-
-
-ipcMain.on('CheckUpdate', () => {
-  checkForUpdates()
-});
-
-autoUpdater.setFeedURL({
-  provider: 'github',
-  owner: 'gaozhangmin',
-  repo: 'aliyunpan',
-});
-
-function checkForUpdates() {
-  autoUpdater.checkForUpdates().then((updateCheckResult) => {
-    if (updateCheckResult && updateCheckResult.updateInfo.version !== autoUpdater.currentVersion.version) {
-      //有新版本可用，显示提示框
-      dialog.showMessageBox({
-        type: 'question',
-        buttons: ['Yes', 'No'],
-        title: '应用有新版本可用',
-        message: `检测到新版本: ${updateCheckResult.updateInfo.version} , 扫码关注小白羊网盘下载更新`,
-        detail: '是否立即安装新版本？',
-        icon: qrCodeImage
-      }).then((result) => {
-        // 根据用户选择的按钮执行相应操作
-        if (result.response === 0) {
-          shell.openExternal(downloadPageUrl);
-        }
-      });
-    }
-  }).catch((error) => {
-    // 更新检查失败
-  });
-}
+//
+// autoUpdater.setFeedURL({
+//   provider: 'github',
+//   owner: 'gaozhangmin',
+//   repo: 'aliyunpan',
+// });
+//
+// function checkForUpdates() {
+//   autoUpdater.checkForUpdates().then((updateCheckResult) => {
+//     if (updateCheckResult && updateCheckResult.updateInfo.version !== autoUpdater.currentVersion.version) {
+//       //有新版本可用，显示提示框
+//       dialog.showMessageBox({
+//         type: 'question',
+//         buttons: ['Yes', 'No'],
+//         title: '应用有新版本可用',
+//         message: `检测到新版本: ${updateCheckResult.updateInfo.version} , 扫码关注小白羊网盘下载更新`,
+//         detail: '是否立即安装新版本？',
+//         icon: qrCodeImage
+//       }).then((result) => {
+//         // 根据用户选择的按钮执行相应操作
+//         if (result.response === 0) {
+//           shell.openExternal(downloadPageUrl);
+//         }
+//       });
+//     }
+//   }).catch((error) => {
+//     // 更新检查失败
+//   });
+// }
 
 app
   .whenReady()
   .then(() => {
-    checkForUpdates()
-    const versionFile = getUserDataPath('version')
-    if (versionFile && existsSync(versionFile)) {
-      const version = readFileSync(versionFile, 'utf-8')
-      if (version != app.getVersion()) {
-        session.defaultSession.clearCache()
-        session.defaultSession.clearAuthCache()
-        writeFileSync(versionFile, app.getVersion(), 'utf-8')
+    if (process.platform !== 'linux') {
+      const localVersion = getResourcesPath('localVersion')
+      console.log("localVersion", localVersion)
+      if (localVersion && existsSync(localVersion)) {
+        const version = readFileSync(localVersion, 'utf-8')
+        if (version < app.getVersion()) {
+          writeFileSync(localVersion, app.getVersion(), 'utf-8')
+        }
+      } else {
+        writeFileSync(localVersion, app.getVersion(), 'utf-8')
       }
-    } else {
-      session.defaultSession.clearCache()
-      session.defaultSession.clearAuthCache()
-      writeFileSync(versionFile, app.getVersion(), 'utf-8')
     }
-
     session.defaultSession.webRequest.onBeforeSendHeaders((details, cb) => {
-
       const should115Referer = details.url.indexOf('.115.com') > 0
       const shouldGieeReferer = details.url.indexOf('gitee.com') > 0
       const shouldAliOrigin = details.url.indexOf('.aliyundrive.com') > 0
-
       const shouldAliReferer = !should115Referer && !shouldGieeReferer && (!details.referrer || details.referrer.trim() === '' || /(\/localhost:)|(^file:\/\/)|(\/127.0.0.1:)/.exec(details.referrer) !== null)
       const shouldToken = details.url.includes('aliyundrive') && details.url.includes('download')
       const shouldOpenApiToken = details.url.includes('adrive/v1.0')
@@ -266,7 +239,7 @@ export function createMenu() {
   menuCopy.append(new MenuItem({ label: '全选', role: 'selectAll' }))
 }
 
-ipcMain.on('WebToElectron', (event, data) => {
+ipcMain.on('WebToElectron', async (event, data) => {
   let mainWindow = AppWindow.mainWindow
   if (data.cmd && data.cmd === 'close') {
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.hide()
@@ -623,7 +596,7 @@ async function startAria2c() {
     } else {
       ariaPath = 'aria2c'
     }
-    basePath = path.join(basePath, DEBUGGING ? path.join(process.platform, process.arch): '')
+    basePath = path.join(basePath, DEBUGGING ? path.join(process.platform, process.arch) : '')
     let ariaFullPath = path.join(basePath, ariaPath)
     if (!existsSync(ariaFullPath)) {
       ShowError('找不到Aria程序文件', ariaFullPath)
@@ -633,7 +606,7 @@ async function startAria2c() {
     const options = { shell: true, windowsVerbatimArguments: true }
     const port = await portIsOccupied(16800)
     const subprocess = execFile(
-       '\"'+ ariaFullPath + '\"',
+      '\"' + ariaFullPath + '\"',
       [
         '--stop-with-process=' + process.pid,
         '-D',

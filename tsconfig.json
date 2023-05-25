@@ -8,6 +8,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "sourceMap": false,
+    "allowJs": true,
     "baseUrl": "./",
     "strict": true,
     "allowSyntheticDefaultImports": true,

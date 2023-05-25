@@ -27,7 +27,6 @@
 import '../assets/style.css';
 import '../assets/preview.css';
 import message from "../utils/message";
-import {useAppStore} from "../store";
 
 export default {
   name: "Preview",
@@ -94,16 +93,18 @@ export default {
         message.info('已经是最后一张图片了');
       } else {
         this.reactiveIndex = fileIndex; // Update the reactive variable
-        this.preview_img_style = {
-          backgroundImage: 'url(\''+this.image_list[fileIndex].download_url+'\')',
-          backgroundSize: this.getBackgroundSize()
-        };
+        if (this.image_list[fileIndex] !== undefined) {
+          this.preview_img_style = {
+            backgroundImage: 'url(\''+this.image_list[fileIndex].download_url+'\')',
+            backgroundSize: this.getBackgroundSize()
+          };
 
-        this.preview_cache_img_style = {
-          backgroundImage: 'url(\''+this.image_list[fileIndex].thumbnail+'\')',
-          backgroundSize: this.getBackgroundSize()
-        };
-        this.photo_name = this.image_list[fileIndex].name.replace(/\.[a-z|A-Z|0-9]*$/g, "");
+          this.preview_cache_img_style = {
+            backgroundImage: 'url(\''+this.image_list[fileIndex].thumbnail+'\')',
+            backgroundSize: this.getBackgroundSize()
+          };
+          this.photo_name = this.image_list[fileIndex].name.replace(/\.[a-z|A-Z|0-9]*$/g, "");
+        }
       }
     },
 

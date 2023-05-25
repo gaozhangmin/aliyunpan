@@ -124,10 +124,10 @@ export default defineComponent({
             <template #icon> <i class="iconfont iconjietu" /> </template>
             <template #default>雪碧图</template>
           </a-doption>
-          <a-doption v-show="isvideo" @click="() => menuDLNA()">
-            <template #icon> <i class="iconfont icontouping2" /> </template>
-            <template #default>DLNA投屏</template>
-          </a-doption>
+<!--          <a-doption v-show="isvideo" @click="() => menuDLNA()">-->
+<!--            <template #icon> <i class="iconfont icontouping2" /> </template>-->
+<!--            <template #default>DLNA投屏</template>-->
+<!--          </a-doption>-->
           <a-doption v-show="isvideo" @click="() => menuM3U8Download()">
             <template #icon> <i class="iconfont iconluxiang" /> </template>
             <template #default>M3U8下载</template>

@@ -32,5 +32,5 @@ declare interface Window {
   WebShutDown: any
   WebSetProxy: any
   AutoLanuchAtStartup: any
-  CheckUpdate:any
+  // CheckUpdate:any
 }

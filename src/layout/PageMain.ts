@@ -30,6 +30,10 @@ export function PageMain() {
     .then(async () => {
       await Sleep(500)
 
+      ServerHttp.CheckUpgrade().catch((err: any) => {
+        DebugLog.mSaveDanger('CheckUpgrade', err)
+      })
+
       await DownDAL.aReloadDowning().catch((err: any) => {
         DebugLog.mSaveDanger('aReloadDowning', err)
       })
@@ -109,8 +113,11 @@ function timeEvent() {
     })
   }
 
+  // 自动刷新文件夹大小
   if (settingStore.uiFolderSize == true
-      && lockDirSizeTime == false && nowTime - runTime > 50 && chkDirSizeTime >= 10) {
+      && !lockDirSizeTime
+      && nowTime - runTime > 50
+      && chkDirSizeTime >= 10) {
     lockDirSizeTime = true
     PanDAL.aUpdateDirFileSize()
       .catch((err: any) => {
@@ -122,7 +129,7 @@ function timeEvent() {
       })
   } else chkDirSizeTime++
 
-
+  // 自动清除上传下载日志
   chkClearDownLogTime++
   if (nowTime - runTime > 60 && chkClearDownLogTime >= 540) {
     chkClearDownLogTime = 0

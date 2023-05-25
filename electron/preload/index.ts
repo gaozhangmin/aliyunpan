@@ -141,11 +141,11 @@ window.WebSetProxy = function (data: { proxyUrl: string }) {
 // }
 
 
-window.CheckUpdate = function () {
-  try {
-    ipcRenderer.send('CheckUpdate')
-  } catch {}
-}
+// window.CheckUpdate = function () {
+//   try {
+//     ipcRenderer.send('CheckUpdate')
+//   } catch {}
+// }
 
 function createRightMenu() {
   window.addEventListener(

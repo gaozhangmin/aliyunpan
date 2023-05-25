@@ -17,7 +17,7 @@ export default defineComponent({
           <div class="container1">
               <div class="content2">
                   <div class="content-text3">
-                      <div class="image-container1">
+                      <div class="image-container">
                           <img src="/images/qrcode_258.jpg" alt="公众号">
                           <img src="/images/wechat_award.jpeg" alt="赞赏码">
                       </div>
@@ -34,5 +34,8 @@ export default defineComponent({
     text-indent: 30px;
     color: red;
     font-weight: bold;
+}
+.image-container {
+    text-align: center;
 }
 </style>
