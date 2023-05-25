@@ -305,8 +305,7 @@ const defaultSetting = async (art: Artplayer) => {
 
 const getVideoInfo = async (art: Artplayer) => {
   // 获取视频链接
-  const data: IVideoPreviewUrl | undefined =
-    await AliFile.ApiVideoPreviewUrl(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id)
+  const data: any = await AliFile.ApiVideoPreviewUrl(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id)
   if (data) {
     pageVideo.duration = data.duration
     // 画质
@@ -326,8 +325,8 @@ const getVideoInfo = async (art: Artplayer) => {
       style: { marginRight: '10px' },
       html: qualityDefault ? qualityDefault.html : '',
       selector: qualitySelector,
-      onSelect: (item: selectorItem) => {
-        art.switchQuality(item.url)
+      onSelect: async (item: selectorItem) => {
+        await art.switchQuality(item.url)
       }
     })
     const subtitles = data.subtitles || []
