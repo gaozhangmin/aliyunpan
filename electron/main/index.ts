@@ -389,33 +389,8 @@ ipcMain.on('WebSpawnSync', (event, data) => {
 ipcMain.on('WebExecSync', (event, data) => {
   try {
     const cmdArguments = []
-    if (data.command === 'mpv') {
-      const basePath = path.resolve(app.getAppPath(), '..')
-      if (process.platform === 'win32') {
-        const exe = path.join(basePath, 'MPV', 'mpv.exe')
-        if (!existsSync(exe)) {
-          event.returnValue = { error: '找不到文件' + data.command + ' ' + exe }
-          ShowError('找不到文件', data.command + ' ' + exe)
-          return
-        }
-        cmdArguments.push('"' + exe + '"')
-      } else if (process.platform === 'darwin') {
-        const exe = path.join(basePath, 'mpv')
-        if (!existsSync(exe)) {
-          event.returnValue = { error: '找不到文件' + data.command + ' ' + exe }
-          ShowError('找不到文件', data.command + ' ' + exe)
-          return
-        }
-        cmdArguments.push('\'' + exe + '\'')
-      } else {
-        cmdArguments.push('mpv')
-      }
-    } else {
-      cmdArguments.push(data.command)
-    }
-
+    cmdArguments.push(data.command)
     if (data.args) cmdArguments.push(...data.args)
-
     const finalCmd = cmdArguments.join(' ')
     exec(finalCmd, (err: any) => {
       event.returnValue = err

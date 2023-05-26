@@ -147,7 +147,7 @@ export default class ServerHttp {
           }
           if (platform === 'win32'
             && fileData.name.indexOf(process.arch) > 0
-            && fileData.name.indexOf('.exe') > 0) {
+            && fileData.name.endsWith('.exe')) {
             updateData = fileData
           } else if (platform === 'darwin'
             && fileData.name.indexOf(process.arch) > 0
