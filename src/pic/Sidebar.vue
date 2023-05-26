@@ -23,7 +23,7 @@
 <!--      <a :class="get_css_class_list_item('/fav')" @click="on_switch_album('fav', '个人收藏')" href="javascript:void(0)"><span>个人收藏</span></a>-->
     </div>
 
-    <div class="title2">
+    <div class="title2" @click="this.getAlbumList">
       我的相簿
     </div>
     <div class="listview">
@@ -76,7 +76,6 @@ export default {
     },
     async getAlbumList() {
       this.album_list = await AliAlbum.ApiAlbumsList()
-      console.log("album_list", this.album_list)
     }
   }
 }

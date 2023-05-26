@@ -23,9 +23,11 @@ import ArchivePasswordModal from '../pan/topbtns/ArchivePasswordModal.vue'
 import AlphaModal from '../pan/topbtns/AlphaModal.vue'
 import UploadModal from '../pan/topbtns/UploadModal.vue'
 import DownloadModal from '../pan/topbtns/DownloadModal.vue'
+import CreatNewAlbumModal from "../pan/topbtns/CreatNewAlbumModal.vue";
 
 export default defineComponent({
   components: {
+    CreatNewAlbumModal,
     UserSpaceModal,
     CreatNewFileModal,
     RenameModal,
@@ -61,6 +63,7 @@ export default defineComponent({
 
   <UserSpaceModal :visible="modalStore.modalName == 'userspace'" />
   <CreatNewFileModal :visible="modalStore.modalName == 'creatfile'" />
+  <CreatNewAlbumModal :visible="modalStore.modalName == 'createalbum'" />
   <CreatNewDirModal :visible="modalStore.modalName == 'creatdir'" :dirtype="modalStore.modalData.dirtype || ''" :parentdirid="modalStore.modalData.parentdirid || ''" :callback="modalStore.modalData.callback" />
   <CreatNewShareLinkModal :visible="modalStore.modalName == 'creatshare'" :sharetype="modalStore.modalData.sharetype || ''" :filelist="modalStore.modalData.filelist || []" />
 

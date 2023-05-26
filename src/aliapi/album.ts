@@ -17,7 +17,7 @@ export default class AliAlbum {
     static async ApiAlbumsList(): Promise<IAliAlbumsList[]> {
         const url = 'adrive/v1/album/list'
         const albums: IAliAlbumsList[] = []
-
+        if (!GetDriveID(useUserStore().user_id, 'pic')) return albums
         const userId = useUserStore().user_id
         let max: number = useSettingStore().debugFileListMax
         let next_marker = ''
@@ -27,12 +27,23 @@ export default class AliAlbum {
                 const items = resp.body.items as IAliAlubmListInfo[]
                 if (items) {
                     items.forEach((item) => {
-                        albums.push({
-                            name: item.album_id,
-                            friendly_name: item.name,
-                            preview: item.cover.list[0].thumbnail,
-                            image_count: item.image_count
-                        })
+                        console.log("album item", item)
+                        if (item.cover) {
+                            albums.push({
+                                name: item.album_id,
+                                friendly_name: item.name,
+                                preview: item.cover.list[0].thumbnail,
+                                image_count: item.image_count
+                            })
+                        } else {
+                            albums.push({
+                                name: item.album_id,
+                                friendly_name: item.name,
+                                preview: '',
+                                image_count: item.image_count
+                            })
+                        }
+
                     })
                     next_marker = resp.body.next_marker
                 } else {
@@ -97,15 +108,17 @@ export default class AliAlbum {
         return undefined
     }
 
-    static async ApiAlbumCreate(user_id: string, name: string, description: string): Promise<IAliAlubmCreateInfo | undefined> {
+    static async ApiAlbumCreate(name: string, description: string): Promise<{ album_id: string; error: string }> {
+        const userId = useUserStore().user_id
         const url = 'adrive/v1/album/create'
-        const resp = await AliHttp.Post(url, {name, description}, user_id, '')
+        const resp = await AliHttp.Post(url, {name, description}, userId, '')
         if (AliHttp.IsSuccess(resp.code)) {
-            return resp.body.items as  IAliAlubmCreateInfo
+            const item =  resp.body as  IAliAlubmCreateInfo
+            return {album_id: item.album_id, error: ''}
         } else {
             DebugLog.mSaveWarning('ApiAlbumCreate err='  + (resp.code || ''))
         }
-        return undefined
+        return {album_id: '', error: resp.body?.code || '创建相册出错'}
     }
 
     static async ApiAlbumUpdate(user_id: string, album_id:string, name: string, description: string): Promise<IAliAlubmCreateInfo | undefined> {

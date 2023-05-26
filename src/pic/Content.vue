@@ -1,5 +1,12 @@
 <template>
-  <div  style="height: 100%; overflow-y: auto" @scroll="handleScroll">
+    <div style="height: 14px"></div>
+    <div class="toppanbtns" style="height: 26px; margin-bottom:5px;" tabindex="-1">
+      <div  class="toppanbtn">
+        <a-button type="text" size="small" tabindex="-1" @click="() => modalCreatNewAlbum()"><i class="iconfont iconplus" />新建相册</a-button>
+        <a-button type="text" size="small" tabindex="-1"><i class="iconfont iconupload" />上传照片</a-button>
+      </div>
+    </div>
+  <div  style="height:100%; overflow-y: auto" @scroll="handleScroll">
     <div class="cnav">
       <div :class="['title', 'left', sidebar_shown_pc?'':'sidebar-hidden']">
         <span class="title-text">{{ album_friendly_name }}</span>
@@ -19,7 +26,7 @@
 
     <div>
       <div class="photo box" v-for="(photo, i) in photo_list" :photo-name="photo.name" :key="i" :style="{ backgroundImage: `url('${ photo.thumbnail }')` }"
-            @click="raise_event_show_preview(photo.name, photo_list, i, photo.album_name, photo)"
+           @click="raise_event_show_preview(photo.name, photo_list, i, photo.album_name, photo)"
       >
       </div>
     </div>
@@ -32,6 +39,7 @@ import '../assets/contentview.css'
 
 import AliAlbum from '../aliapi/album'
 import PanTopbtn from "../pan/menus/PanTopbtn.vue";
+import { modalCreatNewAlbum } from "../utils/modal";
 const PHOTO_PER_PAGE = 50;
 
 export default {
@@ -58,6 +66,7 @@ export default {
     this.initialize();
   },
   methods: {
+    modalCreatNewAlbum,
     raise_event_show_sidebar(val, mode) {
       this.$emit('should-show-sidebar', val, mode);
     },
