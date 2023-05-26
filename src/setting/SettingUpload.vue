@@ -37,7 +37,6 @@ const cb = async (val: any) => {
       <div class="settingrow">
           <a-select tabindex="-1" :style="{ width: '278px' }" :model-value="settingStore.downUploadWhatExist" @update:model-value="cb({ downUploadWhatExist: $event })">
               <a-option value="ignore">删除网盘内文件，继续上传</a-option>
-              <a-option value="overwrite">覆盖网盘内文件，继续上传</a-option>
               <a-option value="auto_rename">保留网盘内文件，继续上传，重命名</a-option>
               <a-option value="refuse">保留网盘内文件，不上传了</a-option>
           </a-select>

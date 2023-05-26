@@ -21,11 +21,6 @@ export default class AliUploadOpenApi {
       result.errormsg = '创建文件失败(数据错误)'
       return result
     }
-    if (check_name_mode != 'auto_rename'
-      && check_name_mode != 'refuse'
-      && check_name_mode != 'ignore') {
-      check_name_mode = 'refuse'
-    }
 
     const pathSplitor = name.split(path.sep);
     if (pathSplitor.length > 1) {
@@ -137,12 +132,6 @@ export default class AliUploadOpenApi {
     if (!user_id || !drive_id || !parent_file_id || !name) {
       result.errormsg = '创建文件失败(数据错误)'
       return result
-    }
-
-    if (check_name_mode != 'auto_rename'
-      && check_name_mode != 'refuse'
-      && check_name_mode != 'ignore') {
-      check_name_mode = 'refuse'
     }
 
     const pathSplitor = name.split(path.sep);
