@@ -1,9 +1,20 @@
 <template>
   <div :class="showNavBar ? 'preview-with-navbar' : 'preview-hidden-navbar'" style="width: 100%; height: 100%;">
+
     <span style="position: absolute; top: 45%; text-align: center; color: #888; display: block; width: 100%;">正在加载图片...</span>
+
+
     <div class="center">
       <div class="preview-photo-base preview-bg" :style="preview_cache_img_style"></div>
       <div class="preview-photo-high-res preview-bg" :style="preview_img_style"></div>
+      <div class="prev-next-buttons">
+        <a-button type="text" tabindex="-1" @click="goLastImage" style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); z-index: 9999;  background: none; box-shadow: none;">
+          <i class="iconfont iconarrow-left-1-icon" style="font-size: 80px;"></i>
+        </a-button>
+        <a-button type="text" tabindex="-1" @click="goNextImage" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); z-index: 9999;  background: none; box-shadow: none;">
+          <i class="iconfont iconarrow-right-1-icon" style="font-size: 80px;"></i>
+        </a-button>
+      </div>
     </div>
     <div class="preview-mask" @click="() => { showNavBar = !showNavBar }"></div>
     <div class="navbar" style="width: 100% !important;" v-show="showNavBar">
@@ -11,18 +22,14 @@
         {{ photo_name }}
       </div>
       <div class="left-button-group" @click="raise_hide_preview()">
-        <i class="larrow"></i><span class="backtext">{{ catalog_name === '' ? '相册列表':catalog_name }}</span>
+        <i class="larrow"></i><span class="backtext">{{ catalog_name === '' ? '相册列表' : catalog_name }}</span>
       </div>
-
       <div class="right-button-group">
         <a href="javascript:void(0)" @click="downloadPhoto()">下载</a>
-        <a-button type="text" tabindex="-1" @click="goLastImage"> <i class="iconfont iconarrow-left-2-icon"></i>上一张 </a-button>
-        <a-button type="text" tabindex="-1" @click="goNextImage"> <i class="iconfont iconarrow-right-2-icon"></i>下一张 </a-button>
       </div>
     </div>
   </div>
 </template>
-
 <script>
 import '../assets/style.css';
 import '../assets/preview.css';
@@ -51,6 +58,11 @@ export default {
     },
   },
   methods: {
+    toggleNavBar() {
+      if (!this.showNavBar) {
+        this.showNavBar = true
+      }
+    },
     onKeyDown(event) {
       event.stopPropagation()
       event.preventDefault()
@@ -68,6 +80,7 @@ export default {
       }
     },
     goLastImage() {
+      this.showNavBar = false
       if (this.reactiveIndex === -1) this.reactiveIndex = this.index;
       const fileIndex = this.reactiveIndex - 1
       if (fileIndex < 0) {
@@ -87,6 +100,7 @@ export default {
       }
     },
     goNextImage() {
+      this.showNavBar = false
       if (this.reactiveIndex === -1) this.reactiveIndex = this.index;
       const fileIndex = this.reactiveIndex + 1
       if (fileIndex >= this.image_list.length) {
