@@ -5,11 +5,7 @@ import {
 } from './alimodels'
 import AliHttp, {IUrlRespData} from "./alihttp";
 import DebugLog from "../utils/debuglog";
-import {IAliFileResp} from "./dirfilelist";
-import {usePanFileStore, useSettingStore, useUserStore} from "../store";
-import TreeStore from "../store/treestore";
-import {OrderDir, OrderFile} from "../utils/filenameorder";
-import message from "../utils/message";
+import {useSettingStore, useUserStore} from "../store";
 import {GetDriveID} from "./utils";
 
 export default class AliAlbum {
@@ -51,7 +47,8 @@ export default class AliAlbum {
                 }
 
             } else {
-                console.log("resp", resp)
+                next_marker = ''
+                break
             }
             if (albums.length >= max && max > 0) {
                 next_marker = ''
@@ -71,6 +68,64 @@ export default class AliAlbum {
             DebugLog.mSaveWarning('ApiAlbumsList err='  + (resp.code || ''))
         }
         return undefined
+    }
+
+    // https://api.aliyundrive.com/adrive/v1/album/add_files
+    static async ApiAlbumAddFiles(album_id: string, file_ids: string[]): Promise<IUrlRespData> {
+        const driver_id = GetDriveID(useUserStore().user_id, 'pic')
+        const userId = useUserStore().user_id
+        const url = 'adrive/v1/album/add_files'
+        const drive_file_list: { driver_id: string; file_id: string; }[]  = []
+        file_ids.forEach((file_id) => {
+            drive_file_list.push({driver_id, file_id});
+        })
+        const postData = {
+            "album_id": album_id,
+            "drive_file_list":drive_file_list
+        }
+        return await AliHttp.Post(url, postData, userId, '')
+    }
+
+
+    static async ApiAllPhotos(): Promise<AliAlbumFileInfo[]> {
+        const driver_id = GetDriveID(useUserStore().user_id, 'pic')
+        const userId = useUserStore().user_id
+        const url = 'adrive/v3/file/search'
+        let marker = '';
+        let max: number = useSettingStore().debugFileListMax
+
+        const results:AliAlbumFileInfo[] = []
+
+        do {
+            const postData = {
+                "drive_id": driver_id,
+                "query": "type = \"file\"",
+                "image_thumbnail_process": "image/resize,w_400/format,jpeg",
+                "image_url_process": "image/resize,w_1920/format,jpeg",
+                "video_thumbnail_process": "video/snapshot,t_0,f_jpg,ar_auto,w_1000",
+                "limit": 100,
+                "marker":marker,
+                "order_by": "created_at DESC"
+            }
+            const resp = await AliHttp.Post(url, postData, userId, '')
+            if (AliHttp.IsSuccess(resp.code)) {
+                const items =  resp.body.items as AliAlbumFileInfo[]
+                if (items) {
+                    results.push(...items)
+                    marker = resp.body.next_marker
+                } else {
+                    marker = ''
+                }
+            } else {
+                marker = ''
+                break
+            }
+            if (results.length >= max && max > 0) {
+                marker = ''
+                break
+            }
+        } while (marker)
+        return results
     }
 
     static async ApiAlbumsAllPhotos(): Promise<AliAlbumFileInfo[]> {
@@ -121,16 +176,12 @@ export default class AliAlbum {
         return {album_id: '', error: resp.body?.code || '创建相册出错'}
     }
 
-    static async ApiAlbumUpdate(user_id: string, album_id:string, name: string, description: string): Promise<IAliAlubmCreateInfo | undefined> {
+    static async ApiAlbumUpdate(album_id:string, name: string, description: string): Promise<IUrlRespData> {
+        const userId = useUserStore().user_id
         // { "album_id": "cfe400000000478599575b69356c5a4962383669", "description": "ff", "name": "未命名" }
         const url = 'adrive/v1/album/update'
-        const resp = await AliHttp.Post(url, {name, album_id, description}, user_id, '')
-        if (AliHttp.IsSuccess(resp.code)) {
-            return resp.body.items as  IAliAlubmCreateInfo
-        } else {
-            DebugLog.mSaveWarning('ApiAlbumUpdate err='  + (resp.code || ''))
-        }
-        return undefined
+        const resp = await AliHttp.Post(url, {name, album_id}, userId, '')
+        return resp
     }
 
     static async ApiAlbumFilesDelete(user_id: string, album_id:string, drive_file_list:{ "drive_id":string, "file_id": string}[]): Promise<number> {
@@ -138,6 +189,14 @@ export default class AliAlbum {
         const url = 'adrive/v1/album/delete_files'
         const resp = await AliHttp.Post(url, {album_id, drive_file_list}, user_id, '')
         return resp.code
+    }
+
+
+    static async ApiAlbumDelete(album_id:string): Promise<IUrlRespData> {
+        const userId = useUserStore().user_id
+        const url = 'adrive/v1/album/delete'
+        const resp = await AliHttp.Post(url, {album_id}, userId, '')
+        return resp
     }
 
     static async ApiAlbumAddExistPic(user_id: string, album_id:string, drive_file_list:{ "drive_id":string, "file_id": string}[]): Promise<number> {

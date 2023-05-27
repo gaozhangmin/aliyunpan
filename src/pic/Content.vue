@@ -1,18 +1,19 @@
 <template>
-    <div style="height: 14px"></div>
-    <div class="toppanbtns" style="height: 26px; margin-bottom:5px;" tabindex="-1">
-      <div  class="toppanbtn">
-        <a-button type="text" size="small" tabindex="-1" @click="() => modalCreatNewAlbum()"><i class="iconfont iconplus" />新建相册</a-button>
-        <a-button type="text" size="small" tabindex="-1"><i class="iconfont iconupload" />上传照片</a-button>
-      </div>
+  <div style="height: 14px"></div>
+  <div class="toppanbtns" style="height: 26px; margin-bottom:5px;" tabindex="-1">
+    <div  class="toppanbtn">
+      <a-button type="text" size="small" tabindex="-1" @click="() => modalCreatNewAlbum()"><i class="iconfont iconplus" />新建相册</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="() => handleUpload('pic', this.base_name)"><i class="iconfont iconupload" />上传照片</a-button>
     </div>
+  </div>
+
   <div  style="height:100%; overflow-y: auto" @scroll="handleScroll">
     <div class="cnav">
       <div :class="['title', 'left', sidebar_shown_pc?'':'sidebar-hidden']">
         <span class="title-text">{{ album_friendly_name }}</span>
       </div>
       <div class="title right">
-        <span style="color: #eee; margin-right: 10px;">{{ photo_count }}张图片</span>
+        <span style="color: lightskyblue; margin-right: 10px;">{{ photo_count }}张图片</span>
 
       </div>
       <div class="back left"   style="line-height:45px; left: 18px; top: 0" @click="raise_event_show_sidebar(true, 'mobile')">
@@ -38,16 +39,16 @@ import '../assets/style.css'
 import '../assets/contentview.css'
 
 import AliAlbum from '../aliapi/album'
-import PanTopbtn from "../pan/menus/PanTopbtn.vue";
 import { modalCreatNewAlbum } from "../utils/modal";
+import { handleUpload } from '../pan/topbtns/topbtn'
 const PHOTO_PER_PAGE = 50;
 
 export default {
   name: "Content",
-  components: {PanTopbtn},
   props: [ 'base_name', 'album_friendly_name', 'sidebar_shown_pc' ],
   data() {
     return {
+      IsListSelectedAll: false,
       page_count: 0,
       current_page_to_load: 0,
       photo_count: 0,
@@ -66,6 +67,7 @@ export default {
     this.initialize();
   },
   methods: {
+    handleUpload,
     modalCreatNewAlbum,
     raise_event_show_sidebar(val, mode) {
       this.$emit('should-show-sidebar', val, mode);
@@ -83,13 +85,12 @@ export default {
         return;
 
       if (this.base_name === 'all') {
-        const photos = await AliAlbum.ApiAlbumsAllPhotos()
-        if (photos !== null) {
-          this.photo_list.push(...photos)
-        }
+        const photos = await AliAlbum.ApiAllPhotos()
+        this.photo_list.push(...photos)
+        this.photo_count = this.photo_list.length
       } else {
         const photos = await AliAlbum.ApiAlbumListFiles(this.base_name)
-        if (photos !== null) {
+        if (photos !== undefined) {
           photos.forEach((photo) => {
             photo.album_name = this.album_friendly_name
           })

@@ -64,20 +64,20 @@
   "dmg": {
     "window": { "width": 540, "height": 380 },
     "contents": [
-      {  "x": 410, "y": 230, "type": "link", "path": "/Applications" },
+      { "x": 410, "y": 230, "type": "link", "path": "/Applications" },
       { "x": 130, "y": 230, "type": "file" }
     ]
   },
   "nsis": {
     "oneClick": false,
-    "artifactName": "XBYDriver-Setup-${version}-${arch}.${ext}",
+    "perMachine": false,
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": false
   },
   "publish": [
     {
       "provider": "github",
-      "releaseType": "prerelease"
+      "releaseType": "draft"
     }
   ]
 }

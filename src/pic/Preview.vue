@@ -140,7 +140,6 @@ export default {
       let dr = pr - wr;
       const fill_width = 'auto 100%';
       const fill_height = '100% auto';
-      console.log(pr, wr);
       if (pr > 1) { // 横屏
         if (wr > 1) { // 横图
           if (dr > 0) return fill_height;

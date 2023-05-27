@@ -11,18 +11,20 @@ import { ArrayKeyList } from '../../utils/utils'
 import PanDAL from '../pandal'
 import usePanFileStore from '../panfilestore'
 import usePanTreeStore from '../pantreestore'
-import { useSettingStore } from '../../store'
+import { useSettingStore, useUserStore } from '../../store'
 import { Sleep } from '../../utils/format'
 import TreeStore from '../../store/treestore'
 import { copyToClipboard } from '../../utils/electronhelper'
 import DownDAL from '../../down/DownDAL'
+import UploadingDAL from '../../transfer/uploadingdal'
+import { GetDriveID } from '../../aliapi/utils'
 
 const topbtnLock = new Set()
 
 
-export function handleUpload(uploadType: string) {
+export function handleUpload(uploadType: string, album_id?:string) {
   const pantreeStore = usePanTreeStore()
-  if (!pantreeStore.user_id || !pantreeStore.drive_id || !pantreeStore.selectDir.file_id) {
+  if (uploadType !== 'pic' && (!pantreeStore.user_id || !pantreeStore.drive_id || !pantreeStore.selectDir.file_id)) {
     message.error('上传操作失败 父文件夹错误')
     return
   }
@@ -31,6 +33,18 @@ export function handleUpload(uploadType: string) {
     window.WebShowOpenDialogSync({ title: '选择多个文件上传到网盘', buttonLabel: '上传选中的文件', properties: ['openFile', 'multiSelections', 'showHiddenFiles', 'noResolveAliases', 'treatPackageAsDirectory', 'dontAddToRecent'] }, (files: string[] | undefined) => {
       if (files && files.length > 0) {
         modalUpload(pantreeStore.selectDir.file_id, files)
+      }
+    })
+  } else if (uploadType == 'pic' && album_id !== undefined) {
+    const driver_id = GetDriveID(useUserStore().user_id, 'pic')
+    const userId = useUserStore().user_id
+    console.log("album_id", album_id)
+    window.WebShowOpenDialogSync({ title: '选择多张照片上传到相册', buttonLabel: '上传选中的照片', properties: ['openFile', 'multiSelections', 'showHiddenFiles', 'noResolveAliases', 'treatPackageAsDirectory', 'dontAddToRecent'] }, (files: string[] | undefined) => {
+      if (files && files.length > 0) {
+        files.forEach((file) => {
+          file+='album_id='+album_id
+        })
+        UploadingDAL.aUploadLocalFiles(userId, driver_id, "root", files,  useSettingStore().downUploadWhatExist, true)
       }
     })
   } else {

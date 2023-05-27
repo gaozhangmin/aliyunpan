@@ -7,10 +7,6 @@
       <div class="left-button-group">
         <a class="hidden-btn" href="javascript:void(0)" @click="() => { this.raise_event_show_sidebar(false, 'mobile'); this.raise_event_show_sidebar(false, 'pc') }">隐藏</a>
       </div>
-
-<!--      <div class="right-button-group">-->
-<!--        <a href="javascript:void(0)" @click="logout()">退出</a>-->
-<!--      </div>-->
     </div>
 
     <div class="title1 navtitle" :style="{ marginTop: '50px', opacity: 1-shouldShowSemiTransparentNavBar }">
@@ -19,18 +15,24 @@
 
     <div class="listview" style="margin-top: 5px;">
       <a :class="get_css_class_list_item('all')" @click="on_switch_album('all', '图库')" href="javascript:void(0)"><span>图库</span></a>
-<!--      <a :class="get_css_class_list_item('/recent')" @click="on_switch_album('/recent', '最近项目')" href="javascript:void(0)"><span>最近项目</span></a>-->
-<!--      <a :class="get_css_class_list_item('/fav')" @click="on_switch_album('fav', '个人收藏')" href="javascript:void(0)"><span>个人收藏</span></a>-->
     </div>
 
-    <div class="title2" @click="this.getAlbumList">
+    <div class="title2">
       我的相簿
+      <a-button type="text" size="small" tabindex="-1"  title="刷新 F5" @click="this.getAlbumList">
+        <template #icon>
+          <i class="iconfont iconreload-1-icon" />
+        </template>
+      </a-button>
     </div>
     <div class="listview">
-      <a :class="get_css_class_list_item(album.name)" @click="on_switch_album(album.name, album.friendly_name)"  href="javascript:void(0)" v-for="album in album_list" :key="album.name">
+      <a :class="get_css_class_list_item(album.name)"  @click="on_switch_album(album.name, album.friendly_name)"  href="javascript:void(0)" v-for="album in album_list" :key="album.name">
         <div style="position: relative">
-          <div class="list_img" :style="{ backgroundImage: album.preview === '' ? '' : `url(${album.preview})` }"></div>
+          <div class="list_img"  :style="{ backgroundImage: album.preview === '' ? '' : `url(${album.preview})` }"></div>
           <span style="margin-left: 27px;">{{ album.friendly_name }}</span>
+          <a class="delete-button" href="javascript:void(0)" @click.stop="deleteAlbum(album)">
+            <i class="iconfont icondelete" />
+          </a>
         </div>
 
       </a>
@@ -42,6 +44,7 @@
 import '../assets/style.css';
 import '../assets/sidebar.css';
 import AliAlbum from '../aliapi/album'
+import AliHttp from '../aliapi/alihttp'
 
 export default {
   name: "Sidebar",
@@ -52,6 +55,24 @@ export default {
     shouldShowSemiTransparentNavBar: false,
   }),
   methods: {
+
+    async updateAlbum(album, newName) {
+      const resp = await AliAlbum.ApiAlbumUpdate(album.name, newName, '');
+      if (AliHttp.IsSuccess(resp.code)) {
+        album.friendly_name = newName
+      } else {
+        this.$message.error("相册更改失败")
+      }
+    },
+    async deleteAlbum(album) {
+      const resp = await AliAlbum.ApiAlbumDelete(album.name)
+      console.log("resp", resp)
+      if (AliHttp.IsSuccess(resp.code)) {
+        this.getAlbumList()
+      } else {
+        this.$message.error("删除相册失败")
+      }
+    },
     raise_event_show_sidebar(val, mode) {
       this.$emit('should-show-sidebar', val, mode);
     },
@@ -82,5 +103,17 @@ export default {
 </script>
 
 <style scoped>
+.delete-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: none;
+}
 
+.listview a:hover .delete-button {
+  display: block;
+}
+.icondelete {
+  color: red;
+}
 </style>

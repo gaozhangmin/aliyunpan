@@ -29,6 +29,7 @@ import ContentView from "./Content.vue";
 import Preview from './Preview.vue';
 import {useAppStore, useUserStore} from "../store";
 import {GetDriveID} from "../aliapi/utils";
+import { modalCreatNewAlbum } from '../utils/modal'
 
 export default {
   name: 'App',
@@ -53,6 +54,7 @@ export default {
     contentFriendlyName: "",
   }),
   methods: {
+    modalCreatNewAlbum,
     previewPhoto(filename, photo_list, index, album_name, photo_obj) {
       this.preview_filename = filename;
       this.preview_index = index;

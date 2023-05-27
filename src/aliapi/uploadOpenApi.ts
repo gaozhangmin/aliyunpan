@@ -3,6 +3,7 @@ import AliHttp from './alihttp'
 import { IUploadCreat, IUploadInfo } from './models'
 import path from "path";
 import AliFileCmd from "./filecmd";
+import AliAlbum from './album'
 
 export default class AliUploadOpenApi {
 
@@ -23,14 +24,18 @@ export default class AliUploadOpenApi {
     }
 
     const pathSplitor = name.split(path.sep);
+    let newFileName = name;
     if (pathSplitor.length > 1) {
       const dirFullName = pathSplitor.slice(0, pathSplitor.length - 1).join(path.sep);
-      name = pathSplitor[pathSplitor.length-1]
+      newFileName = pathSplitor[pathSplitor.length-1]
       const resp = await AliFileCmd.ApiCreatNewForder(user_id, drive_id, parent_file_id, dirFullName);
       parent_file_id = resp.file_id
     }
-
-    const url = 'adrive/v1.0/openFile/create'
+    let url = 'adrive/v1.0/openFile/create'
+    if (name.includes('_album_id')) {
+      url = 'adrive/v1/biz/albums/file/create'
+      newFileName = name.split('album_id=')[0]
+    }
     const postData: {
       drive_id: string
       parent_file_id: string
@@ -44,7 +49,7 @@ export default class AliUploadOpenApi {
     } = {
       drive_id,
       parent_file_id: parent_file_id,
-      name: name,
+      name: newFileName,
       type: 'file',
       check_name_mode: check_name_mode == 'ignore' ? 'refuse' : check_name_mode,
       size: fileSize,
@@ -133,10 +138,10 @@ export default class AliUploadOpenApi {
       result.errormsg = '创建文件失败(数据错误)'
       return result
     }
-
+    let newFileName = name
     const pathSplitor = name.split(path.sep);
     if (pathSplitor.length > 1) {
-      name = pathSplitor[pathSplitor.length-1]
+      newFileName = pathSplitor[pathSplitor.length-1]
       const dirFullName = pathSplitor.slice(0, pathSplitor.length - 1).join(path.sep);
       const resp = await AliFileCmd.ApiCreatNewForder(user_id, drive_id, parent_file_id, dirFullName);
       parent_file_id = resp.file_id
@@ -158,7 +163,7 @@ export default class AliUploadOpenApi {
     } = {
       drive_id,
       parent_file_id: parent_file_id,
-      name: name,
+      name: newFileName,
       type: 'file',
       check_name_mode: check_name_mode == 'ignore' ? 'refuse' : check_name_mode,
       size: fileSize,
@@ -285,6 +290,7 @@ export default class AliUploadOpenApi {
       resp = await AliHttp.Post(url, postData, user_id, '')
     }
     if (AliHttp.IsSuccess(resp.code)) {
+
       if (resp.body.size == fileSize) {
         if (fileSha1) {
           

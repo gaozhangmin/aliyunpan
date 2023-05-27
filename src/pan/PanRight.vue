@@ -183,6 +183,7 @@ const menuShowVideo = ref(false)
 const menuShowZip = ref(false)
 const handleRightClick = (e: { event: MouseEvent; node: any }) => {
   const key = e.node.key
+  console.log("handleRightClick", e)
 
   if (!panfileStore.ListSelected.has(key)) panfileStore.mMouseSelect(key, false, false)
   const dirType = panfileStore.SelectDirType
