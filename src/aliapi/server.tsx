@@ -177,7 +177,7 @@ export default class ServerHttp {
               mask: true,
               alignCenter: true,
               title: () => h('div', {
-                innerHTML: `有新版本<span class='vertip'>${tagName}</span><i class='verupdate'></i>`,
+                innerHTML: `有新版本<span class='vertip'>${tagName}</span>`,
                 class: { vermodalhead: true },
                 style: { maxWidth: '540px' }
               }),
