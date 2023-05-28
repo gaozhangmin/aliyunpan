@@ -137,7 +137,7 @@ const handleSelectFFmpeg = () => {
             <span class='opblue'>自定义播放器</span> 不支持记忆播放进度 <br>
             只能够跳转到<span class='opblue'>网页播放器</span>进度
             <hr />
-            已支持：PotPlayer，Mpv
+            已支持：PotPlayer，MPV
           </div>
         </template>
       </a-popover>

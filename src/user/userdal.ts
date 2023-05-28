@@ -261,9 +261,7 @@ export default class UserDAL {
     const nowMonth = new Date().getMonth() + 1
     const nowDay = new Date().getDate()
     const signData = await DB.getValueObject('uiAutoSign')
-
-    const lastDaySign = await DB.getValueNumber('uiAutoSign')
-
+    console.log("UserSign",nowMonth,  nowDay,signData )
     // @ts-ignore
     if (!signData || signData.signMon !== nowMonth || signData.signDay !== nowDay) {
     // if (lastDaySign !== new Date().getDate()) {

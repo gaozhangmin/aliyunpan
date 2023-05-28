@@ -2,7 +2,6 @@
 import { ref } from 'vue'
 import useSettingStore from './settingstore'
 import MySwitch from '../layout/MySwitch.vue'
-import Config from '../utils/config'
 import ServerHttp from '../aliapi/server'
 import os from 'os'
 
@@ -12,10 +11,6 @@ const cb = (val: any) => {
 }
 
 const verLoading = ref(false)
-
-const handleCheckVer = () => {
-    settingStore.checkUpdate()
-}
 
 const handleCheckVer1 = () => {
   verLoading.value = true
