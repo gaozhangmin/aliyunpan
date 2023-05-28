@@ -98,24 +98,22 @@ export default class ServerHttp {
         timeout: 30000
       })
       .then(async (response: AxiosResponse) => {
-        const content = B64decode(response.data.content)
-        const contentJson = JSON.parse(content);
-        console.log('CheckConfigUpgrade', contentJson)
-        if (contentJson.SIP) {
-          const SIP = B64decode(contentJson.SIP)
+        console.log('CheckConfigUpgrade', response)
+        if (response.data.SIP) {
+          const SIP = B64decode(response.data.SIP)
           if (SIP.length > 0) ServerHttp.baseApi = SIP
         }
-        if (contentJson.SSList) {
+        if (response.data.SSList) {
           const list: IShareSiteModel[] = []
-          for (let i = 0, maxi = contentJson.SSList.length; i < maxi; i++) {
-            const item = contentJson.SSList[i]
+          for (let i = 0, maxi = response.data.SSList.length; i < maxi; i++) {
+            const item = response.data.SSList[i]
             const add = { title: item.title, url: item.url, tip: item.tip }
             if (add.url.length > 0) list.push(add)
           }
           ShareDAL.SaveShareSite(list)
         }
-        if (contentJson.HELP) {
-          useServerStore().mSaveHelpUrl(contentJson.HELP)
+        if (response.data.HELP) {
+          useServerStore().mSaveHelpUrl(response.data.HELP)
         }
       })
   }
@@ -151,9 +149,9 @@ export default class ServerHttp {
             updateData = fileData
           } else if (platform === 'darwin'
             && fileData.name.indexOf(process.arch) > 0
-            && fileData.name.endsWith('.dmg') > 0) {
+            && fileData.name.endsWith('.dmg')) {
             updateData = fileData
-          } else if (fileData.name.endsWith('.asar') > 0) {
+          } else if (fileData.name.endsWith('.asar')) {
             asarFileUrl = 'https://ghproxy.com/' + fileData.url
           }
         }
@@ -163,7 +161,6 @@ export default class ServerHttp {
             let localVersion = getResourcesPath('localVersion')
             if (localVersion && existsSync(localVersion)) {
               configVer = readFileSync(localVersion, 'utf-8').replaceAll('v', '').trim()
-              console.log("configVer", configVer)
             }
           }
           const remoteVer = tagName.replaceAll('v', '').trim()
@@ -217,12 +214,12 @@ export default class ServerHttp {
                 }),
                 h(Button, {
                   type: 'outline',
-                  style: verUrl.length > 0 ? '' : 'display: none',
+                  style: asarFileUrl.length == 0 && verUrl.length > 0 ? '' : 'display: none',
                   innerHTML: process.platform !== 'linux' ? '全量更新' : '详情',
                   onClick: async () => {
                     if (verUrl.length > 0 && process.platform !== 'linux') {
                       // 下载安装
-                      await this.AutoDownload(verUrl, updateData.name, false)
+                      await this.AutoDownload(verUrl, html_url, updateData.name, false)
                     } else {
                       openExternal(html_url)
                     }
@@ -236,7 +233,15 @@ export default class ServerHttp {
                   onClick: async () => {
                     if (asarFileUrl.length > 0 && process.platform !== 'linux') {
                       // 下载安装
-                      await this.AutoDownload(asarFileUrl, updateData.name, true, remoteVer)
+                      const flag = await this.AutoDownload(asarFileUrl, html_url, updateData.name, true)
+                      // 更新本地版本号
+                      if (flag && tagName) {
+                        message.info('热更新完毕，自动重启应用中...', 5)
+                        const localVersion = getResourcesPath('localVersion')
+                        localVersion && writeFileSync(localVersion, tagName, 'utf-8')
+                        await this.Sleep(2000)
+                        window.WebRelaunch()
+                      }
                     }
                     return true
                   }
@@ -251,6 +256,7 @@ export default class ServerHttp {
         }
       })
       .catch((err: any) => {
+        message.info('检查更新失败，请检查网络是否正常')
         DebugLog.mSaveDanger('CheckUpgrade', err)
       })
   }
@@ -259,53 +265,51 @@ export default class ServerHttp {
     let splitTextArr = context.trim().split(/\r\n/g)
     let resultTextArr: string[] = []
     splitTextArr.forEach((item, i) => {
-      if (item != '') {
-        let links = item.match(/!?\[.+?\]\(https?:\/\/.+\)/g)
-        // 处理链接
-        if (links != null) {
-          for (let index = 0; index < links.length; index++) {
-            const text_link = links[index].match(/[^!\[\(\]\)]+/g)//提取文字和链接
-            if (text_link) {
-              if (links[index][0] == '!') { //解析图片
-                item = item.replace(links[index], '<img src="' + text_link[1] + '" loading="lazy" alt="' + text_link[0] + '" />')
-              } else { //解析超链接
-                item = item.replace(links[index], `<i>【${text_link[0]}】</i>`)
-              }
+      let links = item.match(/!?\[.+?\]\(https?:\/\/.+\)/g)
+      // 处理链接
+      if (links != null) {
+        for (let index = 0; index < links.length; index++) {
+          const text_link = links[index].match(/[^!\[\(\]\)]+/g)//提取文字和链接
+          if (text_link) {
+            if (links[index][0] == '!') { //解析图片
+              item = item.replace(links[index], '<img src="' + text_link[1] + '" loading="lazy" alt="' + text_link[0] + '" />')
+            } else { //解析超链接
+              item = item.replace(links[index], `<i>【${text_link[0]}】</i>`)
             }
           }
         }
-        if (item.indexOf('- ')) { // 无序列表
-          item = item.replace(/.*-\s+(.*)/g, '<strong>$1</strong>')
-        }
-        if (item.indexOf('* ')) { // 无序列表
-          item = item.replace(/.*\*\s+(.*)/g, '<strong>$1</strong>')
-        }
-        if (item.includes('**')) {
-          item = item.replaceAll(/\*\*/g, '')
-        }
-        if (item.startsWith('# ')) { // 1 级标题（h1）
-          resultTextArr.push(`<h1>${item.replace('# ', '')}</h1>`)
-        } else if (item.startsWith('## ')) { // 2 级标题（h2）
-          resultTextArr.push(`<h2>${item.replace('## ', '')}</h2>`)
-        } else if (item.startsWith('### ')) { // 3 级标题（h3）
-          resultTextArr.push(`<h3>${item.replace('### ', '')}</h3>`)
-        } else if (item.indexOf('---') == 0) {
-          resultTextArr.push(item.replace('---', '<hr>'))
-        } else { // 普通的段落
-          resultTextArr.push(`${item}`)
-        }
+      }
+      if (item.indexOf('- ')) { // 无序列表
+        item = item.replace(/.*-\s+(.*)/g, '<strong>$1</strong>')
+      }
+      if (item.indexOf('* ')) { // 无序列表
+        item = item.replace(/.*\*\s+(.*)/g, '<strong>$1</strong>')
+      }
+      if (item.includes('**')) {
+        item = item.replaceAll(/\*\*/g, '')
+      }
+      if (item.startsWith('# ')) { // 1 级标题（h1）
+        resultTextArr.push(`<h1>${item.replace('# ', '')}</h1>`)
+      } else if (item.startsWith('## ')) { // 2 级标题（h2）
+        resultTextArr.push(`<h2>${item.replace('## ', '')}</h2>`)
+      } else if (item.startsWith('### ')) { // 3 级标题（h3）
+        resultTextArr.push(`<h3>${item.replace('### ', '')}</h3>`)
+      } else if (item.indexOf('---') == 0) {
+        resultTextArr.push(item.replace('---', '<hr>'))
+      } else { // 普通的段落
+        resultTextArr.push(`${item}`)
       }
     })
     return resultTextArr.join('<br>')
   }
 
-  static async AutoDownload(appNewUrl: string, file_name: string, hot: boolean, hotVer?: string): Promise<boolean> {
+  static async AutoDownload(appNewUrl: string, html_url: string, file_name: string, hot: boolean): Promise<boolean> {
     let resourcesPath = hot ? getAppNewPath() : getResourcesPath(file_name)
     if (!hot && existsSync(resourcesPath)) {
-      this.autoInstallNewVersion(resourcesPath)
+      await this.autoInstallNewVersion(resourcesPath)
       return true
     }
-    message.info('新版本正在后台下载中，请耐心等待。。。。', 10)
+    message.info('新版本正在后台下载中，请耐心等待。。。。', 2)
     return axios
       .get(appNewUrl, {
         withCredentials: false,
@@ -317,26 +321,18 @@ export default class ServerHttp {
           Expires: '0'
         }
       })
-      .then((response: AxiosResponse) => {
+      .then(async (response: AxiosResponse) => {
         writeFileSync(resourcesPath, Buffer.from(response.data))
         if (!hot) {
-          this.Sleep(2000)
-          this.autoInstallNewVersion(resourcesPath)
-        } else {
-          // 更新本地版本号
-          if (hotVer) {
-            const localVersion = getResourcesPath('localVersion')
-            localVersion && writeFileSync(localVersion, hotVer, 'utf-8')
-          }
-          message.info('热更新完毕，自动重启应用中...', 5)
-          this.Sleep(1000)
-          window.WebRelaunch()
+          await this.Sleep(2000)
+          await this.autoInstallNewVersion(resourcesPath)
         }
         return true
       })
       .catch(() => {
-        message.error('新版本下载失败，请前往github下载最新版本', 6)
+        message.error('新版本下载失败，关注公众号从网盘下载', 5)
         rmSync(resourcesPath, { force: true })
+        openExternal(html_url)
         return false
       })
   }

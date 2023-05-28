@@ -87,7 +87,7 @@ const handleSelectFFmpeg = () => {
             默认：<span class="opred">内置网页播放器</span>
             <hr />
             <span class="opred">内置网页播放器</span>：<br />
-            使用Videojs网页，播放转码后的视频<br />
+            使用artplayer网页，播放转码后的视频<br />
             支持 选择清晰度、倍速播放、内置字幕、画中画模式
             <div class="hrspace"></div>
             <span class="opred">自定义播放软件</span>：<br />
@@ -98,9 +98,49 @@ const handleSelectFFmpeg = () => {
           </div>
         </template>
       </a-popover>
-<!--      <div v-if="settingStore.uiVideoPlayer === 'mpv'" style="font-size: 12px; color: var(&#45;&#45;color-text-3)">mpv 支持倍速！支持外挂字幕！支持切换音轨！</div>-->
-<!--      <div v-if="settingStore.uiVideoPlayer === 'potplayer'" style="font-size: 12px; color: var(&#45;&#45;color-text-3)">potplayer 支持倍速！支持外挂字幕！支持切换音轨！</div>-->
-<!--      <div v-if="settingStore.uiVideoPlayer === 'web'" style="font-size: 12px; color: var(&#45;&#45;color-text-3)">网页 支持倍速！支持选择清晰度！支持继续播放！</div>-->
+    </div>
+    <div class='settingspace'></div>
+    <div class='settinghead'>字幕加载设置</div>
+    <div class='settingrow' style='min-width: 400px '>
+      <a-radio-group type='button' tabindex='-1' :model-value='settingStore.uiVideoSubtitleMode'
+                     @update:model-value='cb({ uiVideoSubtitleMode: $event })'>
+        <a-radio tabindex='-1' value='close'>关闭字幕加载</a-radio>
+        <a-radio tabindex='-1' value='auto'>自动加载同名字幕</a-radio>
+        <!-- <a-radio tabindex='-1' value='select'>手动选择字幕文件</a-radio> -->
+      </a-radio-group>
+      <a-popover position='bottom'>
+        <i class='iconfont iconbulb' />
+        <template #content>
+          <div style='min-width: 400px'>
+            默认：<span class='opred'>自动加载同名字幕</span>
+            <hr />
+            <span class='opred'>关闭字幕加载</span>：<br />
+            不自动加载字幕
+            <div class='hrspace'></div>
+            <span class='opred'>自动加载同名字幕</span>：<br />
+            当只有一个字幕文件时，无法比较字幕是否和视频名称同名<br />默认会加载该字幕
+            <div class='hrspace'></div>
+          </div>
+        </template>
+      </a-popover>
+    </div>
+    <div class='settingspace'></div>
+    <div class='settinghead'>网页播放进度</div>
+    <div class='settingrow'>
+      <MySwitch :value='settingStore.uiVideoPlayerHistory' @update:value='cb({ uiVideoPlayerHistory: $event })'>
+        自动跳转到网页播放进度
+      </MySwitch>
+      <a-popover position='bottom'>
+        <i class='iconfont iconbulb' />
+        <template #content>
+          <div style='min-width: 400px'>
+            <span class='opblue'>自定义播放器</span> 不支持记忆播放进度 <br>
+            只能够跳转到<span class='opblue'>网页播放器</span>进度
+            <hr />
+            已支持：PotPlayer，Mpv
+          </div>
+        </template>
+      </a-popover>
     </div>
     <div class="settinghead"></div>
     <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'win32' ? '' : 'none', marginTop: '8px' }">
@@ -116,13 +156,20 @@ const handleSelectFFmpeg = () => {
             也可以直接选择桌面上播放软件的快捷方式
             <div class="hrspace"></div>
             已测试：Potplayer，VLC，KMPlayer，恒星播放器，SMPlayer，MPC-HC
+            <div v-if="settingStore.uiVideoPlayerPath.toLowerCase().includes('mpv')" class='hitText'>
+              <div class="hrspace"></div>
+              【mpv】 支持倍速！支持外挂字幕！支持切换音轨！支持播放历史!
+            </div>
+            <div v-if="settingStore.uiVideoPlayerPath.toLowerCase().includes('potplayer')" class='hitText'>
+              <div class="hrspace"></div>
+              【potplayer】 支持倍速！支持外挂字幕！支持切换音轨！支持播放历史!
+            </div>
             <div class="hrspace"></div>
             详情请参阅<span class="opblue">帮助文档</span>
           </div>
         </template>
       </a-popover>
     </div>
-
       <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'darwin' ? '' : 'none', marginTop: '20px' }">
       <a-input-search tabindex="-1" style="max-width: 300px" :readonly="true" button-text="播放器" search-button :model-value="settingStore.uiVideoPlayerPath" @search="handleSelectPlayer" />
       <a-popover position="bottom">
@@ -133,8 +180,14 @@ const handleSelectFFmpeg = () => {
             <hr />
             1.点击 选择播放软件按钮 <span class="opblue">--></span> 弹出文件选择框，<br />
             2.点击 左上 应用程序 <span class="opblue">--></span> 点击一个 播放软件 <span class="opblue">--></span> 点击 确定
-            <div class="hrspace"></div>
-            已测试：IINA，MKPlayer，VLC
+            <div v-if="settingStore.uiVideoPlayerPath.toLowerCase().includes('mpv')" class='hitText'>
+              <div class="hrspace"></div>
+              【mpv】 支持倍速！支持外挂字幕！支持切换音轨！支持播放历史!
+            </div>
+            <div v-if="settingStore.uiVideoPlayerPath.toLowerCase().includes('potplayer')" class='hitText'>
+              <div class="hrspace"></div>
+              【potplayer】 支持倍速！支持外挂字幕！支持切换音轨！支持播放历史!
+            </div>
             <div class="hrspace"></div>
             详情请参阅<span class="opblue">帮助文档</span>
           </div>

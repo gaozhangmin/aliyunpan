@@ -10,7 +10,7 @@ export default defineComponent({
 
 <template>
   <div class="myswitch">
-    <a-switch :model-value="value" tabindex="-1" @update:model-value="$emit('update:value', $event)">
+    <a-switch  :model-value="value" tabindex="-1" @update:model-value="$emit('update:value', $event)">
       <template #checked>✔</template>
       <template #unchecked>✖</template>
     </a-switch>
@@ -60,5 +60,4 @@ export default defineComponent({
   line-height: 20px;
   user-select: none;
 }
-
 </style>

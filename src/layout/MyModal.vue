@@ -23,6 +23,7 @@ import ArchivePasswordModal from '../pan/topbtns/ArchivePasswordModal.vue'
 import AlphaModal from '../pan/topbtns/AlphaModal.vue'
 import UploadModal from '../pan/topbtns/UploadModal.vue'
 import DownloadModal from '../pan/topbtns/DownloadModal.vue'
+import SelectSubTitleModal from '../pan/topbtns/SelectSubTitleModal.vue'
 import CreatNewAlbumModal from "../pan/topbtns/CreatNewAlbumModal.vue";
 
 export default defineComponent({
@@ -123,6 +124,7 @@ export default defineComponent({
   line-height: 25px;
   color: rgb(var(--primary-6));
 }
+
 .modaltitle .onerowtitle {
   font-size: 16px;
   line-height: 25px;
@@ -138,6 +140,7 @@ export default defineComponent({
   display: flex;
   align-items: center;
 }
+
 .modalfoot .tips {
   font-size: 14px;
   line-height: 25px;

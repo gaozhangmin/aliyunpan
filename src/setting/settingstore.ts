@@ -4,8 +4,8 @@ import { getResourcesPath, getUserDataPath } from '../utils/electronhelper'
 import {useAppStore, useUserStore} from '../store'
 import PanDAL from '../pan/pandal'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
-import UserDAL from "../user/userdal";
-import DB from "../utils/db";
+import UserDAL from "../user/userdal"
+import message from "../utils/message"
 
 declare type ProxyType = 'none' | 'http' | 'https' | 'socks4' | 'socks4a' | 'socks5' | 'socks5h'
 
@@ -19,6 +19,10 @@ export interface SettingState {
   uiVideoMode: string
 
   uiVideoPlayer: string
+
+  uiVideoPlayerHistory: boolean
+
+  uiVideoSubtitleMode: string
 
   uiVideoPlayerPath: string
 
@@ -159,6 +163,8 @@ const setting: SettingState = {
   uiImageMode: 'fill',
   uiVideoMode: 'web',
   uiVideoPlayer: 'web',
+  uiVideoPlayerHistory: false,
+  uiVideoSubtitleMode: 'auto',
   uiVideoPlayerPath: '',
   uiAutoColorVideo: true,
   uiAutoPlaycursorVideo: true,
@@ -243,7 +249,9 @@ function _loadSetting(val: any) {
   console.log('_loadSetting', val)
   setting.uiImageMode = defaultValue(val.uiImageMode, ['fill', 'width', 'web'])
   setting.uiVideoMode = defaultValue(val.uiVideoMode, ['web', 'online'])
-  setting.uiVideoPlayer = defaultValue(val.uiVideoPlayer, ['mpv', 'web', 'potplayer', 'other'])
+  setting.uiVideoPlayer = defaultValue(val.uiVideoPlayer, ['web', 'other'])
+  setting.uiVideoPlayerHistory = defaultBool(val.uiVideoPlayerHistory, false)
+  setting.uiVideoSubtitleMode = defaultValue(val.uiVideoSubtitleMode, ['close', 'auto', 'select'])
   setting.uiVideoPlayerPath = defaultString(val.uiVideoPlayerPath, '')
   setting.uiAutoColorVideo = defaultBool(val.uiAutoColorVideo, true)
   setting.uiAutoPlaycursorVideo = defaultBool(val.uiAutoPlaycursorVideo, true)
@@ -389,12 +397,7 @@ const useSettingStore = defineStore('setting', {
     }
   },
   actions: {
-
-    checkUpdate() {
-      window.CheckUpdate()
-
-    },
-    updateStore(partial: Partial<SettingState>) {
+    async updateStore(partial: Partial<SettingState>) {
       if (partial.uiTimeFolderFormate) partial.uiTimeFolderFormate = partial.uiTimeFolderFormate.replace('mm-dd', 'MM-dd').replace('HH-MM', 'HH-mm')
       this.$patch(partial)
       if (Object.hasOwn(partial, 'uiLaunchStart') || Object.hasOwn(partial, 'uiLaunchStartShow')) {
