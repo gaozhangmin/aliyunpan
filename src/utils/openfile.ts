@@ -208,7 +208,7 @@ async function Video(token: ITokenInfo, drive_id: string, file_id: string, paren
     }
   }
   if (!url && !weifa) {
-    const data = await AliFile.ApiFileDownloadUrl(token.user_id, drive_id, file_id, 14400)
+    const data = await AliFile.ApiFileDownloadUrlOpenApi(token.user_id, drive_id, file_id, 14400)
     if (typeof data !== 'string' && data.url && data.url != '') {
       url = data.url
       mode = '原始文件模式'
