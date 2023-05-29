@@ -70,6 +70,7 @@ export default defineComponent({
     const treeSelectedKeys = ref<string[]>([])
     const treeCheckedKeys = ref<{ checked: string[]; halfChecked: string[] }>({ checked: [], halfChecked: [] })
     const checkInfo = ref('')
+    const multiOpt = ref(false)
 
     const onRunReplaceName = throttle(() => {
       RunReplaceName(renameConfig, treeData.value, treeCheckedKeys.value.checked)
@@ -99,7 +100,6 @@ export default defineComponent({
         apiLoad(treeNode.dataRef.key).then((addList: TreeNodeData[]) => {
           treeNode.dataRef!.children = addList
           if (treeData.value) treeData.value = treeData.value.concat()
-
           resolve()
         })
       })
@@ -161,16 +161,22 @@ export default defineComponent({
     const handleOpen = () => {
       const cacheReg = localStorage.getItem('renamemulti')
       if (cacheReg) {
-        const regList: string[] = JSON.parse(cacheReg)
-        replaceData.value = regList
+        replaceData.value = JSON.parse(cacheReg)
       }
-
-      
       let fileList: IAliGetFileModel[] = []
-
       if (props.istree) {
         const pantreeStore = usePanTreeStore()
-        fileList = [{ ...pantreeStore.selectDir, isDir: true, ext: '', category: '', icon: '', sizeStr: '', timeStr: '', starred: false, thumbnail: '' } as IAliGetFileModel]
+        fileList = [{
+          ...pantreeStore.selectDir,
+          isDir: true,
+          ext: '',
+          category: '',
+          icon: '',
+          sizeStr: '',
+          timeStr: '',
+          starred: false,
+          thumbnail: ''
+        } as IAliGetFileModel]
       } else {
         const panfileStore = usePanFileStore()
         fileList = panfileStore.GetSelected()
@@ -304,6 +310,7 @@ export default defineComponent({
       treeExpandedKeys,
       treeSelectedKeys,
       treeCheckedKeys,
+      multiOpt,
       treeSelectToExpand,
       handleTreeCheck,
       onLoadData,
@@ -340,8 +347,7 @@ export default defineComponent({
       const nameList: string[] = []
       const checkMap = new Set(this.treeCheckedKeys.checked)
       RunAllNode(this.treeData, (node) => {
-        
-        const isMatch = node.newtitle && node.newtitle !== node.rawtitle && checkMap.has(node.key) 
+        const isMatch = node.newtitle && node.newtitle !== node.rawtitle && checkMap.has(node.key)
         if (isMatch) {
           idList.push(node.key)
           nameList.push(node.newtitle)
@@ -374,7 +380,11 @@ export default defineComponent({
         })
         .then(() => {
           this.okLoading = false
-          modalCloseAll()
+          if (!this.multiOpt) {
+            modalCloseAll()
+          } else {
+            this.handleOpen()
+          }
         })
     },
     handleContextMenu(menuKey: string, treeNodeKey: string) {
@@ -448,6 +458,9 @@ export default defineComponent({
 
       this.treeCheckedKeys.checked = Array.from(checked)
     },
+    handleMultiOpt() {
+      this.multiOpt = !this.multiOpt
+    },
     handleSelectRow(visible: boolean, treeNodeKey: string) {
       if (visible) this.treeSelectedKeys = [treeNodeKey]
     }
@@ -488,7 +501,9 @@ export default defineComponent({
                   </a-col>
                 </a-row>
 
-                <div class="renamehr"><div class="renamehrline"></div></div>
+                <div class='renamehr'>
+                  <div class='renamehrline'></div>
+                </div>
 
                 <a-typography-text type="secondary"> 替换成： </a-typography-text>
                 <a-row style="margin-bottom: 16px">
@@ -888,34 +903,43 @@ export default defineComponent({
             </a-tabs>
           </div>
         </a-layout-sider>
-        <a-layout-content class="xbyright">
-          <div style="height: 20px"></div>
-          <div class="toppanbtns" style="height: 26px" tabindex="-1">
-            <div class="toppanbtn">
-              <a-button type="text" size="small" tabindex="-1" :disabled="okLoading" @click="onRunReplaceName()"> <i class="iconfont iconreload-1-icon" />刷新 </a-button>
-              <a-button type="text" size="small" tabindex="-1" :disabled="okLoading" @click="handleContextMenu('all', '')"> <i class="iconfont iconfangkuang" />全选 </a-button>
+        <a-layout-content class='xbyright'>
+          <div style='height: 20px'></div>
+          <div class='toppanbtns' style='height: 26px' tabindex='-1'>
+            <div class='toppanbtn'>
+              <a-button type='text' size='small' tabindex='-1' :disabled='okLoading' @click='onRunReplaceName()'>
+                <i class='iconfont iconreload-1-icon' />刷新
+              </a-button>
+              <a-button type='text' size='small' tabindex='-1' :disabled='okLoading'
+                        style='margin: 0'
+                        @click="handleContextMenu('all', '')">
+                <i :class="treeCheckedKeys.checked.length === treeData.length ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />全选
+              </a-button>
+              <a-button type='text' size='small' tabindex='-1' style='margin: 0' @click="handleMultiOpt">
+                <i :class="multiOpt ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />多次操作
+              </a-button>
             </div>
-            <div style="padding-top: 3px; color: rgb(var(--primary-6)); flex-shrink: 0">{{ checkInfo }}</div>
-            <div style="flex-grow: 1"></div>
-            <a-radio-group v-model="renameConfig.show" type="button" tabindex="-1" class="renameradio">
-              <a-radio tabindex="-1" :value="false" title="高亮显示被替换的文字">高亮</a-radio>
-              <a-radio tabindex="-1" :value="true" title="显示替换后的文件名">最终</a-radio>
+            <div style='padding-top: 3px; color: rgb(var(--primary-6)); flex-shrink: 0'>{{ checkInfo }}</div>
+            <div style='flex-grow: 1'></div>
+            <a-radio-group v-model='renameConfig.show' type='button' tabindex='-1' class='renameradio'>
+              <a-radio tabindex='-1' :value='false' title='高亮显示被替换的文字'>高亮</a-radio>
+              <a-radio tabindex='-1' :value='true' title='显示替换后的文件名'>最终</a-radio>
             </a-radio-group>
-            <div style="margin-right: 18px"></div>
+            <div style='margin-right: 18px'></div>
           </div>
-          <div style="height: 16px"></div>
-          <div style="width: 100%; padding-right: 16px; overflow: hidden">
+          <div style='height: 16px'></div>
+          <div style='width: 100%; padding-right: 16px; overflow: hidden'>
             <AntdTree
-              ref="treeref"
-              v-model:expandedKeys="treeExpandedKeys"
-              v-model:selectedKeys="treeSelectedKeys"
-              v-model:checkedKeys="treeCheckedKeys"
-              :tree-data="treeData"
-              :load-data="onLoadData"
-              :tabindex="-1"
-              :focusable="false"
-              class="renametree"
-              :checkable="true"
+              ref='treeref'
+              v-model:expandedKeys='treeExpandedKeys'
+              v-model:selectedKeys='treeSelectedKeys'
+              v-model:checkedKeys='treeCheckedKeys'
+              :tree-data='treeData'
+              :load-data='onLoadData'
+              :tabindex='-1'
+              :focusable='false'
+              class='renametree'
+              :checkable='true'
               block-node
               selectable
               check-strictly

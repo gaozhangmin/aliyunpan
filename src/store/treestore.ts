@@ -100,11 +100,12 @@ export default class TreeStore {
         }
         childDirList.push(item)
       }
-    } catch {}
+    } catch {
+    }
 
     if (saveToDriverData) {
       const childrenMap2 = new Map<string, DirData[]>()
-      childrenMap.forEach(function (value, key) {
+      childrenMap.forEach(function(value, key) {
         Object.freeze(value)
         childrenMap2.set(key, value)
       })
@@ -124,7 +125,7 @@ export default class TreeStore {
   static async SaveOneDriver(OneDriver: IDriverModel): Promise<void> {
 
     const childrenMap2 = new Map<string, DirData[]>()
-    OneDriver.DirChildrenMap.forEach(function (value, key) {
+    OneDriver.DirChildrenMap.forEach(function(value, key) {
       Object.freeze(value)
       childrenMap2.set(key, value)
     })
@@ -137,9 +138,13 @@ export default class TreeStore {
 
 
   static async SaveOneDirFileList(oneDir: IAliFileResp, hasFiles: boolean): Promise<void> {
+    console.log('SaveOneDirFileList', oneDir.dirID)
+
     if (oneDir.dirID == 'favorite' || oneDir.dirID == 'trash' || oneDir.dirID == 'recover' || oneDir.dirID.startsWith('search') || oneDir.dirID.startsWith('color') || oneDir.dirID.startsWith('video')) {
+
       return
     }
+
     let driverData = DriverData.get(oneDir.m_drive_id)
     if (!driverData) {
 
@@ -225,18 +230,15 @@ export default class TreeStore {
     }
   }
 
-  static GetTreeDataToShow(driverData: IDriverModel, node: TreeNodeData, expandedKeys: Set<string>, map: Map<string, TreeNodeData>, getChildren: boolean, order: string = ''): void {
+  static GetTreeDataToShow(driverData: IDriverModel, node: TreeNodeData, expandedKeys: Set<string>, map: Map<string, TreeNodeData>, getChildren: boolean, order: string = '', isLeafForce: boolean = false): void {
     let childDirList: DirData[] = ArrayCopy(driverData.DirChildrenMap.get(node.key) || [])
-    node.isLeaf = childDirList.length == 0
-
+    node.isLeaf = isLeafForce ? false : childDirList.length == 0
     let dirOrder = ''
     if (!order) {
       const settingStore = useSettingStore()
       if (settingStore.uiFileOrderDuli != 'null') {
-
         dirOrder = driverData.FileOrderMap[node.key] || settingStore.uiFileOrderDuli || settingStore.uiFileListOrder || 'name asc'
       } else {
-
         dirOrder = settingStore.uiFileListOrder || 'name asc'
         order = dirOrder
       }
@@ -254,9 +256,8 @@ export default class TreeStore {
     for (let i = 0, maxi = childDirList.length; i < maxi; i++) {
       const item = childDirList[i]
       const itemNode: TreeNodeData = { __v_skip: true, key: item.file_id, title: item.name, children: [] }
-      if (expandedKeys.has(itemNode.key)) TreeStore.GetTreeDataToShow(driverData, itemNode, expandedKeys, map, true, order)
-      else if (getChildren) TreeStore.GetTreeDataToShow(driverData, itemNode, expandedKeys, map, false, order)
-
+      if (expandedKeys.has(itemNode.key)) TreeStore.GetTreeDataToShow(driverData, itemNode, expandedKeys, map, true, order, isLeafForce)
+      else if (getChildren) TreeStore.GetTreeDataToShow(driverData, itemNode, expandedKeys, map, false, order, isLeafForce)
       children.push(itemNode)
       map.set(itemNode.key, itemNode)
     }

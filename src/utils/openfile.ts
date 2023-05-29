@@ -10,7 +10,7 @@ import { clickWait } from './debounce'
 import DebugLog from './debuglog'
 import { CleanStringForCmd } from './filehelper'
 import message from './message'
-import { modalArchive, modalArchivePassword } from './modal'
+import { modalArchive, modalArchivePassword, modalSelectPanDir } from './modal'
 import { humanTime, Sleep } from './format'
 import levenshtein from 'fast-levenshtein'
 
@@ -75,11 +75,18 @@ export async function menuOpenFile(file: IAliGetFileModel): Promise<void> {
             subTitleFileId = subTitlesList[similarity.index].file_id
           }
         }
-      } else if (useSettingStore().uiVideoSubtitleMode === 'select'){
-        // TODO 手动选择字幕文件
-      } else {}
+        Video(token, drive_id, file_id, parent_file_id, file.name, file.icon == 'iconweifa', file.description, subTitleFileId)
+      } else if (useSettingStore().uiVideoSubtitleMode === 'select') {
+        // 手动选择字幕文件
+        modalSelectPanDir('select', parent_file_id, async (_user_id: string, _drive_id: string, dirID: string, _dirName: string) => {
+          Video(token, drive_id, file_id, parent_file_id, file.name, file.icon == 'iconweifa', file.description, dirID)
+        }, '', /srt|vtt|ass/)
+      } else {
+        Video(token, drive_id, file_id, parent_file_id, file.name, file.icon == 'iconweifa', file.description, subTitleFileId)
+      }
+    } else {
+      Video(token, drive_id, file_id, parent_file_id, file.name, file.icon == 'iconweifa', file.description, subTitleFileId)
     }
-    Video(token, drive_id, file_id, parent_file_id, file.name, file.icon == 'iconweifa', file.description, subTitleFileId)
     return
   }
   if (file.category.startsWith('audio')) {
@@ -157,16 +164,19 @@ async function Video(token: ITokenInfo, drive_id: string, file_id: string, paren
     return
   }
   // 获取文件信息
-  const info = await AliFile.ApiFileInfo(token.user_id, drive_id, file_id)
   let play_cursor: number = 0
-  if (info?.play_cursor) {
-    play_cursor = info?.play_cursor
-  } else if (info?.user_meta) {
-    const meta = JSON.parse(info?.user_meta)
-    if (meta.play_cursor) {
-      play_cursor = parseFloat(meta.play_cursor)
+  if (useSettingStore().uiVideoPlayer == 'web' || useSettingStore().uiVideoPlayerHistory) {
+    const info = await AliFile.ApiFileInfoOpenApi(token.user_id, drive_id, file_id)
+    if (info?.play_cursor) {
+      play_cursor = info?.play_cursor
+    } else if (info?.user_meta) {
+      const meta = JSON.parse(info?.user_meta)
+      if (meta.play_cursor) {
+        play_cursor = parseFloat(meta.play_cursor)
+      }
     }
   }
+
   message.loading('加载视频中...', 2)
   const settingStore = useSettingStore()
   if (settingStore.uiAutoColorVideo && !dec) {
@@ -210,9 +220,11 @@ async function Video(token: ITokenInfo, drive_id: string, file_id: string, paren
   }
   // 加载网盘内字幕文件
   let subTitleUrl = ''
-  const data = await AliFile.ApiFileDownloadUrl(token.user_id, drive_id, subTitleFileId, 14400)
-  if (typeof data !== 'string' && data.url && data.url != '') {
-    subTitleUrl = data.url
+  if (subTitleFileId.length > 0) {
+    const data = await AliFile.ApiFileDownloadUrlOpenApi(token.user_id, drive_id, subTitleFileId, 14400)
+    if (typeof data !== 'string' && data.url && data.url != '') {
+      subTitleUrl = data.url
+    }
   }
   // 自定义播放器
   let title = mode + '__' + name

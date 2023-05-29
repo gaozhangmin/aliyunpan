@@ -481,6 +481,9 @@ export default class AliFile {
     if (!user_id || !drive_id || !file_id) return ''
     const downUrl = await AliFile.ApiFileDownloadUrlOpenApi(user_id, drive_id, file_id, 14400)
     if (typeof downUrl == 'string') return downUrl
+    // 原始文件大小
+    if (filesize === -1) filesize = downUrl.size
+    if (maxsize === -1) maxsize = downUrl.size
     const resp = await AliHttp.GetString(downUrl.url, '', filesize, maxsize) 
     if (AliHttp.IsSuccess(resp.code)) {
       if (typeof resp.body == 'string') return resp.body

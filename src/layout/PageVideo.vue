@@ -256,6 +256,10 @@ const refreshSetting = async (art: Artplayer, item: any) => {
   pageVideo.play_cursor = item.play_cursor
   pageVideo.file_name = item.html
   pageVideo.file_id = item.file_id || ''
+  if (onlineSubBlobUrl.length > 0) {
+    URL.revokeObjectURL(onlineSubBlobUrl)
+    onlineSubBlobUrl = ''
+  }
   // 刷新信息
   await getVideoInfo(art)
 }
@@ -276,12 +280,12 @@ const defaultSetting = async (art: Artplayer) => {
   art.setting.add({
     name: 'autoPlayNext',
     width: 250,
-    html: '自动播放',
+    html: '自动连播',
     tooltip: art.storage.get('autoPlayNext') ? '开启' : '关闭',
     switch: art.storage.get('autoPlayNext'),
     onSwitch: (item: SettingOption) => {
       item.tooltip = item.switch ? '关闭' : '开启'
-      art.notice.show = '自动播放' + item.tooltip
+      art.notice.show = '自动连播' + item.tooltip
       art.storage.set('autoPlayNext', !item.switch)
       return !item.switch
     }
@@ -458,10 +462,13 @@ const getVideoCursor = async (art: Artplayer, play_cursor?: number) => {
   }
 }
 
+let onlineSubBlobUrl: string = ''
 const loadOnlineSub = async (art: Artplayer, item: any) => {
-  const data = await AliFile.ApiFileDownloadUrl(pageVideo.user_id, pageVideo.drive_id, item.file_id, 14400)
-  if (typeof data !== 'string' && data.url && data.url != '') {
-    await art.subtitle.switch(data.url, {
+  const data = await AliFile.ApiFileDownText(pageVideo.user_id, pageVideo.drive_id, item.file_id, -1, -1)
+  if (data) {
+    const blob = new Blob([data], { type: item.ext })
+    onlineSubBlobUrl = URL.createObjectURL(blob)
+    await art.subtitle.switch(onlineSubBlobUrl, {
       name: item.name,
       type: item.ext,
       encoding: 'utf-8',
@@ -478,13 +485,18 @@ const embedSubSelector: selectorItem[] = []
 const getSubTitleList = async (art: Artplayer) => {
   // 尝试加载当前文件夹字幕文件
   let subSelector: selectorItem[]
+  const hasDir = art.storage.get('subTitleListMode')
   // 加载二级目录(仅加载一个文件夹)
   let file_id = ''
-  try {
-    file_id = curDirFileList.find(file => file.isDir).file_id
-  } catch (err) {
+  if (hasDir) {
+    try {
+      file_id = curDirFileList.find(file => file.isDir).file_id
+    } catch (err) {
+    }
+  } else {
+    file_id = pageVideo.parent_file_id
   }
-  let onlineSubSelector = await getDirFileList(file_id, true, '', /srt|vtt|ass/) || []
+  let onlineSubSelector = await getDirFileList(file_id, hasDir, '', /srt|vtt|ass/) || []
   // console.log('onlineSubSelector', onlineSubSelector)
   subSelector = [...embedSubSelector, ...onlineSubSelector]
   if (subSelector.length === 0) {
@@ -547,6 +559,17 @@ const getSubTitleList = async (art: Artplayer) => {
         }
       },
       {
+        html: '字幕列表',
+        tooltip: art.storage.get('subTitleListMode') ? '含子文件夹' : '同文件夹',
+        switch: art.storage.get('subTitleListMode'),
+        onSwitch: async (item: SettingOption) => {
+          item.tooltip = item.switch ? '同文件夹' : '含子文件夹'
+          art.storage.set('subTitleListMode', !item.switch)
+          await getSubTitleList(art)
+          return !item.switch
+        }
+      },
+      {
         html: '字幕偏移',
         tooltip: '0s',
         range: [0, -5, 5, 0.1],
@@ -600,6 +623,10 @@ const updateVideoTime =  () => {
 }
 const handleHideClick = () => {
   updateVideoTime().then(() => {
+    if (onlineSubBlobUrl.length > 0) {
+      URL.revokeObjectURL(onlineSubBlobUrl)
+      onlineSubBlobUrl = ''
+    }
     window.close()
   })
 }
@@ -632,10 +659,10 @@ onBeforeUnmount(() => {
 
 <style>
 .disable {
-    cursor: not-allowed;
-    pointer-events: none;
-    background-color: transparent;
-    color: #ACA899;
+  cursor: not-allowed;
+  pointer-events: none;
+  background-color: transparent;
+  color: #ACA899;
 }
 .iconfont.iconarrow-right-1-icon {
   font-size: 20px;

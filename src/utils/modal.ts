@@ -42,8 +42,11 @@ export function modalShowShareLink(share_id: string, share_pwd: string, share_to
   useModalStore().showModal('showshare', { share_id, share_pwd, share_token, withsave, file_id_list })
 }
 
-export function modalSelectPanDir(selecttype: string, selectid: string, callback: (user_id: string, drive_id: string, dirID: string, dirName: string) => void) {
-  useModalStore().showModal('selectpandir', { selecttype, selectid, callback })
+export function modalSelectPanDir(selecttype: string, selectid: string,
+                                  callback: (user_id: string, drive_id: string, dirID: string, dirName: string) => void,
+                                  category?: string,
+                                  extFilter?: RegExp) {
+  useModalStore().showModal('selectpandir', { selecttype, selectid, category, extFilter, callback })
 }
 
 export function modalShuXing(istree: boolean, ismulti: boolean) {

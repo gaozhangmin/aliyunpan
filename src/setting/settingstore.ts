@@ -164,7 +164,7 @@ const setting: SettingState = {
   uiVideoMode: 'web',
   uiVideoPlayer: 'web',
   uiVideoPlayerHistory: false,
-  uiVideoSubtitleMode: 'auto',
+  uiVideoSubtitleMode: 'close',
   uiVideoPlayerPath: '',
   uiAutoColorVideo: true,
   uiAutoPlaycursorVideo: true,

@@ -250,7 +250,7 @@ export function menuCopySelectedFile(istree: boolean, copyby: string) {
   const file_idList: string[] = []
   const diridList: string[] = []
   for (let i = 0, maxi = files.length; i < maxi; i++) {
-    if (files[i].isDir && diridList.includes(files[i].parent_file_id) == false) diridList.push(files[i].parent_file_id)
+    if (files[i].isDir && !diridList.includes(files[i].parent_file_id)) diridList.push(files[i].parent_file_id)
     file_idList.push(files[i].file_id)
   }
 
@@ -258,7 +258,7 @@ export function menuCopySelectedFile(istree: boolean, copyby: string) {
     message.error('没有可以复制移动的文件')
     return
   }
-  modalSelectPanDir(copyby, '', async function (user_id: string, drive_id: string, dirID: string) {
+  modalSelectPanDir(copyby, parent_file_id, async function (user_id: string, drive_id: string, dirID: string) {
     if (!drive_id || !dirID) return
 
     if (parent_file_id == dirID) {
@@ -269,23 +269,15 @@ export function menuCopySelectedFile(istree: boolean, copyby: string) {
     let successList: string[]
     if (copyby == 'copy') {
       successList = await AliFileCmd.ApiCopyBatch(user_id, drive_id, file_idList, drive_id, dirID)
-
-
-
       PanDAL.aReLoadOneDirToRefreshTree(selectedData.user_id, selectedData.drive_id, dirID)
       TreeStore.ClearDirSize(drive_id, [dirID])
     } else {
       successList = await AliFileCmd.ApiMoveBatch(user_id, drive_id, file_idList, drive_id, dirID)
-
       if (istree) {
-
         PanDAL.aReLoadOneDirToShow(selectedData.drive_id, selectedData.parentDirID, false)
-
         PanDAL.aReLoadOneDirToRefreshTree(selectedData.user_id, selectedData.drive_id, dirID)
       } else {
-
         usePanFileStore().mDeleteFiles(selectedData.dirID, successList, true)
-
         PanDAL.aReLoadOneDirToRefreshTree(selectedData.user_id, selectedData.drive_id, dirID)
       }
       TreeStore.ClearDirSize(drive_id, [dirID, ...selectedData.selectedParentKeys])

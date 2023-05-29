@@ -9,7 +9,7 @@ export function humanSize(bytes: number | string | undefined): string {
     bytes /= 1024
     ++u
   }
-  return `${bytes.toFixed(2)}${units[u]}`
+  return `${Math.floor(bytes)}${units[u]}`;
 }
 const speedunits = ['B', 'KB', 'M', 'G']
 

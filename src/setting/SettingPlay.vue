@@ -99,49 +99,51 @@ const handleSelectFFmpeg = () => {
         </template>
       </a-popover>
     </div>
-    <div class='settingspace'></div>
-    <div class='settinghead'>字幕加载设置</div>
-    <div class='settingrow' style='min-width: 400px '>
-      <a-radio-group type='button' tabindex='-1' :model-value='settingStore.uiVideoSubtitleMode'
-                     @update:model-value='cb({ uiVideoSubtitleMode: $event })'>
-        <a-radio tabindex='-1' value='close'>关闭字幕加载</a-radio>
-        <a-radio tabindex='-1' value='auto'>自动加载同名字幕</a-radio>
-        <!-- <a-radio tabindex='-1' value='select'>手动选择字幕文件</a-radio> -->
-      </a-radio-group>
+    <template v-if="settingStore.uiVideoPlayer === 'other'">
+      <div class='settingspace'></div>
+      <div class='settinghead'>字幕加载设置</div>
+      <div class='settingrow' style='min-width: 400px '>
+        <a-radio-group type='button' tabindex='-1' :model-value='settingStore.uiVideoSubtitleMode'
+                       @update:model-value='cb({ uiVideoSubtitleMode: $event })'>
+          <a-radio tabindex='-1' value='close'>关闭字幕加载</a-radio>
+          <a-radio tabindex='-1' value='auto'>加载视频同名字幕</a-radio>
+          <a-radio tabindex='-1' value='select'>手动选择字幕</a-radio>
+        </a-radio-group>
+      </div>
       <a-popover position='bottom'>
         <i class='iconfont iconbulb' />
         <template #content>
           <div style='min-width: 400px'>
-            默认：<span class='opred'>自动加载同名字幕</span>
+            默认：<span class='opred'>自动加载视频同名字幕</span>
             <hr />
             <span class='opred'>关闭字幕加载</span>：<br />
             不自动加载字幕
             <div class='hrspace'></div>
-            <span class='opred'>自动加载同名字幕</span>：<br />
+            <span class='opred'>自动加载视频同名字幕</span>：<br />
             当只有一个字幕文件时，无法比较字幕是否和视频名称同名<br />默认会加载该字幕
             <div class='hrspace'></div>
           </div>
         </template>
       </a-popover>
-    </div>
-    <div class='settingspace'></div>
-    <div class='settinghead'>网页播放进度</div>
-    <div class='settingrow'>
-      <MySwitch :value='settingStore.uiVideoPlayerHistory' @update:value='cb({ uiVideoPlayerHistory: $event })'>
-        自动跳转到网页播放进度
-      </MySwitch>
-      <a-popover position='bottom'>
-        <i class='iconfont iconbulb' />
-        <template #content>
-          <div style='min-width: 400px'>
-            <span class='opblue'>自定义播放器</span> 不支持记忆播放进度 <br>
-            只能够跳转到<span class='opblue'>网页播放器</span>进度
-            <hr />
-            已支持：PotPlayer，MPV
-          </div>
-        </template>
-      </a-popover>
-    </div>
+      <div class='settingspace'></div>
+      <div class='settinghead'>网页播放进度</div>
+      <div class='settingrow'>
+        <MySwitch :value='settingStore.uiVideoPlayerHistory' @update:value='cb({ uiVideoPlayerHistory: $event })'>
+          自动跳转到网页播放进度
+        </MySwitch>
+        <a-popover position='bottom'>
+          <i class='iconfont iconbulb' />
+          <template #content>
+            <div style='min-width: 400px'>
+              <span class='opblue'>自定义播放器</span> 不支持记忆播放进度 <br>
+              只能够跳转到<span class='opblue'>网页播放器</span>进度
+              <hr />
+              已支持：PotPlayer，MPV
+            </div>
+          </template>
+        </a-popover>
+      </div>
+    </template>
     <div class="settinghead"></div>
     <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'win32' ? '' : 'none', marginTop: '8px' }">
       <a-input-search tabindex="-1" style="max-width: 100px" :readonly="true" button-text="选择播放软件" search-button :model-value="settingStore.uiVideoPlayerPath" @search="handleSelectPlayer" />
@@ -213,7 +215,6 @@ const handleSelectFFmpeg = () => {
         </template>
       </a-popover>
     </div>
-    <div class="settingspace"></div>
     <div class="settinghead">FFmpeg路径</div>
     <div class="settingrow">
       <a-input-search tabindex="-1" style="max-width: 300px" :readonly="true" button-text="FFMpeg" search-button :model-value="settingStore.ffmpegPath" @search="handleSelectFFmpeg" />

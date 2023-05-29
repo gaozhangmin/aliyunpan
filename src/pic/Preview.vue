@@ -2,8 +2,6 @@
   <div :class="showNavBar ? 'preview-with-navbar' : 'preview-hidden-navbar'" style="width: 100%; height: 100%;">
 
     <span style="position: absolute; top: 45%; text-align: center; color: #888; display: block; width: 100%;">正在加载图片...</span>
-
-
     <div class="center">
       <div class="preview-photo-base preview-bg" :style="preview_cache_img_style"></div>
       <div class="preview-photo-high-res preview-bg" :style="preview_img_style"></div>
@@ -34,6 +32,7 @@
 import '../assets/style.css';
 import '../assets/preview.css';
 import message from "../utils/message";
+import {onUnmounted} from "vue";
 
 export default {
   name: "Preview",
@@ -47,9 +46,6 @@ export default {
     keyDowning: false,
   }),
   computed: {
-    // photo_name() {
-    //   return this.current_photo_filename.replace(/\.[a-z|A-Z|0-9]*$/g, "");
-    // },
     thumbnail_path() {
       return this.current_photo.thumbnail
     },
@@ -58,15 +54,10 @@ export default {
     },
   },
   methods: {
-    toggleNavBar() {
-      if (!this.showNavBar) {
-        this.showNavBar = true
-      }
-    },
     onKeyDown(event) {
+      if (this.showNavBar) return
       event.stopPropagation()
       event.preventDefault()
-
       if (this.keyDowning) return
       this.keyDowning = true
       setTimeout(() => {
@@ -179,7 +170,10 @@ export default {
   },
   mounted() {
     window.addEventListener('keydown', this.onKeyDown, true)
-  }
+  },
+  unmounted() {
+    window.removeEventListener('keydown', this.onKeyDown)
+  },
 }
 </script>
 

@@ -230,7 +230,7 @@ const usePanFileStore = defineStore('panfile', {
 
     mRefreshListDataShow(refreshRaw: boolean) {
       if (!refreshRaw) {
-          const listDataShow = this.ListDataShow.concat()
+        const listDataShow = this.ListDataShow.concat()
         Object.freeze(listDataShow)
         const listDataGrid = this.ListDataGrid.concat()
         Object.freeze(listDataGrid)

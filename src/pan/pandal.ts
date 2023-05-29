@@ -76,17 +76,15 @@ export default class PanDAL {
     pantreeStore.mSaveTreeAllNode(OneDriver.drive_id, dir, map)
   }
 
-  static GetPanTreeAllNode(drive_id: string, treeExpandedKeys: string[]): TreeNodeData[] {
+  static GetPanTreeAllNode(drive_id: string, treeExpandedKeys: string[], getChildren: boolean = true, isLeafForce: boolean = false): TreeNodeData[] {
     const OneDriver = TreeStore.GetDriver(drive_id)
     if (!OneDriver) return []
     console.log('GetPanTreeAllNode')
     const expandedKeys = new Set(treeExpandedKeys)
-
     const dir: TreeNodeData = { __v_skip: true, title: '根目录', namesearch: '', key: 'root', children: [] }
     const map = new Map<string, TreeNodeData>()
-    TreeStore.GetTreeDataToShow(OneDriver, dir, expandedKeys, map, true)
-    map.set(dir.key, dir) 
-
+    TreeStore.GetTreeDataToShow(OneDriver, dir, expandedKeys, map, getChildren, '', isLeafForce)
+    map.set(dir.key, dir)
     return [dir]
   }
 

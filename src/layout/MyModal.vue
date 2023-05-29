@@ -111,7 +111,12 @@ export default defineComponent({
   <UploadModal :visible="modalStore.modalName == 'upload'" :file_id="modalStore.modalData.file_id || ''" :filelist="modalStore.modalData.filelist || []" />
   <DownloadModal :visible="modalStore.modalName == 'download'" :istree="modalStore.modalData.istree || false" />
 
-  <SelectPanDirModal :visible="modalStore.modalName == 'selectpandir'" :selecttype="modalStore.modalData.selecttype || ''" :selectid="modalStore.modalData.selectid || ''" :callback="modalStore.modalData.callback" />
+  <SelectPanDirModal :visible="modalStore.modalName == 'selectpandir'"
+                     :selecttype="modalStore.modalData.selecttype || ''"
+                     :selectid="modalStore.modalData.selectid || ''"
+                     :category="modalStore.modalData.category"
+                     :extFilter="modalStore.modalData.extFilter"
+                     :callback='modalStore.modalData.callback' />
 </template>
 <style>
 .modalclass .arco-modal-body {

@@ -257,16 +257,12 @@ export default class UserDAL {
     if (!token || !token.access_token) {
       return
     }
-
-    const nowMonth = new Date().getMonth() + 1
-    const nowDay = new Date().getDate()
-    const signData = await DB.getValueObject('uiAutoSign')
-    console.log("UserSign",nowMonth,  nowDay,signData )
-    // @ts-ignore
-    if (!signData || signData.signMon !== nowMonth || signData.signDay !== nowDay) {
-    // if (lastDaySign !== new Date().getDate()) {
-      return AliUser.ApiUserSign(token).then(async signDay => {
-        signDay && await DB.saveValueObject('uiAutoSign', { signMon: nowMonth, signDay: signDay })
+    const lastDaySign = await DB.getValueNumber('uiAutoSign')
+    console.log("自动签到", lastDaySign, new Date().getDate())
+    if (lastDaySign !== new Date().getDate()) {
+      return AliUser.ApiUserSign(token).then(async lastDay => {
+        console.log("自动签到123", lastDay)
+        lastDay != -1 && await DB.saveValueNumber('uiAutoSign', lastDay)
       })
     }
 

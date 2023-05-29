@@ -175,16 +175,16 @@ export default class AliUser {
         message.error("签到失败" + signResp.body?.message)
         return -1
       }
-      let sign_data
+      let lastSignDay
       const { title, signInCount = 0, signInLogs = [] } = signResp.body.result
       for (let i = 0; i < signInLogs.length - 1; i++) {
-          if (signInLogs[i]['status'] === 'miss') {
-            sign_data = signInLogs[i - 1]
-            break
-         }
+        if (signInLogs[i]['status'] === 'miss') {
+          lastSignDay = signInLogs[i - 1]
+          break
+        }
       }
       let reward = '无奖励'
-      if (sign_data['type'] !== 'luckyBottle') {
+      if (lastSignDay['type'] !== 'luckyBottle') {
         const rewardUrl = 'https://member.aliyundrive.com/v1/activity/sign_in_reward'
         const rewardResp = await AliHttp.Post(rewardUrl, { signInDay: signInCount }, token.user_id, '')
         if (AliHttp.IsSuccess(rewardResp.code)) {
@@ -197,7 +197,7 @@ export default class AliUser {
         }
       }
       message.info(`本月累计签到${signInCount}次，本次签到 ${reward}`)
-      return signInCount
+      return Number(lastSignDay['calendarDay'])
     } else {
       message.error("签到失败" + signResp.body?.message)
     }
