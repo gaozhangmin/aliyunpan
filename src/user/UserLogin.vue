@@ -74,7 +74,7 @@ export default defineComponent({
             if (loading) loading.parentNode!.removeChild(loading)
             document.getElementById('loginframediverror')!.style.display = 'none'
             if (msg.indexOf('bizExt') > 0) {
-              const resp = await AliHttp.PostWithOutUserId(Config.tmpQrCodeUrl, {})
+              const resp = await AliHttp.PostWithOutUserId(Config.tmpQrCodeUrl, { })
               if (AliHttp.IsSuccess(resp.code)) {
                 const qrCodeUrl = resp.body.qrCodeUrl
                 const codeStatusUrl = qrCodeUrl + '/status'
@@ -319,7 +319,7 @@ export default defineComponent({
 
 <template>
   <a-modal v-model:visible="useUser.userShowLogin" :mask-closable="false" unmount-on-close :footer="false" class="userloginmodal" @before-open="handleOpen">
-    <template #title> 登录阿里云盘(手动录入token) </template>
+    <template #title> 登录阿里云盘(登录两遍) </template>
     <div id="logindiv">
       <div class="logincontent">
         <div class="loginframe">
@@ -343,7 +343,7 @@ export default defineComponent({
             </a-row>
           </div>
           <div id="loginframediv" style="overflow: hidden; position: relative; width: 100%; height: 100%">
-            <Webview id="loginiframe" src="about:blank" style="width: 100%; height: 400px; border: none; overflow: hidden" />
+            <Webview id="loginiframe" src="about:blank" style="width: 100%; height: 350px; border: none; overflow: hidden" />
             <div id="qr-code-status" style="position: absolute; bottom: 0; left: 0; right: 0; text-align: center; font-size: 15px; padding: 10px; background-color: #fff; color: #000;"></div>
           </div>
         </div>
@@ -368,7 +368,7 @@ export default defineComponent({
 .loginframe {
   position: relative;
   width: 348px;
-  height: 367px;
+  height: 300px;
   min-height: 400px;
   margin: 0 auto;
   overflow: hidden;
