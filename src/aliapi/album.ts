@@ -24,7 +24,9 @@ export default class AliAlbum {
                 if (items) {
                     items.forEach((item) => {
                         console.log("album item", item)
-                        if (item.cover) {
+                        if (item.cover
+                          && item.cover.list.length > 0
+                          && item.cover.list[0].thumbnail) {
                             albums.push({
                                 name: item.album_id,
                                 friendly_name: item.name,
