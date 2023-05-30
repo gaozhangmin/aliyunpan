@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import DebugLog from '../utils/debuglog'
-import { getResourcesPath, getUserDataPath } from '../utils/electronhelper'
+import {getResourcesPath, getUserData, getUserDataPath} from '../utils/electronhelper'
 import {useAppStore, useUserStore} from '../store'
 import PanDAL from '../pan/pandal'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
@@ -69,6 +69,8 @@ export interface SettingState {
 
 
   downSavePath: string
+
+  appUserDataPath: string
 
   downSavePathDefault: boolean
 
@@ -193,6 +195,7 @@ const setting: SettingState = {
   ],
 
   downSavePath: '',
+  appUserDataPath: '',
   downSavePathDefault: true,
   downSavePathFull: true,
   downSaveBreakWeiGui: true,
@@ -275,6 +278,7 @@ function _loadSetting(val: any) {
 
 
   setting.downSavePath = defaultString(val.downSavePath, '')
+  setting.appUserDataPath = defaultString(val.appUserDataPath, getUserData())
   setting.downSavePathDefault = defaultBool(val.downSavePathDefault, true)
   setting.downSavePathFull = defaultBool(val.downSavePathFull, true)
   setting.downSaveBreakWeiGui = defaultBool(val.downSaveBreakWeiGui, true)
@@ -405,6 +409,9 @@ const useSettingStore = defineStore('setting', {
       }
       if (Object.hasOwn(partial, 'proxyUseProxy')) {
         this.WebSetProxy()
+      }
+      if (Object.hasOwn(partial, 'appUserDataPath')) {
+        window.WebToElectron({ cmd: { appUserDataPath: this.appUserDataPath} })
       }
       // if (Object.hasOwn(partial, 'launchAtStartup')) {
       //   window.AutoLanuchAtStartup({launchAtStartup: setting.launchAtStartup})

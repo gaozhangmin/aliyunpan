@@ -9,7 +9,6 @@ import { exec, spawn } from 'child_process'
 import { existsSync, readFileSync, writeFileSync, rmdirSync } from 'fs'
 import path from 'path'
 import fixPath from 'fix-path'
-import { autoUpdater } from "electron-updater"
 
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()
 fixPath()
@@ -39,14 +38,12 @@ app.setAppUserModelId('gaozhangmin')
 app.name = 'alixby3'
 const DEBUGGING = !app.isPackaged
 
-// const downloadPageUrl = 'https://github.com/gaozhangmin/aliyunpan/releases/latest'
-// const qrCodePath = getStaticPath(path.join('images', 'qrcode_1280.jpg'))
-// const qrCodeImage = nativeImage.createFromPath(qrCodePath);
-
 const userData = getResourcesPath('userdir.config')
 try {
   if (existsSync(userData)) {
+    console.log("userData", userData)
     const configData = readFileSync(userData, 'utf-8')
+    console.log("configData", configData)
     if (configData) app.setPath('userData', configData)
   }
 } catch {
@@ -169,9 +166,15 @@ app
         const version = readFileSync(localVersion, 'utf-8')
         if (version < app.getVersion()) {
           writeFileSync(localVersion, app.getVersion(), 'utf-8')
+          session.defaultSession.clearStorageData({
+            storages: ['indexdb']
+          })
         }
       } else {
         writeFileSync(localVersion, app.getVersion(), 'utf-8')
+        session.defaultSession.clearStorageData({
+          storages: ['indexdb']
+        })
       }
     }
     session.defaultSession.webRequest.onBeforeSendHeaders((details, cb) => {
@@ -288,7 +291,11 @@ ipcMain.on('WebToElectron', async (event, data) => {
       !launchStartShow && settings.args.push('--openAsHidden')
     }
     app.setLoginItemSettings(settings)
-  } else {
+   } else if (data.cmd && Object.hasOwn(data.cmd, 'appUserDataPath')) {
+    const userDataPath = data.cmd.appUserDataPath
+    const localVersion = getResourcesPath('userdir.config')
+    writeFileSync(localVersion, userDataPath, 'utf-8')
+  }  else {
     event.sender.send('ElectronToWeb', 'mainsenddata')
   }
 })
