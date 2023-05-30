@@ -98,21 +98,21 @@ export default class ServerHttp {
         timeout: 30000
       })
       .then(async (response: AxiosResponse) => {
-        console.log('CheckConfigUpgrade', response)
-        if (response.data.SIP) {
-          const SIP = B64decode(response.data.SIP)
-          if (SIP.length > 0) ServerHttp.baseApi = SIP
+        const content = B64decode(response.data.content)
+        const config = JSON.parse(content)
+        if (config.SIP) {
+          ServerHttp.baseApi = B64decode(config.SIP)
         }
-        if (response.data.SSList) {
+        if (config.SSList) {
           const list: IShareSiteModel[] = []
-          for (let i = 0, maxi = response.data.SSList.length; i < maxi; i++) {
-            const item = response.data.SSList[i]
+          for (let i = 0, maxi = config.SSList.length; i < maxi; i++) {
+            const item = config.SSList[i]
             const add = { title: item.title, url: item.url, tip: item.tip }
             if (add.url.length > 0) list.push(add)
           }
           ShareDAL.SaveShareSite(list)
         }
-        if (response.data.HELP) {
+        if (config.HELP) {
           useServerStore().mSaveHelpUrl(response.data.HELP)
         }
       })
