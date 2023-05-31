@@ -5,11 +5,11 @@ import message from '../utils/message'
 import { IShareSiteModel, useServerStore } from '../store'
 import { Modal, Button, Space } from '@arco-design/web-vue'
 import { h } from 'vue'
-import { getAppNewPath, getResourcesPath, openExternal } from '../utils/electronhelper'
+import { getAppNewPath, getResourcesPath, getUserDataPath, openExternal } from '../utils/electronhelper'
 import ShareDAL from '../share/share/ShareDAL'
 import DebugLog from '../utils/debuglog'
 import { writeFileSync, rmSync, existsSync, readFileSync } from 'fs'
-import { execFile, SpawnOptions } from 'child_process'
+import { execFile, spawn, SpawnOptions } from 'child_process'
 import path from 'path'
 
 const { shell } = require('electron')
@@ -66,7 +66,6 @@ export default class ServerHttp {
       })
       .then((resp) => {
         if (resp.state == 'error' && resp.msg == '网络错误' && isfirst) {
-
           return ServerHttp.Sleep(2000).then(() => {
             return ServerHttp.Post(postData, false)
           })
@@ -158,7 +157,7 @@ export default class ServerHttp {
         if (tagName) {
           let configVer = Config.appVersion.replaceAll('v', '').trim()
           if (process.platform !== 'linux') {
-            let localVersion = getResourcesPath('localVersion')
+            let localVersion = getUserDataPath('localVersion')
             if (localVersion && existsSync(localVersion)) {
               configVer = readFileSync(localVersion, 'utf-8').replaceAll('v', '').trim()
             }
@@ -237,7 +236,7 @@ export default class ServerHttp {
                       // 更新本地版本号
                       if (flag && tagName) {
                         message.info('热更新完毕，自动重启应用中...', 5)
-                        const localVersion = getResourcesPath('localVersion')
+                        const localVersion = getUserDataPath('localVersion')
                         localVersion && writeFileSync(localVersion, tagName, 'utf-8')
                         await this.Sleep(2000)
                         window.WebRelaunch()
@@ -337,35 +336,22 @@ export default class ServerHttp {
       })
   }
 
-  static autoInstallNewVersion(resourcesPath: string) {
+  static async autoInstallNewVersion(resourcesPath: string) {
     // 自动安装
     const options: SpawnOptions = { shell: true, windowsVerbatimArguments: true }
-    if (process.platform === 'win32') {
-      console.log("resourcesPath", resourcesPath)
-      execFile('\"' + resourcesPath + '\"' + ' /S', options, error => {
-        if(error) {
-          message.info('安装失败，请前往文件夹手动安装', 5)
-          const resources = getResourcesPath('')
-          shell.openPath(path.join(resources, '/'))
-        } else {
-          message.info('安装成功，请重新打开', 5)
-        }
-      })
-    } else if (process.platform === 'darwin') {
-      execFile('open ' + '\"' + resourcesPath + '\"', options, error => {
-        if(error) {
-          message.info('安装失败，请前往文件夹手动安装', 5)
-          const resources = getResourcesPath('')
-          shell.openPath(path.join(resources, '/'))
-        } else {
-          message.info('请手动移动到应用程序目录，完成安装', 5)
-        }
-      })
-    } else if (process.platform === 'linux') {
+    const subProcess = await spawn(`${resourcesPath}`, options)
+    if (subProcess.pid && process.kill(subProcess.pid, 0)) {
+      await this.Sleep(1000)
+      window.WebToElectron({ cmd: 'exit' })
+    } else {
+      message.info('安装失败，请前往文件夹手动安装', 5)
       const resources = getResourcesPath('')
-      message.info('Linux不支持自动安装，请文件夹手动安装: ' + resources, 5)
       shell.openPath(path.join(resources, '/'))
     }
-
   }
 }
+
+
+
+
+

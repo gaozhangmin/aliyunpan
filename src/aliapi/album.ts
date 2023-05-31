@@ -23,8 +23,7 @@ export default class AliAlbum {
                 const items = resp.body.items as IAliAlubmListInfo[]
                 if (items) {
                     items.forEach((item) => {
-                        console.log("album item", item)
-                        if (item.cover
+                        if (item.cover && item.cover.list
                           && item.cover.list.length > 0
                           && item.cover.list[0].thumbnail) {
                             albums.push({

@@ -1,8 +1,8 @@
 import {getCrxPath, getResourcesPath, getStaticPath, getUserDataPath, mkAriaConf} from './mainfile'
 import { release } from 'os'
 import { AppWindow, creatElectronWindow, createMainWindow, createTray, Referer, ShowError, ShowErrorAndExit, ua } from './window'
-import Electron, { nativeImage } from 'electron'
-import {execFile, SpawnOptions} from 'child_process'
+import Electron from 'electron'
+import { execFile } from 'child_process'
 import { portIsOccupied } from './utils'
 import { app, BrowserWindow, dialog, Menu, MenuItem, ipcMain, shell, session } from 'electron'
 import { exec, spawn } from 'child_process'
@@ -41,9 +41,7 @@ const DEBUGGING = !app.isPackaged
 const userData = getResourcesPath('userdir.config')
 try {
   if (existsSync(userData)) {
-    console.log("userData", userData)
     const configData = readFileSync(userData, 'utf-8')
-    console.log("configData", configData)
     if (configData) app.setPath('userData', configData)
   }
 } catch {
@@ -160,11 +158,10 @@ app
   .whenReady()
   .then(() => {
     if (process.platform !== 'linux') {
-      const localVersion = getResourcesPath('localVersion')
-      console.log("localVersion", localVersion)
+      const localVersion = getUserDataPath('localVersion')
       if (localVersion && existsSync(localVersion)) {
         const version = readFileSync(localVersion, 'utf-8')
-        if (version < app.getVersion()) {
+        if (version !== app.getVersion()) {
           writeFileSync(localVersion, app.getVersion(), 'utf-8')
           session.defaultSession.clearStorageData({
             storages: ['indexdb']
