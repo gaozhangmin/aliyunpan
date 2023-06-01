@@ -2,16 +2,18 @@ import {getCrxPath, getResourcesPath, getStaticPath, getUserDataPath, mkAriaConf
 import { release } from 'os'
 import { AppWindow, creatElectronWindow, createMainWindow, createTray, Referer, ShowError, ShowErrorAndExit, ua } from './window'
 import Electron from 'electron'
-import { execFile } from 'child_process'
+import {execFile, SpawnOptions} from 'child_process'
 import { portIsOccupied } from './utils'
 import { app, BrowserWindow, dialog, Menu, MenuItem, ipcMain, shell, session } from 'electron'
 import { exec, spawn } from 'child_process'
-import { existsSync, readFileSync, writeFileSync, rmdirSync } from 'fs'
+import { existsSync, readFileSync, writeFileSync } from 'fs'
 import path from 'path'
 import fixPath from 'fix-path'
 
-if (release().startsWith('6.1')) app.disableHardwareAcceleration()
 fixPath()
+if (release().startsWith('6.1')) {
+  app.disableHardwareAcceleration()
+}
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true'
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 process.on('unhandledRejection', (reason, p) => {
@@ -157,11 +159,11 @@ ipcMain.on('WebUserToken', (event, data) => {
 app
   .whenReady()
   .then(() => {
-    if (process.platform !== 'linux') {
-      const localVersion = getUserDataPath('localVersion')
+    try {
+      const localVersion = getResourcesPath('localVersion')
       if (localVersion && existsSync(localVersion)) {
         const version = readFileSync(localVersion, 'utf-8')
-        if (version !== app.getVersion()) {
+        if (app.getVersion() !== version) {
           writeFileSync(localVersion, app.getVersion(), 'utf-8')
           session.defaultSession.clearStorageData({
             storages: ['indexdb']
@@ -173,7 +175,7 @@ app
           storages: ['indexdb']
         })
       }
-    }
+    } catch (err) {}
     session.defaultSession.webRequest.onBeforeSendHeaders((details, cb) => {
       const should115Referer = details.url.indexOf('.115.com') > 0
       const shouldGieeReferer = details.url.indexOf('gitee.com') > 0
@@ -355,36 +357,25 @@ ipcMain.on('WebPlatformSync', (event) => {
 
 ipcMain.on('WebSpawnSync', (event, data) => {
   try {
-    const options = { ...data.options }
-    options.detached = true
-    options.stdio = 'ignore'
-
-    if (data.command === 'mpv') {
-      let basePath = path.resolve(app.getAppPath(), '..')
-      if (DEBUGGING) basePath = app.getAppPath()
-      if (process.platform === 'win32') {
-        data.command = path.join(basePath, 'MPV', 'mpv.exe')
-      } else if (process.platform === 'darwin') {
-        data.command = path.join(basePath, 'mpv')
-      } else {
-        data.command = 'mpv'
-      }
+    const options: SpawnOptions = {
+      stdio: 'ignore',
+      ...data.options
     }
-
-    if ((process.platform === 'win32' || process.platform === 'darwin') && existsSync(data.command) == false) {
+    if ((process.platform == 'win32' || process.platform == 'darwin') && !existsSync(data.command)) {
       event.returnValue = { error: '找不到文件' + data.command }
       ShowError('找不到文件', data.command)
     } else {
-      const subprocess = spawn(data.command, data.args, options)
-      const ret = {
-        data: data,
-        exitCode: subprocess.exitCode,
-        pid: subprocess.pid,
-        spawnfile: subprocess.spawnfile,
-        command: data.command
+      const command = process.platform == 'win32' ? `${data.command}` : `open -a ${data.command} ${data.command.includes('mpv.app') ? '--args ' : ''}`
+      const subProcess = spawn(command, data.args, options)
+      const isRunning = process.kill(subProcess.pid, 0)
+      subProcess.unref()
+      event.returnValue = {
+        pid: subProcess.pid,
+        isRunning: isRunning,
+        execCmd: data,
+        options: options,
+        exitCode: subProcess.exitCode
       }
-      subprocess.unref()
-      event.returnValue = ret
     }
   } catch (err: any) {
     event.returnValue = { error: err }

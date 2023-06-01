@@ -30,9 +30,8 @@ export default class UserDAL {
           if (token.user_id === defaultUser) {
             defaultUserAdd = true
             await this.UserLogin(token).catch(() => {})
-          } else if (token.user_id !== defaultUser && !defaultUserAdd) {
-            defaultUserAdd = true
-            await this.UserLogin(token).catch(() => {})
+          } else {
+            await this.autoUserSign(token)
           }
         }
       }
@@ -56,9 +55,6 @@ export default class UserDAL {
         // 每3小时自动刷新
         if (expire_time - dateNow < 1000 * 60 * 3) {
           await AliUser.ApiTokenRefreshAccount(token, false)
-        }
-        // 每1小时自动刷新
-        if (expire_time - dateNow < 1000 * 60) {
           await AliUser.ApiSessionRefreshAccount(token,  false)
         }
       } catch (err: any) {
@@ -99,7 +95,11 @@ export default class UserDAL {
       vipexpire: '',
       pic_drive_id: '',
       device_id: '',
-      signature: ''
+      signature: '',
+      signInfo: {
+        signMon: -1,
+        signDay: -1,
+      }
     }
   }
 
@@ -153,7 +153,8 @@ export default class UserDAL {
     // 保存登录信息
     await DB.saveValueString('uiDefaultUser', token.user_id)
     useUserStore().userLogin(token.user_id)
-    UserDAL.SaveUserToken(token)
+    // 登陆后自动签到
+    await UserDAL.autoUserSign(token)
     window.WebUserToken({
       user_id: token.user_id,
       name: token.user_name,
@@ -172,9 +173,6 @@ export default class UserDAL {
     // 刷新数据
     PanDAL.aReLoadDrive(token.user_id, token.default_drive_id)
     PanDAL.aReLoadQuickFile(token.user_id)
-    if (token.user_id && useSettingStore().uiLaunchAutoSign) {
-      await this.UserSign(token.user_id)
-    }
     message.success('加载用户成功!', 2, loadingKey)
   }
 
@@ -188,8 +186,7 @@ export default class UserDAL {
     for (const [user_id, token] of UserTokenMap) {
       const isLogin = token.user_id && (await AliUser.ApiTokenRefreshAccount(token, false))
       if (isLogin) {
-        await this.UserLogin(token).catch(() => {
-        })
+        await this.UserLogin(token)
         newUserID = user_id
         break
       }
@@ -252,20 +249,21 @@ export default class UserDAL {
     }
   }
 
-  static async UserSign(user_id: string): Promise<void> {
-    const token = UserDAL.GetUserToken(user_id)
-    if (!token || !token.access_token) {
-      return
+  static async autoUserSign(token: ITokenInfo) {
+    // 自动签到
+    if (token.user_id && useSettingStore().uiLaunchAutoSign) {
+      const nowMonth = new Date().getMonth() + 1
+      const nowDay = new Date().getDate()
+      if (!token.signInfo) token.signInfo = { signMon: -1, signDay: -1 }
+      const signInfo = token.signInfo
+      if (signInfo.signMon !== nowMonth || signInfo.signDay !== nowDay) {
+        const signDay = await AliUser.ApiUserSign(token)
+        if (signDay) {
+          signInfo.signMon = nowMonth
+          signInfo.signDay = signDay
+        }
+      }
     }
-    const nowMonth = new Date().getMonth() + 1
-    const nowDay = new Date().getDate()
-    const signData = await DB.getValueObject('uiAutoSign')
-    // @ts-ignore
-    if (!signData || signData.signMon !== nowMonth || signData.signDay !== nowDay) {
-      return AliUser.ApiUserSign(token).then(async signDay => {
-        signDay && await DB.saveValueObject('uiAutoSign', { signMon: nowMonth, signDay: signDay })
-      })
-    }
-
+    UserDAL.SaveUserToken(token)
   }
 }

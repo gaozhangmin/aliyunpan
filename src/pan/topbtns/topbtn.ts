@@ -18,6 +18,7 @@ import { copyToClipboard } from '../../utils/electronhelper'
 import DownDAL from '../../down/DownDAL'
 import UploadingDAL from '../../transfer/uploadingdal'
 import { GetDriveID } from '../../aliapi/utils'
+import {isEmpty} from "lodash";
 
 const topbtnLock = new Set()
 
@@ -67,22 +68,36 @@ export function menuDownload(istree: boolean, tips: boolean = false) {
     message.error('没有可以下载的文件')
     return
   }
+  const settingStore = useSettingStore()
+  const savePath = settingStore.AriaIsLocal ? settingStore.downSavePath : settingStore.ariaSavePath
+  const savePathFull = settingStore.downSavePathFull
+  const downSavePathDefault = settingStore.downSavePathDefault
+  if (isEmpty(savePath)) {
+    message.error('未设置保存路径')
+    modalDownload(istree)
+    return
+  }
   if (topbtnLock.has('menuDownload')) return
   topbtnLock.add('menuDownload')
   let files: IAliGetFileModel[] = []
   if (istree) {
-    files = [{ ...usePanTreeStore().selectDir, isDir: true, ext: '', category: '', icon: '', sizeStr: '', timeStr: '', starred: false, thumbnail: '' }]
+    files = [{
+      ...usePanTreeStore().selectDir,
+      isDir: true,
+      ext: '',
+      category: '',
+      icon: '',
+      sizeStr: '',
+      timeStr: '',
+      starred: false,
+      thumbnail: ''
+    }]
   } else {
     files = usePanFileStore().GetSelected()
   }
   try {
-    const settingStore = useSettingStore()
-    const savePath = settingStore.AriaIsLocal ? settingStore.downSavePath : settingStore.ariaSavePath
-    const savePathFull = settingStore.downSavePathFull
-    const downSavePathDefault = settingStore.downSavePathDefault
-    !savePath && message.error('未设置保存路径')
-    if(downSavePathDefault || tips) {
-      DownDAL.aAddDownload(files, savePath, savePathFull, true)
+    if (downSavePathDefault || !tips) {
+      DownDAL.aAddDownload(files, savePath, savePathFull)
     } else {
       modalDownload(istree)
     }
@@ -237,7 +252,17 @@ export function menuCopySelectedFile(istree: boolean, copyby: string) {
 
   let files: IAliGetFileModel[] = []
   if (istree) {
-    files = [{ ...usePanTreeStore().selectDir, isDir: true, ext: '', category: '', icon: '', sizeStr: '', timeStr: '', starred: false, thumbnail: '' } as IAliGetFileModel]
+    files = [{
+      ...usePanTreeStore().selectDir,
+      isDir: true,
+      ext: '',
+      category: '',
+      icon: '',
+      sizeStr: '',
+      timeStr: '',
+      starred: false,
+      thumbnail: ''
+    } as IAliGetFileModel]
   } else {
     files = usePanFileStore().GetSelected()
   }

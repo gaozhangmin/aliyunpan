@@ -44,6 +44,11 @@ export interface ITokenInfo {
 
 
   pic_drive_id: string
+
+  signInfo: {
+    signMon: number;
+    signDay: number;
+  }
 }
 
 export interface UserState {

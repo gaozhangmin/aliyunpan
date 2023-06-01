@@ -1,4 +1,4 @@
-import { IAliGetFileModel, IAliShareItem } from '../aliapi/alimodels'
+import {AliAlbumFileInfo, IAliGetFileModel, IAliShareItem} from '../aliapi/alimodels'
 import { useModalStore } from '../store'
 
 export function modalCloseAll() {
@@ -17,6 +17,10 @@ export function modalCreatNewDir(dirtype: string, parentdirid: string = '', call
 
 export function modalCreatNewAlbum() {
   useModalStore().showModal('createalbum', { })
+}
+
+export function modalMoveToAlbum(photos_file_id:string[]) {
+  useModalStore().showModal('movetoalubm', { photos_file_id })
 }
 
 export function modalCreatNewShareLink(sharetype: string, filelist: IAliGetFileModel[]) {

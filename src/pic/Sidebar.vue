@@ -34,7 +34,6 @@
             <i class="iconfont icondelete" />
           </a>
         </div>
-
       </a>
     </div>
   </div>
@@ -66,7 +65,6 @@ export default {
     },
     async deleteAlbum(album) {
       const resp = await AliAlbum.ApiAlbumDelete(album.name)
-      console.log("resp", resp)
       if (AliHttp.IsSuccess(resp.code)) {
         this.getAlbumList()
       } else {

@@ -417,7 +417,7 @@ const useSettingStore = defineStore('setting', {
       //   window.AutoLanuchAtStartup({launchAtStartup: setting.launchAtStartup})
       // }
       if (Object.hasOwn(partial, 'uiLaunchAutoSign') && this.uiLaunchAutoSign) {
-        UserDAL.UserSign(useUserStore().user_id)
+        UserDAL.autoUserSign(useUserStore().GetUserToken)
       }
       if (Object.hasOwn(partial, 'uiTheme')) {
         useAppStore().toggleTheme(setting.uiTheme)

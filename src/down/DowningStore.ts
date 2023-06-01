@@ -217,7 +217,7 @@ const useDowningStore = defineStore('downing', {
       }
     },
 
-    mAddDownload({ downlist, tip }: { downlist: Item[]; tip: boolean }) {
+    mAddDownload({ downlist }: { downlist: Item[] }) {
       const DowningList = this.ListDataRaw
       const savelist = []
       const haslist = new Map<string, boolean>()
@@ -234,12 +234,10 @@ const useDowningStore = defineStore('downing', {
       DB.saveDownings(JSON.parse(JSON.stringify(savelist)))
       DowningList.push(...savelist);
       this.mRefreshListDataShow(true)
-      if (tip) {
-        if (savelist.length == 0) {
-          message.info('下载任务已存在，请勿重复创建任务')
-        } else {
-          message.success('成功创建 ' + savelist.length.toString() + '个下载任务')
-        }
+      if (savelist.length == 0) {
+        message.info('下载任务已存在，请勿重复创建任务')
+      } else {
+        message.success('成功创建 ' + savelist.length.toString() + '个下载任务')
       }
     },
 

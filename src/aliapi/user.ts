@@ -172,32 +172,42 @@ export default class AliUser {
     // console.log(JSON.stringify(resp))
     if (AliHttp.IsSuccess(signResp.code)) {
       if (!signResp.body || !signResp.body.result) {
-        message.error("签到失败" + signResp.body?.message)
+        message.error('签到失败' + signResp.body?.message)
         return -1
       }
-      let lastSignDay
-      const { title, signInCount = 0, signInLogs = [] } = signResp.body.result
-      for (let i = 0; i < signInLogs.length - 1; i++) {
-        if (signInLogs[i]['status'] === 'miss') {
-          lastSignDay = signInLogs[i - 1]
+      const { signInCount = 0, signInLogs = [] } = signResp.body.result
+      const sign_day = new Date().getDate()
+      let sign_data: any = {
+        calendarDay: sign_day,
+        isReward: false,
+        reward: { name: '', description: '' }
+      }
+      for (let signInLog of signInLogs) {
+        const calendarDay = signInLog['calendarDay']
+        if (calendarDay && parseInt(calendarDay) === sign_day) {
+          sign_data = signInLog
           break
         }
       }
       let reward = '无奖励'
-      const rewardUrl = 'https://member.aliyundrive.com/v1/activity/sign_in_reward'
-      const rewardResp = await AliHttp.Post(rewardUrl, { signInDay: signInCount }, token.user_id, '')
-      if (AliHttp.IsSuccess(rewardResp.code)) {
-        if (!rewardResp.body || !rewardResp.body.result || !rewardResp.body.success) {
-          message.error('签到后领取奖励失败，请前往手机端领取' + rewardResp.body?.message)
-          return -1
+      if (!sign_data['isReward']) {
+        const rewardUrl = 'https://member.aliyundrive.com/v1/activity/sign_in_reward'
+        const rewardResp = await AliHttp.Post(rewardUrl, { signInDay: signInCount }, token.user_id, '')
+        if (AliHttp.IsSuccess(rewardResp.code)) {
+          if (!rewardResp.body || !rewardResp.body.result || !rewardResp.body.success) {
+            message.error('签到后领取奖励失败，请前往手机端领取' + rewardResp.body?.message)
+            return -1
+          }
+          const result = rewardResp.body.result
+          reward = `获得【${result['name']}】 - ${result['description']}`
         }
-        const result = rewardResp.body.result
-        reward = `获得【${result["name"]}】 - ${result["description"]}`
+      } else {
+        reward = `获得【${sign_data['reward']['name']}】 - ${sign_data['reward']['description']}`
       }
-      message.info(`本月累计签到${signInCount}次，本次签到 ${reward}`)
-      return Number(lastSignDay['calendarDay'])
+      message.info(`【${token.nick_name || token.user_name}】本月累计签到${signInCount}次，本次签到 ${reward}`)
+      return parseInt(sign_data['calendarDay'])
     } else {
-      message.error("签到失败" + signResp.body?.message)
+      message.error('签到失败' + signResp.body?.message)
     }
     return -1
   }

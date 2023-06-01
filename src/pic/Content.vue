@@ -1,46 +1,13 @@
-<template>
-  <div style="height: 14px"></div>
-  <div class="toppanbtns" style="height: 26px; margin-bottom:5px;" tabindex="-1">
-    <div  class="toppanbtn">
-      <a-button type="text" size="small" tabindex="-1" @click="() => modalCreatNewAlbum()"><i class="iconfont iconplus" />新建相册</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="() => handleUpload('pic', this.base_name)"><i class="iconfont iconupload" />上传照片</a-button>
-    </div>
-  </div>
-
-  <div  style="height:100%; overflow-y: auto" @scroll="handleScroll">
-    <div class="cnav">
-      <div :class="['title', 'left', sidebar_shown_pc?'':'sidebar-hidden']">
-        <span class="title-text">{{ album_friendly_name }}</span>
-      </div>
-      <div class="title right">
-        <span style="color: lightskyblue; margin-right: 10px;">{{ photo_count }}张图片</span>
-
-      </div>
-      <div class="back left"   style="line-height:45px; left: 18px; top: 0" @click="raise_event_show_sidebar(true, 'mobile')">
-        <i class="larrow" style="border-color: white"></i><span class="backtext">照片</span>
-      </div>
-
-      <div :class="['back', 'left', 'sidebar-hidden-left', sidebar_shown_pc?'':'sidebar-hidden']" @click="raise_event_show_sidebar(true, 'pc')" style="line-height:45px; left: 18px; top: 0">
-        <span class="backtext">显示</span>
-      </div>
-    </div>
-
-    <div>
-      <div class="photo box" v-for="(photo, i) in photo_list" :photo-name="photo.name" :key="i" :style="{ backgroundImage: `url('${ photo.thumbnail }')` }"
-           @click="raise_event_show_preview(photo.name, photo_list, i, photo.album_name, photo)"
-      >
-      </div>
-    </div>
-  </div>
-</template>
-
 <script>
 import '../assets/style.css'
 import '../assets/contentview.css'
 
 import AliAlbum from '../aliapi/album'
-import { modalCreatNewAlbum } from "../utils/modal";
+import { modalCreatNewAlbum, modalMoveToAlbum } from '../utils/modal'
 import { handleUpload } from '../pan/topbtns/topbtn'
+import { Tooltip as  AntdTooltip } from 'ant-design-vue'
+import AliHttp from "../aliapi/alihttp";
+
 const PHOTO_PER_PAGE = 50;
 
 export default {
@@ -55,6 +22,8 @@ export default {
       photo_list: [],
       initial_scroll_height: 0,
       response_load_new: true,
+      selected_photos: [],
+      isselected: false
     }
   },
   watch: {
@@ -67,6 +36,7 @@ export default {
     this.initialize();
   },
   methods: {
+    modalMoveToAlbum,
     handleUpload,
     modalCreatNewAlbum,
     raise_event_show_sidebar(val, mode) {
@@ -102,7 +72,8 @@ export default {
     async initialize() {
       if (this.base_name === "")
         return;
-
+      this.selected_photos = [];
+      this.isselected = false;
       this.current_page_to_load = 0;
       this.photo_list = [];
       this.response_load_new = true;
@@ -137,11 +108,106 @@ export default {
       if((el.srcElement.offsetHeight + el.srcElement.scrollTop) >= el.srcElement.scrollHeight - this.initial_scroll_height) {
         this.load_image()
       }
-    }
+    },
+    toggleSelect(photo) {
+      if (this.isSelected(photo)) {
+        // 已选中，移除选中状态
+        const index = this.selected_photos.findIndex(selectedPhoto => selectedPhoto === photo.file_id);
+        if (index !== -1) {
+          this.selected_photos.splice(index, 1);
+        }
+      } else {
+        // 未选中，添加选中状态
+        this.selected_photos.push(photo.file_id);
+      }
+      this.isselected = this.selected_photos.length > 0
+    },
+    handleSelectAll() {
+      if (this.selected_photos.length === this.photo_list.length) {
+        // 如果已经全部选择，则取消选择所有照片
+        this.selected_photos = [];
+      } else {
+        // 否则，选择所有照片
+        const photosFileid = this.photo_list.map(photo => photo.file_id);
+        this.selected_photos = [...photosFileid];
+      }
+      this.isselected = this.selected_photos.length > 0
+    },
+    isSelected(photo) {
+      return this.selected_photos.includes(photo.file_id);
+    },
+    async handleRemovePhoto() {
+      // const photoNames = this.selected_photos.map(photo => photo.file_id);
+      const resp = await AliAlbum.ApiAlbumFilesDelete(this.base_name, this.selected_photos);
+      if (!AliHttp.IsSuccess(resp.code)) {
+        this.$message.error("移除照片失败")
+      } else {
+        this.$message.success("移除照片成功")
+        this.initialize();
+      }
+    },
+    async handleTrash() {
+      // const photoNames = this.selected_photos.map(photo => photo.file_id);
+      const resp = await AliAlbum.trashPhotos(this.selected_photos);
+      if (!resp) {
+        this.$message.error("移除照片到回收站失败")
+      } else {
+        this.$message.success("移除照片到回收站成功")
+        this.initialize();
+      }
+    },
   }
 }
 
 </script>
+
+<template>
+  <div class="toppannav">
+    <span> {{ album_friendly_name }} </span>
+  </div>
+  <div style="height: 14px"></div>
+  <div class="toppanbtns" style="height: 26px; margin-bottom:5px;" tabindex="-1">
+    <div class="toppanbtn">
+      <a-button type="text" size="small" tabindex="-1" @click="() => modalCreatNewAlbum()"><i class="iconfont iconplus" />新建相册</a-button>
+      <a-button type="text" size="small" tabindex="-1" @click="() => handleUpload('pic', this.base_name)"><i class="iconfont iconupload" />上传照片</a-button>
+    </div>
+    <div class="toppanbtn" v-show="isselected">
+      <a-button type="text" size="small" tabindex="-1"  @click="() => handleRemovePhoto()"><i class="iconfont icondelete" />从相册中移除</a-button>
+      <a-button type="text" size="small" tabindex="-1"  @click="() => handleTrash()"><i class="iconfont iconrest" />移到回收站</a-button>
+      <a-button type="text" size="small" tabindex="-1"  @click="() => { const newSelectedPhotos = selected_photos.concat(this.base_name); modalMoveToAlbum(newSelectedPhotos); }"><i class="iconfont iconplus" />添加到相册</a-button>
+    </div>
+  </div>
+  <div class="toppanarea" tabindex="-1">
+    <div style="margin: 0 3px">
+      <AntdTooltip title="点击全选" placement="left">
+        <a-button shape="circle" type="text" tabindex="-1" class="select all" title="Ctrl+A" @click="handleSelectAll">
+          <i :class="[selected_photos.length === photo_list.length ? 'iconfont iconrsuccess' : 'iconfont iconpic2']" />
+        </a-button>
+      </AntdTooltip>
+    </div>
+    <div class='selectInfo'>已选中 {{ selected_photos.length }} / {{ photo_list.length }} 个</div>
+  </div>
+
+  <div  style="height:100%; overflow-y: auto" @scroll="handleScroll">
+    <div class="cnav">
+      <div class="title right">
+        <span style="color: lightskyblue; margin-right: 10px;">{{ photo_count }}张图片</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="photo box" v-for="(photo, i) in photo_list" :photo-name="photo.name" :key="i" :style="{ backgroundImage: `url('${ photo.thumbnail }')` }"
+           @click="raise_event_show_preview(photo.name, photo_list, i, photo.album_name, photo)">
+        <a-button shape='circle' type='text' tabindex='-1' class='select' :title="i"
+                  @click.prevent.stop="toggleSelect(photo)" style="position: absolute; top: 5px; left: 5px; z-index: 99999; color: red;">
+          <i :class="selected_photos.includes(photo.file_id) ?  'iconfont iconrsuccess' : 'iconfont iconpic2'"/>
+        </a-button>
+      </div>
+    </div>
+  </div>
+</template>
+
+
 
 <style scoped>
 

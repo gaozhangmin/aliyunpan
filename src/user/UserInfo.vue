@@ -4,20 +4,21 @@ import { useUserStore } from '../store'
 import UserDAL from '../user/userdal'
 import message from '../utils/message'
 import { modalUserSpace } from '../utils/modal'
+import AliUser from '../aliapi/user'
 export default defineComponent({
   setup() {
     const handleUserChange = (val: any, user_id: string) => {
       if (val) UserDAL.UserChange(user_id)
     }
     const handleRefreshUserInfo = () => {
-      UserDAL.UserRefreshByUserFace(useUserStore().user_id, false).then((success) => {
+      UserDAL.UserRefreshByUserFace(userStore.user_id, false).then((success) => {
         if (success) message.info('刷新用户信息成功')
         else message.error('刷新用户信息失败')
       })
     }
 
     const handleSign = () => {
-      UserDAL.UserSign(useUserStore().user_id)
+      AliUser.ApiUserSign(userStore.GetUserToken)
     }
 
     const handleUserSpace = () => {

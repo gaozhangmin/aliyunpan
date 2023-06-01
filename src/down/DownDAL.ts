@@ -139,9 +139,8 @@ export default class DownDAL {
    * @param fileList
    * @param savePath
    * @param needPanPath
-   * @param tip
    */
-  static aAddDownload(fileList: IAliGetFileModel[], savePath: string, needPanPath: boolean, tip: boolean) {
+  static aAddDownload(fileList: IAliGetFileModel[], savePath: string, needPanPath: boolean) {
     const userID = useUserStore().user_id
     const settingStore = useSettingStore()
 
@@ -218,16 +217,14 @@ export default class DownDAL {
           FailedCode: 0,
           FailedMessage: '',
           AutoTry: 0,
-          DownUrl: downloadurl,
-        },
-      };
-      AriaStopList([downitem.Info.GID]).then(r => {})
-      AriaDeleteList([downitem.Info.GID]).then(r => {})
-      if (downitem.Info.ariaRemote && !downitem.Info.isDir) downitem.Info.icon = 'iconfont iconcloud-download';
-      downlist.push(downitem);
+          DownUrl: downloadurl
+        }
+      }
+      if (downitem.Info.ariaRemote && !downitem.Info.isDir) downitem.Info.icon = 'iconfont iconcloud-download'
+      downlist.push(downitem)
     }
 
-    useDowningStore().mAddDownload({ downlist, tip });
+    useDowningStore().mAddDownload({ downlist })
   }
 
   /**
@@ -475,13 +472,6 @@ export default class DownDAL {
    * 查询是否下载中
    */
   static QueryIsDowning() {
-    return false
-  }
-
-  /**
-   * ?查询选择的是否下载中？
-   */
-  static QuerySelectedIsDowning() {
     return false
   }
 }

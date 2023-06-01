@@ -25,9 +25,11 @@ import UploadModal from '../pan/topbtns/UploadModal.vue'
 import DownloadModal from '../pan/topbtns/DownloadModal.vue'
 import SelectSubTitleModal from '../pan/topbtns/SelectSubTitleModal.vue'
 import CreatNewAlbumModal from "../pan/topbtns/CreatNewAlbumModal.vue";
+import MoveToAlbumModal from '../pan/topbtns/MoveToAlbumModal.vue'
 
 export default defineComponent({
   components: {
+    MoveToAlbumModal,
     CreatNewAlbumModal,
     UserSpaceModal,
     CreatNewFileModal,
@@ -65,6 +67,7 @@ export default defineComponent({
   <UserSpaceModal :visible="modalStore.modalName == 'userspace'" />
   <CreatNewFileModal :visible="modalStore.modalName == 'creatfile'" />
   <CreatNewAlbumModal :visible="modalStore.modalName == 'createalbum'" />
+  <MoveToAlbumModal :visible="modalStore.modalName == 'movetoalubm'"  :photos_file_id='modalStore.modalData.photos_file_id' :album_id='modalStore.modalData.album_id' />
   <CreatNewDirModal :visible="modalStore.modalName == 'creatdir'" :dirtype="modalStore.modalData.dirtype || ''" :parentdirid="modalStore.modalData.parentdirid || ''" :callback="modalStore.modalData.callback" />
   <CreatNewShareLinkModal :visible="modalStore.modalName == 'creatshare'" :sharetype="modalStore.modalData.sharetype || ''" :filelist="modalStore.modalData.filelist || []" />
 

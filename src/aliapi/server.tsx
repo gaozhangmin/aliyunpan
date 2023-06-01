@@ -236,7 +236,7 @@ export default class ServerHttp {
                       // 更新本地版本号
                       if (flag && tagName) {
                         message.info('热更新完毕，自动重启应用中...', 5)
-                        const localVersion = getUserDataPath('localVersion')
+                        const localVersion = getResourcesPath('localVersion')
                         localVersion && writeFileSync(localVersion, tagName, 'utf-8')
                         await this.Sleep(2000)
                         window.WebRelaunch()
@@ -338,8 +338,8 @@ export default class ServerHttp {
 
   static async autoInstallNewVersion(resourcesPath: string) {
     // 自动安装
-    const options: SpawnOptions = { shell: true, windowsVerbatimArguments: true }
-    const subProcess = await spawn(`${resourcesPath}`, options)
+    const options = { shell: true, windowsVerbatimArguments: true }
+    const subProcess = await execFile(`${resourcesPath}`, options)
     if (subProcess.pid && process.kill(subProcess.pid, 0)) {
       await this.Sleep(1000)
       window.WebToElectron({ cmd: 'exit' })

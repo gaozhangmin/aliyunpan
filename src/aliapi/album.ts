@@ -185,11 +185,18 @@ export default class AliAlbum {
         return resp
     }
 
-    static async ApiAlbumFilesDelete(user_id: string, album_id:string, drive_file_list:{ "drive_id":string, "file_id": string}[]): Promise<number> {
+    static async ApiAlbumFilesDelete(album_id:string, file_list:string[]): Promise<IUrlRespData> {
+        const userId = useUserStore().user_id
+        const drive_id = GetDriveID(userId, 'pic')
+        const data:{drive_id:string, file_id:string}[] = []
+        file_list.forEach((file_id) => {
+            data.push({drive_id, file_id})
+        })
+        console.log("ApiAlbumFilesDelete data=", data, album_id)
         // { "album_id": "cfe400000000478599575b69356c5a4962383669", "drive_file_list": [{ "drive_id": "9600002", "file_id": "623b00000000d89ef21d4118838aed83de7575ba" }] }
         const url = 'adrive/v1/album/delete_files'
-        const resp = await AliHttp.Post(url, {album_id, drive_file_list}, user_id, '')
-        return resp.code
+        const resp = await AliHttp.Post(url, {album_id, "drive_file_list": data}, userId, '')
+        return resp
     }
 
 
@@ -200,10 +207,48 @@ export default class AliAlbum {
         return resp
     }
 
-    static async ApiAlbumAddExistPic(user_id: string, album_id:string, drive_file_list:{ "drive_id":string, "file_id": string}[]): Promise<number> {
+    static async ApiAlbumAddExistPic(album_id:string, file_list:string[]): Promise<IUrlRespData> {
+        const userId = useUserStore().user_id
+        const drive_id = GetDriveID(userId, 'pic')
+        const data:{drive_id:string, file_id:string}[] = []
+        file_list.forEach((file_id) => {
+            data.push({drive_id, file_id})
+        })
+        const postData = {album_id, "drive_file_list": data}
         // { "album_id": "cfe400000000478599575b69356c5a4962383669", "drive_file_list": [{ "drive_id": "9600002", "file_id": "623b00000000d89ef21d4118838aed83de7575ba" }] }
         const url = 'adrive/v1/album/add_files'
-        const resp = await AliHttp.Post(url, {album_id, drive_file_list}, user_id, '')
-        return resp.code
+        const resp = await AliHttp.Post(url, postData, userId, '')
+        return resp
+    }
+
+    static async trashPhotos(file_ids: string[]): Promise<boolean> {
+        const user_id = useUserStore().user_id
+        const drive_id = GetDriveID(user_id, 'pic')
+        // @ts-ignore
+        const requestData = []
+        file_ids.forEach((file_id) => {
+            requestData.push({
+                "body": {
+                    "drive_id": drive_id,
+                    "file_id": file_id
+                },
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                "id": file_id,
+                "method": "POST",
+                "url": "/recyclebin/trash"
+            })
+        })
+        const url = 'v2/batch'
+        // @ts-ignore
+        const postData = { requests: requestData, resource: "file" }
+        const resp = await AliHttp.Post(url, postData, user_id, '')
+        if (AliHttp.IsSuccess(resp.code)) {
+            return true
+        } else {
+            DebugLog.mSaveWarning('UploadFileDelete err=' + (resp.code || ''))
+            return false
+        }
     }
 }

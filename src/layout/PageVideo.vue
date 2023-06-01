@@ -42,7 +42,6 @@ const options: Option = {
     playsInline: true
   },
   customType: {
-    flv: (video: HTMLMediaElement, url: string) => playFlv(video, url, ArtPlayerRef),
     m3u8: (video: HTMLMediaElement, url: string) => playM3U8(video, url, ArtPlayerRef)
   }
 }
@@ -83,24 +82,6 @@ const playM3U8 = (video: HTMLMediaElement, url: string, art: Artplayer) => {
     video.src = url
   } else {
     art.notice.show = 'Unsupported playback format: m3u8'
-  }
-}
-
-const playFlv = (video: HTMLMediaElement, url: string, art: Artplayer) => {
-  if (FlvJs.isSupported()) {
-    // @ts-ignore
-    if (art.flv) art.flv.destroy()
-    const flv = FlvJs.createPlayer(
-      { url: url, type: 'flv', withCredentials: true, cors: true },
-      { referrerPolicy: 'same-origin' }
-    )
-    flv.attachMediaElement(video)
-    flv.load()
-    // @ts-ignore
-    art.flv = flv
-    art.on('destroy', () => flv.destroy())
-  } else {
-    art.notice.show = 'Unsupported playback format: flv'
   }
 }
 
@@ -164,7 +145,7 @@ const createVideo = async (name: string) => {
   if (muted) ArtPlayerRef.muted = muted === 'true'
   ArtPlayerRef.on('ready', async () => {
     // @ts-ignore
-    if (!ArtPlayerRef.hls && !ArtPlayerRef.flv) {
+    if (!ArtPlayerRef.hls) {
       await getVideoCursor(ArtPlayerRef, pageVideo.play_cursor)
       await ArtPlayerRef.play()
     }
@@ -226,6 +207,7 @@ const getDirFileList = async (dir_id: string, hasDir: boolean, category: string 
     if (!dir.next_marker) {
       for (let item of dir.items) {
         const fileInfo = {
+          html: item.name,
           category: item.category,
           name: item.name,
           file_id: item.file_id,
@@ -467,12 +449,7 @@ const loadOnlineSub = async (art: Artplayer, item: any) => {
   if (data) {
     const blob = new Blob([data], { type: item.ext })
     onlineSubBlobUrl = URL.createObjectURL(blob)
-    await art.subtitle.switch(onlineSubBlobUrl, {
-      name: item.name,
-      type: item.ext,
-      encoding: 'utf-8',
-      escape: true
-    })
+    await art.subtitle.switch(onlineSubBlobUrl, { name: item.name, type: item.ext })
     return item.html
   } else {
     art.notice.show = `加载${item.name}字幕失败`
@@ -594,11 +571,7 @@ const getSubTitleList = async (art: Artplayer) => {
       if (art.subtitle.show) {
         if (!item.file_id) {
           art.notice.show = ''
-          art.subtitle.switch(item.url, {
-            name: item.name,
-            encoding: 'utf-8',
-            escape: true
-          })
+          await art.subtitle.switch(item.url, { name: item.name })
           return item.html
         } else {
           return await loadOnlineSub(art, item)

@@ -22,6 +22,7 @@ declare global {
     WebOpenUrl: any
     WebShowOpenDialogSync: any
     WebExecSync: any
+    WebSpawnSync: any
     WebPlatformSync: any
     UploadPort: any
     DownloadPort: any
