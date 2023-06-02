@@ -9,7 +9,7 @@ import { getAppNewPath, getResourcesPath, getUserDataPath, openExternal } from '
 import ShareDAL from '../share/share/ShareDAL'
 import DebugLog from '../utils/debuglog'
 import { writeFileSync, rmSync, existsSync, readFileSync } from 'fs'
-import { execFile, spawn, SpawnOptions } from 'child_process'
+import { ChildProcess, execFile, spawn, SpawnOptions } from 'child_process'
 import path from 'path'
 
 const { shell } = require('electron')
@@ -157,7 +157,7 @@ export default class ServerHttp {
         if (tagName) {
           let configVer = Config.appVersion.replaceAll('v', '').trim()
           if (process.platform !== 'linux') {
-            let localVersion = getUserDataPath('localVersion')
+            let localVersion = getResourcesPath('localVersion')
             if (localVersion && existsSync(localVersion)) {
               configVer = readFileSync(localVersion, 'utf-8').replaceAll('v', '').trim()
             }
@@ -336,17 +336,31 @@ export default class ServerHttp {
       })
   }
 
-  static async autoInstallNewVersion(resourcesPath: string) {
+  static autoInstallNewVersion(resourcesPath: string) {
     // 自动安装
-    const options = { shell: true, windowsVerbatimArguments: true }
-    const subProcess = await execFile(`${resourcesPath}`, options)
-    if (subProcess.pid && process.kill(subProcess.pid, 0)) {
-      await this.Sleep(1000)
-      window.WebToElectron({ cmd: 'exit' })
-    } else {
-      message.info('安装失败，请前往文件夹手动安装', 5)
-      const resources = getResourcesPath('')
-      shell.openPath(path.join(resources, '/'))
+    const options: SpawnOptions = { shell: true, windowsVerbatimArguments: true }
+    if (process.platform === 'win32' || process.platform === 'linux') {
+      execFile('\"' + resourcesPath + '\"', options, error => {
+        if(error) {
+          message.info('安装失败，请前往文件夹手动安装', 5)
+          const resources = getResourcesPath('')
+          shell.openPath(path.join(resources, '/'))
+        } else {
+          message.info('安装成功，请重新打开', 5)
+          window.WebToElectron({ cmd: 'exit' })
+        }
+      })
+    } else if (process.platform === 'darwin') {
+      execFile('open ' + '\"' + resourcesPath + '\"', options, error => {
+        if(error) {
+          message.info('安装失败，请前往文件夹手动安装', 5)
+          const resources = getResourcesPath('')
+          shell.openPath(path.join(resources, '/'))
+        } else {
+          message.info('请手动移动到应用程序目录，完成安装', 5)
+          window.WebToElectron({ cmd: 'exit' })
+        }
+      })
     }
   }
 }

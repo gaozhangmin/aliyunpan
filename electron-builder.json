@@ -48,6 +48,7 @@
   "win": {
     "icon": "./static/images/icon.png",
     "artifactName": "XBYDriver-${version}-win-${arch}.${ext}",
+    "requestedExecutionLevel": "asInvoker",
     "extraResources": [
       { "from": "./static/engine/win32/${arch}", "to": "./engine"},
       { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
