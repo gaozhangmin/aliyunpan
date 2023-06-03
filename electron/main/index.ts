@@ -165,15 +165,9 @@ app
         const version = readFileSync(localVersion, 'utf-8')
         if (app.getVersion() !== version) {
           writeFileSync(localVersion, app.getVersion(), 'utf-8')
-          session.defaultSession.clearStorageData({
-            storages: ['indexdb']
-          })
         }
       } else {
         writeFileSync(localVersion, app.getVersion(), 'utf-8')
-        session.defaultSession.clearStorageData({
-          storages: ['indexdb']
-        })
       }
     } catch (err) {}
     session.defaultSession.webRequest.onBeforeSendHeaders((details, cb) => {

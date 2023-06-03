@@ -5,11 +5,11 @@ import message from '../utils/message'
 import { IShareSiteModel, useServerStore } from '../store'
 import { Modal, Button, Space } from '@arco-design/web-vue'
 import { h } from 'vue'
-import { getAppNewPath, getResourcesPath, getUserDataPath, openExternal } from '../utils/electronhelper'
+import { getAppNewPath, getResourcesPath, openExternal } from '../utils/electronhelper'
 import ShareDAL from '../share/share/ShareDAL'
 import DebugLog from '../utils/debuglog'
 import { writeFileSync, rmSync, existsSync, readFileSync } from 'fs'
-import { ChildProcess, execFile, spawn, SpawnOptions } from 'child_process'
+import { execFile, SpawnOptions } from 'child_process'
 import path from 'path'
 
 const { shell } = require('electron')
@@ -168,7 +168,7 @@ export default class ServerHttp {
           if (updateData.url) {
             verUrl = 'https://ghproxy.com/' + updateData.url
           }
-          if (remoteVer > configVer) {
+          if (remoteVer !== configVer) {
             Modal.confirm({
               mask: true,
               alignCenter: true,
@@ -247,10 +247,8 @@ export default class ServerHttp {
                 })
               ])
             })
-          } else if (remoteVer == configVer) {
+          } else  {
             message.info('已经是最新版 ' + tagName, 6)
-          } else if (remoteVer < configVer) {
-            message.info('您的本地版本 ' + Config.appVersion + ' 已高于服务器版本 ' + tagName, 6)
           }
         }
       })
@@ -339,7 +337,7 @@ export default class ServerHttp {
   static autoInstallNewVersion(resourcesPath: string) {
     // 自动安装
     const options: SpawnOptions = { shell: true, windowsVerbatimArguments: true }
-    if (process.platform === 'win32' || process.platform === 'linux') {
+    if (process.platform === 'win32') {
       execFile('\"' + resourcesPath + '\"', options, error => {
         if(error) {
           message.info('安装失败，请前往文件夹手动安装', 5)
