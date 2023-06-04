@@ -7,7 +7,7 @@ const settingStore = useSettingStore()
 const cb = async (val: any) => {
     settingStore.updateStore(val)
     if (val.downGlobalSpeed > 0) {
-        await AriaGlobalDownSpeed()
+        await AriaGlobalUploadSpeed()
     }
 }
 </script>

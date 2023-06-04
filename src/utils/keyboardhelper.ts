@@ -1,8 +1,8 @@
 import { KeyboardMessage } from '../store/keyboardstore'
-import {throttle} from "./debounce"
+import { throttle } from './debounce'
 
 export function TestCtrlShift(key: string, event: KeyboardMessage, fun: any): boolean {
-  if (event.Key.toLowerCase() == key.toLowerCase() && event.Ctrl && event.Shift && event.Repeat == false) {
+  if (event.Key.toLowerCase() == key.toLowerCase() && event.Ctrl && event.Shift && !event.Repeat) {
     fun()
     return true
   }
@@ -10,7 +10,7 @@ export function TestCtrlShift(key: string, event: KeyboardMessage, fun: any): bo
 }
 
 export function TestCtrl(key: string, event: KeyboardMessage, fun: any): boolean {
-  if (event.Key.toLowerCase() == key.toLowerCase() && event.Ctrl && event.Repeat == false) {
+  if (event.Key.toLowerCase() == key.toLowerCase() && event.Ctrl && !event.Repeat) {
     fun()
     return true
   }
@@ -18,7 +18,7 @@ export function TestCtrl(key: string, event: KeyboardMessage, fun: any): boolean
 }
 
 export function TestShift(key: string, event: KeyboardMessage, fun: any): boolean {
-  if (event.Key.toLowerCase() == key.toLowerCase() && event.Shift && event.Repeat == false) {
+  if (event.Key.toLowerCase() == key.toLowerCase() && event.Shift && !event.Repeat) {
     fun()
     return true
   }
@@ -26,7 +26,7 @@ export function TestShift(key: string, event: KeyboardMessage, fun: any): boolea
 }
 
 export function TestAlt(key: string, event: KeyboardMessage, fun: any): boolean {
-  if (event.Key.toLowerCase() == key.toLowerCase() && event.Alt && event.Repeat == false) {
+  if (event.Key.toLowerCase() == key.toLowerCase() && event.Alt && !event.Repeat) {
     fun()
     return true
   }
@@ -34,7 +34,7 @@ export function TestAlt(key: string, event: KeyboardMessage, fun: any): boolean 
 }
 
 export function TestKey(key: string, event: KeyboardMessage, fun: any): boolean {
-  if (event.Key.toLowerCase() == key.toLowerCase() && event.Repeat == false && event.Ctrl == false && event.Shift == false && event.Alt == false) {
+  if (event.Key.toLowerCase() == key.toLowerCase() && !event.Repeat && !event.Ctrl && !event.Shift && !event.Alt) {
     fun()
     return true
   }
@@ -157,9 +157,7 @@ export function TestKeyboardSelect(event: KeyboardMessage, viewlist: any, store:
     store.mKeyboardSelect(key, true, false)
     viewlist.scrollIntoView({ key: key, align: 'auto' })
   }
-  if (TestCtrl(' ', event, cspace)) return true
-
-  return false
+  return TestCtrl(' ', event, cspace);
 }
 
 export function RefreshScroll(element: any) {
@@ -171,7 +169,8 @@ export function RefreshScroll(element: any) {
 
     element.scrollBy(0, 1)
     element.scrollBy(0, -1)
-  } catch {}
+  } catch {
+  }
 }
 
 export function RefreshScrollTo(element: any, top: number) {
@@ -182,7 +181,8 @@ export function RefreshScrollTo(element: any, top: number) {
     if (element.children[0].className.indexOf('arco-list-virtual') > 0) element = element.children[0]
 
     element.scrollTo(0, top)
-  } catch {}
+  } catch {
+  }
 }
 
 const menulist = ['leftpansubmove', 'leftpansubzhankai', 'leftpanmenu', 'rightpansubmove', 'rightpansubbiaoji',

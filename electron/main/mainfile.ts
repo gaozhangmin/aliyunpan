@@ -1,6 +1,8 @@
 import { app } from 'electron'
 import path  from 'path'
 import { existsSync, mkdirSync, writeFileSync, copyFileSync, rmSync } from 'fs'
+import is from 'electron-is'
+
 const DEBUGGING = !app.isPackaged
 
 let NewCopyed = false
@@ -14,7 +16,7 @@ export function getAsarPath(fileName: string) {
     const basePath = path.resolve(app.getAppPath())
     const baseNew = path.join(basePath, '..', 'app.new')
     const baseSave = path.join(basePath, '..', 'app.asar')
-    if (NewCopyed == false) {
+    if (!NewCopyed) {
       // 热更新asar
       if (existsSync(baseNew)) {
         try {
@@ -27,7 +29,7 @@ export function getAsarPath(fileName: string) {
         }
       }
     }
-    if (NewSaved == false) NewSaved = existsSync(baseSave)
+    if (!NewSaved) NewSaved = existsSync(baseSave)
     if (NewSaved) return path.join(baseSave, fileName)
     return path.join(basePath, fileName)
   }
@@ -43,7 +45,7 @@ export function getResourcesPath(fileName: string) {
 }
 
 export function getStaticPath(fileName: string) {
-  if (fileName == 'app.ico' && process.platform !== 'win32') {
+  if (fileName == 'app.ico' && !is.windows()) {
       fileName = 'app.png'
   }
   let basePath = ''

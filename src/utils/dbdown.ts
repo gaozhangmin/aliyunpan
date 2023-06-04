@@ -1,136 +1,110 @@
 import Dexie from 'dexie'
-
-export interface IDowningInfo {
-  
-  key: string
-  
-  time: number
-  
-  fileCount: number
-  
-  fileSize: number
-  
-  dirCount: number
-}
+import { IStateDownFile } from '../down/DownDAL'
+import useUserStore from '../user/userstore'
 
 class XBYDB3Down extends Dexie {
-  
-  downingProgress: Dexie.Table<object, string>
-  
-  downingInfo: Dexie.Table<IDowningInfo, string>
-  
-  downingGzip: Dexie.Table<Buffer, string>
-  
-  downedGzip: Dexie.Table<Buffer, string>
+  idowning: Dexie.Table<IStateDownFile, string>
+  idowned: Dexie.Table<IStateDownFile, string>
 
   constructor() {
     super('XBYDB3Down')
 
-    this.version(1)
+    this.version(10)
       .stores({
-        downingProgress: '',
-        downingInfo: 'key',
-        downingGzip: '',
-        downedGzip: ''
+        idowning: 'DownID, Info.drive_id, Info.user_id',
+        idowned: 'DownID, Info.drive_id, Info.user_id, Down.DownTime',
       })
       .upgrade((tx: any) => {
         console.log('upgrade', tx)
       })
-
-    this.downingProgress = this.table('downingProgress')
-    this.downingInfo = this.table('downingInfo')
-    this.downingGzip = this.table('downingGzip')
-    this.downedGzip = this.table('downedGzip')
+    this.idowning = this.table('idowning')
+    this.idowned = this.table('idowned')
   }
 
-  async getDowningGzip(key: string): Promise<Buffer | undefined> {
+  async getDowning(key: string): Promise<IStateDownFile | undefined> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    const val = await this.downingGzip.get(key)
+    const val = await this.idowning.get(key)
+    if (val) return val
+    else return undefined
+  }
+  async getDowningAll(): Promise<IStateDownFile[]> {
+    if (!this.isOpen()) await this.open().catch(() => {})
+    return this.idowning.where('Info.user_id').equals(useUserStore().user_id).toArray()
+  }
+  async deleteDowning(key: string) {
+    if (!this.isOpen()) await this.open().catch(() => {})
+    return this.idowning.delete(key)
+  }
+  async deleteDownings(keys: string[]) {
+    if (!this.isOpen()) await this.open().catch(() => {})
+    return this.idowning.bulkDelete(keys)
+  }
+  async saveDowning(key: string, value: IStateDownFile) {
+    if (!this.isOpen()) await this.open().catch(() => {})
+    return this.idowning.put(value, key).catch(() => {})
+  }
+  async saveDownings(values: IStateDownFile[]) {
+    if (!this.isOpen()) await this.open().catch(() => {})
+    return this.idowning.bulkPut(values).catch(() => {})
+  }
+  async deleteDowningAll() {
+    if (!this.isOpen()) await this.open().catch(() => {})
+    return this.idowning.where('Info.user_id').equals(useUserStore().user_id).delete()
+  }
+
+  async getDowned(key: string): Promise<IStateDownFile | undefined> {
+    if (!this.isOpen()) await this.open().catch(() => {})
+    const val = await this.idowned.get(key)
     if (val) return val
     else return undefined
   }
 
-  async deleteDowningGzip(key: string): Promise<void> {
+  async getDownedAll(): Promise<IStateDownFile[]> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return this.downingGzip.delete(key)
+    return this.idowned.where('Info.user_id').equals(useUserStore().user_id).reverse().toArray()
   }
 
-  async saveDowningGzip(key: string, value: Buffer): Promise<string | void> {
+  async getDownedByTop(limit: number) {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return this.downingGzip.put(value, key).catch(() => {})
+    return this.transaction('r', this.idowned, () => {
+      return this.idowned.reverse().limit(limit).toArray()
+    })
   }
 
-  async deleteDowningGzipAll(): Promise<void> {
+  async getDownedTaskCount(): Promise<number> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return this.downingGzip.clear()
+    return this.transaction('r', this.idowned, () => {
+      return this.idowned.count()
+    })
   }
 
-  async getDownedGzip(key: string): Promise<Buffer | undefined> {
+  async deleteDowned(key: string) {
     if (!this.isOpen()) await this.open().catch(() => {})
-    const val = await this.downedGzip.get(key)
-    if (val) return val
-    else return undefined
+    return this.idowned.delete(key)
+  }
+  async deleteDowneds(keys: string[]) {
+    if (!this.isOpen()) await this.open().catch(() => {})
+    return this.idowned.bulkDelete(keys)
   }
 
-  async deleteDownedGzip(key: string): Promise<void> {
+  async deleteDownedOutCount(max: number): Promise<number> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return this.downedGzip.delete(key)
+    const count = await this.idowned.count()
+    if (count > max) {
+      return this.idowned.limit(max - count).delete()
+    }
+    return 0
   }
 
-  async saveDownedGzip(key: string, value: Buffer): Promise<string | void> {
+  async saveDowned(key: string, value: IStateDownFile) {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return this.downedGzip.put(value, key).catch(() => {})
+    return this.idowned.put(value, key).catch(() => {})
   }
-
-  async deleteDownedGzipAll(): Promise<void> {
+  async deleteDownedAll() {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return this.downedGzip.clear()
-  }
-
-  async getDowningInfo(key: string): Promise<IDowningInfo | undefined> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    const val = await this.downingInfo.get(key)
-    if (val) return val
-    else return undefined
-  }
-
-  async deleteDowningInfo(key: string): Promise<void> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.downingInfo.delete(key)
-  }
-
-  async saveDowningInfo(key: string, value: IDowningInfo): Promise<string | void> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.downingInfo.put(value, key).catch(() => {})
-  }
-
-  async deleteDowningInfoAll(): Promise<void> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.downingInfo.clear()
-  }
-
-  async getDowningProgress(key: string): Promise<object | undefined> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    const val = await this.downingProgress.get(key)
-    if (val) return val
-    else return undefined
-  }
-
-  async deleteDowningProgress(key: string): Promise<void> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.downingProgress.delete(key)
-  }
-
-  async saveDowningProgress(key: string, value: object): Promise<string | void> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.downingProgress.put(value, key).catch(() => {})
-  }
-
-  async deleteDowningProgressAll(): Promise<void> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.downingProgress.clear()
+    return this.idowned.where('Info.user_id').equals(useUserStore().user_id).delete()
   }
 }
 
-const DB = new XBYDB3Down()
-export default DB
+const DBDown = new XBYDB3Down()
+export default DBDown

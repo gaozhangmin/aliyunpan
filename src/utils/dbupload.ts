@@ -114,9 +114,9 @@ class XBYDB3Upload extends Dexie {
   iobject: Dexie.Table<object, string>
 
   constructor() {
-    super('XBYDB3Upload1024')
+    super('XBYDB3Upload')
 
-    this.version(1)
+    this.version(2)
       .stores({
         iuploadtask: '&TaskID',
         iuploadinfo: '&UploadID',
@@ -146,7 +146,7 @@ class XBYDB3Upload extends Dexie {
   
   async getUploadTaskAll(): Promise<IStateUploadTask[]> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return await this.transaction('r', this.iuploadtask, () => {
+    return this.transaction('r', this.iuploadtask, () => {
       return this.iuploadtask.toArray()
     })
   }
@@ -154,7 +154,7 @@ class XBYDB3Upload extends Dexie {
   
   async getUploadTaskAllKeys(): Promise<number[]> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return await this.transaction('r', this.iuploadtask, () => {
+    return this.transaction('r', this.iuploadtask, () => {
       return this.iuploadtask.toCollection().primaryKeys()
     })
   }
@@ -162,7 +162,7 @@ class XBYDB3Upload extends Dexie {
   
   async getUploadTaskCount(): Promise<number> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return await this.transaction('r', this.iuploadtask, () => {
+    return this.transaction('r', this.iuploadtask, () => {
       return this.iuploadtask.count()
     })
   }
@@ -234,7 +234,7 @@ class XBYDB3Upload extends Dexie {
 
   async getUploadInfoAll(): Promise<IStateUploadInfo[]> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return await this.transaction('r', this.iuploadinfo, () => {
+    return this.transaction('r', this.iuploadinfo, () => {
       return this.iuploadinfo.toArray()
     })
   }
@@ -243,21 +243,21 @@ class XBYDB3Upload extends Dexie {
 
   async getUploaded(key: number): Promise<IStateUploadTask | undefined> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return await this.transaction('r', this.iuploaded, () => {
+    return this.transaction('r', this.iuploaded, () => {
       return this.iuploaded.where('TaskID').equals(key).first()
     })
   }
 
   async getUploadedByTop(limit: number): Promise<IStateUploadTask[]> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return await this.transaction('r', this.iuploaded, () => {
+    return this.transaction('r', this.iuploaded, () => {
       return this.iuploaded.reverse().limit(limit).toArray()
     })
   }
 
   async getUploadedCount(): Promise<number> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return await this.transaction('r', this.iuploaded, () => {
+    return this.transaction('r', this.iuploaded, () => {
       return this.iuploaded.count()
     })
   }
@@ -304,7 +304,7 @@ class XBYDB3Upload extends Dexie {
   
   async getUploadObj(key: string): Promise<object | undefined> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return await this.transaction('r', this.iobject, () => {
+    return this.transaction('r', this.iobject, () => {
       return this.iobject.get(key)
     })
   }

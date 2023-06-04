@@ -2,17 +2,33 @@
 import { ref } from 'vue'
 import useSettingStore from './settingstore'
 import MySwitch from '../layout/MySwitch.vue'
+import Config from '../utils/config'
 import ServerHttp from '../aliapi/server'
 import os from 'os'
+import { getResourcesPath } from '../utils/electronhelper'
+import { existsSync, readFileSync } from 'fs'
 
 const settingStore = useSettingStore()
 const cb = (val: any) => {
   settingStore.updateStore(val)
 }
 
-const verLoading = ref(false)
+const getAppVersion = () => {
+  if (os.platform() === 'linux') {
+    return Config.appVersion
+  }
+  let appVersion = ''
+  const localVersion = getResourcesPath('localVersion')
+  if (localVersion && existsSync(localVersion)) {
+    appVersion = readFileSync(localVersion, 'utf-8')
+  } else {
+    appVersion = Config.appVersion
+  }
+  return appVersion
+}
 
-const handleCheckVer1 = () => {
+const verLoading = ref(false)
+const handleCheckVer = () => {
   verLoading.value = true
   ServerHttp.CheckUpgrade().then(() => {
     verLoading.value = false
@@ -22,10 +38,12 @@ const handleCheckVer1 = () => {
 
 <template>
   <div class="settingcard">
-    <div class="appver"></div>
+    <div class="appver">小白羊 {{ getAppVersion() }}</div>
+    <div class="settingspace"></div>
+    <div class="settingspace"></div>
     <div class="settinghead">检查更新</div>
     <div class="settingrow">
-        <a-button type="outline" size="mini" tabindex="-1" :loading="verLoading" @click="handleCheckVer1">检查更新</a-button>
+        <a-button type="outline" size="mini" tabindex="-1" :loading="verLoading" @click="handleCheckVer">检查更新</a-button>
     </div>
     <div class="settingspace"></div>
     <div class="settinghead">外观</div>

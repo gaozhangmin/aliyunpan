@@ -1,7 +1,9 @@
 import { createPinia } from 'pinia'
 import useAppStore from './appstore'
 import useKeyboardStore from './keyboardstore'
+import useMouseStore from './mousestore'
 import type { KeyboardState } from './keyboardstore'
+import type { MouseState } from './mousestore'
 import useLogStore from './logstore'
 import useModalStore from './modalstore'
 import type { ModalState } from './modalstore'
@@ -41,8 +43,10 @@ export {
   ModalState,
   useWinStore,
   WinState,
+  useMouseStore,
   useKeyboardStore,
   KeyboardState,
+  MouseState,
   useUserStore,
   ITokenInfo,
   usePanTreeStore,

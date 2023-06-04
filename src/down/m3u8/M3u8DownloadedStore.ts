@@ -4,9 +4,9 @@ import { IStateDownFile } from './M3u8DownloadDAL'
 import { GetSelectedList, GetFocusNext, SelectAll, MouseSelectOne, KeyboardSelectOne } from '../../utils/selecthelper'
 import { humanSize } from '../../utils/format'
 import message from '../../utils/message'
-import DB from '../../utils/db'
 import fs from 'fs'
 import path from 'path'
+import DBDown from '../../utils/dbdown'
 
 type Item = IStateDownFile
 type State = DownState
@@ -218,7 +218,7 @@ const useM3u8DownloadedStore = defineStore('m3u8downloaded', {
       }
       this.ListDataRaw = newList;
       this.ListSelected = newListSelected;
-      DB.deleteDowneds(uploadIDList)
+      DBDown.deleteDowneds(uploadIDList)
       this.mRefreshListDataShow(true)
     },
 
@@ -228,7 +228,7 @@ const useM3u8DownloadedStore = defineStore('m3u8downloaded', {
     mDeleteAllUploaded() {
       this.ListSelected = new Set<string>()
       this.ListDataRaw.splice(0, this.ListDataRaw.length)
-      DB.deleteDownedAll()
+      DBDown.deleteDownedAll()
       this.mRefreshListDataShow(true)
     },
 

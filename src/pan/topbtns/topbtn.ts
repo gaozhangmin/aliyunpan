@@ -6,7 +6,16 @@ import AliTrash from '../../aliapi/trash'
 import { IPageVideoXBT } from '../../store/appstore'
 import DebugLog from '../../utils/debuglog'
 import message from '../../utils/message'
-import { modalCopyFileTree, modalCreatNewShareLink, modalDLNAPlayer, modalDownload, modalM3U8Download, modalSearchPan, modalSelectPanDir, modalUpload } from '../../utils/modal'
+import {
+  modalCopyFileTree,
+  modalCreatNewShareLink,
+  modalDLNAPlayer,
+  modalDownload,
+  modalM3U8Download,
+  modalSearchPan,
+  modalSelectPanDir,
+  modalUpload
+} from '../../utils/modal'
 import { ArrayKeyList } from '../../utils/utils'
 import PanDAL from '../pandal'
 import usePanFileStore from '../panfilestore'
@@ -58,7 +67,7 @@ export function handleUpload(uploadType: string, album_id?:string) {
 }
 
 
-export function menuDownload(istree: boolean, tips: boolean = false) {
+export function menuDownload(istree: boolean, tips: boolean = true) {
   const selectedData = PanDAL.GetPanSelectedData(istree)
   if (selectedData.isError) {
     message.error('下载操作失败 父文件夹错误')
@@ -523,8 +532,14 @@ export async function topRecoverSelectedFile() {
   const selectParentKeys: string[] = ['root', 'recover']
   for (let i = 0, maxi = files.length; i < maxi; i++) {
     const file = files[i]
-    resumeList.push({ drive_id: file.drive_id, file_id: file.file_id, content_hash: file.description, size: file.size, name: file.name })
-    if (selectParentKeys.includes(files[i].parent_file_id) == false) selectParentKeys.push(files[i].parent_file_id)
+    resumeList.push({
+      drive_id: file.drive_id,
+      file_id: file.file_id,
+      content_hash: file.description,
+      size: file.size,
+      name: file.name
+    })
+    if (!selectParentKeys.includes(files[i].parent_file_id)) selectParentKeys.push(files[i].parent_file_id)
   }
 
   if (resumeList.length == 0) {
@@ -609,7 +624,12 @@ export function menuVideoXBT() {
     message.error('违规视频无法预览')
     return
   }
-  const pageVideoXBT: IPageVideoXBT = { user_id: usePanTreeStore().user_id, drive_id: first.drive_id, file_id: first.file_id, file_name: first.name }
+  const pageVideoXBT: IPageVideoXBT = {
+    user_id: usePanTreeStore().user_id,
+    drive_id: first.drive_id,
+    file_id: first.file_id,
+    file_name: first.name
+  }
   window.WebOpenWindow({ page: 'PageVideoXBT', data: pageVideoXBT, theme: 'dark' })
 }
 

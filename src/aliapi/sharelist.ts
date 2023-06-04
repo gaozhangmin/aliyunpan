@@ -26,7 +26,7 @@ export default class AliShareList {
 
     do {
       const isGet = await AliShareList.ApiShareListOnePage(dir)
-      if (isGet != true) {
+      if (!isGet) {
         break 
       }
     } while (dir.next_marker)

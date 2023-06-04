@@ -7,13 +7,12 @@ import {
   useM3u8DownloadingStore,
   useFootStore,
 } from '../../store'
-import DB from '../../utils/db'
 import {
   AriaAddUrl,
   AriaConnect, AriaDeleteList,
   AriaGetM3u8DowningList,
   AriaHashFile, AriaStopList,
-  FormateAriaError,
+  FormatAriaError,
   IsAria2cRemote
 } from '../../utils/aria2c'
 import { humanSize, humanSizeSpeed } from '../../utils/format'
@@ -22,6 +21,7 @@ import {ClearFileName} from "../../utils/filehelper";
 import TreeStore from "../../store/treestore";
 import fs from "fs";
 import { execFile } from 'child_process'
+import DBDown from '../../utils/dbdown'
 
 export interface IStateDownFile {
   DownID: string
@@ -105,7 +105,7 @@ export default class M3u8DownloadDAL {
     const downingStore = useM3u8DownloadingStore()
     if(downingStore.ListLoading) return
     downingStore.ListLoading = true
-    const stateDownFiles = await DB.getDowningAll()
+    const stateDownFiles = await DBDown.getDowningAll()
     // 首次从DB中加载数据，如果上次意外停止则重新开始，如果手动暂停则保持
     for (const stateDownFile of stateDownFiles) {
       if (!stateDownFile.Down.IsStop && stateDownFile.Down.DownState != '队列中') {
@@ -133,15 +133,15 @@ export default class M3u8DownloadDAL {
     if(downedStore.ListLoading) return
     downedStore.ListLoading = true
     const max = useSettingStore().debugDownedListMax
-    const showlist = await DB.getDownedByTop(max)
-    const count = await DB.getDownedTaskCount()
+    const showlist = await DBDown.getDownedByTop(max)
+    const count = await DBDown.getDownedTaskCount()
     downedStore.aLoadListData(showlist, count)
     downedStore.ListLoading = false
   }
 
   static async aClearDowned() {
     const max = useSettingStore().debugDownedListMax
-    return await DB.deleteDownedOutCount(max)
+    return await DBDown.deleteDownedOutCount(max)
   }
 
   /**
@@ -465,7 +465,7 @@ export default class M3u8DownloadDAL {
 
             if (list[i].errorCode && list[i].errorCode != '0') {
               down.FailedCode = parseInt(list[i].errorCode) || 0;
-              down.FailedMessage = FormateAriaError(list[i].errorCode, list[i].errorMessage);
+              down.FailedMessage = FormatAriaError(list[i].errorCode, list[i].errorMessage);
             }
 
             if (isComplete) {
@@ -541,7 +541,7 @@ export default class M3u8DownloadDAL {
       } catch {}
     }
 
-    if (saveList.length > 0) DB.saveDownings(JSON.parse(JSON.stringify(saveList)))
+    if (saveList.length > 0) DBDown.saveDownings(JSON.parse(JSON.stringify(saveList)))
     if (dellist.length > 0) AriaDeleteList(dellist).then()
     if (SaveTimeWait > 10) SaveTimeWait = 0;
     else SaveTimeWait++;

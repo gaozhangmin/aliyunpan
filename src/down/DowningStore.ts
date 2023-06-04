@@ -1,12 +1,11 @@
 import fuzzysort from 'fuzzysort'
 import { defineStore } from 'pinia'
-import { IStateDownFile } from './DownDAL'
+import DownDAL, { IStateDownFile } from './DownDAL'
 import { GetSelectedList, GetFocusNext, SelectAll, MouseSelectOne, KeyboardSelectOne } from '../utils/selecthelper'
 import { humanSize } from '../utils/format'
 import message from '../utils/message'
-import DB from '../utils/db'
 import { useDownedStore } from '../store'
-import { AriaDeleteList, AriaStopList } from '../utils/aria2c'
+import DBDown from '../utils/dbdown'
 
 type Item = IStateDownFile
 type State = DowningState
@@ -82,13 +81,7 @@ const useDowningStore = defineStore('downing', {
   actions: {
 
     aLoadListData(list: Item[]) {
-
-      let item: Item
-      for (let i = 0, maxi = list.length; i < maxi; i++) {
-        item = list[i]
-      }
       this.ListDataRaw = this.mGetOrder(this.ListOrderKey, list)
-
       let oldSelected = this.ListSelected
       let newSelected = new Set<string>()
       let key = ''
@@ -96,7 +89,6 @@ const useDowningStore = defineStore('downing', {
         key = list[i][KEY]
         if (oldSelected.has(key)) newSelected.add(key)
       }
-
       this.$patch({ ListSelected: newSelected, ListFocusKey: '', ListSelectKey: '', ListSearchKey: '' })
       this.mRefreshListDataShow(true)
     },
@@ -141,7 +133,6 @@ const useDowningStore = defineStore('downing', {
         Object.freeze(searchlist)
         this.ListDataShow = searchlist
       } else {
-
         let ListDataShow = this.ListDataRaw.concat()
         Object.freeze(ListDataShow)
         this.ListDataShow = ListDataShow
@@ -159,7 +150,11 @@ const useDowningStore = defineStore('downing', {
     },
 
     mSelectAll() {
-      this.$patch({ ListSelected: SelectAll(this.ListDataShow, KEY, this.ListSelected), ListFocusKey: '', ListSelectKey: '' })
+      this.$patch({
+        ListSelected: SelectAll(this.ListDataShow, KEY, this.ListSelected),
+        ListFocusKey: '',
+        ListSelectKey: ''
+      })
       this.mRefreshListDataShow(false)
     },
 
@@ -231,8 +226,8 @@ const useDowningStore = defineStore('downing', {
           savelist.push(downitem)
         }
       }
-      DB.saveDownings(JSON.parse(JSON.stringify(savelist)))
-      DowningList.push(...savelist);
+      DBDown.saveDownings(JSON.parse(JSON.stringify(savelist)))
+      DowningList.push(...savelist)
       this.mRefreshListDataShow(true)
       if (savelist.length == 0) {
         message.info('下载任务已存在，请勿重复创建任务')
@@ -249,7 +244,7 @@ const useDowningStore = defineStore('downing', {
       for (const DownID of this.ListSelected) {
         for (let j = 0; j < DowningList.length; j++) {
           if (DowningList[j].DownID == DownID) {
-            const down = DowningList[j].Down;
+            const down = DowningList[j].Down
             if (down.IsDowning || down.IsCompleted) continue
             down.IsStop = false
             down.DownState = '队列中'
@@ -278,7 +273,7 @@ const useDowningStore = defineStore('downing', {
         down.DownSpeed = 0
         down.DownSpeedStr = ''
         down.IsFailed = false
-        down.FailedCode = 0;
+        down.FailedCode = 0
         down.FailedMessage = ''
         down.AutoTry = 0
       }
@@ -314,10 +309,8 @@ const useDowningStore = defineStore('downing', {
           }
         }
       }
-      AriaStopList(gidList).then(r => {})
-      // DownDAL.stopDowning(false, downIDList) // TODO
+      DownDAL.stopDowning(downList, gidList)
       this.mRefreshListDataShow(true)
-      DB.saveDownings(JSON.parse(JSON.stringify(downList)))
     },
 
     /**
@@ -342,10 +335,8 @@ const useDowningStore = defineStore('downing', {
         down.FailedMessage = ''
         down.AutoTry = 0
       }
-      AriaStopList(gidList).then(r => {})
-      // DownDAL.stopDowning(false, downIDList) // TODO
+      DownDAL.stopDowning(DowningList, gidList)
       this.mRefreshListDataShow(true)
-      DB.saveDownings(JSON.parse(JSON.stringify(DowningList)))
     },
 
     /**
@@ -356,21 +347,21 @@ const useDowningStore = defineStore('downing', {
     mDeleteDowning(downIDList: string[]) {
       const gidList: string[] = []
       const DowningList = this.ListDataRaw
-      const newListSelected = new Set(this.ListSelected);
-      const newList: Item[] = [];
+      const newListSelected = new Set(this.ListSelected)
+      const newList: Item[] = []
       for (let j = 0; j < DowningList.length; j++) {
-        const DownID = DowningList[j].DownID;
+        const DownID = DowningList[j].DownID
         if (downIDList.includes(DownID)) {
           gidList.push(DowningList[j].Info.GID)
           DowningList[j].Down.DownState = '待删除'
-          if (newListSelected.has(DownID)) newListSelected.delete(DownID);
+          if (newListSelected.has(DownID)) newListSelected.delete(DownID)
         } else {
-          newList.push(DowningList[j]);
+          newList.push(DowningList[j])
         }
       }
-      this.ListDataRaw = newList;
-      this.ListSelected = newListSelected;
-      DB.deleteDownings(JSON.parse(JSON.stringify(downIDList)))
+      this.ListDataRaw = newList
+      this.ListSelected = newListSelected
+      DownDAL.deleteDowning(false, DowningList, gidList)
       this.mRefreshListDataShow(true)
       AriaStopList(gidList).then(r => {})
       AriaDeleteList(gidList).then(r => {})
@@ -385,19 +376,13 @@ const useDowningStore = defineStore('downing', {
       const gidList: string[] = []
       const DowningList = this.ListDataRaw
       this.ListSelected = new Set<string>()
-      const downIDList: string[] = []
       for (let j = 0; j < DowningList.length; j++) {
-        const DownID = DowningList[j].DownID
         DowningList[j].Down.DownState = '待删除'
-        downIDList.push(DownID)
         gidList.push(DowningList[j].Info.GID)
       }
       DowningList.splice(0, DowningList.length)
-      DB.deleteDowningAll()
+      DownDAL.deleteDowning(true, DowningList, gidList)
       this.mRefreshListDataShow(true)
-      AriaStopList(gidList).then(r => {})
-      AriaDeleteList(gidList).then(r => {})
-      // DownDAL.deleteDowning(false, downIDList) // TODO
     },
 
     /**
@@ -406,24 +391,24 @@ const useDowningStore = defineStore('downing', {
      */
     mOrderDowning(downIDList: string[]) {
       const DowningList = this.ListDataRaw
-      const newlist: Item[] = [];
-      const lastlist: Item[] = [];
+      const newlist: Item[] = []
+      const lastlist: Item[] = []
 
       for (let j = 0; j < DowningList.length; j++) {
-        const DownID = DowningList[j].DownID;
-        let find = false;
+        const DownID = DowningList[j].DownID
+        let find = false
         for (let i = 0; i < downIDList.length; i++) {
           if (downIDList[i] == DownID) {
-            newlist.push(DowningList[j]);
-            find = true;
-            break;
+            newlist.push(DowningList[j])
+            find = true
+            break
           }
         }
         if (!find) {
-          lastlist.push(DowningList[j]);
+          lastlist.push(DowningList[j])
         }
       }
-      DowningList.splice(0, DowningList.length, ...newlist, ...lastlist);
+      DowningList.splice(0, DowningList.length, ...newlist, ...lastlist)
       this.mRefreshListDataShow(true)
     },
 
@@ -433,13 +418,13 @@ const useDowningStore = defineStore('downing', {
         if (DowningList[j].DownID == DownID && DowningList[j].Down.DownState === '已完成') {
           const item = DowningList[j]
           DowningList.splice(j, 1)
-          DB.deleteDowning(item.DownID)
+          DBDown.deleteDowning(item.DownID)
           item.Down.DownTime = Date.now()
           item.DownID = item.Down.DownTime.toString() + '_' + item.DownID
           useDownedStore().ListDataRaw.splice(0, 0, item)
           useDownedStore().mRefreshListDataShow(true)
-          DB.saveDowned(item.DownID, JSON.parse(JSON.stringify(item)))
-          break;
+          DBDown.saveDowned(item.DownID, JSON.parse(JSON.stringify(item)))
+          break
         }
       }
       if (this.ListSelected.has(DownID)) this.ListSelected.delete(DownID)
@@ -447,11 +432,11 @@ const useDowningStore = defineStore('downing', {
 
     mUpdateDownState(data: any) {
       const DowningList = this.ListDataRaw
-      const DownID = data.DownID;
+      const DownID = data.DownID
       for (let j = 0; j < DowningList.length; j++) {
         if (DowningList[j].DownID == DownID) {
-          DowningList[j].Down = { ...DowningList[j].Down, ...data };
-          break;
+          DowningList[j].Down = { ...DowningList[j].Down, ...data }
+          break
         }
       }
     }

@@ -102,13 +102,12 @@ export function HanToPin(input: string): string {
 
 
 export function GetOssExpires(downUrl: string) {
-  if (!downUrl || downUrl.includes('x-oss-expires=') == false) return 0
+  if (!downUrl || !downUrl.includes('x-oss-expires=')) return 0
   try {
     
     let expires = downUrl.substring(downUrl.indexOf('x-oss-expires=') + 'x-oss-expires='.length)
     expires = expires.substring(0, expires.indexOf('&'))
-    const lastTime = parseInt(expires) - Math.floor(Date.now() / 1000) 
-    return lastTime
+    return parseInt(expires) - Math.floor(Date.now() / 1000)
   } catch {
     return 0
   }

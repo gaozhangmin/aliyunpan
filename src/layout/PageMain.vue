@@ -1,6 +1,17 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
-import { useAppStore, useKeyboardStore, KeyboardState, useSettingStore, useUserStore, useWinStore, useFootStore, useServerStore } from '../store'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import {
+  useAppStore,
+  useKeyboardStore,
+  KeyboardState,
+  useSettingStore,
+  useUserStore,
+  useWinStore,
+  useFootStore,
+  useServerStore,
+  useMouseStore,
+  MouseState
+} from '../store'
 import { onHideRightMenu, TestAlt, TestCtrl, TestKey, TestShift } from '../utils/keyboardhelper'
 import { getResourcesPath, openExternal } from '../utils/electronhelper'
 import DebugLog from '../utils/debuglog'
@@ -29,6 +40,7 @@ const panVisible = ref(true)
 const appStore = useAppStore()
 const winStore = useWinStore()
 const keyboardStore = useKeyboardStore()
+const mouseStore = useMouseStore()
 const footStore = useFootStore()
 
 const handlePanVisible = () => {
@@ -53,8 +65,6 @@ const handleHelpPage = () => {
 }
 
 keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
-  console.log(state.KeyDownEvent)
-
   if (TestAlt('1', state.KeyDownEvent, () => appStore.toggleTab('pan'))) return
   if (TestAlt('2', state.KeyDownEvent, () => appStore.toggleTab('pic'))) return
   if (TestAlt('3', state.KeyDownEvent, () => appStore.toggleTab('down'))) return
@@ -64,7 +74,6 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
   if (TestAlt('f4', state.KeyDownEvent, () => handleHideClick(undefined))) return
   if (TestAlt('m', state.KeyDownEvent, () => handleMinClick(undefined))) return
   if (TestAlt('enter', state.KeyDownEvent, () => handleMaxClick(undefined))) return
-
   if (TestShift('tab', state.KeyDownEvent, () => appStore.toggleTabNext())) return
   if (TestCtrl('tab', state.KeyDownEvent, () => appStore.toggleTabNextMenu())) return
   if (TestAlt('l', state.KeyDownEvent, () => (useUserStore().userShowLogin = true))) return
@@ -74,10 +83,13 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
   if (TestKey('f11', state.KeyDownEvent, f11)) return
 })
 
+mouseStore.$subscribe((_m: any, state: MouseState) => {
+  // console.log(state)
+})
+
 const onResize = throttle(() => {
   const width = document.body.offsetWidth || 800
   const height = document.body.offsetHeight || 600
-
   if (winStore.width != width || winStore.height != height) winStore.updateStore({ width, height })
   // let ddsound = document.getElementById('ddsound') as { play: any } | undefined
   // if (ddsound) ddsound.play()
@@ -87,7 +99,6 @@ const onKeyDown = (event: KeyboardEvent) => {
   const ele = (event.srcElement || event.target) as any
   const nodeName = ele && ele.nodeName
   if (event.key === 'Tab') {
-
     event.preventDefault()
     event.stopPropagation()
     event.cancelBubble = true
@@ -96,11 +107,20 @@ const onKeyDown = (event: KeyboardEvent) => {
   }
   if (document.body.getElementsByClassName('arco-modal-container').length) return
   if (event.key == 'Control' || event.key == 'Shift' || event.key == 'Alt' || event.key == 'Meta') return
-
   const isInput = nodeName == 'INPUT' || nodeName == 'TEXTAREA' || false
   if (!isInput) {
     onHideRightMenu()
     keyboardStore.KeyDown(event)
+  }
+}
+
+const onMouseDown = (event: MouseEvent) => {
+  const ele = (event.srcElement || event.target) as any
+  const nodeName = ele && ele.nodeName
+  if (document.body.getElementsByClassName('arco-modal-container').length) return
+  const isInput = nodeName == 'INPUT' || nodeName == 'TEXTAREA' || false
+  if (!isInput) {
+    mouseStore.KeyDown(event)
   }
 }
 
@@ -116,21 +136,21 @@ onMounted(() => {
   DebugLog.aLoadFromDB()
   window.addEventListener('resize', onResize, { passive: true })
   window.addEventListener('keydown', onKeyDown, true)
-
+  window.addEventListener('mousedown', onMouseDown, true)
   setTimeout(() => {
     onHideRightMenu()
   }, 300)
-
   window.addEventListener('click', onHideRightMenu, { passive: true })
+  setTimeout(() => {
+    updateSpeed()
+  }, 3000)
 
-  const css = document.getElementById('usercsslink')
-  const csshref = getResourcesPath('theme.css')
-  // if (css) css.setAttribute('href', 'file:///' + csshref) // TODO 没有这个文件？
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', onResize)
   window.removeEventListener('keydown', onKeyDown)
+  window.removeEventListener('mousedown', onMouseDown)
   window.removeEventListener('click', onHideRightMenu)
 })
 
@@ -252,7 +272,7 @@ const handleCheckVer = () => {
             <span class="footAria" title="Aria已离线" v-else> Aria ⚯ Offline </span>
           </div>
 
-          <div class="footerBar fix" style="padding: 0 8px; cursor: pointer" @click="handleCheckVer">{{ Config.appVersion }}</div>
+          <div class="footerBar fix" style="padding: 0 8px; cursor: pointer" @click="handleCheckVer">{{ getAppVersion() }}</div>
 
           <a-popover v-model:popup-visible="footStore.taskVisible" trigger="click" position="top" class="asynclist">
             <div class="footerBar fix" style="cursor: pointer">

@@ -8,7 +8,7 @@ import { h } from 'vue'
 import { getAppNewPath, getResourcesPath, openExternal } from '../utils/electronhelper'
 import ShareDAL from '../share/share/ShareDAL'
 import DebugLog from '../utils/debuglog'
-import { writeFileSync, rmSync, existsSync, readFileSync } from 'fs'
+import { writeFile, rmSync, existsSync, readFileSync } from 'fs'
 import { execFile, SpawnOptions } from 'child_process'
 import path from 'path'
 
@@ -117,7 +117,7 @@ export default class ServerHttp {
       })
   }
 
-  static async CheckUpgrade(): Promise<void> {
+  static async CheckUpgrade(showMessage: boolean = true): Promise<void> {
     axios
       .get(ServerHttp.updateUrl, {
         withCredentials: false,
@@ -127,7 +127,7 @@ export default class ServerHttp {
       .then(async (response: AxiosResponse) => {
         console.log('CheckUpgrade', response)
         if (!response.data || !response.data.assets || !response.data.html_url) {
-          message.error('获取新版本出错')
+          showMessage && message.error('获取新版本出错')
           return
         }
         let platform = process.platform
@@ -213,12 +213,13 @@ export default class ServerHttp {
                 }),
                 h(Button, {
                   type: 'outline',
-                  style: asarFileUrl.length == 0 && verUrl.length > 0 ? '' : 'display: none',
-                  innerHTML: process.platform !== 'linux' ? '全量更新' : '详情',
+                  style: asarFileUrl.length == 0 ? '' : 'display: none',
+                  innerHTML: platform !== 'linux' && verUrl.length > 0 ? '全量更新' : '详情',
                   onClick: async () => {
-                    if (verUrl.length > 0 && process.platform !== 'linux') {
+                    if (verUrl.length > 0 && platform !== 'linux') {
                       // 下载安装
-                      await this.AutoDownload(verUrl, html_url, updateData.name, false)
+                      const msgKey = 'download_' + Date.now().toString()
+                      await this.AutoDownload(verUrl, html_url, updateData.name, false, msgKey)
                     } else {
                       openExternal(html_url)
                     }
@@ -227,33 +228,42 @@ export default class ServerHttp {
                 }),
                 h(Button, {
                   type: 'primary',
-                  style: asarFileUrl.length > 0 && process.platform !== 'linux' ? '' : 'display: none',
+                  style: asarFileUrl.length > 0 && platform !== 'linux' ? '' : 'display: none',
                   innerHTML: '热更新',
                   onClick: async () => {
-                    if (asarFileUrl.length > 0 && process.platform !== 'linux') {
+                    if (asarFileUrl.length > 0 && platform !== 'linux') {
                       // 下载安装
-                      const flag = await this.AutoDownload(asarFileUrl, html_url, updateData.name, true)
+                      const msgKey = 'download_' + Date.now().toString()
+                      const flag = await this.AutoDownload(asarFileUrl, html_url, updateData.name, true, msgKey)
                       // 更新本地版本号
                       if (flag && tagName) {
-                        message.info('热更新完毕，自动重启应用中...', 5)
                         const localVersion = getResourcesPath('localVersion')
-                        localVersion && writeFileSync(localVersion, tagName, 'utf-8')
-                        await this.Sleep(2000)
-                        window.WebRelaunch()
+                        if (localVersion) {
+                          writeFile(localVersion, tagName, async (err)=> {
+                            if (err) {
+                              return false
+                            } else {
+                              message.info('热更新完毕，自动重启应用中...', 0, msgKey)
+                              await this.Sleep(2000)
+                              window.WebRelaunch()
+                              return true
+                            }
+                          })
+                        }
                       }
                     }
-                    return true
+                    return false
                   }
                 })
               ])
             })
-          } else  {
+          } else if (showMessage && remoteVer <= configVer) {
             message.info('已经是最新版 ' + tagName, 6)
           }
         }
       })
       .catch((err: any) => {
-        message.info('检查更新失败，请检查网络是否正常')
+        showMessage && message.info('检查更新失败，请检查网络是否正常')
         DebugLog.mSaveDanger('CheckUpgrade', err)
       })
   }
@@ -300,13 +310,13 @@ export default class ServerHttp {
     return resultTextArr.join('<br>')
   }
 
-  static async AutoDownload(appNewUrl: string, html_url: string, file_name: string, hot: boolean): Promise<boolean> {
-    let resourcesPath = hot ? getAppNewPath() : getResourcesPath(file_name)
+  static async AutoDownload(appNewUrl: string, html_url: string, file_name: string, hot: boolean, msgKey: string): Promise<boolean> {
+    const resourcesPath = hot ? getAppNewPath() : getResourcesPath(file_name)
     if (!hot && existsSync(resourcesPath)) {
-      await this.autoInstallNewVersion(resourcesPath)
+      await this.autoInstallNewVersion(resourcesPath, msgKey)
       return true
     }
-    message.info('新版本正在后台下载中，请耐心等待。。。。', 2)
+    message.loading('新版本正在后台下载中，请耐心等待。。。', 0, msgKey)
     return axios
       .get(appNewUrl, {
         withCredentials: false,
@@ -319,10 +329,15 @@ export default class ServerHttp {
         }
       })
       .then(async (response: AxiosResponse) => {
-        writeFileSync(resourcesPath, Buffer.from(response.data))
+        writeFile(resourcesPath, Buffer.from(response.data), (err) => {
+          if(err) {
+            message.error('下载更新失败，请检查【Resources文件夹】是否有写入权限',5, msgKey)
+            return false
+          }
+        })
         if (!hot) {
           await this.Sleep(2000)
-          await this.autoInstallNewVersion(resourcesPath)
+          await this.autoInstallNewVersion(resourcesPath, msgKey)
         }
         return true
       })
@@ -334,28 +349,28 @@ export default class ServerHttp {
       })
   }
 
-  static autoInstallNewVersion(resourcesPath: string) {
+  static async autoInstallNewVersion(resourcesPath: string, msgKey: string) {
     // 自动安装
     const options: SpawnOptions = { shell: true, windowsVerbatimArguments: true }
     if (process.platform === 'win32') {
       execFile('\"' + resourcesPath + '\"', options, error => {
         if(error) {
-          message.info('安装失败，请前往文件夹手动安装', 5)
+          message.info('安装失败，请前往文件夹手动安装', 5, msgKey)
           const resources = getResourcesPath('')
           shell.openPath(path.join(resources, '/'))
         } else {
-          message.info('安装成功，请重新打开', 5)
+          message.info('安装成功，请重新打开', 5, msgKey)
           window.WebToElectron({ cmd: 'exit' })
         }
       })
     } else if (process.platform === 'darwin') {
       execFile('open ' + '\"' + resourcesPath + '\"', options, error => {
         if(error) {
-          message.info('安装失败，请前往文件夹手动安装', 5)
+          message.info('安装失败，请前往文件夹手动安装', 5, msgKey)
           const resources = getResourcesPath('')
           shell.openPath(path.join(resources, '/'))
         } else {
-          message.info('请手动移动到应用程序目录，完成安装', 5)
+          message.info('请手动移动到应用程序目录，完成安装', 5, msgKey)
           window.WebToElectron({ cmd: 'exit' })
         }
       })

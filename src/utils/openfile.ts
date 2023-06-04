@@ -95,7 +95,7 @@ export async function menuOpenFile(file: IAliGetFileModel): Promise<void> {
     return
   }
   const codeExt = PrismExt(file.ext)
-  if (file.size < 100 * 1024 || (file.size < 5 * 1024 * 1024 && codeExt)) {
+  if (file.size < 512 * 1024 || (file.size < 5 * 1024 * 1024 && codeExt)) {
     Code(drive_id, file_id, file.name, codeExt, file.size)
     return
   }
@@ -129,7 +129,6 @@ async function Archive(drive_id: string, file_id: string, file_name: string, par
   }
 
   if (resp.state == '密码错误' && useSettingStore().yinsiZipPassword) {
-
     password = await ServerHttp.PostToServer({
       cmd: 'GetZipPwd',
       sha1: info.content_hash,
@@ -147,10 +146,8 @@ async function Archive(drive_id: string, file_id: string, file_name: string, par
   }
 
   if (resp.state == '密码错误') {
-
     modalArchivePassword(user_id, drive_id, file_id, file_name, parent_file_id, info.domain_id, info.file_extension || '')
   } else if (resp.state == 'Succeed' || resp.state == 'Running') {
-
     modalArchive(user_id, drive_id, file_id, file_name, parent_file_id, password)
   } else {
     message.error('在线解压失败 ' + resp.state + '，操作取消')
@@ -245,7 +242,10 @@ async function Video(token: ITokenInfo, drive_id: string, file_id: string, paren
   }
   const commandLowerCase = command.toLowerCase()
   let playerArgs: any = { url, otherArgs: [] }
-  let options: SpawnOptions = {}
+  let options: SpawnOptions = {
+    // 跟随软件退出
+    detached: !settingStore.uiVideoPlayerExit
+  }
   if (commandLowerCase.indexOf('potplayer') > 0) {
     playerArgs = {
       url: url,
@@ -268,7 +268,10 @@ async function Video(token: ITokenInfo, drive_id: string, file_id: string, paren
       url: url,
       otherArgs: [
         '--force-window=immediate',
-        '--geometry=50%',
+        '--hwdec=auto',
+        '--geometry=80%',
+        '--autofit-larger=100%x100%',
+        '--autofit-smaller=640',
         '--audio-pitch-correction=yes',
         '--keep-open-pause=no',
         '--alang=[en,eng,zh,chi,chs,sc,zho]',
@@ -381,7 +384,6 @@ async function Code(drive_id: string, file_id: string, name: string, codeExt: st
     message.error('获取文件预览链接失败，操作取消')
     return
   }
-
   const pageCode: IPageCode = {
     user_id: token.user_id,
     drive_id,

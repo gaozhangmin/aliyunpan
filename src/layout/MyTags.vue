@@ -42,7 +42,7 @@ export default defineComponent({
 <template>
   <div class="mytags">
     <a-tag v-for="item in value" :key="item" closable color="red" tabindex="-1" @close="del(item)">{{ item }}</a-tag>
-    <a-input-search v-model:model-value="addVal" tabindex="-1" :style="{ width: '150px' }" placeholder="mp4" button-text="添加" search-button @search="add" @press-enter="add(addVal)" />
+    <a-input-search v-model:model-value="addVal" tabindex="-1" :style="{ width: '200px' }" button-text="添加" search-button @search="add" @press-enter="add(addVal)" />
   </div>
 </template>
 <style>

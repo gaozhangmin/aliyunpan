@@ -7,23 +7,24 @@ import TreeStore, { TreeNodeData } from '../store/treestore'
 export interface PanTreeState {
   user_id: string
   drive_id: string
-  
+
   History: IAliGetDirModel[]
-  
+
   selectDir: IAliGetDirModel
-  
+
   selectDirPath: IAliGetDirModel[]
-  
+
   treeData: TreeNodeData[]
-  
+
   treeExpandedKeys: string[]
-  
+
   treeSelectedKeys: string[]
-  
+
   quickData: TreeNodeData[]
-  
+
   scrollToDir: string
 }
+
 let treeDataMap = new Map<string, TreeNodeData>()
 type State = PanTreeState
 
@@ -59,31 +60,31 @@ const usePanTreeStore = defineStore('pantree', {
     quickData: [],
     scrollToDir: ''
   }),
-
-  getters: {},
-
+  getters: {
+    PanHistoryCount(state: State): number {
+      return state.History.length
+    },
+  },
   actions: {
     mTreeSelected(key: string) {
       console.log('mTreeSelected', key)
       PanDAL.aReLoadOneDirToShow('', key, true)
     },
-    
+
     mTreeExpand(key: string) {
       console.log('mTreeExpand', key)
       const arr = this.treeExpandedKeys
       if (arr.includes(key)) {
-        
         const dirPath = TreeStore.GetDirPath(this.drive_id, this.selectDir.file_id)
         const needSelectNew = dirPath.filter((t) => t.parent_file_id == key).length > 0
         this.treeExpandedKeys = arr.filter((t) => t != key)
-        if (needSelectNew) PanDAL.aReLoadOneDirToShow('', key, false) 
+        if (needSelectNew) PanDAL.aReLoadOneDirToShow('', key, false)
       } else {
-        
         this.treeExpandedKeys = arr.concat([key])
-        PanDAL.RefreshPanTreeAllNode(this.drive_id) 
+        PanDAL.RefreshPanTreeAllNode(this.drive_id)
       }
     },
-    
+
     mTreeExpandAll(keyList: string[], isExpaned: boolean) {
       const arr = new Set(this.treeExpandedKeys)
       if (isExpaned) {
@@ -96,18 +97,23 @@ const usePanTreeStore = defineStore('pantree', {
         }
       }
       this.treeExpandedKeys = Array.from(arr)
-      if (isExpaned) PanDAL.RefreshPanTreeAllNode(this.drive_id) 
+      if (isExpaned) PanDAL.RefreshPanTreeAllNode(this.drive_id)
     },
-    
+
     mSaveUser(user_id: string, drive_id: string) {
       this.$reset()
       this.$patch({ user_id, drive_id })
     },
-    
+
     mShowDir(dir: IAliGetDirModel, dirPath: IAliGetDirModel[], treeSelectedKeys: string[], treeExpandedKeys: string[]) {
-      this.$patch({ selectDir: dir, selectDirPath: dirPath, treeSelectedKeys: treeSelectedKeys, treeExpandedKeys: treeExpandedKeys })
+      this.$patch({
+        selectDir: dir,
+        selectDirPath: dirPath,
+        treeSelectedKeys: treeSelectedKeys,
+        treeExpandedKeys: treeExpandedKeys
+      })
     },
-    
+
     mSaveTreeAllNode(drive_id: string, root: TreeNodeData, rootMap: Map<string, TreeNodeData>) {
       if (this.drive_id !== drive_id) return
 
@@ -121,12 +127,12 @@ const usePanTreeStore = defineStore('pantree', {
       this.treeData = list
       treeDataMap = rootMap
     },
-    
+
     mSaveTreeOneDirNode(drive_id: string, dirID: string, dirNode: TreeNodeData, dirMap: Map<string, TreeNodeData>) {
       console.log('刷新Tree', dirNode)
       if (this.drive_id !== drive_id) return
 
-      
+
       const findDir = treeDataMap.get(dirID)
       if (findDir) {
         findDir.children = dirNode.children
@@ -138,15 +144,15 @@ const usePanTreeStore = defineStore('pantree', {
         this.treeData = this.treeData.concat()
       }
     },
-    
+
     mRenameFiles(fileList: { file_id: string; parent_file_id: string; name: string; isDir: boolean }[]) {
       let isChange = false
       let isPath = false
-      
+
       const diridList: string[] = []
       for (let i = 0, maxi = fileList.length; i < maxi; i++) {
         const item = fileList[i]
-        if (!item.isDir) continue 
+        if (!item.isDir) continue
         diridList.push(item.file_id)
         const findNode = treeDataMap.get(item.file_id)
         if (findNode) {
@@ -157,7 +163,7 @@ const usePanTreeStore = defineStore('pantree', {
           this.selectDir = Object.assign({}, this.selectDir, { name: item.name }) as IAliGetDirModel
           isChange = true
         }
-        
+
         this.selectDirPath.map((t) => {
           if (t.file_id == item.file_id) {
             t.name = item.name
@@ -170,7 +176,7 @@ const usePanTreeStore = defineStore('pantree', {
       if (isChange) this.treeData = this.treeData.concat()
       if (isPath) this.selectDirPath = this.selectDirPath.concat()
 
-      
+
       TreeStore.RenameDirs(this.drive_id, fileList)
     },
     mSaveQuick(list: { key: string; title: string }[]) {

@@ -32,7 +32,6 @@ export interface ITokenInfo {
   is_first_login: boolean
   need_rp_verify: boolean
 
-
   name: string
   spu_id: string
   is_expires: boolean

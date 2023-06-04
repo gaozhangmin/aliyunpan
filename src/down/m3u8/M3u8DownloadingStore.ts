@@ -4,9 +4,9 @@ import { IStateDownFile } from './M3u8DownloadDAL'
 import { GetSelectedList, GetFocusNext, SelectAll, MouseSelectOne, KeyboardSelectOne } from '../../utils/selecthelper'
 import { humanSize } from '../../utils/format'
 import message from '../../utils/message'
-import DB from '../../utils/db'
 import { useM3u8DownloadedStore } from '../../store'
 import { AriaDeleteList, AriaStopList } from '../../utils/aria2c'
+import DBDown from '../../utils/dbdown'
 
 type Item = IStateDownFile
 type State = DowningState
@@ -231,7 +231,7 @@ const useM3u8DownloadingStore = defineStore('m3u8downloading', {
           savelist.push(downitem)
         }
       }
-      DB.saveDownings(JSON.parse(JSON.stringify(savelist)))
+      DBDown.saveDownings(JSON.parse(JSON.stringify(savelist)))
       DowningList.push(...savelist);
       this.mRefreshListDataShow(true)
       if (tip) {
@@ -319,7 +319,7 @@ const useM3u8DownloadingStore = defineStore('m3u8downloading', {
       AriaStopList(gidList).then(r => {})
       // DownDAL.stopDowning(false, downIDList) // TODO
       this.mRefreshListDataShow(true)
-      DB.saveDownings(JSON.parse(JSON.stringify(downList)))
+      DBDown.saveDownings(JSON.parse(JSON.stringify(downList)))
     },
 
     /**
@@ -347,7 +347,7 @@ const useM3u8DownloadingStore = defineStore('m3u8downloading', {
       AriaStopList(gidList).then(r => {})
       // DownDAL.stopDowning(false, downIDList) // TODO
       this.mRefreshListDataShow(true)
-      DB.saveDownings(JSON.parse(JSON.stringify(DowningList)))
+      DBDown.saveDownings(JSON.parse(JSON.stringify(DowningList)))
     },
 
     /**
@@ -372,7 +372,7 @@ const useM3u8DownloadingStore = defineStore('m3u8downloading', {
       }
       this.ListDataRaw = newList;
       this.ListSelected = newListSelected;
-      DB.deleteDownings(JSON.parse(JSON.stringify(downIDList)))
+      DBDown.deleteDownings(JSON.parse(JSON.stringify(downIDList)))
       this.mRefreshListDataShow(true)
       AriaStopList(gidList).then(r => {})
       AriaDeleteList(gidList).then(r => {})
@@ -395,7 +395,7 @@ const useM3u8DownloadingStore = defineStore('m3u8downloading', {
         gidList.push(DowningList[j].Info.GID)
       }
       DowningList.splice(0, DowningList.length)
-      DB.deleteDowningAll()
+      DBDown.deleteDowningAll()
       this.mRefreshListDataShow(true)
       AriaStopList(gidList).then(r => {})
       AriaDeleteList(gidList).then(r => {})
@@ -435,12 +435,12 @@ const useM3u8DownloadingStore = defineStore('m3u8downloading', {
         if (DowningList[j].DownID == DownID && DowningList[j].Down.DownState === '已完成') {
           const item = DowningList[j]
           DowningList.splice(j, 1)
-          DB.deleteDowning(item.DownID)
+          DBDown.deleteDowning(item.DownID)
           item.Down.DownTime = Date.now()
           item.DownID = item.Down.DownTime.toString() + '_' + item.DownID
           useM3u8DownloadedStore().ListDataRaw.splice(0, 0, item)
           useM3u8DownloadedStore().mRefreshListDataShow(true)
-          DB.saveDowned(item.DownID, JSON.parse(JSON.stringify(item)))
+          DBDown.saveDowned(item.DownID, JSON.parse(JSON.stringify(item)))
           break;
         }
       }

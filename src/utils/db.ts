@@ -1,46 +1,30 @@
 import Dexie from 'dexie'
-import useUserStore,{ ITokenInfo } from '../user/userstore'
+import { ITokenInfo } from '../user/userstore'
 import { IOtherShareLinkModel } from '../share/share/OtherShareStore'
-import { IStateUploadFile } from '../aliapi/models'
-import { IStateDownFile } from '../down/DownDAL'
-
-export interface ICache {
-  key: string
-  time: number
-  value: object
-}
 
 class XBYDB3 extends Dexie {
   iobject: Dexie.Table<object, string>
   istring: Dexie.Table<string, string>
   inumber: Dexie.Table<number, string>
   ibool: Dexie.Table<boolean, string>
+  icache: Dexie.Table<Blob, string>
 
   itoken: Dexie.Table<ITokenInfo, string>
   iothershare: Dexie.Table<IOtherShareLinkModel, string>
-  idowning: Dexie.Table<IStateDownFile, string>
-  idowned: Dexie.Table<IStateDownFile, string>
-  iuploading: Dexie.Table<IStateUploadFile, string>
-  iuploaded: Dexie.Table<IStateUploadFile, string>
-  ifilehash: Dexie.Table<object, string>
 
   constructor() {
-    super('XBYDB3')
+    super('XBY3Database')
 
-    this.version(9)
+    this.version(10)
       .stores({
         iobject: '',
         istring: '',
         inumber: '',
         ibool: '',
+        icache: '',
 
         itoken: 'user_id',
-        iothershare: 'share_id',
-        idowning: 'DownID, Info.drive_id, Info.user_id',
-        idowned: 'DownID, Info.drive_id, Info.user_id, Down.DownTime',
-        iuploading: 'UploadID, Info.drive_id, Info.user_id',
-        iuploaded: 'UploadID, Info.drive_id, Info.user_id, Upload.DownTime',
-        ifilehash: ''
+        iothershare: 'share_id'
       })
       .upgrade((tx: any) => {
         console.log('upgrade', tx)
@@ -49,14 +33,10 @@ class XBYDB3 extends Dexie {
     this.istring = this.table('istring')
     this.inumber = this.table('inumber')
     this.ibool = this.table('ibool')
+    this.icache = this.table('icache')
 
     this.itoken = this.table('itoken')
     this.iothershare = this.table('iothershare')
-    this.idowning = this.table('idowning')
-    this.idowned = this.table('idowned')
-    this.iuploading = this.table('iuploading')
-    this.iuploaded = this.table('iuploaded')
-    this.ifilehash = this.table('ifilehash')
   }
 
   async getValueString(key: string): Promise<string> {
@@ -124,7 +104,7 @@ class XBYDB3 extends Dexie {
 
   async getUser(user_id: string): Promise<ITokenInfo | undefined> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return await this.transaction('r', this.itoken, () => {
+    return this.transaction('r', this.itoken, () => {
       return this.itoken.get(user_id)
     })
   }
@@ -147,9 +127,19 @@ class XBYDB3 extends Dexie {
     return this.itoken.put(token, token.user_id).catch(() => {})
   }
 
+  async getCache(key: string): Promise<Blob | undefined> {
+    if (!this.isOpen()) await this.open().catch(() => {})
+    const val = await this.icache.get(key)
+    return val
+  }
+  async saveCache(key: string, data: Blob) {
+    if (!this.isOpen()) await this.open().catch(() => {})
+    return this.icache.put(data, key)
+  }
+
   async getOtherShare(share_id: string): Promise<IOtherShareLinkModel | undefined> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return await this.iothershare.get(share_id)
+    return this.iothershare.get(share_id)
   }
 
   async getOtherShareAll(): Promise<IOtherShareLinkModel[]> {
@@ -166,152 +156,6 @@ class XBYDB3 extends Dexie {
   async saveOtherShare(share: IOtherShareLinkModel): Promise<string | void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.iothershare.put(share, share.share_id).catch(() => {})
-  }
-
-  async getDowning(key: string): Promise<IStateDownFile | undefined> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    const val = await this.idowning.get(key)
-    if (val) return val
-    else return undefined
-  }
-  async getDowningAll(): Promise<IStateDownFile[]> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    const list = await this.idowning.where('Info.user_id').equals(useUserStore().user_id).toArray()
-    return list
-  }
-  async deleteDowning(key: string) {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.idowning.delete(key)
-  }
-  async deleteDownings(keys: string[]) {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.idowning.bulkDelete(keys)
-  }
-  async saveDowning(key: string, value: IStateDownFile) {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.idowning.put(value, key).catch(() => {})
-  }
-  async saveDownings(values: IStateDownFile[]) {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.idowning.bulkPut(values).catch(() => {})
-  }
-  async deleteDowningAll() {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.idowning.where('Info.user_id').equals(useUserStore().user_id).delete()
-  }
-
-  async getDowned(key: string): Promise<IStateDownFile | undefined> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    const val = await this.idowned.get(key)
-    if (val) return val
-    else return undefined
-  }
-
-  async getDownedAll(): Promise<IStateDownFile[]> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    const list = await this.idowned.where('Info.user_id').equals(useUserStore().user_id).reverse().toArray()
-    return list
-  }
-
-  async getDownedByTop(limit: number) {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return await this.transaction('r', this.idowned, () => {
-      return this.idowned.reverse().limit(limit).toArray()
-    })
-  }
-
-  async getDownedTaskCount(): Promise<number> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return await this.transaction('r', this.idowned, () => {
-      return this.idowned.count()
-    })
-  }
-
-  async deleteDowned(key: string) {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.idowned.delete(key)
-  }
-  async deleteDowneds(keys: string[]) {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.idowned.bulkDelete(keys)
-  }
-
-  async deleteDownedOutCount(max: number): Promise<number> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    const count = await this.idowned.count()
-    if (count > max) {
-      return this.idowned.limit(max - count).delete()
-    }
-    return 0
-  }
-
-  async saveDowned(key: string, value: IStateDownFile) {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.idowned.put(value, key).catch(() => {})
-  }
-  async deleteDownedAll() {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.idowned.where('Info.user_id').equals(useUserStore().user_id).delete()
-  }
-
-  async getUploading(key: string): Promise<IStateUploadFile | undefined> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    const val = await this.iuploading.get(key)
-    if (val) return val
-    else return undefined
-  }
-  async getUploadingAll(): Promise<IStateUploadFile[]> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    const list = await this.iuploading.where('Info.user_id').equals(useUserStore().user_id).toArray()
-    return list
-  }
-  async deleteUploading(key: string) {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.iuploading.delete(key)
-  }
-  async deleteUploadings(keys: string[]) {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.iuploading.bulkDelete(keys)
-  }
-  async saveUploading(key: string, value: IStateUploadFile) {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.iuploading.put(value, key).catch(() => {})
-  }
-  async saveUploadings(items: IStateUploadFile[]) {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.iuploading.bulkPut(items).catch(() => {})
-  }
-  async deleteUploadingAll() {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.iuploading.where('Info.user_id').equals(useUserStore().user_id).delete()
-  }
-  async getUploaded(key: string): Promise<IStateUploadFile | undefined> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    const val = await this.iuploaded.get(key)
-    if (val) return val
-    else return undefined
-  }
-  async getUploadedAll(): Promise<IStateUploadFile[]> {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    const userStore = useUserStore()
-    const list = await this.iuploaded.where('Info.user_id').equals(userStore.user_id).reverse().toArray()
-    return list
-  }
-  async deleteUploaded(key: string) {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.iuploaded.delete(key)
-  }
-  async deleteUploadeds(keys: string[]) {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.iuploaded.bulkDelete(keys)
-  }
-  async saveUploaded(key: string, value: IStateUploadFile) {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.iuploaded.put(value, key).catch(() => {})
-  }
-  async deleteUploadedAll() {
-    if (!this.isOpen()) await this.open().catch(() => {})
-    return this.iuploaded.where('Info.user_id').equals(useUserStore().user_id).delete()
   }
 }
 

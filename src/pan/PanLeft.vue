@@ -5,7 +5,15 @@ import { Tree as AntdTree } from 'ant-design-vue'
 import 'ant-design-vue/es/tree/style/css'
 import usePanTreeStore, { fileiconfn } from './pantreestore'
 import MySwitchTab from '../layout/MySwitchTab.vue'
-import { KeyboardState, useAppStore, useKeyboardStore, usePanFileStore, useSettingStore, useWinStore } from '../store'
+import {
+  KeyboardState,
+  MouseState,
+  useAppStore,
+  useKeyboardStore,
+  usePanFileStore,
+  useSettingStore,
+  useWinStore
+} from '../store'
 import PanDAL from './pandal'
 import { onShowRightMenu, onHideRightMenuScroll, TestCtrl } from '../utils/keyboardhelper'
 import DirLeftMenu from './menus/DirLeftMenu.vue'
@@ -291,7 +299,6 @@ const handleQuickSelect = (index: number) => {
 .dirtree .iconfont.iconsearch {
   color: #1890ff;
 }
-
 .colortree .iconfont.iconrss_video {
   color: #a760ef;
 }

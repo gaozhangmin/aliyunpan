@@ -33,18 +33,6 @@ function BlobToBuff(body: Blob): Promise<ArrayBuffer | undefined> {
   })
 }
 
-
-function HttpCodeBreak(code: number): Boolean {
-  if (code >= 200 && code <= 300) return true
-  if (code == 400) return true
-  // if (code == 401) return true
-  if (code >= 402 && code <= 429) return true
-  // if (code == 403) return true
-  if (code == 404) return true
-  if (code == 409) return true
-  return false
-}
-
 function Sleep(msTime: number): Promise<{ success: true; time: number }> {
   return new Promise((resolve) =>
     setTimeout(
@@ -66,6 +54,16 @@ export default class AliHttp {
 
   static IsSuccess(code: number): Boolean {
     return code >= 200 && code <= 300
+  }
+
+  static HttpCodeBreak(code: number): Boolean {
+    if (code >= 200 && code <= 300) return true
+    if (code == 400) return true
+    // if (code == 401) return true
+    if (code >= 402 && code <= 429) return true
+    if (code == 404) return true
+    if (code == 409) return true
+    return false
   }
 
   static async CatchError(error: any, token: ITokenInfo | undefined): Promise<IUrlRespData> {
@@ -97,7 +95,9 @@ export default class AliHttp {
           ]
           if (errCode.includes(data.code)) isNeedLog = false
           // 自动刷新Token
-          if (data.code == 'AccessTokenInvalid') {
+          if (data.code == 'AccessTokenInvalid'
+            || data.code == 'AccessTokenExpired'
+            || data.code == 'TokenVerifyFailed') {
             if (token) {
               if (window.IsMainPage) {
                 return await AliUser.ApiTokenRefreshAccount(token, true).then((isLogin: boolean) => {
@@ -168,7 +168,7 @@ export default class AliHttp {
     if (!url.startsWith('http') && !url.startsWith('https')) url = AliHttp.baseapi + url
     for (let i = 0; i <= 5; i++) {
       const resp = await AliHttp._Get(url, user_id)
-      if (HttpCodeBreak(resp.code)) return resp
+      if (AliHttp.HttpCodeBreak(resp.code)) return resp
       else if (i == 5) return resp
       else await Sleep(2000)
     }
@@ -209,7 +209,7 @@ export default class AliHttp {
     if (!url.startsWith('http') && !url.startsWith('https')) url = AliHttp.baseapi + url
     for (let i = 0; i <= 5; i++) {
       const resp = await AliHttp._GetString(url, user_id, fileSize, maxSize)
-      if (HttpCodeBreak(resp.code)) return resp
+      if (AliHttp.HttpCodeBreak(resp.code)) return resp
       else if (i == 5) return resp
       else await Sleep(2000)
     }
@@ -297,7 +297,7 @@ export default class AliHttp {
     if (!url.startsWith('http') && !url.startsWith('https')) url = AliHttp.baseapi + url
     for (let i = 0; i <= 5; i++) {
       const resp = await AliHttp._GetBlob(url, user_id)
-      if (HttpCodeBreak(resp.code)) return resp
+      if (AliHttp.HttpCodeBreak(resp.code)) return resp
       else if (i == 5) return resp
       else await Sleep(2000)
     }
@@ -346,7 +346,7 @@ export default class AliHttp {
           || url.includes('/file/scan')
           || url.includes('openFile'))
           && !resp.body?.code) await Sleep(1000)
-      else if (HttpCodeBreak(resp.code)) return resp
+      else if (AliHttp.HttpCodeBreak(resp.code)) return resp
       else if (i == 3) return resp
       else await Sleep(1000)
     }
@@ -437,7 +437,7 @@ export default class AliHttp {
     if (!url.startsWith('http') && !url.startsWith('https')) url = AliHttp.baseapi + url
     for (let i = 0; i <= 5; i++) {
       const resp = await AliHttp._PostString(url, postData, user_id, share_token)
-      if (HttpCodeBreak(resp.code)) return resp
+      if (AliHttp.HttpCodeBreak(resp.code)) return resp
       else if (i == 5) return resp
       else await Sleep(2000)
     }

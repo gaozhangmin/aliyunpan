@@ -296,7 +296,7 @@ export async function AriaChangeToLocal() {
         const url = `127.0.0.1:${port} secret=${localPwd}`
         if (Aria2cLocalRelaunchTime < 2) message.error('无法连接到本地Aria2 ' + url)
       } else {
-        await AriaGlobalSpeed()
+        await AriaGlobalDownSpeed()
       }
       await Sleep(1000)
     } catch (e) {
@@ -307,21 +307,6 @@ export async function AriaChangeToLocal() {
   }
   return true
 }
-
-
-export async function AriaGlobalSpeed() {
-  try {
-    const settingStore = useSettingStore()
-    const limit = settingStore.downGlobalSpeed.toString() + (settingStore.downGlobalSpeedM == 'MB' ? 'M' : 'K')
-    await GetAria()?.call('aria2.changeGlobalOption', { 'max-overall-download-limit': limit }).catch((e: any) => {
-      if (e && e.message == 'Unauthorized') message.error('Aria2密码错误(密码不要有 ^ 或特殊字符)')
-      IsAria2cOnlineLocal = false
-    })
-  } catch {
-    SetAriaOnline(false)
-  }
-}
-
 
 export async function AriaGlobalDownSpeed() {
   try {
@@ -341,7 +326,6 @@ export async function AriaGlobalUploadSpeed() {
   try {
     const settingStore = useSettingStore()
     const limit = settingStore.uploadGlobalSpeed.toString() + (settingStore.uploadGlobalSpeedM == 'MB' ? 'M' : 'K')
-    console.log("AriaGlobalUploadSpeed", limit)
     await GetAria()?.call('aria2.changeGlobalOption', { 'max-overall-upload-limit': limit }).catch((e: any) => {
       if (e) message.error('上传限速失败，Error: ' + e.message)
       else message.info('设置设置上传速度成功，限速：' + limit)
@@ -612,7 +596,7 @@ export function AriaHashFile(downitem: IStateDownFile): { DownID: string; Check:
 }
 
 
-export function FormateAriaError(code: string, message: string): string {
+export function FormatAriaError(code: string, message: string): string {
   switch (code) {
     case '0':
       return ''

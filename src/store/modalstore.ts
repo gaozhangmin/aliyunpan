@@ -16,7 +16,6 @@ const useModalStore = defineStore('modal', {
     showModal(modalName: string, modalData: any) {
       if (modalName) onHideRightMenuScroll()
       if (modalName && modalName == this.modalName) {
-        
         this.$patch({ modalName: '', modalData: {} })
         setTimeout(() => {
           this.$patch({ modalName, modalData })

@@ -22,7 +22,7 @@ export default class FollowingDAL {
     for (let i = 0, maxi = classed.length; i < maxi; i++) {
       const item = classed[i]
       if (!item.class_name) continue
-      if (map.has(item.class_name) == false) map.set(item.class_name, [])
+      if (!map.has(item.class_name)) map.set(item.class_name, [])
       const list = map.get(item.class_name)!
       const add: IAliOtherFollowingModel = {
         avatar: item.avatar || '',
@@ -99,7 +99,7 @@ export default class FollowingDAL {
       if (id.indexOf('?') > 0) id = id.substring(0, id.indexOf('?'))
       if (id.indexOf('&') > 0) id = id.substring(0, id.indexOf('&'))
       id = id.trim()
-      if (id.length == 32 && /^[A-Za-z0-9]+$/.test(id) && idList.includes(id) == false) idList.push(id)
+      if (id.length == 32 && /^[A-Za-z0-9]+$/.test(id) && !idList.includes(id)) idList.push(id)
       text = text.substring(index + 'aliyundrive.com/u/'.length)
       index = text.indexOf('aliyundrive.com/u/')
     }

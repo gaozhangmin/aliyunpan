@@ -98,7 +98,7 @@ export default class UserDAL {
       signature: '',
       signInfo: {
         signMon: -1,
-        signDay: -1,
+        signDay: -1
       }
     }
   }
@@ -146,9 +146,9 @@ export default class UserDAL {
     UserTokenMap.set(token.user_id, token)
     // 加载用户信息
     await Promise.all([
-        AliUser.ApiUserInfo(token),
-        AliUser.ApiUserPic(token),
-        AliUser.ApiUserVip(token)
+      AliUser.ApiUserInfo(token),
+      AliUser.ApiUserPic(token),
+      AliUser.ApiUserVip(token)
     ])
     // 保存登录信息
     await DB.saveValueString('uiDefaultUser', token.user_id)
@@ -178,9 +178,8 @@ export default class UserDAL {
 
 
   static async UserLogOff(user_id: string): Promise<boolean> {
-    DB.deleteUser(user_id)
+    await DB.deleteUser(user_id)
     UserTokenMap.delete(user_id)
-
 
     let newUserID = ''
     for (const [user_id, token] of UserTokenMap) {
@@ -228,12 +227,14 @@ export default class UserDAL {
     if (!token || !token.access_token) {
       return false
     }
-
-    let time = Date.now() - (new Date(token.expire_time).getTime() - token.expires_in * 1000)
-    time = time / 1000
-
-    if (!force || time < 600) {
-      await Promise.all([AliUser.ApiUserInfo(token), AliUser.ApiUserPic(token), AliUser.ApiUserVip(token)])
+    let expires_in = new Date(token.expire_time).getTime() - token.expires_in * 1000
+    let time = Date.now() - expires_in
+    if (!force || time / 1000 < 600) {
+      await Promise.all([
+        AliUser.ApiUserInfo(token),
+        AliUser.ApiUserPic(token),
+        AliUser.ApiUserVip(token)
+      ])
       UserDAL.SaveUserToken(token)
       return true
     } else {
@@ -242,7 +243,11 @@ export default class UserDAL {
       const isSession = token.user_id && (await AliUser.ApiSessionRefreshAccount(token, true))
       if (!isToken || !isSession) return false
       // 刷新用户信息
-      await Promise.all([AliUser.ApiUserInfo(token), AliUser.ApiUserPic(token), AliUser.ApiUserVip(token)])
+      await Promise.all([
+        AliUser.ApiUserInfo(token),
+        AliUser.ApiUserPic(token),
+        AliUser.ApiUserVip(token)
+      ])
       useUserStore().userLogin(token.user_id)
       UserDAL.SaveUserToken(token)
       return true

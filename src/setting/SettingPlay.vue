@@ -146,7 +146,7 @@ const handleSelectFFmpeg = () => {
     </template>
     <div class="settinghead"></div>
     <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'win32' ? '' : 'none', marginTop: '8px' }">
-      <a-input-search tabindex="-1" style="max-width: 100px" :readonly="true" button-text="选择播放软件" search-button :model-value="settingStore.uiVideoPlayerPath" @search="handleSelectPlayer" />
+      <a-input-search tabindex="-1" style="max-width: 100px" :readonly="true" button-text="播放软件" search-button :model-value="settingStore.uiVideoPlayerPath" @search="handleSelectPlayer" />
       <a-popover position="bottom">
         <i class="iconfont iconbulb" />
         <template #content>
@@ -241,6 +241,13 @@ const handleSelectFFmpeg = () => {
             播放进度</div>
         </template>
       </a-popover>
+    </div>
+    <div class='settingspace'></div>
+    <div class='settinghead'>播放器退出设置</div>
+    <div class='settingrow'>
+      <MySwitch :value='settingStore.uiVideoPlayerExit' @update:value='cb({ uiVideoPlayerExit: $event })'>
+        跟随软件一同退出
+      </MySwitch>
     </div>
     <div class="settingspace"></div>
     <div class="settinghead">图片预览</div>

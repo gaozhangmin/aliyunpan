@@ -1,4 +1,4 @@
-import {AliAlbumFileInfo, IAliGetFileModel, IAliShareItem} from '../aliapi/alimodels'
+import { IAliGetFileModel, IAliShareItem } from '../aliapi/alimodels'
 import { useModalStore } from '../store'
 
 export function modalCloseAll() {

@@ -2,7 +2,8 @@ import {getCrxPath, getResourcesPath, getStaticPath, getUserDataPath, mkAriaConf
 import { release } from 'os'
 import { AppWindow, creatElectronWindow, createMainWindow, createTray, Referer, ShowError, ShowErrorAndExit, ua } from './window'
 import Electron from 'electron'
-import {execFile, SpawnOptions} from 'child_process'
+import is from 'electron-is'
+import { execFile, SpawnOptions } from 'child_process'
 import { portIsOccupied } from './utils'
 import { app, BrowserWindow, dialog, Menu, MenuItem, ipcMain, shell, session } from 'electron'
 import { exec, spawn } from 'child_process'
@@ -70,7 +71,7 @@ if (process.argv && process.argv.join(' ').indexOf('exit') >= 0) {
   app.exit()
 }
 app.on('window-all-closed', () => {
-  if (process.platform == 'darwin') {
+  if (is.macOS()) {
     AppWindow.appTray?.destroy()
   } else {
     app.quit() // 未测试应该使用哪一个
@@ -235,6 +236,36 @@ export function createMenu() {
   menuCopy.append(new MenuItem({ label: '全选', role: 'selectAll' }))
 }
 
+async function creatAria() {
+  try {
+    const enginePath: string = getStaticPath('engine')
+    const confPath: string = path.join(enginePath, 'aria2.conf')
+    const ariaPath: string = is.windows() ? 'aria2c.exe' : 'aria2c'
+    const basePath: string = path.join(enginePath, DEBUGGING ? path.join(process.platform, process.arch) : '')
+    let ariaFilePath: string = path.join(basePath, ariaPath)
+    if (!existsSync(ariaFilePath)) {
+      ShowError('找不到Aria程序文件', ariaFilePath)
+      return 0
+    }
+    const listenPort = await portIsOccupied(16800)
+    const options: SpawnOptions = {
+      stdio: is.dev() ? 'pipe' : 'ignore',
+      windowsHide: false
+    }
+    const args = [
+      `--stop-with-process=${process.pid}`,
+      `--conf-path=${confPath}`,
+      `--rpc-listen-port=${listenPort}`,
+      '-D'
+    ]
+    execFile(`${ariaFilePath}`, args, options)
+    return listenPort
+  } catch (e: any) {
+    console.log(e)
+  }
+  return 0
+}
+
 ipcMain.on('WebToElectron', async (event, data) => {
   let mainWindow = AppWindow.mainWindow
   if (data.cmd && data.cmd === 'close') {
@@ -274,7 +305,7 @@ ipcMain.on('WebToElectron', async (event, data) => {
       path: process.execPath
     }
     // 显示主窗口
-    if (process.platform === 'darwin') {
+    if (is.macOS()) {
       settings.openAsHidden = !launchStartShow
     } else {
       settings.args = [
@@ -284,7 +315,11 @@ ipcMain.on('WebToElectron', async (event, data) => {
       !launchStartShow && settings.args.push('--openAsHidden')
     }
     app.setLoginItemSettings(settings)
-   } else if (data.cmd && Object.hasOwn(data.cmd, 'appUserDataPath')) {
+  } else if (data.cmd && data.cmd === 'openDevTools') {
+    mainWindow.webContents.isDevToolsOpened()
+      ? mainWindow.webContents.closeDevTools()
+      : mainWindow.webContents.openDevTools({ mode: 'undocked' })
+  }  else if (data.cmd && Object.hasOwn(data.cmd, 'appUserDataPath')) {
     const userDataPath = data.cmd.appUserDataPath
     const localVersion = getResourcesPath('userdir.config')
     writeFileSync(localVersion, userDataPath, 'utf-8')
@@ -334,8 +369,6 @@ ipcMain.on('WebShowItemInFolder', (event, fullPath) => {
 
 ipcMain.on('WebPlatformSync', (event) => {
   const asarPath = app.getAppPath()
-  const basePath = path.resolve(asarPath, '..')
-  const findMPV = process.platform !== 'win32' || existsSync(path.join(basePath, 'MPV', 'mpv.exe'))
   const appPath = app.getPath('userData')
   event.returnValue = {
     platform: process.platform,
@@ -344,8 +377,7 @@ ipcMain.on('WebPlatformSync', (event) => {
     execPath: process.execPath,
     appPath: appPath,
     asarPath: asarPath,
-    argv0: process.argv0,
-    findMPV
+    argv0: process.argv0
   }
 })
 
@@ -355,16 +387,17 @@ ipcMain.on('WebSpawnSync', (event, data) => {
       stdio: 'ignore',
       ...data.options
     }
-    if ((process.platform == 'win32' || process.platform == 'darwin') && !existsSync(data.command)) {
+    if ((is.windows() || is.macOS()) && !existsSync(data.command)) {
       event.returnValue = { error: '找不到文件' + data.command }
       ShowError('找不到文件', data.command)
     } else {
       let command
-      if (process.platform == 'darwin') {
+      if (is.macOS()) {
         command = `open -a ${data.command} ${data.command.includes('mpv.app') ? '--args ' : ''}`
       } else {
         command = `${data.command}`
-      }      const subProcess = spawn(command, data.args, options)
+      }
+      const subProcess = spawn(command, data.args, options)
       const isRunning = process.kill(subProcess.pid, 0)
       subProcess.unref()
       event.returnValue = {
@@ -452,7 +485,7 @@ ipcMain.on('WebSetProgressBar', (event, data) => {
 })
 
 ipcMain.on('WebShutDown', (event, data) => {
-  if (process.platform === 'darwin') {
+  if (is.macOS()) {
     const shutdownCmd = 'osascript -e \'tell application "System Events" to shut down\''
     exec(shutdownCmd, (err: any) => {
       if (data.quitApp) {
@@ -467,14 +500,14 @@ ipcMain.on('WebShutDown', (event, data) => {
     })
   } else {
     const cmdArguments = ['shutdown']
-    if (process.platform === 'linux') {
+    if (is.linux()) {
       if (data.sudo) {
         cmdArguments.unshift('sudo')
       }
       cmdArguments.push('-h')
       cmdArguments.push('now')
     }
-    if (process.platform === 'win32') {
+    if (is.windows()) {
       cmdArguments.push('-s')
       cmdArguments.push('-f')
       cmdArguments.push('-t 0')
@@ -516,6 +549,7 @@ ipcMain.on('WebOpenWindow', (event, data) => {
     win.show()
   })
 })
+
 ipcMain.on('WebOpenUrl', (event, data) => {
   const win = new BrowserWindow({
     show: false,

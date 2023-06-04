@@ -17,7 +17,7 @@ class XBYDB3Cache extends Dexie {
   constructor() {
     super('XBYDB3Cache')
 
-    this.version(1)
+    this.version(10)
       .stores({
         ilog: '&logid',
         ifilehash: '++id,[size+mtime]',
@@ -38,7 +38,7 @@ class XBYDB3Cache extends Dexie {
 
   async getLogAll(): Promise<IStateDebugLog[]> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return await this.transaction('r', this.ilog, () => {
+    return this.transaction('r', this.ilog, () => {
       return this.ilog.reverse().limit(500).toArray()
     })
   }

@@ -1,7 +1,15 @@
 <!-- eslint-disable no-irregular-whitespace -->
 <script setup lang='ts'>
 import { IAliGetFileModel } from '../aliapi/alimodels'
-import { KeyboardState, useAppStore, useFootStore, useKeyboardStore, usePanFileStore, useSettingStore } from '../store'
+import {
+  KeyboardState, MouseState,
+  useAppStore,
+  useFootStore,
+  useKeyboardStore,
+  useMouseStore,
+  usePanFileStore,
+  useSettingStore
+} from '../store'
 import useWinStore from '../store/winstore'
 import {
   onShowRightMenu,
@@ -39,6 +47,8 @@ import DirTopPath from './menus/DirTopPath.vue'
 import message from '../utils/message'
 import { menuOpenFile } from '../utils/openfile'
 import { throttle } from '../utils/debounce'
+import { TestButton } from '../utils/mosehelper'
+import usePanTreeStore from './pantreestore'
 
 const viewlist = ref()
 const inputsearch = ref()
@@ -87,8 +97,7 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
         document.getElementById('searchpanInput')?.focus()
       }, 300)
     })
-  )
-    return
+  ) return
   if (TestCtrl('f', state.KeyDownEvent, () => inputsearch.value.focus())) return
   if (TestKey('f3', state.KeyDownEvent, () => inputsearch.value.focus())) return
   if (TestKey(' ', state.KeyDownEvent, () => inputsearch.value.focus())) return
@@ -110,9 +119,27 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
   if (TestKeyboardScroll(state.KeyDownEvent, viewlist.value, panfileStore)) return
 })
 
+const mouseStore = useMouseStore()
+mouseStore.$subscribe((_m: any, state: MouseState) => {
+  if (appStore.appTab != 'pan') return
+  const mouseEvent = state.MouseEvent
+  // console.log('MouseEvent', state.MouseEvent)
+  if (TestButton(0, mouseEvent, () => {
+    if (mouseEvent.srcElement) {
+      // @ts-ignore
+      if (mouseEvent.srcElement.className && mouseEvent.srcElement.className.toString().startsWith('arco-virtual-list')) {
+        onSelectCancel()
+      }
+    }
+  })) return
+  if (TestButton(3, mouseEvent, () => handleBack())) return
+})
 const handleRefresh = () => PanDAL.aReLoadOneDirToShow('', 'refresh', false)
 const handleDingWei = () => PanDAL.aTreeScrollToDir('refresh')
-const handleBack = () => PanDAL.aReLoadOneDirToShow('', 'back', false)
+const handleBack = () => {
+  if (!usePanTreeStore().PanHistoryCount) return
+  PanDAL.aReLoadOneDirToShow('', 'back', false)
+}
 const handleHome = () => PanDAL.aReLoadOneDirToShow('', 'root', false)
 const handleSelectAll = () => panfileStore.mSelectAll()
 
@@ -152,6 +179,7 @@ const handleSelect = (file_id: string, event: any, isCtrl: boolean = false) => {
     panfileStore.mRefreshListDataShow(false)
   } else {
     panfileStore.mMouseSelect(file_id, event.ctrlKey || isCtrl, event.shiftKey)
+    if(!panfileStore.ListSelected.has(file_id)) panfileStore.ListFocusKey = ''
   }
 }
 
@@ -654,8 +682,7 @@ const onPanDragEnd = (ev: any) => {
               :class="'rangselect ' + (rangSelectFiles[item.file_id] ? (rangSelectStart == item.file_id ? 'rangstart' : rangSelectEnd == item.file_id ? 'rangend' : 'rang') : '')">
               <a-button shape='circle' type='text' tabindex='-1' class='select' :title='index'
                         @click.prevent.stop='handleSelect(item.file_id, $event, true)'>
-                <i
-                  :class="panfileStore.ListSelected.has(item.file_id) ? (item.starred ? 'iconfont iconcrown3' : 'iconfont iconrsuccess') : item.starred ? 'iconfont iconcrown' : 'iconfont iconpic2'" />
+                <i :class="panfileStore.ListSelected.has(item.file_id) ? (item.starred ? 'iconfont iconcrown3' : 'iconfont iconrsuccess') : item.starred ? 'iconfont iconcrown' : 'iconfont iconpic2'" />
               </a-button>
             </div>
             <div class='fileicon'>
@@ -694,12 +721,10 @@ const onPanDragEnd = (ev: any) => {
             @contextmenu='(event:MouseEvent)=>handleRightClick({event,node:{key:item.file_id}} )'
             @dragstart='(ev) => onRowItemDragStart(ev, item.file_id)'
             @dragend='onRowItemDragEnd'>
-            <div
-              :class="'rangselect ' + (rangSelectFiles[item.file_id] ? (rangSelectStart == item.file_id ? 'rangstart' : rangSelectEnd == item.file_id ? 'rangend' : 'rang') : '')">
+            <div :class="'rangselect ' + (rangSelectFiles[item.file_id] ? (rangSelectStart == item.file_id ? 'rangstart' : rangSelectEnd == item.file_id ? 'rangend' : 'rang') : '')">
               <a-button shape='circle' type='text' tabindex='-1' class='select' :title='index'
                         @click.prevent.stop='handleSelect(item.file_id, $event, true)'>
-                <i
-                  :class="panfileStore.ListSelected.has(item.file_id) ? (item.starred ? 'iconfont iconcrown3' : 'iconfont iconrsuccess') : item.starred ? 'iconfont iconcrown' : 'iconfont iconpic2'" />
+                <i :class="panfileStore.ListSelected.has(item.file_id) ? (item.starred ? 'iconfont iconcrown3' : 'iconfont iconrsuccess') : item.starred ? 'iconfont iconcrown' : 'iconfont iconpic2'" />
               </a-button>
             </div>
             <div class='fileicon'>

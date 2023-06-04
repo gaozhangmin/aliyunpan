@@ -36,7 +36,7 @@ export default class UploadingData {
     const keys = UploadingTaskList.keys()
     for (let i = 0, maxi = UploadingTaskList.size; i < maxi; i++) {
       const TaskID = keys.next().value as number
-      if (UploadingTaskStop.has(TaskID) == false) return true
+      if (!UploadingTaskStop.has(TaskID)) return true
     }
     return false
   }

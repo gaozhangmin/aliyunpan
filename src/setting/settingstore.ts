@@ -19,7 +19,7 @@ export interface SettingState {
   uiVideoMode: string
 
   uiVideoPlayer: string
-
+  uiVideoPlayerExit: boolean
   uiVideoPlayerHistory: boolean
 
   uiVideoSubtitleMode: string
@@ -165,6 +165,7 @@ const setting: SettingState = {
   uiImageMode: 'fill',
   uiVideoMode: 'web',
   uiVideoPlayer: 'web',
+  uiVideoPlayerExit: false,
   uiVideoPlayerHistory: false,
   uiVideoSubtitleMode: 'close',
   uiVideoPlayerPath: '',
@@ -253,11 +254,12 @@ function _loadSetting(val: any) {
   setting.uiImageMode = defaultValue(val.uiImageMode, ['fill', 'width', 'web'])
   setting.uiVideoMode = defaultValue(val.uiVideoMode, ['web', 'online'])
   setting.uiVideoPlayer = defaultValue(val.uiVideoPlayer, ['web', 'other'])
+  setting.uiVideoPlayerExit = defaultBool(val.uiVideoPlayerExit, false)
   setting.uiVideoPlayerHistory = defaultBool(val.uiVideoPlayerHistory, false)
   setting.uiVideoSubtitleMode = defaultValue(val.uiVideoSubtitleMode, ['close', 'auto', 'select'])
   setting.uiVideoPlayerPath = defaultString(val.uiVideoPlayerPath, '')
-  setting.uiAutoColorVideo = defaultBool(val.uiAutoColorVideo, true)
   setting.uiAutoPlaycursorVideo = defaultBool(val.uiAutoPlaycursorVideo, true)
+  setting.uiAutoColorVideo = defaultBool(val.uiAutoColorVideo, true)
   setting.uiShowPanPath = defaultBool(val.uiShowPanPath, true)
   setting.uiShowPanMedia = defaultBool(val.uiShowPanMedia, false)
   setting.uiExitOnClose = defaultBool(val.uiExitOnClose, false)

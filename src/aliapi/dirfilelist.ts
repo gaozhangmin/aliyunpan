@@ -260,7 +260,7 @@ export default class AliDirFileList {
       pageIndex = -1
     }
     const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
-    return await AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex, type)
+    return AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex, type)
   }
 
   
@@ -608,18 +608,7 @@ export default class AliDirFileList {
               }
             }
             if (dir.itemsKey.has(item.file_id)) continue
-            // if (item.type === 'file' && isRecover) {
-            //   const fileDetails = await AliFile.ApiFileInfoOpenApi(dir.m_user_id, dir.m_drive_id, item.file_id);
-            //   console.log("Recovery", fileDetails)
-            //   item.thumbnail = fileDetails?.thumbnail
-            //   item.url = fileDetails?.url || item.url
-            //   item.download_url = fileDetails?.download_url || item.download_url
-            //   item.starred = fileDetails?.starred || item.starred
-            //   item.trashed = fileDetails?.trashed || item.trashed
-            //   item.deleted = fileDetails?.deleted || item.deleted
-            //   item.description = fileDetails?.description || item.description
-            // }
-            const add =  AliDirFileList.getFileInfo(item, downUrl)
+            const add = AliDirFileList.getFileInfo(item, downUrl)
             if (isRecover) add.description = item.content_hash
             if (isVideo) {
               add.compilation_id = item.compilation_id

@@ -1,4 +1,4 @@
-<script lang="ts">
+<script lang='ts'>
 import { modalCloseAll } from '../../utils/modal'
 import { computed, defineComponent, h, PropType, reactive, ref } from 'vue'
 import { usePanTreeStore, useWinStore } from '../../store'

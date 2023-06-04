@@ -244,14 +244,12 @@ export default class TreeStore {
       }
     } else dirOrder = order
     if (dirOrder.startsWith('size ')) {
-
       for (let i = 0, maxi = childDirList.length; i < maxi; i++) {
         const item = childDirList[i]
         item.size = driverData.DirTotalSizeMap[item.file_id] || 0
       }
     }
     childDirList = OrderNode(dirOrder, childDirList) as DirData[]
-
     const children: TreeNodeData[] = []
     for (let i = 0, maxi = childDirList.length; i < maxi; i++) {
       const item = childDirList[i]
@@ -261,7 +259,6 @@ export default class TreeStore {
       children.push(itemNode)
       map.set(itemNode.key, itemNode)
     }
-
     node.children = children
   }
 
