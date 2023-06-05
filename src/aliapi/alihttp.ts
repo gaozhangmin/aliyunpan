@@ -96,8 +96,7 @@ export default class AliHttp {
           if (errCode.includes(data.code)) isNeedLog = false
           // 自动刷新Token
           if (data.code == 'AccessTokenInvalid'
-            || data.code == 'AccessTokenExpired'
-            || data.code == 'TokenVerifyFailed') {
+            || data.code == 'AccessTokenExpired') {
             if (token) {
               if (window.IsMainPage) {
                 return await AliUser.ApiTokenRefreshAccount(token, true).then((isLogin: boolean) => {

@@ -315,11 +315,7 @@ ipcMain.on('WebToElectron', async (event, data) => {
       !launchStartShow && settings.args.push('--openAsHidden')
     }
     app.setLoginItemSettings(settings)
-  } else if (data.cmd && data.cmd === 'openDevTools') {
-    mainWindow.webContents.isDevToolsOpened()
-      ? mainWindow.webContents.closeDevTools()
-      : mainWindow.webContents.openDevTools({ mode: 'undocked' })
-  }  else if (data.cmd && Object.hasOwn(data.cmd, 'appUserDataPath')) {
+  } else if (data.cmd && Object.hasOwn(data.cmd, 'appUserDataPath')) {
     const userDataPath = data.cmd.appUserDataPath
     const localVersion = getResourcesPath('userdir.config')
     writeFileSync(localVersion, userDataPath, 'utf-8')
