@@ -8,8 +8,6 @@ import DebugLog from '../utils/debuglog'
 import { GetSignature } from '../aliapi/utils'
 import getUuid from 'uuid-by-string'
 import AliHttp from "../aliapi/alihttp";
-import Swal from 'sweetalert2'
-
 function v(e: string) {
   const t = atob(e)
   let r = t.length
@@ -124,8 +122,10 @@ export default defineComponent({
                     }
                   }, 1000)
                 })
+              } else if(resp.code === 429) {
+                  message.error('1个小时超过10次请求会被限流，请更换IP或者1个小时后重试')
               } else {
-                message.error('获取二维码出错，请退出小白羊后重新运行')
+                  message.error('获取二维码出错，请退出小白羊后重新运行')
               }
             }
         })

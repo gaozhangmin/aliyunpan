@@ -2,7 +2,6 @@
 import { useAppStore } from '../store'
 import { onBeforeUnmount, onMounted } from 'vue'
 import Artplayer from 'artplayer'
-import FlvJs from 'flv.js'
 import HlsJs from 'hls.js'
 import AliFile from '../aliapi/file'
 import AliDirFileList from '../aliapi/dirfilelist'
@@ -58,7 +57,7 @@ const playM3U8 = (video: HTMLMediaElement, url: string, art: Artplayer) => {
     hls.loadSource(url)
     hls.attachMedia(video)
     hls.on(HlsJs.Events.MANIFEST_PARSED, async () => {
-      await art.play()
+        await art.play().catch((err) => {})
       await getVideoCursor(art, pageVideo.play_cursor)
     })
     hls.on(HlsJs.Events.ERROR, (event, data) => {
@@ -325,7 +324,7 @@ const defaultSetting = async (art: Artplayer) => {
 
 const getVideoInfo = async (art: Artplayer) => {
   // 获取视频链接
-  const data: any = await AliFile.ApiVideoPreviewUrl(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id)
+  const data: any = await AliFile.ApiVideoPreviewUrlOpenApi(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id)
   if (data) {
     pageVideo.duration = data.duration
     // 画质

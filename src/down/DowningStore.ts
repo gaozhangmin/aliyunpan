@@ -6,6 +6,7 @@ import { humanSize } from '../utils/format'
 import message from '../utils/message'
 import { useDownedStore } from '../store'
 import DBDown from '../utils/dbdown'
+import { AriaDeleteList, AriaStopList } from '../utils/aria2c'
 
 type Item = IStateDownFile
 type State = DowningState

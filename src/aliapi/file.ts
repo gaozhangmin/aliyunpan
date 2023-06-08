@@ -78,7 +78,7 @@ export default class AliFile {
     return undefined
   }
 
-  static async ApiFileDownloadUrlOpenApi(user_id: string, drive_id: string, file_id: string, expire_sec: number): Promise<IDownloadUrl | string> {
+  static async ApiFileDownloadUrlOpenApi(user_id: string, drive_id: string, file_id: string, expire_sec= 14400): Promise<IDownloadUrl | string> {
     if (!user_id || !drive_id || !file_id) return 'file_id错误'
     const data: IDownloadUrl = {
       drive_id: drive_id,
@@ -153,6 +153,10 @@ export default class AliFile {
 
     if (resp.body.code == 'VideoPreviewWaitAndRetry') {
       message.warning('视频正在转码中，稍后重试')
+      return undefined
+    }
+    if (resp.body.code == 'ExceedCapacityForbidden') {
+      message.warning('容量超限, 请清理超出的容量')
       return undefined
     }
 
@@ -235,65 +239,6 @@ export default class AliFile {
     }
   }
 
-  static async ApiVideoPreviewUrl(user_id: string, drive_id: string, file_id: string): Promise<IVideoPreviewUrl | undefined> {
-    if (!user_id || !drive_id || !file_id) return undefined
-    let url = 'adrive/v1.0/openFile/getVideoPreviewPlayInfo'
-    const postData = { drive_id: drive_id, file_id: file_id, category: 'live_transcoding', template_id: '', get_subtitle_info: true, url_expire_sec: 14400 }
-    const resp = await AliHttp.Post(url, postData, user_id, '')
-
-    if (resp.body.code == 'VideoPreviewWaitAndRetry') {
-      message.warning('视频正在转码中，稍后重试')
-      return undefined
-    }
-
-    const data: IVideoPreviewUrl = {
-      drive_id: drive_id,
-      file_id: file_id,
-      expire_sec: 0,
-      width: 0,
-      height: 0,
-      url: '',
-      duration: 0,
-      urlQHD: '',
-      urlFHD: '',
-      urlHD: '',
-      urlSD: '',
-      urlLD: '',
-      subtitles: []
-    }
-    if (AliHttp.IsSuccess(resp.code)) {
-      const subtitle = resp.body.video_preview_play_info?.live_transcoding_subtitle_task_list || []
-      for (let i = 0, maxi = subtitle.length; i < maxi; i++) {
-        if (subtitle[i].status == 'finished') {
-          data.subtitles.push({ language: subtitle[i].language, url: subtitle[i].url })
-        }
-      }
-      const taskList = resp.body.video_preview_play_info?.live_transcoding_task_list || []
-      for (let i = 0, maxi = taskList.length; i < maxi; i++) {
-        if (taskList[i].template_id && taskList[i].template_id == 'QHD' && taskList[i].status == 'finished') {
-          data.urlQHD = taskList[i].url
-        } else if (taskList[i].template_id && taskList[i].template_id == 'FHD' && taskList[i].status == 'finished') {
-          data.urlFHD = taskList[i].url
-        } else if (taskList[i].template_id && taskList[i].template_id == 'HD' && taskList[i].status == 'finished') {
-          data.urlHD = taskList[i].url
-        } else if (taskList[i].template_id && taskList[i].template_id == 'SD' && taskList[i].status == 'finished') {
-          data.urlSD = taskList[i].url
-        } else if (taskList[i].template_id && taskList[i].template_id == 'LD' && taskList[i].status == 'finished') {
-          data.urlLD = taskList[i].url
-        }
-      }
-      data.url =  data.urlQHD || data.urlFHD || data.urlHD || data.urlSD || data.urlLD || ''
-      data.duration = Math.floor(resp.body.video_preview_play_info?.meta?.duration || 0)
-      data.width = resp.body.video_preview_play_info?.meta?.width || 0
-      data.height = resp.body.video_preview_play_info?.meta?.height || 0
-      data.expire_sec = GetOssExpires(data.url)
-      return data
-    } else {
-      DebugLog.mSaveWarning('ApiVideoPreviewUrl err=' + file_id + ' ' + (resp.code || ''))
-    }
-    return undefined
-  }
-
   static async ApiAudioPreviewUrl(user_id: string, drive_id: string, file_id: string): Promise<IDownloadUrl | undefined> {
     if (!user_id || !drive_id || !file_id) return undefined
     
@@ -356,20 +301,9 @@ export default class AliFile {
 
   static async ApiGetFile(user_id: string, drive_id: string, file_id: string): Promise<IAliGetFileModel | undefined> {
     if (!user_id || !drive_id || !file_id) return undefined
-    const url = 'v2/file/get'
-    const postData = {
-      drive_id: drive_id,
-      file_id: file_id,
-      url_expire_sec: 14400,
-      office_thumbnail_process: 'image/resize,w_400/format,jpeg',
-      image_thumbnail_process: 'image/resize,w_400/format,jpeg',
-      image_url_process: 'image/resize,w_1920/format,jpeg',
-      video_thumbnail_process: 'video/snapshot,t_106000,f_jpg,ar_auto,m_fast,w_400'
-    }
-    const resp = await AliHttp.Post(url, postData, user_id, '')
+    const fileItem = await AliFile.ApiFileInfoOpenApi(user_id, drive_id, file_id);
 
-    if (AliHttp.IsSuccess(resp.code)) {
-      const fileItem = resp.body as IAliFileItem
+    if (fileItem) {
       if (fileItem.type === 'file') {
         const fileDetails = await AliFile.ApiFileInfoOpenApi(user_id, drive_id, fileItem.file_id);
         fileItem.thumbnail = fileDetails?.thumbnail
@@ -380,9 +314,7 @@ export default class AliFile {
         fileItem.deleted = fileDetails?.deleted || fileItem.deleted
         fileItem.description = fileDetails?.description || fileItem.description
       }
-      return AliDirFileList.getFileInfo(resp.body as IAliFileItem, '')
-    } else {
-      DebugLog.mSaveWarning('ApiGetFile err=' + file_id + ' ' + (resp.code || ''))
+      return AliDirFileList.getFileInfo(fileItem, '')
     }
     return undefined
   }

@@ -504,6 +504,18 @@ const onPanDragEnd = (ev: any) => {
         </template>
       </a-button>
     </div>
+    <div v-if="panfileStore.SelectDirType == 'video'" class="toppanbtn" tabindex="-1">
+      <div style="margin: 0 0px">
+          <AntdTooltip placement="rightTop">
+              <a-button type='dashed' tabindex="-1"  @click="onSelectAllCompilation">全部专辑</a-button>
+          </AntdTooltip>
+      </div>
+      <div style="margin: 0 10px">
+          <AntdTooltip placement="rightTop">
+              <a-button type='dashed' tabindex="-1" @click="onSelectRecentPlay">正在看</a-button>
+          </AntdTooltip>
+      </div>
+    </div>
     <div v-show="panfileStore.SelectDirType == 'favorite'" class='toppanbtn'>
       <a-button type='text' size='small' tabindex='-1' class='danger' @click='topFavorDeleteAll'><i
         class='iconfont iconcrown2' />清空收藏夹

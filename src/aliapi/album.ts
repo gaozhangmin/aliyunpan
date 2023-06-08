@@ -91,7 +91,7 @@ export default class AliAlbum {
     static async ApiAllPhotos(): Promise<AliAlbumFileInfo[]> {
         const driver_id = GetDriveID(useUserStore().user_id, 'pic')
         const userId = useUserStore().user_id
-        const url = 'adrive/v3/file/search'
+        const url = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/search'
         let marker = '';
         let max: number = useSettingStore().debugFileListMax
 

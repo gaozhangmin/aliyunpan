@@ -65,11 +65,11 @@ export default defineComponent({
           return
         }
         let searchid = ''
-        if (this.form.min == this.form.max && this.form.min > 0) searchid += 'size:' + this.form.min * 1024 * 1024 + ' '
-        else {
-          if (this.form.min) searchid += 'min:' + this.form.min * 1024 * 1024 + ' '
-          if (this.form.max && this.form.max > this.form.min) searchid += 'max:' + this.form.max * 1024 * 1024 + ' '
-        }
+        // if (this.form.min == this.form.max && this.form.min > 0) searchid += 'size:' + this.form.min * 1024 * 1024 + ' '
+        // else {
+        //   if (this.form.min) searchid += 'min:' + this.form.min * 1024 * 1024 + ' '
+        //   if (this.form.max && this.form.max > this.form.min) searchid += 'max:' + this.form.max * 1024 * 1024 + ' '
+        // }
 
         if (this.form.begin) searchid += 'begin:' + this.form.begin + ' '
         if (this.form.end) searchid += 'end:' + this.form.end + ' '
@@ -105,7 +105,7 @@ export default defineComponent({
            :footer="false" :unmount-on-close="true" :mask-closable="false"
            @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>
-      <span class="modaltitle">在整个网盘内 高级搜索</span>
+      <span class="modaltitle">在整个网盘内 高级搜索 <span style="color: red;">(条件不得超过5个)</span></span>
     </template>
     <div class="modalbody" style="width: 440px">
       <a-form ref="formRef" :model="form" layout="horizontal" auto-label-width>
@@ -132,22 +132,22 @@ export default defineComponent({
           <template #extra> <span style="font-size: 12px">可以多选 例如:勾选了图片和视频，则只搜索</span><span class="opblue" style="font-size: 12px">图片和视频</span><span style="font-size: 12px">类型的文件</span> </template>
         </a-form-item>
 
-        <a-form-item field="min">
-          <template #label>体积：</template>
-          <a-input-number v-model="form.min" tabindex="-1" style="width: 170px" :min="0" :max="102400">
-            <template #prefix> 最小 </template>
-          </a-input-number>
-          <div style="flex: auto"></div>
-          <a-input-number v-model="form.max" tabindex="-1" style="width: 170px" :min="form.min" :max="102400">
-            <template #prefix> 最大 </template>
-          </a-input-number>
-          <template #extra> <span style="font-size: 12px">填0不限制大小，单位兆(MB) 例如:1百兆填</span><span class="opblue" style="font-size: 12px">100</span><span style="font-size: 12px">，1GB填</span><span class="opblue" style="font-size: 12px">1024</span> </template>
-        </a-form-item>
+<!--        <a-form-item field="min">-->
+<!--          <template #label>体积：</template>-->
+<!--          <a-input-number v-model="form.min" tabindex="-1" style="width: 170px" :min="0" :max="102400">-->
+<!--            <template #prefix> 最小 </template>-->
+<!--          </a-input-number>-->
+<!--          <div style="flex: auto"></div>-->
+<!--          <a-input-number v-model="form.max" tabindex="-1" style="width: 170px" :min="form.min" :max="102400">-->
+<!--            <template #prefix> 最大 </template>-->
+<!--          </a-input-number>-->
+<!--          <template #extra> <span style="font-size: 12px">填0不限制大小，单位兆(MB) 例如:1百兆填</span><span class="opblue" style="font-size: 12px">100</span><span style="font-size: 12px">，1GB填</span><span class="opblue" style="font-size: 12px">1024</span> </template>-->
+<!--        </a-form-item>-->
 
         <a-form-item field="ext">
           <template #label>后缀名： </template>
           <a-input v-model.trim="form.ext" placeholder="可以不填，例如mkv,mp4" allow-clear />
-          <template #extra> <span style="font-size: 12px">前面没有点(.) 多个后缀用逗号(,)间隔 例如:</span><span class="opblue" style="font-size: 12px">mkv,mp4,zip,jpg</span> </template>
+          <template #extra> <span style="font-size: 12px">前面没有点(.) 多个后缀用逗号(,)间隔,例如:</span><span class="opblue" style="font-size: 12px">mkv,mp4,zip,jpg</span> </template>
         </a-form-item>
         <a-form-item field="begin">
           <template #label>开始： </template>

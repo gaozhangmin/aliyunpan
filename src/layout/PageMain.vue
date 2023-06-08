@@ -141,10 +141,6 @@ onMounted(() => {
     onHideRightMenu()
   }, 300)
   window.addEventListener('click', onHideRightMenu, { passive: true })
-  setTimeout(() => {
-    updateSpeed()
-  }, 3000)
-
 })
 
 onUnmounted(() => {
@@ -184,7 +180,7 @@ const handleCheckVer = () => {
            <i class="iconfont iconmenuon" v-if="panVisible"/>
            <i class="iconfont iconmenuoff" v-else/>
         </a-button>
-        <div class="title">小白羊 {{ Config.appVersion }}</div>
+        <div v-show="appStore.appTab !== 'pic'" class="title">小白羊 {{ Config.appVersion }}</div>
 
         <a-menu mode="horizontal" :selected-keys="[appStore.appTab]" @update:selected-keys="appStore.toggleTab($event[0])">
           <a-menu-item key="pan" title="Alt+1">网盘</a-menu-item>

@@ -15,7 +15,7 @@
       </div>
     </div>
     <div class="preview-mask" @click="() => { showNavBar = !showNavBar }"></div>
-    <div class="navbar" style="width: 100% !important;" v-show="showNavBar">
+    <div class="navbar" style="width: 100% !important;" v-show="showNavBar" >
       <div class="nav-title">
         {{ photo_name }}
       </div>
@@ -122,8 +122,8 @@ export default {
     },
     getBackgroundSize() {
       //current_photo.h > current_photo.w ? 'auto 100%':'100% auto'
-      let ph = this.current_photo.image_media_metadata.height;
-      let pw = this.current_photo.image_media_metadata.width;
+      let ph = this.current_photo.image_media_metadata?.height || 0;
+      let pw = this.current_photo.image_media_metadata?.width || 0;
       let wh = window.innerHeight;
       let ww = window.innerWidth;
       let pr = pw / ph;

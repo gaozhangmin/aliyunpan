@@ -199,7 +199,7 @@ async function Video(token: ITokenInfo, drive_id: string, file_id: string, paren
   let url = ''
   let mode = ''
   if (settingStore.uiVideoMode == 'online') {
-    const data = await AliFile.ApiVideoPreviewUrl(token.user_id, drive_id, file_id)
+    const data = await AliFile.ApiVideoPreviewUrlOpenApi(token.user_id, drive_id, file_id)
     if (data && data.url != '') {
       url = data.url
       mode = '转码视频模式'
@@ -236,6 +236,7 @@ async function Video(token: ITokenInfo, drive_id: string, file_id: string, paren
   }
   const isWindows = window.platform === 'win32'
   const isMacOrLinux = ['darwin', 'linux'].includes(window.platform)
+  const argsToStr = (args: string) => isWindows ? `"${args}"` : `'${args}'`
   if (!isWindows && !isMacOrLinux) {
     message.error('不支持的系统，操作取消')
     return
@@ -252,15 +253,15 @@ async function Video(token: ITokenInfo, drive_id: string, file_id: string, paren
       otherArgs: [
         '/new',
         '/autoplay',
-        `/referer=${referer}`,
-        `/title=${title}`
+        `/referer=${argsToStr(referer)}`,
+        `/title=${argsToStr(title)}`
       ]
     }
     if (playCursor.length > 0 && useSettingStore().uiVideoPlayerHistory) {
-      playerArgs.otherArgs.push(`/seek=${playCursor}`)
+      playerArgs.otherArgs.push(`/seek=${argsToStr(playCursor)}`)
     }
     if (subTitleUrl.length > 0) {
-      playerArgs.otherArgs.push(`/sub=${subTitleUrl}`)
+      playerArgs.otherArgs.push(`/sub=${argsToStr(subTitleUrl)}`)
     }
   }
   if (commandLowerCase.indexOf('mpv') > 0) {
@@ -277,19 +278,19 @@ async function Video(token: ITokenInfo, drive_id: string, file_id: string, paren
         '--alang=[en,eng,zh,chi,chs,sc,zho]',
         '--slang=[zh,chi,chs,sc,zho,en,eng]',
         '--input-ipc-server=alixby_mpv_ipc',
-        `--force-media-title=${titleStr}`,
-        `--referrer=${referer}`,
-        `--title=${title}`
+        `--force-media-title=${argsToStr(titleStr)}`,
+        `--referrer=${argsToStr(referer)}`,
+        `--title=${argsToStr(title)}`
       ]
     }
     if (playCursor.length > 0 && useSettingStore().uiVideoPlayerHistory) {
-      playerArgs.otherArgs.push(`--start=${playCursor}`)
+      playerArgs.otherArgs.push(`--start=${argsToStr(playCursor)}`)
     }
     if (subTitleUrl.length > 0) {
-      playerArgs.otherArgs.push(`--sub-file=${subTitleUrl}`)
+      playerArgs.otherArgs.push(`--sub-file=${argsToStr(subTitleUrl)}`)
     }
   }
-  const args = [playerArgs.url, ...playerArgs.otherArgs]
+  const args = [ argsToStr(playerArgs.url), ...playerArgs.otherArgs ]
   window.WebSpawnSync({ command, args, options })
 }
 

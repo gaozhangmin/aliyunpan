@@ -1,5 +1,5 @@
 export default class Config {
-  static appVersion = '3.11.11'
+  static appVersion = '3.11.12'
   static referer = 'https://www.aliyundrive.com/'
   static downAgent = 'okhttp/4.2.2'
   static userAgent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) aDrive/4.1.0 Chrome/108.0.5359.215 Electron/22.3.1 Safari/537.36'
@@ -10,7 +10,7 @@ export default class Config {
   static driverInfoUrl = 'https://open.aliyundrive.com/adrive/v1.0/user/getDriveInfo'
   static listFile = 'adrive/v1.0/openFile/list'
   static recentPlayListUrl = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/video/recentList'
-  static tmpUrl = 'https://api.nn.ci/alist/ali_open/token'
-  static tmpQrCodeUrl = 'https://api.nn.ci/alist/ali_open/qr'
-  static tokenUrl = 'https://api.nn.ci/alist/ali_open/code'
+  static tmpUrl = 'https:///api-cf.nn.ci/alist/ali_open/token'
+  static tmpQrCodeUrl = 'https:///api-cf.nn.ci/alist/ali_open/qr'
+  static tokenUrl = 'https:///api-cf.nn.ci/alist/ali_open/code'
 }

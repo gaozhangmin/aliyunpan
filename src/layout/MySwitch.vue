@@ -10,7 +10,7 @@ export default defineComponent({
 
 <template>
   <div class="myswitch">
-    <a-switch  :model-value="value" tabindex="-1" @update:model-value="$emit('update:value', $event)">
+    <a-switch type="round" :model-value="value" tabindex="-1" @update:model-value="$emit('update:value', $event)">
       <template #checked>✔</template>
       <template #unchecked>✖</template>
     </a-switch>
@@ -19,20 +19,21 @@ export default defineComponent({
 </template>
 <style>
 .myswitch {
-  height: 25px;
+  height: 30px;
+  display: flex;
   align-items: center;
   user-select: none;
   display: inline-flex;
 }
 .myswitch .arco-switch {
-  min-width: 45px;
-  height: 25px;
-  line-height: 30px;
+  min-width: 36px;
+  height: 18px;
+  line-height: 18px;
 }
 .myswitch .arco-switch-handle {
-  width: 16px;
-  height: 16px;
-  top: 5px;
+  width: 12px;
+  height: 12px;
+  top: 3px;
 }
 .myswitch .arco-switch-checked .arco-switch-handle {
   left: calc(100% - 16px);

@@ -1,4 +1,4 @@
-import {getCrxPath, getResourcesPath, getStaticPath, getUserDataPath, mkAriaConf} from './mainfile'
+import {getResourcesPath, getStaticPath, getUserDataPath} from './mainfile'
 import { release } from 'os'
 import { AppWindow, creatElectronWindow, createMainWindow, createTray, Referer, ShowError, ShowErrorAndExit, ua } from './window'
 import Electron from 'electron'
@@ -102,7 +102,7 @@ app.setAboutPanelOptions({
   applicationName: '小白羊云盘',
   copyright: 'Zhangmin Gao',
   website: 'https://github.com/gaozhangmin/aliyunpan',
-  iconPath: getStaticPath(path.join("images", "app.png")),
+  iconPath: getStaticPath('icon_64.png'),
   applicationVersion: '30'
 })
 
@@ -209,11 +209,12 @@ app
       })
     })
 
-    session.defaultSession.loadExtension(getCrxPath(), { allowFileAccess: true }).then((le) => {
-      createMenu()
-      createTray()
-      createMainWindow()
-    })
+    session.defaultSession.loadExtension(getStaticPath('crx'), { allowFileAccess: true })
+      .then((le) => {
+        createMenu()
+        createTray()
+        createMainWindow()
+      })
   })
   .catch((err: any) => {
     console.log(err)
@@ -381,19 +382,22 @@ ipcMain.on('WebSpawnSync', (event, data) => {
   try {
     const options: SpawnOptions = {
       stdio: 'ignore',
+      shell: true,
       ...data.options
     }
+    const argsToStr = (args: string) => is.windows() ? `"${args}"` : `'${args}'`
     if ((is.windows() || is.macOS()) && !existsSync(data.command)) {
       event.returnValue = { error: '找不到文件' + data.command }
       ShowError('找不到文件', data.command)
     } else {
       let command
       if (is.macOS()) {
-        command = `open -a ${data.command} ${data.command.includes('mpv.app') ? '--args ' : ''}`
+        command = `open -a ${argsToStr(data.command)} ${data.command.includes('mpv.app') ? '--args ' : ''}`
       } else {
-        command = `${data.command}`
+        command = `${argsToStr(data.command)}`
       }
       const subProcess = spawn(command, data.args, options)
+      console.log(command, data.args)
       const isRunning = process.kill(subProcess.pid, 0)
       subProcess.unref()
       event.returnValue = {
@@ -554,7 +558,7 @@ ipcMain.on('WebOpenUrl', (event, data) => {
     center: true,
     minWidth: 680,
     minHeight: 500,
-    icon: getStaticPath(path.join("images", "app.ico")),
+    icon: getStaticPath('icon_256.ico'),
     useContentSize: true,
     frame: true,
     hasShadow: true,
@@ -585,40 +589,31 @@ ipcMain.on('WebOpenUrl', (event, data) => {
 
 async function startAria2c() {
   try {
-    let basePath = getStaticPath('engine')
-    let confPath = path.join(basePath, 'aria2.conf')
-    if (!existsSync(confPath)) mkAriaConf(confPath)
-    let ariaPath = ''
-    if (process.platform === 'win32') {
-      ariaPath = 'aria2c.exe'
-    } else {
-      ariaPath = 'aria2c'
-    }
-    basePath = path.join(basePath, DEBUGGING ? path.join(process.platform, process.arch) : '')
-    let ariaFullPath = path.join(basePath, ariaPath)
-    if (!existsSync(ariaFullPath)) {
-      ShowError('找不到Aria程序文件', ariaFullPath)
+    const enginePath: string = getStaticPath('engine')
+    const confPath: string = path.join(enginePath, 'aria2.conf')
+    const ariaPath: string = is.windows() ? 'aria2c.exe' : 'aria2c'
+    const basePath: string = path.join(enginePath, is.dev() ? path.join(process.platform, process.arch) : '')
+    const ariaFilePath: string = path.join(basePath, ariaPath)
+    if (!existsSync(ariaFilePath)) {
+      ShowError('找不到Aria程序文件', ariaFilePath)
       return 0
     }
-    // process.chdir(basePath)
-    const options = { shell: true, windowsVerbatimArguments: true }
-    const port = await portIsOccupied(16800)
-    const subprocess = execFile(
-      '\"' + ariaFullPath + '\"',
-      [
-        '--stop-with-process=' + process.pid,
-        '-D',
-        '--conf-path=' + '\"'+ confPath + '\"',
-        '--rpc-listen-port=' + port
-      ],
-      options,
-        (error) => {
-          if (error) {
-            ShowError("启动Aria2c失败", error.message)
-            return 0
-          }
-        })
-    return port
+    const argsToStr = (args: any) => is.windows() ? `"${args}"` : `'${args}'`
+    const listenPort = await portIsOccupied(16800)
+    const options: SpawnOptions = {
+      shell: true,
+      stdio: is.dev() ? 'pipe' : 'ignore',
+      windowsHide: false,
+      windowsVerbatimArguments: true
+    }
+    const args = [
+      `--stop-with-process=${argsToStr(process.pid)}`,
+      `--conf-path=${argsToStr(confPath)}`,
+      `--rpc-listen-port=${argsToStr(listenPort)}`,
+      '-D'
+    ]
+    spawn(`${argsToStr(ariaFilePath)}`, args, options)
+    return listenPort
   } catch (e: any) {
     console.log(e)
   }

@@ -265,7 +265,7 @@ export default class AliDirFileList {
 
   
   private static async _ApiDirFileListCount(dir: IAliFileResp, type: string): Promise<number> {
-    const url = 'adrive/v3/file/search'
+    const url = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/search'
     const postData = {
       drive_id: dir.m_drive_id,
       marker: '',
@@ -364,12 +364,7 @@ export default class AliDirFileList {
   }
 
   static async _ApiSearchFileListOnePage(orderby: string, order: string, dir: IAliFileResp, pageIndex: number): Promise<boolean> {
-    let url = 'adrive/v3/file/search'
-    if (useSettingStore().uiShowPanMedia == false) url += '?jsonmask=next_marker%2Cpunished_file_count%2Ctotal_count%2Citems(' + AliDirFileList.ItemJsonmask + ')'
-    else url += '?jsonmask=next_marker%2Cpunished_file_count%2Ctotal_count%2Citems(' + AliDirFileList.ItemJsonmask + '%2Cvideo_media_metadata(duration%2Cwidth%2Cheight%2Ctime)%2Cvideo_preview_metadata%2Fduration%2Cimage_media_metadata)'
-
-    
-    
+    let url = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/search'
     let query = ''
     if (dir.dirID.startsWith('color')) {
       const color = dir.dirID.substring('color'.length).split(' ')[0].replace('#', 'c')
@@ -398,21 +393,24 @@ export default class AliDirFileList {
           type = type.substring(0, type.length - 4).trim()
           if (type && type.indexOf(' or ') > 0) query += '(' + type + ') and '
           else if (type) query += type + ' and '
-        } else if (k == 'size') {
-          const size = parseInt(v)
-          if (size > 0) query += 'size = ' + v + ' and '
-        } else if (k == 'max') {
-          const max = parseInt(v)
-          if (max > 0) query += 'size <= ' + v + ' and '
-        } else if (k == 'min') {
-          const min = parseInt(v)
-          if (min > 0) query += 'size >= ' + v + ' and '
-        } else if (k == 'begin') {
+        }
+        // else if (k == 'size') {
+        //   const size = parseInt(v)
+        //   if (size > 0) query += 'size = ' + v + ' and '
+        // }
+        // else if (k == 'max') {
+        //   const max = parseInt(v)
+        //   if (max > 0) query += 'size <= ' + v + ' and '
+        // } else if (k == 'min') {
+        //   const min = parseInt(v)
+        //   if (min > 0) query += 'size >= ' + v + ' and '
+        // }
+        else if (k == 'begin') {
           const dt = new Date(v).toISOString()
-          query += 'updated_at >= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
+          query += 'created_at >= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
         } else if (k == 'end') {
           const dt = new Date(v).toISOString()
-          query += 'updated_at <= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
+          query += 'created_at <= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
         } else if (k == 'ext') {
           const arr = v.split(',')
           let extin = ''
@@ -441,9 +439,8 @@ export default class AliDirFileList {
   }
 
   static async _ApiSearchFileListCount(dir: IAliFileResp): Promise<number> {
-    const url = 'adrive/v3/file/search'
-    
-    
+    const url = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/search'
+
     let query = ''
     if (dir.dirID.startsWith('color')) {
       const color = dir.dirID.substring('color'.length).split(' ')[0].replace('#', 'c')
@@ -472,21 +469,23 @@ export default class AliDirFileList {
           type = type.substring(0, type.length - 4).trim()
           if (type && type.indexOf(' or ') > 0) query += '(' + type + ') and '
           else if (type) query += type + ' and '
-        } else if (k == 'size') {
-          const size = parseInt(v)
-          if (size > 0) query += 'size = ' + v + ' and '
-        } else if (k == 'max') {
-          const max = parseInt(v)
-          if (max > 0) query += 'size <= ' + v + ' and '
-        } else if (k == 'min') {
-          const min = parseInt(v)
-          if (min > 0) query += 'size >= ' + v + ' and '
-        } else if (k == 'begin') {
+        }
+        // else if (k == 'size') {
+        //   const size = parseInt(v)
+        //   if (size > 0) query += 'size = ' + v + ' and '
+        // } else if (k == 'max') {
+        //   const max = parseInt(v)
+        //   if (max > 0) query += 'size <= ' + v + ' and '
+        // } else if (k == 'min') {
+        //   const min = parseInt(v)
+        //   if (min > 0) query += 'size >= ' + v + ' and '
+        // }
+        else if (k == 'begin') {
           const dt = new Date(v).toISOString()
-          query += 'updated_at >= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
+          query += 'created_at >= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
         } else if (k == 'end') {
           const dt = new Date(v).toISOString()
-          query += 'updated_at <= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
+          query += 'created_at <= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
         } else if (k == 'ext') {
           const arr = v.split(',')
           let extin = ''

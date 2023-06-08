@@ -161,6 +161,27 @@ export default class AliFileCmd {
     return ApiBatchSuccess(file_idList.length <= 1 ? '复制' : '批量复制', batchList, user_id, '')
   }
 
+  static async ApiGetFileBatchOpenApi(user_id: string, drive_id: string, file_idList: string[]): Promise<IAliGetFileModel[]> {
+    const url = "adrive/v1.0/openFile/batch/get"
+    const file_list: { file_id: string, drive_id: string}[] = []
+    file_idList.map((file_id) => {
+      file_list.push({drive_id, file_id})
+    })
+    const postData = {
+      file_list: file_list
+    }
+
+    const successList: IAliGetFileModel[] = []
+    const result = await AliHttp.Post(url, postData, user_id, '')
+    if (AliHttp.IsSuccess(result.code)) {
+      const fileItems = result.body.items as IAliFileItem[]
+      fileItems.forEach((fileItem) => {
+        successList.push(AliDirFileList.getFileInfo(fileItem, 'download_url'))
+      })
+    }
+    return successList
+  }
+
   
   static async ApiGetFileBatch(user_id: string, drive_id: string, file_idList: string[]): Promise<IAliGetFileModel[]> {
     const batchList = ApiBatchMaker('/file/get', file_idList, (file_id: string) => {

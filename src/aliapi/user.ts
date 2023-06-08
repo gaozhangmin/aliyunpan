@@ -280,9 +280,9 @@ export default class AliUser {
     if (!user_id) return 0
     const token = await UserDAL.GetUserTokenFromDB(user_id)
     if (!token) return 0
-    const url = 'adrive/v3/file/search'
+    const url = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/search'
     const postData = {
-      drive_id_list: [token?.default_drive_id, token?.pic_drive_id],
+      drive_id: token?.default_drive_id,
       marker: '',
       limit: 1,
       all: false,

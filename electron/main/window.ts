@@ -201,7 +201,7 @@ export function createTray() {
   ]
 
   
-  const icon = getStaticPath(path.join("images", "app.png"))
+  const icon = getStaticPath('icon_256.ico')
   AppWindow.appTray = new Tray(icon)
 
   const contextMenu = Menu.buildFromTemplate(trayMenuTemplate)
@@ -275,7 +275,7 @@ export function creatElectronWindow(width: number, height: number, center: boole
     minWidth: width > 680 ? 680 : width,
     minHeight: height > 500 ? 500 : height,
     center: center,
-    icon: getStaticPath(path.join("images", "app.png")),
+    icon: getStaticPath('icon_256.ico'),
     useContentSize: true,
     frame: false,
     transparent: false,

@@ -229,7 +229,7 @@ export async function topRestoreSelectedFile() {
       PanDAL.aReLoadOneDirToShow('', 'refresh', false)
     }
     await Sleep(2000)
-    const dirList = await AliFileCmd.ApiGetFileBatch(selectedData.user_id, selectedData.drive_id, diridList)
+    const dirList = await AliFileCmd.ApiGetFileBatchOpenApi(selectedData.user_id, selectedData.drive_id, diridList)
     console.log(diridList, dirList)
 
     const pset = new Set<string>()

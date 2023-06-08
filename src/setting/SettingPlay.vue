@@ -109,22 +109,21 @@ const handleSelectFFmpeg = () => {
           <a-radio tabindex='-1' value='auto'>加载视频同名字幕</a-radio>
           <a-radio tabindex='-1' value='select'>手动选择字幕</a-radio>
         </a-radio-group>
+        <a-popover position='bottom'>
+          <i class='iconfont iconbulb' />
+          <template #content>
+            <div style='min-width: 400px'>
+              默认：<span class='opred'>自动加载视频同名字幕</span>
+              <hr />
+              <span class='opred'>关闭字幕加载</span>：<br />
+              不自动加载字幕
+              <div class='hrspace'></div>
+              <span class='opred'>自动加载视频同名字幕</span>：<br />
+              当只有一个字幕文件时，无法比较字幕是否和视频名称同名<br />默认会加载该字幕
+            </div>
+          </template>
+        </a-popover>
       </div>
-      <a-popover position='bottom'>
-        <i class='iconfont iconbulb' />
-        <template #content>
-          <div style='min-width: 400px'>
-            默认：<span class='opred'>自动加载视频同名字幕</span>
-            <hr />
-            <span class='opred'>关闭字幕加载</span>：<br />
-            不自动加载字幕
-            <div class='hrspace'></div>
-            <span class='opred'>自动加载视频同名字幕</span>：<br />
-            当只有一个字幕文件时，无法比较字幕是否和视频名称同名<br />默认会加载该字幕
-            <div class='hrspace'></div>
-          </div>
-        </template>
-      </a-popover>
       <div class='settingspace'></div>
       <div class='settinghead'>网页播放进度</div>
       <div class='settingrow'>
@@ -143,81 +142,80 @@ const handleSelectFFmpeg = () => {
           </template>
         </a-popover>
       </div>
+      <div class='settingspace'></div>
+      <div class='settinghead'>播放器路径</div>
+      <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'win32' ? '' : 'none' }">
+        <a-input-search tabindex="-1" style="max-width: 100px" :readonly="true" button-text="选择" search-button :model-value="settingStore.uiVideoPlayerPath" @search="handleSelectPlayer" />
+        <a-popover position="bottom">
+          <i class="iconfont iconbulb" />
+          <template #content>
+            <div style="min-width: 400px">
+              <span class="opred">windows</span>：选择一个播放软件.exe
+              <hr />
+              直接手动选择播放软件的exe文件即可<br />
+              例如：选择<span class="opblue">C:\Program Files\Potplayer\Potplayer.exe</span><br />
+              也可以直接选择桌面上播放软件的快捷方式
+              <div class="hrspace"></div>
+              已测试：Potplayer，VLC，KMPlayer，恒星播放器，SMPlayer，MPC-HC
+              <div v-if="settingStore.uiVideoPlayerPath.toLowerCase().includes('mpv')" class='hitText'>
+                <div class="hrspace"></div>
+                【mpv】 支持倍速！支持外挂字幕！支持切换音轨！支持播放历史!
+              </div>
+              <div v-if="settingStore.uiVideoPlayerPath.toLowerCase().includes('potplayer')" class='hitText'>
+                <div class="hrspace"></div>
+                【potplayer】 支持倍速！支持外挂字幕！支持切换音轨！支持播放历史!
+              </div>
+              <div class="hrspace"></div>
+              详情请参阅<span class="opblue">帮助文档</span>
+            </div>
+          </template>
+        </a-popover>
+      </div>
+      <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'darwin' ? '' : 'none'}">
+        <a-input-search tabindex="-1" style="max-width: 300px" :readonly="true" button-text="选择" search-button :model-value="settingStore.uiVideoPlayerPath" @search="handleSelectPlayer" />
+        <a-popover position="bottom">
+          <i class="iconfont iconbulb" />
+          <template #content>
+            <div style="min-width: 400px">
+              <span class="opred">macOS</span>：选择一个播放软件.app
+              <hr />
+              1.点击 选择播放软件按钮 <span class="opblue">--></span> 弹出文件选择框，<br />
+              2.点击 左上 应用程序 <span class="opblue">--></span> 点击一个 播放软件 <span class="opblue">--></span> 点击 确定
+              <div v-if="settingStore.uiVideoPlayerPath.toLowerCase().includes('mpv')" class='hitText'>
+                <div class="hrspace"></div>
+                【mpv】 支持倍速！支持外挂字幕！支持切换音轨！支持播放历史!
+              </div>
+              <div v-if="settingStore.uiVideoPlayerPath.toLowerCase().includes('potplayer')" class='hitText'>
+                <div class="hrspace"></div>
+                【potplayer】 支持倍速！支持外挂字幕！支持切换音轨！支持播放历史!
+              </div>
+            </div>
+          </template>
+        </a-popover>
+      </div>
+      <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'linux' ? '' : 'none'}">
+        <a-auto-complete :data="['mpv', 'vlc', 'totem', 'mplayer', 'smplayer', 'xine', 'parole', 'kodi']" :style="{ width: '378px' }" placeholder="请填写一个播放软件" strict :model-value="settingStore.uiVideoPlayerPath" @change="cb({ uiVideoPlayerPath: $event })" />
+        <a-popover position="bottom">
+          <i class="iconfont iconbulb" />
+          <template #content>
+            <div style="min-width: 400px">
+              <span class="opred">linux</span>：手动填写一个播放命令
+              <hr />
+              你必须先自己在电脑上安装（sudo apt install xxx），<br />
+              然后才能使用这个播放软件，直接手动填写播放软件的名字
+              <div class="hrspace"></div>
+              已测试：mpv,vlc,totem,mplayer,smplayer,xine,parole,kodi
+              <div class="hrspace"></div>
+              详情请参阅<span class="opblue">帮助文档</span>
+            </div>
+          </template>
+        </a-popover>
+      </div>
     </template>
-    <div class="settinghead"></div>
-    <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'win32' ? '' : 'none', marginTop: '8px' }">
-      <a-input-search tabindex="-1" style="max-width: 100px" :readonly="true" button-text="播放软件" search-button :model-value="settingStore.uiVideoPlayerPath" @search="handleSelectPlayer" />
-      <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
-        <template #content>
-          <div style="min-width: 400px">
-            <span class="opred">windows</span>：选择一个播放软件.exe
-            <hr />
-            直接手动选择播放软件的exe文件即可<br />
-            例如：选择<span class="opblue">C:\Program Files\Potplayer\Potplayer.exe</span><br />
-            也可以直接选择桌面上播放软件的快捷方式
-            <div class="hrspace"></div>
-            已测试：Potplayer，VLC，KMPlayer，恒星播放器，SMPlayer，MPC-HC
-            <div v-if="settingStore.uiVideoPlayerPath.toLowerCase().includes('mpv')" class='hitText'>
-              <div class="hrspace"></div>
-              【mpv】 支持倍速！支持外挂字幕！支持切换音轨！支持播放历史!
-            </div>
-            <div v-if="settingStore.uiVideoPlayerPath.toLowerCase().includes('potplayer')" class='hitText'>
-              <div class="hrspace"></div>
-              【potplayer】 支持倍速！支持外挂字幕！支持切换音轨！支持播放历史!
-            </div>
-            <div class="hrspace"></div>
-            详情请参阅<span class="opblue">帮助文档</span>
-          </div>
-        </template>
-      </a-popover>
-    </div>
-      <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'darwin' ? '' : 'none', marginTop: '20px' }">
-      <a-input-search tabindex="-1" style="max-width: 300px" :readonly="true" button-text="播放器" search-button :model-value="settingStore.uiVideoPlayerPath" @search="handleSelectPlayer" />
-      <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
-        <template #content>
-          <div style="min-width: 400px">
-            <span class="opred">macOS</span>：选择一个播放软件.app
-            <hr />
-            1.点击 选择播放软件按钮 <span class="opblue">--></span> 弹出文件选择框，<br />
-            2.点击 左上 应用程序 <span class="opblue">--></span> 点击一个 播放软件 <span class="opblue">--></span> 点击 确定
-            <div v-if="settingStore.uiVideoPlayerPath.toLowerCase().includes('mpv')" class='hitText'>
-              <div class="hrspace"></div>
-              【mpv】 支持倍速！支持外挂字幕！支持切换音轨！支持播放历史!
-            </div>
-            <div v-if="settingStore.uiVideoPlayerPath.toLowerCase().includes('potplayer')" class='hitText'>
-              <div class="hrspace"></div>
-              【potplayer】 支持倍速！支持外挂字幕！支持切换音轨！支持播放历史!
-            </div>
-            <div class="hrspace"></div>
-            详情请参阅<span class="opblue">帮助文档</span>
-          </div>
-        </template>
-      </a-popover>
-    </div>
-
-    <div class="settingrow" :style="{ display: settingStore.uiVideoPlayer == 'other' && platform == 'linux' ? '' : 'none', marginTop: '8px' }">
-      <a-auto-complete :data="['mpv', 'vlc', 'totem', 'mplayer', 'smplayer', 'xine', 'parole', 'kodi']" :style="{ width: '378px' }" placeholder="请填写一个播放软件" strict :model-value="settingStore.uiVideoPlayerPath" @change="cb({ uiVideoPlayerPath: $event })" />
-      <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
-        <template #content>
-          <div style="min-width: 400px">
-            <span class="opred">linux</span>：手动填写一个播放命令
-            <hr />
-            你必须先自己在电脑上安装（sudo apt install xxx），<br />
-            然后才能使用这个播放软件，直接手动填写播放软件的名字
-            <div class="hrspace"></div>
-            已测试：mpv,vlc,totem,mplayer,smplayer,xine,parole,kodi
-            <div class="hrspace"></div>
-            详情请参阅<span class="opblue">帮助文档</span>
-          </div>
-        </template>
-      </a-popover>
-    </div>
-    <div class="settinghead">FFmpeg路径</div>
+    <div class="settingspace"></div>
+    <div class="settinghead">ffmpeg可执行程序</div>
     <div class="settingrow">
-      <a-input-search tabindex="-1" style="max-width: 300px" :readonly="true" button-text="FFMpeg" search-button :model-value="settingStore.ffmpegPath" @search="handleSelectFFmpeg" />
+      <a-input-search tabindex="-1" style="max-width: 300px" :readonly="true" button-text="选择" search-button :model-value="settingStore.ffmpegPath" @search="handleSelectFFmpeg" />
     </div>
     <div class="settingspace"></div>
     <div class="settinghead">自动标记视频</div>

@@ -5,7 +5,7 @@ import message from '../utils/message'
 import { IShareSiteModel, useServerStore } from '../store'
 import { Modal, Button, Space } from '@arco-design/web-vue'
 import { h } from 'vue'
-import { getAppNewPath, getResourcesPath, openExternal } from '../utils/electronhelper'
+import { getAppNewPath, getResourcesPath, openExternal, getUserDataPath } from '../utils/electronhelper'
 import ShareDAL from '../share/share/ShareDAL'
 import DebugLog from '../utils/debuglog'
 import { writeFile, rmSync, existsSync, readFileSync } from 'fs'
@@ -311,7 +311,7 @@ export default class ServerHttp {
   }
 
   static async AutoDownload(appNewUrl: string, html_url: string, file_name: string, hot: boolean, msgKey: string): Promise<boolean> {
-    const resourcesPath = hot ? getAppNewPath() : getResourcesPath(file_name)
+    const resourcesPath = hot ? getAppNewPath() : getUserDataPath(file_name)
     if (!hot && existsSync(resourcesPath)) {
       await this.autoInstallNewVersion(resourcesPath, msgKey)
       return true

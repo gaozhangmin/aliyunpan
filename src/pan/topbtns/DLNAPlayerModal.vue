@@ -72,7 +72,7 @@ export default defineComponent({
         )
       } else {
         
-        const preview = await AliFile.ApiVideoPreviewUrl(user_id, first.drive_id, first.file_id)
+        const preview = await AliFile.ApiVideoPreviewUrlOpenApi(user_id, first.drive_id, first.file_id)
         if (preview) {
           const subtitles: string[] = []
           if (preview.subtitles.length > 0) {
