@@ -396,7 +396,7 @@ export default class AliHttp {
         headers['Content-Type'] = 'application/json'
       }
       if (token && (url.startsWith(this.baseOpenApi)
-          || url.startsWith('https://openapi.aliyundrive.com/'))) {
+          || url.startsWith('https://openapi.aliyundrive.com'))) {
         headers['Authorization'] = token.token_type + ' ' + token.access_token_v2
         headers['x-request-id'] = v4().toString()
         headers['x-device-id'] = token.device_id

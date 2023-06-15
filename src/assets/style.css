@@ -4,7 +4,7 @@
     -moz-user-select: none;
     -webkit-user-select: none;
     -ms-user-select: none;
-    font-size: 16px;
+    /*font-size: 16px;*/
 }
 
 @media screen and (max-width: 500px) {
@@ -59,6 +59,7 @@ i.larrow:active {
     padding-left: 10px;
     font-size: 30px;
     font-weight: bold;
+    color: var(--color-text-1);
 }
 
 .title2 {
@@ -67,6 +68,7 @@ i.larrow:active {
     margin-bottom: 15px;
     font-size: 22px;
     font-weight: bold;
+    color: var(--color-text-1);
 }
 
 /*   1.2 Lists */
@@ -117,8 +119,8 @@ div.navbar.large .nav-title {
 
 div.navbar .left-button-group {
     position: absolute;
-    left: 18px;
-    top: 0;
+    right: 20px;
+    top: 50px;
     height: 45px;
     line-height: 45px;
     color: #5555ff;
@@ -175,4 +177,7 @@ div.listview a {
 div.listview a.selected {
     background: #5555ff;
     color: aliceblue;
+}
+.color-text-1 {
+    color: var(--color-text-1);
 }

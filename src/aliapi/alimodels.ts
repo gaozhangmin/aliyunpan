@@ -17,49 +17,50 @@ export interface IAliFileAudioMeta {
 
 export interface AliAlbumFileInfo {
   album_name?:string
-  "trashed": false,
-  "drive_id": string,
-  "file_id": string,
-  "category": string,
-  "content_hash": string,
-  "content_hash_name": string, //"sha1",
-  "content_type": string, //"image/jpeg",
-  "crc64_hash": string,
-  "created_at": string, //"2023-05-22T04:33:41.635Z",
-  "domain_id": string, //"bj29",
-  "download_url": string,
-  "encrypt_mode": string,
-  "file_extension": string,
-  "hidden": false,
+  "trashed": false
+  "drive_id": string
+  "file_id": string
+  "category": string
+  "content_hash": string
+  "content_hash_name": string //"sha1",
+  "content_type": string //"image/jpeg",
+  "crc64_hash": string
+  "created_at": string //"2023-05-22T04:33:41.635Z",
+  "domain_id": string //"bj29",
+  "download_url": string
+  "encrypt_mode": string
+  "file_extension": string
+  "hidden": false
   "image_media_metadata": {
-    "exif": string, //"{\"ColorSpace\":{\"value\":\"1\"},\"ComponentsConfiguration\":{\"value\":\"1 2 3 0\"},\"Compression\":{\"value\":\"6\"},\"ExifTag\":{\"value\":\"90\"},\"ExifVersion\":{\"value\":\"48 50 50 49\"},\"FileSize\":{\"value\":\"199971\"},\"FlashpixVersion\":{\"value\":\"48 49 48 48\"},\"Format\":{\"value\":\"jpg\"},\"FrameCount\":{\"value\":\"1\"},\"ImageHeight\":{\"value\":\"1350\"},\"ImageWidth\":{\"value\":\"1080\"},\"JPEGInterchangeFormat\":{\"value\":\"274\"},\"JPEGInterchangeFormatLength\":{\"value\":\"13322\"},\"PixelXDimension\":{\"value\":\"1080\"},\"PixelYDimension\":{\"value\":\"1350\"},\"ResolutionUnit\":{\"value\":\"2\"},\"SceneCaptureType\":{\"value\":\"0\"},\"XResolution\":{\"value\":\"72/1\"},\"YCbCrPositioning\":{\"value\":\"1\"},\"YResolution\":{\"value\":\"72/1\"}}",
-    "height": number,
+    "exif": string //"{\"ColorSpace\":{\"value\":\"1\"},\"ComponentsConfiguration\":{\"value\":\"1 2 3 0\"},\"Compression\":{\"value\":\"6\"},\"ExifTag\":{\"value\":\"90\"},\"ExifVersion\":{\"value\":\"48 50 50 49\"},\"FileSize\":{\"value\":\"199971\"},\"FlashpixVersion\":{\"value\":\"48 49 48 48\"},\"Format\":{\"value\":\"jpg\"},\"FrameCount\":{\"value\":\"1\"},\"ImageHeight\":{\"value\":\"1350\"},\"ImageWidth\":{\"value\":\"1080\"},\"JPEGInterchangeFormat\":{\"value\":\"274\"},\"JPEGInterchangeFormatLength\":{\"value\":\"13322\"},\"PixelXDimension\":{\"value\":\"1080\"},\"PixelYDimension\":{\"value\":\"1350\"},\"ResolutionUnit\":{\"value\":\"2\"},\"SceneCaptureType\":{\"value\":\"0\"},\"XResolution\":{\"value\":\"72/1\"},\"YCbCrPositioning\":{\"value\":\"1\"},\"YResolution\":{\"value\":\"72/1\"}}",
+    "height": number
     "image_quality": {
-      "overall_score": number,
-    },
+      "overall_score": number
+    }
     "image_tags": {
-      "confidence": number,
-      "name": string,
-      "parent_name": string,
-      "tag_level": number,
-    }[],
+      "confidence": number
+      "name": string
+      "parent_name": string
+      "tag_level": number
+    }[]
     "width": number
-  },
-  "labels": string[],
-  "mime_type": string,
-  "name": string,
-  "parent_file_id": string,
-  "punish_flag": number,
-  "size": number,
-  "starred": boolean,
-  "status": string,
-  "thumbnail": string,
-  "type": string,
-  "updated_at": string,
-  "upload_id": string,
-  "url": string,
-  "user_meta": string, //"{\"duration\":0,\"identifier\":\"1450B4B5-64CA-4DB9-8D47-739512013AC1/L0/001\",\"size\":199971,\"channel\":\"file_upload\",\"client\":\"iOS\",\"time\":1683595160503,\"hash\":\"BBD9656AD662B20BE260A4E16FFE856034FC3E3E\"}",
+  }
+  "labels": string[]
+  "mime_type": string
+  "name": string
+  "parent_file_id": string
+  "punish_flag": number
+  "size": number
+  "starred": boolean
+  "status": string
+  "thumbnail": string
+  "type": string
+  "updated_at": string
+  "upload_id": string
+  "url": string
+  "user_meta": string //"{\"duration\":0,\"identifier\":\"1450B4B5-64CA-4DB9-8D47-739512013AC1/L0/001\",\"size\":199971,\"channel\":\"file_upload\",\"client\":\"iOS\",\"time\":1683595160503,\"hash\":\"BBD9656AD662B20BE260A4E16FFE856034FC3E3E\"}",
   "ex_fields_info"?: {}
+  "next_marker"?: string
 }
 
 // [{"name": "cutecy", "friendly_name": "\u53ef\u53ef\u7231\u7231\n", "preview": ".DS_Store"}]

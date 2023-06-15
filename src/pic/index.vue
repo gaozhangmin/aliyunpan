@@ -1,14 +1,16 @@
 <template>
-  <div  v-show="appStore.appTab === 'pic'">
-    <div :class="['content-container', '']">
+  <div v-show="appStore.appTab === 'pic'">
+    <div :class="['content-container', sidebar_shown_on_pc_mode?'':'side-hidden-screen']">
       <ContentView :base_name="contentAlbumName" :album_friendly_name="contentFriendlyName"
+                   @should-show-sidebar="(val, mode) =>  mode === 'mobile' ? sidebar_shown_on_mobile_mode = val : sidebar_shown_on_pc_mode = val"
+                   :sidebar_shown_pc = "sidebar_shown_on_pc_mode"
                    @preview-photo="(a,b,c,d,e) => previewPhoto(a,b,c,d,e)">
-
-      </ContentView>
+      </ContentView >
     </div>
-    <div :class="['sidebar-container', '', '']">
+    <div :class="['sidebar-container', sidebar_shown_on_pc_mode?'':'side-hidden-screen', sidebar_shown_on_mobile_mode?'sidebar-mobile-shown':'']">
       <Sidebar ref="sidebar"
                @switch-album="(album_name, friendly_name) => { this.contentAlbumName = album_name; this.contentFriendlyName = friendly_name; }"
+               @should-show-sidebar="(val, mode) =>  mode === 'mobile' ? sidebar_shown_on_mobile_mode = val : sidebar_shown_on_pc_mode = val"
       ></Sidebar>
     </div>
     <div class="preview-container" v-show="preview_shown">
@@ -26,8 +28,10 @@ import ContentView from "./Content.vue";
 import Preview from './Preview.vue';
 import {useAppStore, useUserStore} from "../store";
 import {GetDriveID} from "../aliapi/utils";
+import 'ant-design-vue/es/tree/style/css'
 
 export default {
+  emits: ['previewPhoto'],
   name: 'App',
   components: {
     Sidebar, ContentView, Preview
@@ -35,8 +39,8 @@ export default {
   data: () => ({
     activeName: 'beautiful-album',
     content_view_shown: true,
-    // sidebar_shown_on_mobile_mode: false,
-    // sidebar_shown_on_pc_mode: true,
+    sidebar_shown_on_mobile_mode: false,
+    sidebar_shown_on_pc_mode: true,
     appStore: useAppStore(),
 
     preview_shown: false,
@@ -60,14 +64,12 @@ export default {
     },
 
     initialize() {
-      this.$refs.sidebar.getAlbumList();
-
       this.contentAlbumName = "all";
       this.contentFriendlyName = "图库";
       const intervalId = setInterval(() => {
-        if (GetDriveID(useUserStore().user_id, 'pic')) {
+        if (GetDriveID(useUserStore().user_id, 'pic') !== '') {
           this.$refs.sidebar.getAlbumList();
-          clearInterval(intervalId);
+          clearInterval(intervalId)
         }
       }, 1000);
     }
@@ -102,7 +104,7 @@ body {
   display: inline-block;
   width: 25%;
   height: 100%;
-  background: aliceblue;
+  //background: aliceblue;
 }
 .content-container {
   position: fixed;
@@ -110,7 +112,7 @@ body {
   right: 0;
   display: inline-block;
   width: 75%;
-  background: #fff;
+  //background: #fff;
   height: 100%;
 }
 
@@ -197,7 +199,6 @@ body {
   }
 }
 
-
 div.preview-container {
   position: fixed;
   z-index: 9999;
@@ -206,4 +207,18 @@ div.preview-container {
   height: 100%;
   width: 100%;
 }
+
+body[arco-theme='dark'] .preview-container {
+  color: rgba(211, 216, 241, 0.45) !important;
+}
+
+body[arco-theme='dark'] .content-container {
+  color: rgba(211, 216, 241, 0.45) !important;
+}
+
+body[arco-theme='dark'] .sidebar-container {
+  color: rgba(211, 216, 241, 0.45) !important;
+}
+
+
 </style>

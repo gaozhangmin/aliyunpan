@@ -39,6 +39,7 @@ const handleCheckVer = () => {
 <template>
   <div class="settingcard">
     <div class="appver">小白羊 {{ getAppVersion() }}</div>
+    <div class="settingspace"></div>
     <div class="settinghead">检查更新</div>
     <div class="settingrow">
         <a-button type="outline" size="mini" tabindex="-1" :loading="verLoading" @click="handleCheckVer">检查更新</a-button>

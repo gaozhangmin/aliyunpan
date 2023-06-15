@@ -91,7 +91,7 @@ export default defineComponent({
                       const qrCodeLink = document.createElement('a');
                       qrCodeLink.href = qrCodeUrl;
                       qrCodeLink.textContent = qrCodeUrl;
-                      qrCodeStatus.textContent = `二维码状态: ${status} 如果无法跳转，打开以下URL`
+                      qrCodeStatus.textContent = `二维码状态: ${status}。 如无法跳转，点击二维码链接`
                       qrCodeStatus.appendChild(qrCodeLink);
                       qrCodeLink.addEventListener('click', async (event) => {
                         event.preventDefault();
@@ -347,33 +347,36 @@ export default defineComponent({
             </a-row>
           </div>
           <div id="loginframediv" style="overflow: hidden; position: relative; width: 100%; height: 100%">
-            <Webview id="loginiframe" src="about:blank" style="width: 100%; height: 350px; border: none; overflow: hidden" />
-            <div id="qr-code-status" style="position: absolute; bottom: 0; left: 0; right: 0; text-align: center; font-size: 15px; padding: 10px; background-color: #fff; color: #000;"></div>
+            <Webview id="loginiframe" src="about:blank" style="width: 100%; height: 430px; border: none; overflow: hidden" />
+            <div id="qr-code-status" style="bottom: 0; left: 0; right: 0; text-align: center; font-size: 10px; background-color: #fff; color: red;"></div>
           </div>
+
         </div>
+
       </div>
     </div>
   </a-modal>
 </template>
 <style>
 #logindiv {
-  min-height: 400px;
+  min-height: 430px;
   height: calc(100%);
   text-align: center;
 }
 .logincontent {
   position: relative;
   margin: 0 auto;
-  min-height: 400px;
+  min-height: 430px;
 }
 #loginframedivloading {
   min-height: 60px;
 }
 .loginframe {
+  top: 0;
   position: relative;
-  width: 348px;
-  height: 300px;
-  min-height: 400px;
+  width: 430px;
+  height: 430px;
+  min-height: 430px;
   margin: 0 auto;
   overflow: hidden;
   text-align: center;
@@ -382,7 +385,7 @@ export default defineComponent({
   position: absolute;
   bottom: 0;
   left: 0;
-  background-color: white; /* 为了避免被覆盖，可以设置一个背景颜色 */
+  background-color: white;
 }
 #loginframediverror {
   position: absolute;

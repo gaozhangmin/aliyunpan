@@ -722,3 +722,9 @@ body[arco-theme='dark'] .toppanarea {
 .arco-scrollbar {
   height: 100%;
 }
+.settinghead {
+  color: var(--color-text-2);
+}
+.appver {
+  color: var(--color-text-2);
+}

@@ -1,20 +1,16 @@
 <template>
   <div style="padding-left: 10px; padding-right: 10px; height: 100%; overflow-y: auto" @scroll="handleScroll">
     <div :class="['navbar', shouldShowSemiTransparentNavBar ? '' : 'large']">
-      <div class="nav-title">
-        照片
-      </div>
       <div class="left-button-group">
         <a class="hidden-btn" href="javascript:void(0)" @click="() => { this.raise_event_show_sidebar(false, 'mobile'); this.raise_event_show_sidebar(false, 'pc') }">隐藏</a>
       </div>
     </div>
-
     <div class="title1 navtitle" :style="{ marginTop: '50px', opacity: 1-shouldShowSemiTransparentNavBar }">
       照片
     </div>
 
     <div class="listview" style="margin-top: 5px;">
-      <a :class="get_css_class_list_item('all')" @click="on_switch_album('all', '图库')" href="javascript:void(0)"><span>图库</span></a>
+      <a :class="get_css_class_list_item('all')" @click="on_switch_album('all', '图库')" href="javascript:void(0)"><span class="color-text-1">图库</span></a>
     </div>
 
     <div class="title2">
@@ -29,7 +25,7 @@
       <a :class="get_css_class_list_item(album.name)"  @click="on_switch_album(album.name, album.friendly_name)"  href="javascript:void(0)" v-for="album in album_list" :key="album.name">
         <div style="position: relative">
           <div class="list_img"  :style="{ backgroundImage: album.preview === '' ? '' : `url(${album.preview})` }"></div>
-          <span style="margin-left: 27px;">{{ album.friendly_name }}</span>
+          <span class="color-text-1" style="margin-left: 27px;">{{ album.friendly_name }}</span>
           <a class="delete-button" href="javascript:void(0)" @click.stop="deleteAlbum(album)">
             <i class="iconfont icondelete" />
           </a>
@@ -44,6 +40,7 @@ import '../assets/style.css';
 import '../assets/sidebar.css';
 import AliAlbum from '../aliapi/album'
 import AliHttp from '../aliapi/alihttp'
+import 'ant-design-vue/es/tree/style/css'
 
 export default {
   name: "Sidebar",
@@ -114,4 +111,5 @@ export default {
 .icondelete {
   color: red;
 }
+
 </style>

@@ -16,11 +16,11 @@
     </div>
     <div class="preview-mask" @click="() => { showNavBar = !showNavBar }"></div>
     <div class="navbar" style="width: 100% !important;" v-show="showNavBar" >
-      <div class="nav-title">
-        {{ photo_name }}
-      </div>
-      <div class="left-button-group" @click="raise_hide_preview()">
-        <i class="larrow"></i><span class="backtext">{{ catalog_name === '' ? '相册列表' : catalog_name }}</span>
+<!--      <div class="nav-title">-->
+<!--        {{ photo_name }}-->
+<!--      </div>-->
+      <div class="left-button-group1" @click="raise_hide_preview()">
+        <i class="iconfont iconarrow-left-1-icon"></i><span class="backtext">{{ catalog_name === '' ? '相册列表' : catalog_name }}</span>
       </div>
       <div class="right-button-group">
         <a href="javascript:void(0)" @click="downloadPhoto()">下载</a>
@@ -32,7 +32,7 @@
 import '../assets/style.css';
 import '../assets/preview.css';
 import message from "../utils/message";
-import {onUnmounted} from "vue";
+import 'ant-design-vue/es/tree/style/css'
 
 export default {
   name: "Preview",
@@ -178,5 +178,12 @@ export default {
 </script>
 
 <style scoped>
-
+.left-button-group1 {
+  position: absolute;
+  left: 18px;
+  top: 0;
+  height: 45px;
+  line-height: 45px;
+  color: #5555ff;
+}
 </style>

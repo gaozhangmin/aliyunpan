@@ -32,6 +32,14 @@ div.cnav .title-text {
     font-weight: bold;
 }
 
+.title-text {
+    margin-top: 10px;
+    margin-left: 10px;
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--color-text-1);
+}
+
 div.cnav button{
     border: none;
     border-radius: 20px;

@@ -24,6 +24,7 @@ export default defineComponent({
   align-items: center;
   user-select: none;
   display: inline-flex;
+  color: var(--color-text-2);
 }
 .myswitch .arco-switch {
   min-width: 36px;
