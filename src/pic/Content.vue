@@ -66,15 +66,19 @@ export default {
 
       if (this.base_name === 'all') {
         const photos = await AliAlbum.ApiLimitedPhotos(this.next_marker, PHOTO_PER_PAGE)
-        this.next_marker = photos[0].next_marker || ''
-        this.photo_list.push(...photos)
+        if (photos.length > 0) {
+          this.next_marker = photos[0].next_marker || ''
+          this.photo_list.push(...photos)
+        }
       } else {
         const photos = await AliAlbum.ApiAlbumListFiles(this.base_name, this.next_marker, PHOTO_PER_PAGE)
-        this.next_marker = photos[0].next_marker || ''
-        photos.forEach((photo) => {
-          photo.album_name = this.album_friendly_name
-        })
-        this.photo_list.push(...photos)
+        if (photos.length > 0) {
+          this.next_marker = photos[0].next_marker || ''
+          photos.forEach((photo) => {
+            photo.album_name = this.album_friendly_name
+          })
+          this.photo_list.push(...photos)
+        }
       }
       this.current_page_to_load++;
     },

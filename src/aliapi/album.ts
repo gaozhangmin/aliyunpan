@@ -182,7 +182,6 @@ export default class AliAlbum {
             image_url_process: "image/resize,w_1920/format,jpeg",
             limit: limited,
             marker:marker,
-            order_by: "file_image_time",
             order_direction: "DESC"
         }
         const results:AliAlbumFileInfo[] = []

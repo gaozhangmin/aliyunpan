@@ -146,12 +146,15 @@ export default class ServerHttp {
             && fileData.name.indexOf(process.arch) > 0
             && fileData.name.endsWith('.exe')) {
             updateData = fileData
+            break
           } else if (platform === 'darwin'
             && fileData.name.indexOf(process.arch) > 0
             && fileData.name.endsWith('.dmg')) {
             updateData = fileData
+            break
           } else if (fileData.name.endsWith('.asar')) {
             asarFileUrl = 'https://ghproxy.com/' + fileData.url
+            break
           }
         }
         if (tagName) {

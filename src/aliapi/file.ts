@@ -302,18 +302,7 @@ export default class AliFile {
   static async ApiGetFile(user_id: string, drive_id: string, file_id: string): Promise<IAliGetFileModel | undefined> {
     if (!user_id || !drive_id || !file_id) return undefined
     const fileItem = await AliFile.ApiFileInfoOpenApi(user_id, drive_id, file_id);
-
     if (fileItem) {
-      if (fileItem.type === 'file') {
-        const fileDetails = await AliFile.ApiFileInfoOpenApi(user_id, drive_id, fileItem.file_id);
-        fileItem.thumbnail = fileDetails?.thumbnail
-        fileItem.url = fileDetails?.url || fileItem.url
-        fileItem.download_url = fileDetails?.download_url || fileItem.download_url
-        fileItem.starred = fileDetails?.starred || fileItem.starred
-        fileItem.trashed = fileDetails?.trashed || fileItem.trashed
-        fileItem.deleted = fileDetails?.deleted || fileItem.deleted
-        fileItem.description = fileDetails?.description || fileItem.description
-      }
       return AliDirFileList.getFileInfo(fileItem, '')
     }
     return undefined
