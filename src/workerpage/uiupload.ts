@@ -98,7 +98,7 @@ export async function UploadReport(): Promise<void> {
     const item = keys.next().value as IUploadingUI
     const uploadState = item.Info.uploadState
     // "hashing" | "running" | "已暂停" | "success" | "error" (排队中 状态不可能出现)
-    if (item.IsRunning == false || uploadState == '已暂停') {
+    if (!item.IsRunning || uploadState == '已暂停') {
       
       stopList.push(item.Info)
       AliUploadDisk.DelFileUploadSpeed(item.UploadID)
@@ -130,7 +130,7 @@ export async function UploadReport(): Promise<void> {
       item.Info.speedStr = humanSizeSpeed(speed)
       reportList.push(item.Info)
       runingList.push(item.Info)
-      if (item.File.isDir == false && item.File.size > 3 * 1024 * 1024) saveList.push(item.Info)
+      if (!item.File.isDir && item.File.size > 3 * 1024 * 1024) saveList.push(item.Info)
     } else if (uploadState == '读取中') {
       item.Info.uploadSize = 0
       item.Info.Progress = 0

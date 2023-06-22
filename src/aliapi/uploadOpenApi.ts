@@ -375,11 +375,11 @@ export default class AliUploadOpenApi {
   }
 
   
-  static async UploadFileListUploadedParts(user_id: string, drive_id: string, file_id: string, upload_id: string, part_number_marker: number, uploadInfo: IUploadInfo): Promise<'neterror' | 'success' | 'error'> {
+  static async UploadFileListUploadedParts(user_id: string, drive_id: string, file_id: string, upload_id: string, part_number_marker: string, uploadInfo: IUploadInfo): Promise<'neterror' | 'success' | 'error'> {
     if (!user_id || !drive_id || !file_id || !upload_id) return 'error'
 
     const url = 'adrive/v1.0/openFile/listUploadedParts'
-    const postData = { drive_id: drive_id, upload_id: upload_id, file_id: file_id, part_number_marker /* 1开始 */ }
+    const postData = { drive_id: drive_id, upload_id: upload_id, file_id: file_id, next_part_number_marker:part_number_marker /* 1开始 */ }
     const resp = await AliHttp.Post(url, postData, user_id, '')
     if (resp.code >= 600 && resp.code <= 610) {
       return 'neterror' 
@@ -400,7 +400,7 @@ export default class AliUploadOpenApi {
         }
       }
       if (resp.body.next_part_number_marker && parseInt(resp.body.next_part_number_marker) > 0) {
-        const next = parseInt(resp.body.next_part_number_marker)
+        const next = resp.body.next_part_number_marker
         await this.UploadFileListUploadedParts(user_id, drive_id, file_id, upload_id, next, uploadInfo).catch(() => {})
       }
       return 'success'

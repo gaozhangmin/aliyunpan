@@ -459,7 +459,7 @@ const loadOnlineSub = async (art: Artplayer, item: any) => {
   if (data) {
     const blob = new Blob([data], { type: item.ext })
     onlineSubBlobUrl = URL.createObjectURL(blob)
-    await art.subtitle.switch(onlineSubBlobUrl, { name: item.name, type: item.ext })
+    await art.subtitle.switch(onlineSubBlobUrl, { escape:false, name: item.name, type: item.ext })
     return item.html
   } else {
     art.notice.show = `加载${item.name}字幕失败`
@@ -581,7 +581,7 @@ const getSubTitleList = async (art: Artplayer) => {
       if (art.subtitle.show) {
         if (!item.file_id) {
           art.notice.show = ''
-          await art.subtitle.switch(item.url, { name: item.name })
+          await art.subtitle.switch(item.url, { escape:false, name: item.name})
           return item.html
         } else {
           return await loadOnlineSub(art, item)

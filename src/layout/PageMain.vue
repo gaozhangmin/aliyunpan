@@ -250,14 +250,14 @@ const handleCheckVer = () => {
           </div>
 
           <div class="footerBar fix" v-show="footStore.uploadTotalSpeed" >
-            <i class="iconfont iconshangchuansudu" />
+            <i class="iconfont iconshangchuansudu" style='color: red !important;' />
             <span id="footUploadSpeed" class="footspeedstr">
               {{ footStore.uploadTotalSpeed }}
             </span>
           </div>
 
           <div class="footerBar fix" v-show="footStore.downloadTotalSpeed" >
-            <i class="iconfont iconxiazaisudu" />
+            <i class="iconfont iconxiazaisudu" style='color: red !important;' />
             <span id="footDownSpeed" class="footspeedstr">
               {{ footStore.downloadTotalSpeed }}
             </span>

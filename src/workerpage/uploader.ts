@@ -405,7 +405,7 @@ async function reloadUploadUrl(uploadInfo: IUploadInfo, fileui: IUploadingUI): P
   let isOk = await AliUploadOpenApi.UploadFilePartUrl(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo).catch(() => {})
   if (isOk != 'success') return isOk || 'codeerror'
   if (uploadInfo.part_info_list.length > 0) {
-    isOk = await AliUploadOpenApi.UploadFileListUploadedParts(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, 0, uploadInfo).catch(() => {})
+    isOk = await AliUploadOpenApi.UploadFileListUploadedParts(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, "0", uploadInfo).catch(() => {})
     if (isOk == 'success') {
       const part_info_list = uploadInfo.part_info_list
       let isUpload = true
