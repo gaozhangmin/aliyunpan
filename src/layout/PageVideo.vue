@@ -12,6 +12,8 @@ import AliFileCmd from '../aliapi/filecmd'
 
 const appStore = useAppStore()
 const pageVideo = appStore.pageVideo!
+let autoPlayNumber = 0
+let playbackRate = 1
 let ArtPlayerRef: Artplayer
 
 const options: Option = {
@@ -60,6 +62,7 @@ const playM3U8 = (video: HTMLMediaElement, url: string, art: Artplayer) => {
     hls.on(HlsJs.Events.MANIFEST_PARSED, async () => {
       await art.play().catch((err) => {})
       await getVideoCursor(art, pageVideo.play_cursor)
+      art.playbackRate = playbackRate
     })
     hls.on(HlsJs.Events.ERROR, (event, data) => {
       const errorType = data.type
@@ -102,10 +105,11 @@ onMounted(async () => {
   }, 1000)
   // 创建播放窗口
   await createVideo(name)
-  await defaultSetting(ArtPlayerRef)
   // 获取视频信息
   await getPlayList(ArtPlayerRef)
   await getVideoInfo(ArtPlayerRef)
+  // 加载设置
+  await defaultSetting(ArtPlayerRef)
 })
 
 const getCurrentVideoIndex = () => {
@@ -124,14 +128,17 @@ const createVideo = async (name: string) => {
   // z
   ArtPlayerRef.hotkey.add(90, () => {
     ArtPlayerRef.playbackRate = 1
+    playbackRate = 1
   })
   // x
   ArtPlayerRef.hotkey.add(88, () => {
     ArtPlayerRef.playbackRate -= 0.5
+    playbackRate -= 0.5
   })
   // c
   ArtPlayerRef.hotkey.add(67, () => {
     ArtPlayerRef.playbackRate += 0.5
+    playbackRate += 0.5
   })
   // 获取用户配置
   const storage = ArtPlayerRef.storage
@@ -147,15 +154,16 @@ const createVideo = async (name: string) => {
   ArtPlayerRef.on('ready', async () => {
     // @ts-ignore
     if (!ArtPlayerRef.hls) {
+      await ArtPlayerRef.play().catch((err) => {})
       await getVideoCursor(ArtPlayerRef, pageVideo.play_cursor)
-      await ArtPlayerRef.play()
+      ArtPlayerRef.playbackRate = playbackRate
     }
   })
   // 视频播放完毕
-  ArtPlayerRef.on('video:ended', () => {
-    updateVideoTime()
+  ArtPlayerRef.on('video:ended', async () => {
+    await updateVideoTime()
     if (storage.get('autoPlayNext')) {
-      const autoPlayNext = () => {
+      const autoPlayNext = async () => {
         const currentVideoIndex = getCurrentVideoIndex();
         if (currentVideoIndex + 1 >= playList.length) {
           ArtPlayerRef.notice.show = '视频播放完毕'
@@ -163,8 +171,8 @@ const createVideo = async (name: string) => {
         }
         const item = playList[currentVideoIndex + 1]
         if (item.file_id !== pageVideo.file_id) {
-          refreshSetting(ArtPlayerRef, item)
-          getPlayList(ArtPlayerRef, item.file_id)
+          await refreshSetting(ArtPlayerRef, item)
+          await getPlayList(ArtPlayerRef, item.file_id)
         } else {
           autoPlayNext()
         }
@@ -179,8 +187,8 @@ const createVideo = async (name: string) => {
 //   })
 
 // 播放已暂停
-  ArtPlayerRef.on('video:pause', () => {
-    updateVideoTime()
+  ArtPlayerRef.on('video:pause', async () => {
+    await updateVideoTime()
   })
 // 音量发生变化
   ArtPlayerRef.on('video:volumechange', () => {
@@ -194,7 +202,6 @@ const createVideo = async (name: string) => {
     if (totalDuration
         && totalDuration - ArtPlayerRef.currentTime > 0
         && totalDuration - ArtPlayerRef.currentTime <= endDuration) {
-      console.log("autoSkipEnd")
       ArtPlayerRef.seek = totalDuration
     }
   });
@@ -210,6 +217,7 @@ const getDirFileList = async (dir_id: string, hasDir: boolean, category: string 
         const fileInfo = {
           html: item.name,
           category: item.category,
+          description: item.description,
           name: item.name,
           file_id: item.file_id,
           ext: item.ext,
@@ -220,7 +228,7 @@ const getDirFileList = async (dir_id: string, hasDir: boolean, category: string 
       }
     }
   }
-  const filterList = hasDir ? [...childDirFileList, ...curDirFileList].sort((a, b)=> a.name.localeCompare(b.name, 'zh-CN')): curDirFileList
+  const filterList = hasDir ? [...childDirFileList, ...curDirFileList].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN')) : curDirFileList
   if (category) {
     return filterList.filter(file => file.category === category)
   }
@@ -234,7 +242,7 @@ const getDirFileList = async (dir_id: string, hasDir: boolean, category: string 
 const refreshSetting = async (art: Artplayer, item: any) => {
   if (pageVideo.file_id === item.file_id) return
   // 刷新文件
-  pageVideo.html = item.html.length > 20 ? item.html.substring(0, 40) + '...' : item.html
+  pageVideo.html = item.html
   pageVideo.play_cursor = item.play_cursor
   pageVideo.file_name = item.html
   pageVideo.file_id = item.file_id || ''
@@ -259,28 +267,30 @@ const defaultSetting = async (art: Artplayer) => {
   art.setting.add({
     name: 'autoJumpCursor',
     width: 250,
-    html: '播放进度',
-    tooltip: art.storage.get('autoJumpCursor') ? '打开' : '关闭',
+    html: '自动跳转',
+    tooltip: art.storage.get('autoJumpCursor') ? '跳转到历史进度' : '关闭',
     switch: art.storage.get('autoJumpCursor'),
     onSwitch: async (item: SettingOption) => {
-      item.tooltip = item.switch ? '关闭' : '打开'
+      item.tooltip = item.switch ? '关闭' : '跳转到历史进度'
       art.storage.set('autoJumpCursor', !item.switch)
       return !item.switch
     }
   })
-  art.setting.add({
-    name: 'autoPlayNext',
-    width: 250,
-    html: '自动连播',
-    tooltip: art.storage.get('autoPlayNext') ? '开启' : '关闭',
-    switch: art.storage.get('autoPlayNext'),
-    onSwitch: (item: SettingOption) => {
-      item.tooltip = item.switch ? '关闭' : '开启'
-      art.notice.show = '自动连播' + item.tooltip
-      art.storage.set('autoPlayNext', !item.switch)
-      return !item.switch
-    }
-  })
+  if (playList.length > 1) {
+    art.setting.add({
+      name: 'autoPlayNext',
+      width: 250,
+      html: '自动连播',
+      tooltip: art.storage.get('autoPlayNext') ? '开启' : '关闭',
+      switch: art.storage.get('autoPlayNext'),
+      onSwitch: (item: SettingOption) => {
+        item.tooltip = item.switch ? '关闭' : '开启'
+        art.notice.show = '自动连播' + item.tooltip
+        art.storage.set('autoPlayNext', !item.switch)
+        return !item.switch
+      }
+    })
+  }
   art.setting.add(
       {
         name: 'autoSkipBegin',
@@ -396,6 +406,7 @@ const getPlayList = async (art: Artplayer, file_id?: string) => {
           html: fileList[i].name,
           name: fileList[i].name,
           file_id: fileList[i].file_id,
+          description: fileList[i].description,
           play_cursor: fileList[i].play_cursor,
           default: fileList[i].file_id === pageVideo.file_id
         })
@@ -410,6 +421,7 @@ const getPlayList = async (art: Artplayer, file_id?: string) => {
     }
   }
   if (playList.length > 1) {
+    autoPlayNumber = playList.findIndex(list => list.file_id == pageVideo.file_id)
     art.controls.update({
       name: 'playList',
       index: 10,
@@ -417,9 +429,16 @@ const getPlayList = async (art: Artplayer, file_id?: string) => {
       style: { padding: '0 10px' },
       html: pageVideo.html.length > 20 ? pageVideo.html.substring(0, 40) + '...' : pageVideo.html,
       selector: playList,
-      onSelect: async (item: SettingOption) => {
-        updateVideoTime()
+      mounted: (panel: HTMLDivElement) => {
+        const $current = Artplayer.utils.queryAll('.art-selector-item', panel)
+          .find((item) => Number(item.dataset.index) == autoPlayNumber)
+        $current && Artplayer.utils.addClass($current, 'art-list-icon')
+      },
+      onSelect: async (item: SettingOption, element: HTMLElement) => {
+        await art.emit('video:pause')
+        await updateVideoTime()
         await refreshSetting(art, item)
+        Artplayer.utils.inverseClass(element, 'art-list-icon')
         return item.html.length > 20 ? item.html.substring(0, 40) + '...' : item.html
       }
     })
@@ -595,22 +614,22 @@ const getSubTitleList = async (art: Artplayer) => {
   })
 }
 
-const updateVideoTime =  () => {
-  return  AliFile.ApiUpdateVideoTimeOpenApi(
+const updateVideoTime =  async () => {
+  await AliFile.ApiUpdateVideoTimeOpenApi(
       pageVideo.user_id,
       pageVideo.drive_id,
       pageVideo.file_id,
       ArtPlayerRef.currentTime
   )
 }
-const handleHideClick = () => {
-  updateVideoTime().then(() => {
-    if (onlineSubBlobUrl.length > 0) {
-      URL.revokeObjectURL(onlineSubBlobUrl)
-      onlineSubBlobUrl = ''
-    }
-    window.close()
-  })
+const handleHideClick = async () => {
+  await updateVideoTime()
+  // 释放字幕Blob
+  if (onlineSubBlobUrl.length > 0) {
+    URL.revokeObjectURL(onlineSubBlobUrl)
+    onlineSubBlobUrl = ''
+  }
+  window.close()
 }
 
 onBeforeUnmount(() => {

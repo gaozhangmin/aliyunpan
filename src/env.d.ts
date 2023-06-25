@@ -18,7 +18,6 @@ declare enum TaskState {
 }
 
 declare type CheckNameMode =
-  | 'overwrite' // overwrite (直接覆盖，以后多版本有用)
   | 'auto_rename' // auto_rename (自动换一个随机名称)
   | 'refuse' // refuse (不会创建，告诉你已经存在)
   | 'ignore' // ignore (会创建重名的)

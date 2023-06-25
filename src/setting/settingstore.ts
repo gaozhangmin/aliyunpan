@@ -295,7 +295,7 @@ function _loadSetting(val: any) {
   setting.downSaveShowPro = defaultBool(val.downSaveShowPro, true)
   setting.downSmallFileFirst = defaultBool(val.downSmallFileFirst, false)
   setting.downUploadBreakFile = defaultBool(val.downUploadBreakFile, false)
-  setting.downUploadWhatExist = defaultValue(val.downUploadWhatExist, ['ignore', 'overwrite', 'auto_rename', 'refuse'])
+  setting.downUploadWhatExist = defaultValue(val.downUploadWhatExist, ['ignore', 'auto_rename', 'refuse'])
   setting.downIngoredList = val.downIngoredList && val.downIngoredList.length > 0 ? val.downIngoredList : ['thumbs.db', 'desktop.ini', '.ds_store', '.td', '~', '.downloading']
 
   setting.ariaSavePath = defaultString(val.ariaSavePath, '')
