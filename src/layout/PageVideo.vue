@@ -435,7 +435,6 @@ const getPlayList = async (art: Artplayer, file_id?: string) => {
         $current && Artplayer.utils.addClass($current, 'art-list-icon')
       },
       onSelect: async (item: SettingOption, element: HTMLElement) => {
-        await art.emit('video:pause')
         await updateVideoTime()
         await refreshSetting(art, item)
         Artplayer.utils.inverseClass(element, 'art-list-icon')
