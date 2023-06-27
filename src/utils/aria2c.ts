@@ -543,7 +543,7 @@ export async function AriaAddUrl(file: IStateDownFile): Promise<string> {
 
       const split = useSettingStore().downThreadMax
       const referer = Config.referer
-      const userAgent = Config.userAgent
+      const userAgent = Config.downAgent
       const multicall = [
         ['aria2.forceRemove', info.GID],
         ['aria2.removeDownloadResult', info.GID],

@@ -13,11 +13,19 @@ export default class AliFileCmd {
     const result = { file_id: '', error: '新建文件夹失败' }
     if (!user_id || !drive_id || !parent_file_id) return result
     const url = 'adrive/v1.0/openFile/create'
-    const pathSplitor = creatDirName.split('/');
+    const pathSplitor = creatDirName.split(path.sep);
     if (pathSplitor.length > 1) {
       let parentFileId = parent_file_id;
       for (let i = 0; i < pathSplitor.length; i++) {
         const folderName = pathSplitor[i];
+        const resp = await AliFileCmd.ApiCreatNewForder(user_id, drive_id, parentFileId, folderName);
+        parentFileId = resp.file_id
+      }
+      return { file_id:parentFileId, error: '' }
+    } else if (path.sep === '\\' && creatDirName.split('/').length > 1) {
+      let parentFileId = parent_file_id;
+      for (let i = 0; i < creatDirName.split('/').length; i++) {
+        const folderName = creatDirName.split('/')[i];
         const resp = await AliFileCmd.ApiCreatNewForder(user_id, drive_id, parentFileId, folderName);
         parentFileId = resp.file_id
       }
