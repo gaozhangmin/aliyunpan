@@ -175,11 +175,11 @@ export default defineComponent({
                 tokenfrom: 'account',
                 access_token: result.accessToken,
                 refresh_token: result.refreshToken,
-                expires_in: result.expiresIn,
+                expires_in: Date.now() + result.expiresIn * 1000,
                 token_type: result.tokenType,
                 access_token_v2: accessTokenV2,
                 refresh_token_v2: refreshTokenV2,
-                expires_in_v2: expiresInV2,
+                expires_in_v2: Date.now() + expiresInV2 * 1000,
                 token_type_v2: tokenTypeV2,
                 user_id: result.userId,
                 user_name: result.userName,
@@ -211,7 +211,7 @@ export default defineComponent({
                 }
               }
               console.log(tk2)
-              UserDAL.UserLogin(tk2).then(() => {
+              UserDAL.UserLogin(tk2, true).then(() => {
                 useUserStore().userShowLogin = false
                 if (window.WebClearCookies) window.WebClearCookies({
                   origin: 'https://auth.aliyundrive.com',

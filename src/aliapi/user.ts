@@ -11,6 +11,9 @@ import Config from "../utils/config";
 
 export const TokenReTimeMap = new Map<string, number>()
 export const TokenLockMap = new Map<string, number>()
+
+export const TokenReTimeMapV2 = new Map<string, number>()
+export const TokenLockMapV2 = new Map<string, number>()
 export const SessionLockMap = new Map<string, number>()
 export const SessionReTimeMap = new Map<string, number>()
 export default class AliUser {
@@ -62,6 +65,12 @@ export default class AliUser {
 
   }
 
+// {
+//   "token_type": "Bearer",
+//   "access_token": "",
+//   "refresh_token": "",
+//   "expires_in": 7200
+// }
   static async ApiTokenRefreshAccountV2_TMP(token: ITokenInfo): Promise<IUrlRespData> {
     const postData = {
       refresh_token: token.refresh_token_v2,
@@ -70,8 +79,63 @@ export default class AliUser {
     return  await AliHttp._Post(Config.tmpUrl, postData, '', '')
   }
 
-  static async ApiTokenRefreshAccount(token: ITokenInfo, showMessage: boolean): Promise<boolean> {
+  static async ApiRefreshAccessTokenV2(token: ITokenInfo, showMessage: boolean, force: boolean = false): Promise<boolean> {
+    if (!token.refresh_token_v2) return false
+    if (!force && token.expires_in_v2 &&  token.expires_in_v2 > Date.now()) {
+      return true
+    }
+    if (force) {
+      TokenLockMapV2.delete(token.user_id)
+      TokenReTimeMapV2.delete(token.user_id)
+    }
+    while (true) {
+      const lock = TokenLockMapV2.has(token.user_id)
+      if (lock) await Sleep(1000)
+      else break
+    }
+    TokenLockMapV2.set(token.user_id, Date.now())
+    const time = TokenReTimeMapV2.get(token.user_id) || 0
+    if (Date.now() - time < 1000 * 60 * 5) {
+      TokenLockMapV2.delete(token.user_id)
+      return true
+    }
+
+    const resp = await this.ApiTokenRefreshAccountV2_TMP(token)
+    TokenLockMapV2.delete(token.user_id)
+    if (AliHttp.IsSuccess(resp.code)) {
+      TokenReTimeMapV2.set(resp.body.user_id, Date.now())
+      token.tokenfrom = 'account'
+
+      token.refresh_token_v2 = resp.body.refresh_token
+      token.access_token_v2 = resp.body.access_token
+      token.expires_in_v2 = Date.now() + resp.body.expires_in * 1000
+      token.token_type_v2 = resp.body.token_type
+
+      UserDAL.SaveUserToken(token)
+      return true
+    } else {
+      if (resp.body?.code != 'InvalidParameter.RefreshToken') {
+        DebugLog.mSaveWarning('ApiTokenRefreshAccount err=' + (resp.code || '') + ' ' + (resp.body?.code || ''))
+      }
+      if (showMessage) {
+        message.error('刷新账号[' + token.user_name + '] v2 token 失败,需要重新登录')
+        UserDAL.UserLogOff(token.user_id)
+      } else {
+        UserDAL.UserClearFromDB(token.user_id)
+      }
+    }
+    return false
+  }
+
+  static async ApiRefreshAccessTokenV1(token: ITokenInfo, showMessage: boolean, force: boolean = false): Promise<boolean> {
     if (!token.refresh_token) return false
+    if (!force && token.expires_in &&  token.expires_in > Date.now()) {
+      return true
+    }
+    if (force) {
+      TokenLockMap.delete(token.user_id)
+      TokenReTimeMap.delete(token.user_id)
+    }
     while (true) {
       const lock = TokenLockMap.has(token.user_id)
       if (lock) await Sleep(1000)
@@ -88,21 +152,14 @@ export default class AliUser {
 
     const postData = { refresh_token: token.refresh_token, grant_type: 'refresh_token' }
     const resp = await AliHttp.Post(url, postData, '', '')
-    const respV2 = await this.ApiTokenRefreshAccountV2_TMP(token)
     TokenLockMap.delete(token.user_id)
-    if (AliHttp.IsSuccess(resp.code) && AliHttp.IsSuccess(respV2.code)) {
+    if (AliHttp.IsSuccess(resp.code)) {
       TokenReTimeMap.set(resp.body.user_id, Date.now())
       token.tokenfrom = 'account'
       token.access_token = resp.body.access_token
       token.refresh_token = resp.body.refresh_token
-      token.expires_in = resp.body.expires_in
+      token.expires_in = Date.now() + resp.body.expires_in * 1000
       token.token_type = resp.body.token_type
-
-      token.refresh_token_v2 = respV2.body.refresh_token
-      token.access_token_v2 = respV2.body.access_token
-      token.expires_in_v2 = respV2.body.expires_in
-      token.token_type_v2 = respV2.body.token_type
-
       token.user_id = resp.body.user_id
       token.user_name = resp.body.user_name
       token.avatar = resp.body.avatar
@@ -130,7 +187,7 @@ export default class AliUser {
         DebugLog.mSaveWarning('ApiTokenRefreshAccount err=' + (resp.code || '') + ' ' + (resp.body?.code || ''))
       }
       if (showMessage) {
-        message.error('刷新账号[' + token.user_name + '] token 失败,需要重新登录')
+        message.error('刷新账号[' + token.user_name + '] v1 token 失败,需要重新登录')
         UserDAL.UserLogOff(token.user_id)
       } else {
         UserDAL.UserClearFromDB(token.user_id)

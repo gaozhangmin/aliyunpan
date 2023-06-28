@@ -92,18 +92,29 @@ export default class AliHttp {
             'UserDeviceIllegality',
             'UserDeviceOffline',
             'DeviceSessionSignatureInvalid',
+            'AccessTokenInvalid',
+            'AccessTokenExpired',
+            'I400JD',
           ]
           if (errCode.includes(data.code)) isNeedLog = false
           // 自动刷新Token
           if (data.code == 'AccessTokenInvalid'
-            || data.code == 'AccessTokenExpired') {
+            || data.code == 'AccessTokenExpired' || data.code == 'I400JD') {
             if (token) {
-              if (window.IsMainPage) {
-                return await AliUser.ApiTokenRefreshAccount(token, true).then((isLogin: boolean) => {
+              const isOpenApi = config.url.includes('adrive/v1.0')
+              if (!isOpenApi) {
+                return await AliUser.ApiRefreshAccessTokenV1(token, true, true).then((isLogin: boolean) => {
                   if (isLogin) {
                     return { code: 401, header: '', body: '' } as IUrlRespData
                   }
                   return { code: 403, header: '', body: 'NetError 账号需要重新登录' } as IUrlRespData
+                })
+              } else {
+                return await AliUser.ApiRefreshAccessTokenV2(token, true, true).then((flag: boolean) => {
+                  if (flag) {
+                    return { code: 401, header: '', body: '' } as IUrlRespData
+                  }
+                  return { code: 403, header: '', body: '刷新OpenApiToken失败，请检查配置' } as IUrlRespData
                 })
               }
             } else {
@@ -342,8 +353,7 @@ export default class AliHttp {
           (url.includes('/file/search')
           || url.includes('/file/list')
           || url.includes('/file/walk')
-          || url.includes('/file/scan')
-          || url.includes('openFile'))
+          || url.includes('/file/scan'))
           && !resp.body?.code) await Sleep(1000)
       else if (AliHttp.HttpCodeBreak(resp.code)) return resp
       else if (i == 3) return resp

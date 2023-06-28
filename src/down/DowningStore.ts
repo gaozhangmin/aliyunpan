@@ -1,12 +1,10 @@
 import fuzzysort from 'fuzzysort'
 import { defineStore } from 'pinia'
 import DownDAL, { IStateDownFile } from './DownDAL'
-import { GetSelectedList, GetFocusNext, SelectAll, MouseSelectOne, KeyboardSelectOne } from '../utils/selecthelper'
+import { GetFocusNext, GetSelectedList, KeyboardSelectOne, MouseSelectOne, SelectAll } from '../utils/selecthelper'
 import { humanSize } from '../utils/format'
 import message from '../utils/message'
-import { useDownedStore } from '../store'
 import DBDown from '../utils/dbdown'
-import { AriaDeleteList, AriaStopList } from '../utils/aria2c'
 
 type Item = IStateDownFile
 type State = DowningState
@@ -214,26 +212,23 @@ const useDowningStore = defineStore('downing', {
     },
 
     mAddDownload({ downlist }: { downlist: Item[] }) {
-      const DowningList = this.ListDataRaw
       const savelist = []
-      const haslist = new Map<string, boolean>()
-      for (let i = 0; i < DowningList.length; i++) {
-        haslist.set(DowningList[i].DownID, true)
-      }
-      for (let d = 0; d < downlist.length; d++) {
-        const downitem = downlist[d]
+      const DowningList = this.ListDataRaw
+      const haslist = new Set(DowningList.map(item => item.DownID))
+      for (const downitem of downlist) {
         if (!haslist.has(downitem.DownID)) {
           Object.freeze(downitem.Info)
           savelist.push(downitem)
+          haslist.add(downitem.DownID)
         }
       }
-      DBDown.saveDownings(JSON.parse(JSON.stringify(savelist)))
-      DowningList.push(...savelist)
-      this.mRefreshListDataShow(true)
-      if (savelist.length == 0) {
+      if (savelist.length === 0) {
         message.info('下载任务已存在，请勿重复创建任务')
       } else {
-        message.success('成功创建 ' + savelist.length.toString() + '个下载任务')
+        DBDown.saveDownings(JSON.parse(JSON.stringify(savelist)))
+        DowningList.push(...savelist)
+        this.mRefreshListDataShow(true)
+        message.success(`成功创建 ${savelist.length} 个下载任务`)
       }
     },
 
@@ -283,9 +278,8 @@ const useDowningStore = defineStore('downing', {
     /**
      * 暂停下载，只改变状态，待定时任务处理
      */
-    mStopDowning() {
+    async mStopDowning() {
       const gidList: string[] = []
-      const downIDList: string[] = []
       const downList: Item[] = []
       const DowningList = this.ListDataRaw
       for (const DownID of this.ListSelected) {
@@ -294,7 +288,6 @@ const useDowningStore = defineStore('downing', {
             const down = DowningList[j].Down
             if (down.IsCompleted) continue
             gidList.push(DowningList[j].Info.GID)
-            downIDList.push(DowningList[j].DownID)
             downList.push(DowningList[j])
             down.IsDowning = false
             down.IsCompleted = false
@@ -310,21 +303,19 @@ const useDowningStore = defineStore('downing', {
           }
         }
       }
-      DownDAL.stopDowning(downList, gidList)
+      await DownDAL.stopDowning(downList, gidList)
       this.mRefreshListDataShow(true)
     },
 
     /**
      * 暂停全部
      */
-    mStopAllDowning() {
+    async mStopAllDowning() {
       const gidList: string[] = []
-      const downIDList: string[] = []
       const DowningList = this.ListDataRaw
       for (let j = 0; j < DowningList.length; j++) {
         const down = DowningList[j].Down
         if (down.IsCompleted) continue
-        downIDList.push(DowningList[j].DownID)
         gidList.push(DowningList[j].Info.GID)
         down.IsDowning = false
         down.IsStop = true
@@ -336,7 +327,7 @@ const useDowningStore = defineStore('downing', {
         down.FailedMessage = ''
         down.AutoTry = 0
       }
-      DownDAL.stopDowning(DowningList, gidList)
+      await DownDAL.stopDowning(DowningList, gidList)
       this.mRefreshListDataShow(true)
     },
 
@@ -345,44 +336,45 @@ const useDowningStore = defineStore('downing', {
      * 注：下载服务中的执行列表，请根据状态做进一步处理
      * @param downIDList
      */
-    mDeleteDowning(downIDList: string[]) {
+    async mDeleteDowning(downIDList: string[]) {
       const gidList: string[] = []
-      const DowningList = this.ListDataRaw
       const newListSelected = new Set(this.ListSelected)
       const newList: Item[] = []
+      const DowningList: Item[] = this.ListDataRaw
+      const deleteList: Item[] = []
       for (let j = 0; j < DowningList.length; j++) {
         const DownID = DowningList[j].DownID
         if (downIDList.includes(DownID)) {
-          gidList.push(DowningList[j].Info.GID)
           DowningList[j].Down.DownState = '待删除'
-          if (newListSelected.has(DownID)) newListSelected.delete(DownID)
+          gidList.push(DowningList[j].Info.GID)
+          deleteList.push(DowningList[j])
+          if (newListSelected.has(DownID)) {
+            newListSelected.delete(DownID)
+          }
         } else {
           newList.push(DowningList[j])
         }
       }
       this.ListDataRaw = newList
       this.ListSelected = newListSelected
-      DownDAL.deleteDowning(false, DowningList, gidList)
+      await DownDAL.deleteDowning(false, deleteList, gidList)
       this.mRefreshListDataShow(true)
-      AriaStopList(gidList).then(r => {})
-      AriaDeleteList(gidList).then(r => {})
-      // DownDAL.deleteDowning(false, downIDList) // TODO
     },
 
     /**
      * 删除全部，修改为“待删除”状态，并从列表中删除 <br/>
      * 注：下载服务中的执行列表，请根据状态做进一步处理
      */
-    mDeleteAllDowning() {
+    async mDeleteAllDowning() {
       const gidList: string[] = []
       const DowningList = this.ListDataRaw
-      this.ListSelected = new Set<string>()
       for (let j = 0; j < DowningList.length; j++) {
         DowningList[j].Down.DownState = '待删除'
         gidList.push(DowningList[j].Info.GID)
       }
+      await DownDAL.deleteDowning(true, DowningList, gidList)
       DowningList.splice(0, DowningList.length)
-      DownDAL.deleteDowning(true, DowningList, gidList)
+      this.ListSelected = new Set<string>()
       this.mRefreshListDataShow(true)
     },
 
@@ -413,35 +405,56 @@ const useDowningStore = defineStore('downing', {
       this.mRefreshListDataShow(true)
     },
 
-    mSaveToDowned(DownID: string) {
+    mUpdateDownState(DownID: string, state: string, msg?: string) {
       const DowningList = this.ListDataRaw
-      for (let j = 0; j < DowningList.length; j++) {
-        if (DowningList[j].DownID == DownID && DowningList[j].Down.DownState === '已完成') {
-          const item = DowningList[j]
-          DowningList.splice(j, 1)
-          DBDown.deleteDowning(item.DownID)
-          item.Down.DownTime = Date.now()
-          item.DownID = item.Down.DownTime.toString() + '_' + item.DownID
-          useDownedStore().ListDataRaw.splice(0, 0, item)
-          useDownedStore().mRefreshListDataShow(true)
-          DBDown.saveDowned(item.DownID, JSON.parse(JSON.stringify(item)))
-          break
-        }
+      const updateState: any = {
+        DownID: DownID,
+        IsDowning: false,
+        IsCompleted: state === 'downed',
+        DownProcess: 0,
+        DownSpeedStr: '',
+        DownState: '',
+        AutoTry: 0,
+        IsFailed: false,
+        IsStop: false,
+        FailedCode: 0,
+        FailedMessage: ''
       }
-      if (this.ListSelected.has(DownID)) this.ListSelected.delete(DownID)
-    },
-
-    mUpdateDownState(data: any) {
-      const DowningList = this.ListDataRaw
-      const DownID = data.DownID
+      switch (state) {
+        case 'start':
+          updateState.DownState = '解析中'
+          updateState.IsDowning = true
+          updateState.DownTime = Date.now()
+          break
+        case 'success':
+          updateState.IsDowning = true
+          updateState.DownState = '下载中'
+          break
+        case 'downed':
+          updateState.IsDowning = true
+          updateState.DownState = '已完成'
+          updateState.DownProcess = 100
+          break
+        case '已暂停':
+          updateState.IsDowning = false
+          updateState.DownState = '已暂停'
+          updateState.IsStop = true
+          break
+        default:
+          updateState.DownState = '已出错'
+          updateState.AutoTry = Date.now()
+          updateState.IsFailed = true
+          updateState.FailedCode = 504
+          updateState.FailedMessage = msg || state
+          break
+      }
       for (let j = 0; j < DowningList.length; j++) {
         if (DowningList[j].DownID == DownID) {
-          DowningList[j].Down = { ...DowningList[j].Down, ...data }
+          DowningList[j].Down = {  ...DowningList[j].Down, ...updateState }
           break
         }
       }
     }
-
   }
 })
 
