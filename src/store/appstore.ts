@@ -78,7 +78,8 @@ const useAppStore = defineStore('app', {
       ['down', 'DowningRight'],
       ['share', 'OtherShareRight'],
       ['rss', 'AppSame'],
-      ['setting', '']
+      ['setting', ''],
+      ['res', '']
     ]),
     appDark: false,
     appShutDown: false
@@ -128,7 +129,8 @@ const useAppStore = defineStore('app', {
           ['down', 'DowningRight'],
           ['share', 'OtherShareRight'],
           ['rss', 'AppSame'],
-          ['setting', '']
+          ['setting', ''],
+          ['res', '']
         ])
       })
     },
@@ -188,6 +190,10 @@ const useAppStore = defineStore('app', {
           this.appTab = 'pan'
           break
         }
+        case 'res': {
+          this.appTab = 'res'
+          break
+        }
       }
       onHideRightMenu()
     },
@@ -229,6 +235,10 @@ const useAppStore = defineStore('app', {
           next(this.appTabMenuMap, this.appTab, ['SettingUI', 'SettingDown', 'SettingPan', 'SettingDebug', 'SettingAria', 'SettingLog'])
           const menu = this.appTabMenuMap.get('setting')!
           document.getElementById(menu)?.scrollIntoView()
+          break
+        }
+        case 'res': {
+          next(this.appTabMenuMap, this.appTab, ['res', ''])
           break
         }
       }

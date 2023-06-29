@@ -93,10 +93,33 @@ export default defineComponent({
             <template #icon> <i class="iconfont iconcopy" /> </template>
             <template #default>复制到...</template>
           </a-doption>
-          <a-doption class="danger" @click="() => menuTrashSelectFile(istree, false)">
+<!--          <a-doption class="danger" @click="() => menuTrashSelectFile(istree, false)">-->
+<!--            <template #icon> <i class="iconfont icondelete" /> </template>-->
+<!--            <template #default>回收站</template>-->
+<!--          </a-doption>-->
+        </template>
+      </a-dsubmenu>
+      <a-dsubmenu  class="rightmenu" trigger="hover">
+        <template #default>
+          <div @click.stop="() => {}">
+            <span class="arco-dropdown-option-icon"><i class="iconfont iconmoveto" style="opacity: 0.8"></i></span>删除
+          </div>
+        </template>
+        <template #content>
+          <a-doption title="Ctrl+Delete" class="danger" @click="() => menuTrashSelectFile(istree, false)">
             <template #icon> <i class="iconfont icondelete" /> </template>
-            <template #default>回收站</template>
+            <template #default>放回收站</template>
           </a-doption>
+          <a-dsubmenu class="rightmenu" trigger="hover">
+            <template #default>
+              <span class="arco-dropdown-option-icon"><i class="iconfont iconrest"></i></span>彻底删除
+            </template>
+            <template #content>
+              <a-doption title="Ctrl+Shift+Delete" class="danger" @click="() => menuTrashSelectFile(istree, true)">
+                <template #default>删除后无法还原</template>
+              </a-doption>
+            </template>
+          </a-dsubmenu>
         </template>
       </a-dsubmenu>
 
