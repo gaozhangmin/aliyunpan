@@ -27,8 +27,8 @@ export function modalCreatNewShareLink(sharetype: string, filelist: IAliGetFileM
   useModalStore().showModal('creatshare', { sharetype, filelist })
 }
 
-export function modalDaoRuShareLink() {
-  useModalStore().showModal('daorushare', {})
+export function modalDaoRuShareLink(shareUrl='', sharePwd='') {
+  useModalStore().showModal('daorushare', {shareUrl, sharePwd})
 }
 export function modalDaoRuShareLinkMulti() {
   useModalStore().showModal('daorusharemulti', {})

@@ -60,7 +60,7 @@ export default class AliHttp {
     if (code >= 200 && code <= 300) return true
     if (code == 400) return true
     // if (code == 401) return true
-    if (code >= 402 && code <= 429) return true
+    if (code >= 402 && code <= 428) return true
     if (code == 404) return true
     if (code == 409) return true
     return false

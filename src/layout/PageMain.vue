@@ -183,13 +183,13 @@ const handleCheckVer = () => {
         </a-button>
         <div v-show="appStore.appTab !== 'pic'" class="title">小白羊 {{ Config.appVersion }}</div>
 
-        <a-menu mode="horizontal" :selected-keys="[appStore.appTab]" @update:selected-keys="appStore.toggleTab($event[0])">
+        <a-menu class="custom-menu" mode="horizontal" :selected-keys="[appStore.appTab]" @update:selected-keys="appStore.toggleTab($event[0])">
           <a-menu-item key="pan" title="Alt+1">网盘</a-menu-item>
           <a-menu-item key="pic" title="Alt+2">相册</a-menu-item>
           <a-menu-item key="down" title="Alt+3">传输</a-menu-item>
           <a-menu-item key="share" title="Alt+4">分享</a-menu-item>
           <a-menu-item key="rss" title="Alt+5">插件</a-menu-item>
-          <a-menu-item key="res" title="Alt+6">4K资源</a-menu-item>
+          <a-menu-item key="res" title="Alt+6">4K影视</a-menu-item>
         </a-menu>
 
         <div class="flexauto"></div>
@@ -662,5 +662,9 @@ body[arco-theme='dark'] #footer2 audio::-webkit-media-controls-time-remaining-di
     transform: rotate(0deg);
     transition-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
   }
+}
+.custom-menu {
+  /* 添加合适的宽度 */
+  width: 50% !important;
 }
 </style>
