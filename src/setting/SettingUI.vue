@@ -1,16 +1,31 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import message from '../utils/message'
 import useSettingStore from './settingstore'
 import MySwitch from '../layout/MySwitch.vue'
 import Config from '../utils/config'
 import ServerHttp from '../aliapi/server'
 import os from 'os'
-import { getResourcesPath } from '../utils/electronhelper'
+import {copyToClipboard, getResourcesPath} from '../utils/electronhelper'
 import { existsSync, readFileSync } from 'fs'
 
 const settingStore = useSettingStore()
 const cb = (val: any) => {
   settingStore.updateStore(val)
+}
+
+const copyCookies = async () => {
+  const cookies = await window.WebGetCookies({ url: 'https://www.aliyundrive.com' }) as []
+  if (cookies.length > 0) {
+    let cookiesText = ''
+    cookies.forEach(cookie => {
+      cookiesText += cookie['name'] + '=' + cookie['value'] + ';'
+    })
+    copyToClipboard(cookiesText)
+    message.success('当前账号的Cookies已复制到剪切板')
+  } else {
+    message.error('当前账号的Cookies不存在')
+  }
 }
 
 const getAppVersion = () => {
@@ -45,6 +60,13 @@ const handleCheckVer = () => {
         <a-button type="outline" size="mini" tabindex="-1" :loading="verLoading" @click="handleCheckVer">检查更新</a-button>
     </div>
     <div class="settingspace"></div>
+    <div class='settinghead'>阿里云盘账号</div>
+    <div class='settingrow'>
+      <a-button type='outline' size='small' tabindex='-1' @click='copyCookies()'>
+        复制Cookies
+      </a-button>
+    </div>
+    <div class="settingspace"></div>
     <div class="settinghead">外观</div>
     <div class="settingrow">
       <button class="theme-button system-theme" @click="cb({ uiTheme: 'system' })">
@@ -72,11 +94,11 @@ const handleCheckVer = () => {
         </template>
       </a-popover>
     </div>
-<!--    <div class="settingspace"></div>-->
-<!--    <div class="settinghead">开机自启动</div>-->
-<!--    <div class="settingrow">-->
-<!--        <MySwitch :value="settingStore.launchAtStartup" @update:value="cb({ launchAtStartup: $event })"></MySwitch>-->
-<!--    </div>-->
+    <div class="settingspace"></div>
+    <div class="settinghead">启动时检查更新</div>
+    <div class="settingrow">
+      <MySwitch :value="settingStore.uiLaunchAutoCheckUpdate" @update:value="cb({ uiLaunchAutoCheckUpdate: $event })">自动检查更新</MySwitch>
+    </div>
     <div class="settingspace"></div>
     <div class="settinghead">自动签到</div>
     <div class="settingrow">

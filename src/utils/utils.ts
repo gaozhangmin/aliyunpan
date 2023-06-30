@@ -1,5 +1,6 @@
 import { deflateRawSync, inflateRawSync } from 'zlib'
 import crypto from 'crypto'
+import pkg from '../../package.json'
 
 export function ArrayCopyReverse(arr: any[]): any[] {
   const copy: any[] = []
@@ -125,4 +126,8 @@ export function md5Code(key: string) {
   const buffa = Buffer.from(key)
   const md5a = crypto.createHash('md5').update(buffa).digest('hex')
   return md5a
+}
+
+export function getPkgVersion() {
+  return pkg.version
 }

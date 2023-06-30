@@ -1,6 +1,9 @@
 import DebugLog from '../utils/debuglog'
 import { onHideRightMenu } from '../utils/keyboardhelper'
 import { defineStore } from 'pinia'
+import AliHttp from "../aliapi/alihttp";
+import UserDAL from "../user/userdal";
+import {useUserStore} from "./index";
 
 export interface IPageOffice {
   user_id: string
@@ -54,6 +57,8 @@ export interface AppState {
   appPage: string
   
   appTab: string
+
+  isVip: boolean
   
   appTabMenuMap: Map<string, string>
   appDark: boolean
@@ -72,6 +77,7 @@ const useAppStore = defineStore('app', {
     appTheme: 'light',
     appPage: 'PageLoading',
     appTab: 'pan',
+    isVip: false,
     appTabMenuMap: new Map<string, string>([
       ['pan', 'wangpan'],
       ['pic', 'allpic'],
@@ -79,7 +85,7 @@ const useAppStore = defineStore('app', {
       ['share', 'OtherShareRight'],
       ['rss', 'AppSame'],
       ['setting', ''],
-      ['res', '']
+      ['movie', '']
     ]),
     appDark: false,
     appShutDown: false
@@ -130,15 +136,20 @@ const useAppStore = defineStore('app', {
           ['share', 'OtherShareRight'],
           ['rss', 'AppSame'],
           ['setting', ''],
-          ['res', '']
+          ['movie', '']
         ])
       })
     },
     
-    toggleTab(tab: string) {
+    async toggleTab(tab: string) {
       if (this.appTab != tab) {
         this.appTab = tab
-        if (tab == 'setting') DebugLog.aLoadFromDB() 
+        if (tab == 'setting') DebugLog.aLoadFromDB()
+        if (tab == 'movie') {
+          if (useUserStore().userLogined && !this.isVip) {
+            this.isVip = await AliHttp.isVip(UserDAL.GetUserToken(useUserStore().user_id).phone)
+          }
+        }
         onHideRightMenu()
       }
     },
@@ -190,8 +201,8 @@ const useAppStore = defineStore('app', {
           this.appTab = 'pan'
           break
         }
-        case 'res': {
-          this.appTab = 'res'
+        case 'movie': {
+          this.appTab = 'movie'
           break
         }
       }
@@ -237,8 +248,8 @@ const useAppStore = defineStore('app', {
           document.getElementById(menu)?.scrollIntoView()
           break
         }
-        case 'res': {
-          next(this.appTabMenuMap, this.appTab, ['res', ''])
+        case 'movie': {
+          next(this.appTabMenuMap, this.appTab, ['movie', ''])
           break
         }
       }

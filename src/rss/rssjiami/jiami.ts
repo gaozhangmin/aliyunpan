@@ -2,107 +2,48 @@ import { FileSystemErrorMessage } from '../../utils/filehelper'
 import DebugLog from '../../utils/debuglog'
 import message from '../../utils/message'
 import fsPromises from 'fs/promises'
+import { Buffer } from 'buffer'
 import path from 'path'
-import fs from 'fs'
-import cryptoJS from 'crypto-js'
 
-
-export async function DoEncryption(dirPath: string, breakSmall: boolean=false,
-                                     matchExtList: string[], password:string,
-                                     keepOriginFile:boolean=false): Promise<number> {
+export async function DoXiMa(dirPath: string, breakSmall: boolean, matchExtList: string[]): Promise<number> {
   const fileList: string[] = []
   await GetAllFiles(dirPath, breakSmall, fileList)
   if (fileList.length == 0) {
     message.error('选择的文件夹下找不到任何文件')
     return 0
   } else {
-    const targetFileList:string[] = []
+    let rand = Date.now()
+    const rand1 = rand % 256
+    rand = rand / 128
+    const rand2 = Math.floor(rand % 256)
+    let rand3 = Math.floor(Math.random() * 255)
+
+    let RunCount = 0
     for (let i = 0, maxi = fileList.length; i < maxi; i++) {
-      const file = fileList[i]
+      const file = fileList[i].toLowerCase().trimEnd()
       if (matchExtList.length > 0) {
+
+        let find = false
         for (let j = 0; j < matchExtList.length; j++) {
           if (file.endsWith(matchExtList[j])) {
-            targetFileList.push(file)
+            find = true
             break
           }
         }
-      } else {
-        targetFileList.push(file)
+        if (find == false) continue
+      }
+      try {
+        const rand4 = (i % 255) + 1
+        if (rand4 == 200) rand3 = Math.floor(Math.random() * 255)
+        const buff = Buffer.from([0, rand1, rand2, rand3, rand4])
+        fsPromises.appendFile(fileList[i], buff).catch(() => {})
+        RunCount++
+      } catch (err: any) {
+        DebugLog.mSaveDanger('XM appendFile' + (err.message || '') + fileList[i])
       }
     }
-    if (targetFileList.length > 0) {
-      return encryptFiles(targetFileList, password, keepOriginFile)
-    } else {
-      message.error('无符合格式的待加密文件')
-      return 0
-    }
+    return RunCount
   }
-}
-
-export async function DoDecryption(dirPath: string, password:string): Promise<number> {
-  const fileList: string[] = []
-  await GetAllFiles(dirPath, false, fileList)
-  if (fileList.length == 0) {
-    message.error('选择的文件夹下找不到任何文件')
-    return 0
-  } else {
-    const targetFileList:string[] = []
-    for (let i = 0, maxi = fileList.length; i < maxi; i++) {
-      const file = fileList[i]
-      if (file.endsWith('.enc')) {
-        targetFileList.push(file)
-      }
-    }
-    if (targetFileList.length > 0) {
-      return decryptionFiles(targetFileList, password)
-    } else {
-      message.error('文件夹无待解密文件(.enc)')
-      return 0
-    }
-
-  }
-}
-
-
-function decryptionFiles(fileList:string[],  password:string):number {
-  let count = 0
-  fileList.forEach(filePath => {
-    try {
-      const data = fs.readFileSync(filePath).toString();
-      const decryptedData = cryptoJS.AES.decrypt(data, password).toString(cryptoJS.enc.Utf8);
-      const decryptedFile = filePath.replace(/\.enc$/, '');
-      fs.writeFileSync(decryptedFile, decryptedData);
-      count++
-      console.log(`文件 ${filePath} 已解密并保存到 ${decryptedFile}`);
-    } catch (err) {
-      console.error(`文件 ${filePath} 解密失败`);
-    }
-  });
-  return count;
-}
-
-
-function encryptFiles(fileList:string[],  password:string, keepOriginalFile:boolean=false):number {
-  let count = 0
-  console.log("encryptFiles", fileList, password, keepOriginalFile)
-  for (let i = 0; i < fileList.length; i++) {
-    const file = fileList[i];
-    let encryptedFile=''
-    if (keepOriginalFile) {
-      encryptedFile = file + ".enc"
-    } else {
-      encryptedFile = file
-    }
-    const data = fs.readFileSync(file); // 读取原始文件数据
-
-    // 使用 AES 对称加密算法加密文件数据
-    const encryptedData = cryptoJS.AES.encrypt(data.toString(), password).toString();
-    // 将加密后的数据写入保存加密文件的路径
-    fs.writeFileSync(encryptedFile, encryptedData);
-    count++
-    console.log(`文件 ${file} 已加密并保存到 ${encryptedFile}`);
-  }
-  return count;
 }
 
 async function GetAllFiles(dir: string, breakSmall: boolean, fileList: string[]) {
@@ -130,7 +71,7 @@ async function GetAllFiles(dir: string, breakSmall: boolean, fileList: string[])
             else if (stat.isSymbolicLink()) {
               // donothing
             } else if (stat.isFile()) {
-              if (!breakSmall || stat.size > 5 * 1024 * 1024) fileList.push(item)
+              if (breakSmall == false || stat.size > 5 * 1024 * 1024) fileList.push(item)
             }
           })
           .catch()

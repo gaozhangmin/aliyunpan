@@ -1,8 +1,16 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useAppStore, useKeyboardStore, KeyboardState, useUserStore, useWinStore, useDownedStore } from '../store'
-import { onShowRightMenu, onHideRightMenuScroll, RefreshScroll, RefreshScrollTo, TestCtrl, TestKey,
-  TestKeyboardScroll, TestKeyboardSelect } from '../utils/keyboardhelper'
+import { KeyboardState, useAppStore, useDownedStore, useKeyboardStore, useWinStore } from '../store'
+import {
+  onHideRightMenuScroll,
+  onShowRightMenu,
+  RefreshScroll,
+  RefreshScrollTo,
+  TestCtrl,
+  TestKey,
+  TestKeyboardScroll,
+  TestKeyboardSelect
+} from '../utils/keyboardhelper'
 import { Tooltip as AntdTooltip } from 'ant-design-vue'
 import 'ant-design-vue/es/tooltip/style/css'
 import { IStateDownFile } from './DownDAL'
@@ -28,13 +36,13 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
 })
 
 const handleSelectAll = () => downedStore.mSelectAll()
-const handleOrder = (order: string) => downedStore.mOrderListData(order)
+
 const handleSelect = (shareid: string, event: any) => {
   onHideRightMenuScroll()
   downedStore.mMouseSelect(shareid, event.ctrlKey, event.shiftKey)
 }
 
-const handleDelete = () => downedStore.mDeleteUploaded([...downedStore.ListSelected])
+const handleDelete = async () => await downedStore.mDeleteDowned([...downedStore.ListSelected])
 
 const handleOpenFile = (file: IStateDownFile | null) =>
   downedStore.mOpenUploadedFile(file, [...downedStore.ListSelected], false)
@@ -42,7 +50,7 @@ const handleOpenFile = (file: IStateDownFile | null) =>
 const handleOpenDir = (file: IStateDownFile | null) =>
   downedStore.mOpenUploadedFile(file, [...downedStore.ListSelected], true)
 
-const handleDeleteAll = () => downedStore.mDeleteAllUploaded()
+const handleDeleteAll = async () => await downedStore.mDeleteAllDowned()
 
 const handleSearchInput = (value: string) => {
   downedStore.mSearchListData(value)

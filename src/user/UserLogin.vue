@@ -195,7 +195,9 @@ export default defineComponent({
                 is_first_login: result.isFirstLogin,
                 need_rp_verify: result.needRpVerify,
                 name: '',
+                phone: '',
                 spu_id: '',
+                vipIcon: '',
                 is_expires: false,
                 used_size: 0,
                 total_size: 0,
@@ -347,8 +349,8 @@ export default defineComponent({
             </a-row>
           </div>
           <div id="loginframediv" style="overflow: hidden; position: relative; width: 100%; height: 100%">
-            <Webview id="loginiframe" src="about:blank" style="width: 100%; height: 430px; border: none; overflow: hidden" />
-            <div id="qr-code-status" style="bottom: 0; left: 0; right: 0; text-align: center; font-size: 10px; background-color: #fff; color: red;"></div>
+            <Webview id="loginiframe" src="about:blank" style="width: 350px; height: 350px; border: none; overflow: hidden" />
+            <div id="qr-code-status" style="bottom: 0; left: 0; right: 0; text-align: center; font-size: 15px; background-color: #fff; color: red;"></div>
           </div>
 
         </div>
@@ -374,8 +376,8 @@ export default defineComponent({
 .loginframe {
   top: 0;
   position: relative;
-  width: 430px;
-  height: 430px;
+  width: 350px;
+  height: 350px;
   min-height: 430px;
   margin: 0 auto;
   overflow: hidden;

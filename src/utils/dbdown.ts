@@ -77,11 +77,11 @@ class XBYDB3Down extends Dexie {
       return this.idowned.count()
     })
   }
-
   async deleteDowned(key: string) {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.idowned.delete(key)
   }
+
   async deleteDowneds(keys: string[]) {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.idowned.bulkDelete(keys)

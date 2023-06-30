@@ -279,17 +279,17 @@ export async function AriaChangeToLocal() {
       }
       await Sleep(500)
       await Aria2EngineLocal.open()
-          .then(() => {
-            Aria2cLocalRelaunchTime = 0
-            SetAriaOnline(true, 'local')
-          })
-          .catch(() => {
-            SetAriaOnline(false, 'local')
-            Aria2cLocalRelaunchTime++
-            if (Aria2cLocalRelaunchTime < 2) {
-              message.info('正在尝试重启Aria进程中。。。')
-            }
-          })
+        .then(() => {
+          Aria2cLocalRelaunchTime = 0
+          SetAriaOnline(true, 'local')
+        })
+        .catch(() => {
+          SetAriaOnline(false, 'local')
+          Aria2cLocalRelaunchTime++
+          if (Aria2cLocalRelaunchTime < 2) {
+            message.info('正在尝试重启Aria进程中。。。')
+          }
+        })
 
       if (!IsAria2cOnlineLocal) {
         const url = `127.0.0.1:${port} secret=${localPwd}`
@@ -523,7 +523,7 @@ export async function AriaAddUrl(file: IStateDownFile): Promise<string> {
         downloadUrl = ''
       }
       if (!downloadUrl) {
-        const durl = await AliFile.ApiFileDownloadUrl(info.user_id, info.drive_id, info.file_id, 14400)
+        const durl = await AliFile.ApiFileDownloadUrlOpenApi(info.user_id, info.drive_id, info.file_id, 14400)
         if (typeof durl == 'string') {
           return `生成下载链接失败, ${durl}`
         } else if (!durl.url) {
@@ -598,9 +598,9 @@ export function AriaHashFile(downitem: IStateDownFile): { DownID: string; Check:
 export function FormatAriaError(code: string, message: string): string {
   switch (code) {
     case '0':
-      return ''
+      return message
     case '1':
-      return 'aria2c未知错误'
+      return message
     case '2':
       return 'aria2c网络超时'
     case '3':

@@ -3,13 +3,11 @@ import path from 'path'
 import { copyFileSync, existsSync, rmSync } from 'fs'
 import is from 'electron-is'
 
-const DEBUGGING = !app.isPackaged
-
 let NewCopyed = false
 let NewSaved = false
 
 export function getAsarPath(fileName: string) {
-  if (DEBUGGING) {
+  if (is.dev()) {
     const basePath = path.resolve(app.getAppPath())
     return path.join(basePath, fileName)
   } else {
@@ -37,13 +35,13 @@ export function getAsarPath(fileName: string) {
 
 export function getResourcesPath(fileName: string) {
   let basePath = path.resolve(app.getAppPath(), '..')
-  if (DEBUGGING) basePath = path.resolve(app.getAppPath(), '.')
+  if (is.dev()) basePath = path.resolve(app.getAppPath(), '.')
   return path.join(basePath, fileName)
 }
 
 export function getStaticPath(fileName: string) {
   let basePath = path.resolve(app.getAppPath(), '..')
-  if (DEBUGGING) basePath = path.resolve(app.getAppPath(), './static')
+  if (is.dev()) basePath = path.resolve(app.getAppPath(), './static')
   if (fileName.startsWith('icon')) {
     if (fileName == 'icon_256.ico' && !is.windows()) {
       fileName = path.join('images', 'icon_24.png')

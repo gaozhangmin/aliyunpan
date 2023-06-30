@@ -250,7 +250,7 @@ async function AddDirs(addFileList: IStateUploadTaskFile[], addDirList: IStateUp
       TaskID: readConfig.TaskID,
       UploadID: readConfig.filetime,
       partPath: path.join(parentDirPartPath, dirName),
-      name: parentDirName + '/' + dirName,
+      name: path.join(parentDirName, dirName),
       size: 0,
       sizeStr: humanSize(0),
       mtime: 0 ,

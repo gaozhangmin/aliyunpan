@@ -10,7 +10,6 @@ import SettingAria from './SettingAria.vue'
 import SettingLog from './SettingLog.vue'
 import { useAppStore } from '../store'
 import SettingProxy from './SettingProxy.vue'
-import SettingLocalAria from './SettingLocalAria.vue'
 
 const appStore = useAppStore()
 
@@ -64,13 +63,13 @@ onUnmounted(() => {
           <template #icon><i class="iconfont iconupload" /></template>
           上传
         </a-menu-item>
-        <a-menu-item key="SettingPlay">
-          <template #icon><i class="iconfont iconshipin" /></template>
-          在线播放
-        </a-menu-item>
         <a-menu-item key="SettingPan">
           <template #icon><i class="iconfont iconfile-folder" /></template>
           网盘
+        </a-menu-item>
+        <a-menu-item key="SettingPlay">
+          <template #icon><i class="iconfont iconshipin" /></template>
+          在线播放
         </a-menu-item>
         <a-menu-item key="SettingDebug">
           <template #icon><i class="iconfont iconlogoff" /></template>
@@ -84,10 +83,10 @@ onUnmounted(() => {
           <template #icon><i class="iconfont iconchuanshu" /></template>
           远程Aria
         </a-menu-item>
-        <a-menu-item key="SettingLocalAria">
-            <template #icon><i class="iconfont iconchuanshu" /></template>
-            本地Aria
-        </a-menu-item>
+<!--        <a-menu-item key="SettingLocalAria">-->
+<!--            <template #icon><i class="iconfont iconchuanshu" /></template>-->
+<!--            本地Aria-->
+<!--        </a-menu-item>-->
         <a-menu-item key="SettingLog">
           <template #icon><i class="iconfont icondebug" /></template>
           运行日志
@@ -153,13 +152,13 @@ onUnmounted(() => {
           </div>
           <SettingAria />
         </div>
-        <div id="SettingLocalAria">
-            <div>
-                <div style="height: 10px"></div>
-                <a-divider orientation="center" class="settinghr">本地Aria</a-divider>
-            </div>
-            <SettingLocalAria />
-        </div>
+<!--        <div id="SettingLocalAria">-->
+<!--            <div>-->
+<!--                <div style="height: 10px"></div>-->
+<!--                <a-divider orientation="center" class="settinghr">本地Aria</a-divider>-->
+<!--            </div>-->
+<!--            <SettingLocalAria />-->
+<!--        </div>-->
         <div id="SettingLog">
           <div>
             <div style="height: 10px"></div>

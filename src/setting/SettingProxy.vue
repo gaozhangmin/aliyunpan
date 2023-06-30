@@ -37,7 +37,7 @@ const handleProxyConn = async () => {
 
     const result = await new Promise<string>(async (resolve) => {
       nodehttps
-        .get(AliHttp.baseapi, option, (res: any) => {
+        .get(AliHttp.baseApi, option, (res: any) => {
           resolve('success')
         })
         .on('error', (e: any) => {

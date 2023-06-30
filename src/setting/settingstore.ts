@@ -17,18 +17,14 @@ export interface SettingState {
   uiImageMode: string
 
   uiVideoMode: string
-
   uiVideoPlayer: string
   uiVideoPlayerExit: boolean
   uiVideoPlayerHistory: boolean
-
   uiVideoSubtitleMode: string
-
   uiVideoPlayerPath: string
+  uiAutoPlaycursorVideo: boolean
 
   uiAutoColorVideo: boolean
-
-  uiAutoPlaycursorVideo: boolean
 
   uiShowPanPath: boolean
 
@@ -36,11 +32,13 @@ export interface SettingState {
 
   uiExitOnClose: boolean
 
+  uiLaunchAutoCheckUpdate: boolean
+
+  uiLaunchAutoSign: boolean
+
   uiLaunchStart: boolean
 
   uiLaunchStartShow: boolean
-
-  uiLaunchAutoSign: boolean
 
   uiFolderSize: boolean
 
@@ -167,14 +165,17 @@ const setting: SettingState = {
   uiVideoPlayer: 'web',
   uiVideoPlayerExit: false,
   uiVideoPlayerHistory: false,
-  uiVideoSubtitleMode: 'close',
+  uiVideoSubtitleMode: 'auto',
   uiVideoPlayerPath: '',
-  uiAutoColorVideo: true,
   uiAutoPlaycursorVideo: true,
+  uiAutoColorVideo: true,
   uiShowPanPath: true,
   uiShowPanMedia: false,
   uiExitOnClose: false,
-
+  uiLaunchAutoCheckUpdate: false,
+  uiLaunchAutoSign: false,
+  uiLaunchStart: false,
+  uiLaunchStartShow: false,
   uiFolderSize: true,
   uiFileOrderDuli: 'null',
   uiTimeFolderFormate: 'yyyy-MM-dd HH-mm-ss',
@@ -242,10 +243,7 @@ const setting: SettingState = {
 
   localAria2cConfPath: '',
   localAria2cPath:'',
-  uiLaunchAutoSign:false,
   ffmpegPath:'ffmpegPath',
-  uiLaunchStart: false,
-  uiLaunchStartShow: false,
 }
 function _loadSetting(val: any) {
 
@@ -263,7 +261,10 @@ function _loadSetting(val: any) {
   setting.uiShowPanPath = defaultBool(val.uiShowPanPath, true)
   setting.uiShowPanMedia = defaultBool(val.uiShowPanMedia, false)
   setting.uiExitOnClose = defaultBool(val.uiExitOnClose, false)
-
+  setting.uiLaunchAutoCheckUpdate = defaultBool(val.uiLaunchAutoCheckUpdate, false)
+  setting.uiLaunchAutoSign = defaultBool(val.uiLaunchAutoSign, false)
+  setting.uiLaunchStart = defaultBool(val.uiLaunchStart, false)
+  setting.uiLaunchStartShow = defaultBool(val.uiLaunchStartShow, false)
   setting.uiFolderSize = defaultBool(val.uiFolderSize, true)
   setting.uiFileOrderDuli = defaultString(val.uiFileOrderDuli, 'null')
   setting.uiTimeFolderFormate = defaultString(val.uiTimeFolderFormate, 'yyyy-MM-dd HH-mm-ss').replace('mm-dd', 'MM-dd').replace('HH-MM', 'HH-mm')
@@ -286,7 +287,7 @@ function _loadSetting(val: any) {
   setting.downSaveBreakWeiGui = defaultBool(val.downSaveBreakWeiGui, true)
   setting.uploadFileMax = defaultValue(val.uploadFileMax, [5, 1, 3, 5, 10, 20, 30, 50])
   setting.downFileMax = defaultValue(val.downFileMax, [5, 1, 3, 5, 10, 20, 30])
-  setting.downThreadMax = defaultValue(val.downThreadMax, [4, 1, 2, 4, 8, 16])
+  setting.downThreadMax = defaultValue(val.downThreadMax, [4, 1, 2, 4, 8, 16, 24, 32])
   setting.uploadGlobalSpeed = defaultNumberSub(val.uploadGlobalSpeed, 0, 0, 999)
   setting.uploadGlobalSpeedM = defaultValue(val.uploadGlobalSpeedM, ['MB', 'KB'])
   setting.downGlobalSpeed = defaultNumberSub(val.downGlobalSpeed, 0, 0, 999)
@@ -328,9 +329,6 @@ function _loadSetting(val: any) {
   setting.localAria2cPath = defaultString(val.localAria2cPath, '')
   setting.localAria2cConfPath = defaultString(val.localAria2cConfPath, '')
   setting.ffmpegPath = defaultString(val.ffmpegPath, '')
-  setting.uiLaunchAutoSign = defaultBool(val.uiLaunchAutoSign, false)
-  setting.uiLaunchStart = defaultBool(val.uiLaunchStart, false)
-  setting.uiLaunchStartShow = defaultBool(val.uiLaunchStartShow, false)
 }
 let settingstr = ''
 
@@ -385,6 +383,7 @@ function defaultNumberSub(val: any, check: number, min: number, max: number) {
 function SaveSetting() {
   try {
     const saveStr = JSON.stringify(setting)
+    // console.log('SaveSetting', saveStr)
     if (saveStr != settingstr) {
       const settingConfig = getUserDataPath('setting.config')
       writeFileSync(settingConfig, saveStr, 'utf-8')
@@ -404,10 +403,13 @@ const useSettingStore = defineStore('setting', {
   },
   actions: {
     async updateStore(partial: Partial<SettingState>) {
-      if (partial.uiTimeFolderFormate) partial.uiTimeFolderFormate = partial.uiTimeFolderFormate.replace('mm-dd', 'MM-dd').replace('HH-MM', 'HH-mm')
+      if (partial.uiTimeFolderFormate) {
+        partial.uiTimeFolderFormate = partial.uiTimeFolderFormate
+          .replace('mm-dd', 'MM-dd').replace('HH-MM', 'HH-mm')
+      }
       this.$patch(partial)
       if (Object.hasOwn(partial, 'uiLaunchStart') || Object.hasOwn(partial, 'uiLaunchStartShow')) {
-        window.WebToElectron({ cmd: { launchStartUp: this.uiLaunchStart, launchStartUpShow: this.uiLaunchStartShow } })
+        window.WebToElectron({ cmd: { launchStart: this.uiLaunchStart, launchStartShow: this.uiLaunchStartShow } })
       }
       if (Object.hasOwn(partial, 'proxyUseProxy')) {
         this.WebSetProxy()
@@ -415,17 +417,16 @@ const useSettingStore = defineStore('setting', {
       if (Object.hasOwn(partial, 'appUserDataPath')) {
         window.WebToElectron({ cmd: { appUserDataPath: this.appUserDataPath} })
       }
-      // if (Object.hasOwn(partial, 'launchAtStartup')) {
-      //   window.AutoLanuchAtStartup({launchAtStartup: setting.launchAtStartup})
-      // }
       if (Object.hasOwn(partial, 'uiLaunchAutoSign') && this.uiLaunchAutoSign) {
         UserDAL.autoUserSign(useUserStore().GetUserToken)
       }
       if (Object.hasOwn(partial, 'uiTheme')) {
         useAppStore().toggleTheme(setting.uiTheme)
       }
-      if (Object.hasOwn(partial, 'uiShowPanMedia') || Object.hasOwn(partial, 'uiFolderSize') || Object.hasOwn(partial, 'uiFileOrderDuli')) {
-        PanDAL.aReLoadOneDirToShow('', 'refresh', false)
+      if (Object.hasOwn(partial, 'uiShowPanMedia')
+          || Object.hasOwn(partial, 'uiFolderSize')
+          || Object.hasOwn(partial, 'uiFileOrderDuli')) {
+        await PanDAL.aReLoadOneDirToShow('', 'refresh', false)
       }
       SaveSetting()
       window.WinMsgToUpload({ cmd: 'SettingRefresh' })

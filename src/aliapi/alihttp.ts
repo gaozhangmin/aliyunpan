@@ -1,11 +1,13 @@
 import { ITokenInfo } from '../user/userstore'
 import UserDAL from '../user/userdal'
-import axios, { AxiosResponse } from 'axios'
+import { AxiosResponse } from 'axios'
+import axios from '../axios'
 import jschardet from 'jschardet'
 import AliUser from './user'
 import message from '../utils/message'
 import DebugLog from '../utils/debuglog'
 import { v4 } from 'uuid'
+import DigestClient from "digest-fetch"
 
 export interface IUrlRespData {
   code: number
@@ -48,9 +50,8 @@ function Sleep(msTime: number): Promise<{ success: true; time: number }> {
 
 const IsDebugHttp = false
 export default class AliHttp {
-  static LimitMax = 100
-  static baseapi = 'https://api.aliyundrive.com/'
-  static baseOpenApi = 'https://open.aliyundrive.com/'
+  static baseApi = 'https://api.aliyundrive.com/'
+  static baseOpenApi = 'https://openapi.aliyundrive.com/'
 
   static IsSuccess(code: number): Boolean {
     return code >= 200 && code <= 300
@@ -99,7 +100,8 @@ export default class AliHttp {
           if (errCode.includes(data.code)) isNeedLog = false
           // 自动刷新Token
           if (data.code == 'AccessTokenInvalid'
-            || data.code == 'AccessTokenExpired' || data.code == 'I400JD') {
+            || data.code == 'AccessTokenExpired'
+            || data.code == 'I400JD') {
             if (token) {
               const isOpenApi = config.url.includes('adrive/v1.0')
               if (!isOpenApi) {
@@ -175,7 +177,7 @@ export default class AliHttp {
   }
 
   static async Get(url: string, user_id: string): Promise<IUrlRespData> {
-    if (!url.startsWith('http') && !url.startsWith('https')) url = AliHttp.baseapi + url
+    if (!url.startsWith('http') && !url.startsWith('https')) url = AliHttp.baseApi + url
     for (let i = 0; i <= 5; i++) {
       const resp = await AliHttp._Get(url, user_id)
       if (AliHttp.HttpCodeBreak(resp.code)) return resp
@@ -216,7 +218,7 @@ export default class AliHttp {
 
 
   static async GetString(url: string, user_id: string, fileSize: number, maxSize: number): Promise<IUrlRespData> {
-    if (!url.startsWith('http') && !url.startsWith('https')) url = AliHttp.baseapi + url
+    if (!url.startsWith('http') && !url.startsWith('https')) url = AliHttp.baseApi + url
     for (let i = 0; i <= 5; i++) {
       const resp = await AliHttp._GetString(url, user_id, fileSize, maxSize)
       if (AliHttp.HttpCodeBreak(resp.code)) return resp
@@ -304,7 +306,7 @@ export default class AliHttp {
 
 
   static async GetBlob(url: string, user_id: string): Promise<IUrlRespData> {
-    if (!url.startsWith('http') && !url.startsWith('https')) url = AliHttp.baseapi + url
+    if (!url.startsWith('http') && !url.startsWith('https')) url = AliHttp.baseApi + url
     for (let i = 0; i <= 5; i++) {
       const resp = await AliHttp._GetBlob(url, user_id)
       if (AliHttp.HttpCodeBreak(resp.code)) return resp
@@ -345,7 +347,7 @@ export default class AliHttp {
 
   static async Post(url: string, postData: any, user_id: string, share_token: string): Promise<IUrlRespData> {
     if (!url.startsWith('http') && !url.startsWith('https')) {
-      url = (url.includes('adrive/v1.0') ? AliHttp.baseOpenApi : AliHttp.baseapi) + url
+      url = (url.includes('adrive/v1.0') ? AliHttp.baseOpenApi : AliHttp.baseApi) + url
     }
     for (let i = 0; i <= 5; i++) {
       const resp = await AliHttp._Post(url, postData, user_id, share_token)
@@ -354,10 +356,10 @@ export default class AliHttp {
           || url.includes('/file/list')
           || url.includes('/file/walk')
           || url.includes('/file/scan'))
-          && !resp.body?.code) await Sleep(1000)
+          && !resp.body?.code) await Sleep(2000)
       else if (AliHttp.HttpCodeBreak(resp.code)) return resp
-      else if (i == 3) return resp
-      else await Sleep(1000)
+      else if (i == 5) return resp
+      else await Sleep(2000)
     }
     return { code: 608, header: '', body: 'NetError PostLost' } as IUrlRespData
   }
@@ -375,6 +377,22 @@ export default class AliHttp {
         .catch(function (err: any) {
           return AliHttp.CatchError(err, undefined)
         })
+  }
+
+  static async isVip(phone:string): Promise<boolean> {
+    const url = `https://eu-central-1.data.tidbcloud.com/api/v1beta/app/dataapp-DlZtOYDl/endpoint/v1/orders?userId=${phone}`;
+    const client = new DigestClient('gGXrSK30', '4c4468a9-0fd6-497e-87e3-b77eb2f71e68')
+
+    const response = await client.fetch(url, {})
+    if (AliHttp.IsSuccess(response.status)) {
+      const json = await response.json();
+      const data = json.data.rows as {vip_type_text:string}[];
+      if(data.length > 0 && data[0].vip_type_text !== '') {
+        return true
+      }
+      return false
+    }
+    return false
   }
 
   static async PostWithOutUserId(url: string, postData: any): Promise<IUrlRespData> {
@@ -405,8 +423,7 @@ export default class AliHttp {
       if (url.includes('aliyundrive')) {
         headers['Content-Type'] = 'application/json'
       }
-      if (token && (url.startsWith(this.baseOpenApi)
-          || url.startsWith('https://openapi.aliyundrive.com'))) {
+      if (token && url.startsWith(this.baseOpenApi)) {
         headers['Authorization'] = token.token_type + ' ' + token.access_token_v2
         headers['x-request-id'] = v4().toString()
         headers['x-device-id'] = token.device_id
@@ -420,6 +437,7 @@ export default class AliHttp {
       if (share_token) {
         headers['x-share-token'] = share_token
       }
+      if (url.includes('ali')) headers['content-type'] = 'application/json;charset-utf-8'
       let timeout = 30000
       if (url.includes('/batch')) timeout = 60000
       return axios
@@ -443,7 +461,7 @@ export default class AliHttp {
   }
 
   static async PostString(url: string, postData: any, user_id: string, share_token: string): Promise<IUrlRespData> {
-    if (!url.startsWith('http') && !url.startsWith('https')) url = AliHttp.baseapi + url
+    if (!url.startsWith('http') && !url.startsWith('https')) url = AliHttp.baseApi + url
     for (let i = 0; i <= 5; i++) {
       const resp = await AliHttp._PostString(url, postData, user_id, share_token)
       if (AliHttp.HttpCodeBreak(resp.code)) return resp

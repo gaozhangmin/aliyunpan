@@ -23,7 +23,7 @@ const appStore = useAppStore()
         </a-menu-item>
         <a-menu-item key="DownedRight">
           <template #icon><i class="iconfont icondesktop" /></template>
-          已下载完
+          下载完成
         </a-menu-item>
         <a-menu-item key="UploadingRight">
           <template #icon><i class="iconfont iconcloud-upload" /></template>
@@ -31,19 +31,19 @@ const appStore = useAppStore()
         </a-menu-item>
         <a-menu-item key="UploadedRight">
           <template #icon><i class="iconfont iconcloud_success" /></template>
-          已上传完
+          上传完成
         </a-menu-item>
-        <a-menu-item key="SyncRight">
-          <template #icon><i class="iconfont iconcloud-sync" /></template>
-          文件夹同步 x
-        </a-menu-item>
+<!--        <a-menu-item key="SyncRight">-->
+<!--          <template #icon><i class="iconfont iconcloud-sync" /></template>-->
+<!--          文件夹同步 x-->
+<!--        </a-menu-item>-->
         <a-menu-item key="M3U8DowingRight">
           <template #icon><i class="iconfont iconluxiang" /></template>
           M3U8下载中
         </a-menu-item>
         <a-menu-item key="M3U8DowedRight">
           <template #icon><i class="iconfont iconluxiang" /></template>
-          M3U8下载完
+          M3U8下载完成
         </a-menu-item>
       </a-menu>
     </a-layout-sider>

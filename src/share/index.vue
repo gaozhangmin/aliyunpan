@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ShareSiteRight from './share/ShareSiteRight.vue'
+import SearchRes from '../resource/searchIndex.vue'
 import MyShareRight from './share/MyShareRight.vue'
 import OtherShareRight from './share/OtherShareRight.vue'
 import MyFollowingRight from './following/MyFollowingRight.vue'
@@ -8,12 +9,20 @@ import { useAppStore, useUserStore } from '../store'
 
 import ShareDAL from './share/ShareDAL'
 import FollowingDAL from './following/FollowingDAL'
+import AliHttp from '../aliapi/alihttp'
+import UserDAL from '../user/userdal'
+import VipInformPage from '../resource/vipInfo.vue'
 
 const appStore = useAppStore()
-appStore.$subscribe((mutation) => {
+const userStore = useUserStore()
+let vipIdentity = false
+appStore.$subscribe(async (mutation) => {
   const appPage = appStore.GetAppTabMenu
-
-  if (appPage == 'ShareSiteRight') ShareDAL.aLoadShareSite()
+  if (appPage == 'ShareSiteRight') {
+    if (userStore.userLogined && !vipIdentity) {
+      vipIdentity = await AliHttp.isVip(UserDAL.GetUserToken(userStore.user_id).phone)
+    }
+  }
   if (appPage == 'MyShareRight') ShareDAL.aReloadMyShare(useUserStore().user_id, false)
   if (appPage == 'MyFollowingRight') FollowingDAL.aReloadMyFollowing(useUserStore().user_id, false)
   if (appPage == 'OtherFollowingRight') FollowingDAL.aReloadOtherFollowingList(useUserStore().user_id, false)
@@ -27,24 +36,24 @@ appStore.$subscribe((mutation) => {
       <a-menu :selected-keys="[appStore.GetAppTabMenu]" :style="{ width: '100%' }" class="xbyleftmenu" @update:selected-keys="appStore.toggleTabMenu('share', $event[0])">
         <a-menu-item key="OtherShareRight">
           <template #icon><i class="iconfont iconfenxiang1" /></template>
-          导入过的分享
+          导入的分享
         </a-menu-item>
         <a-menu-item key="MyShareRight">
           <template #icon><i class="iconfont iconfenxiang" /></template>
-          我创建的分享
+          创建的分享
         </a-menu-item>
         <a-menu-item key="MyFollowingRight">
           <template #icon><i class="iconfont icondingyue" /></template>
-          我订阅的公众号
+          我的订阅
         </a-menu-item>
         <a-menu-item key="OtherFollowingRight">
           <template #icon><i class="iconfont icontuijian" /></template>
           公众号推荐
         </a-menu-item>
-<!--        <a-menu-item key="ShareSiteRight">-->
-<!--          <template #icon><i class="iconfont iconrvip" /></template>-->
-<!--          资源分享网站-->
-<!--        </a-menu-item>-->
+        <a-menu-item key="ShareSiteRight">
+          <template #icon><i class="iconfont iconrvip" /></template>
+          全网资源搜索
+        </a-menu-item>
       </a-menu>
     </a-layout-sider>
     <a-layout-content class="xbyright">
@@ -53,7 +62,8 @@ appStore.$subscribe((mutation) => {
         <a-tab-pane key="MyShareRight" title="1"><MyShareRight /></a-tab-pane>
         <a-tab-pane key="MyFollowingRight" title="3"><MyFollowingRight /></a-tab-pane>
         <a-tab-pane key="OtherFollowingRight" title="6"><OtherFollowingRight /></a-tab-pane>
-<!--        <a-tab-pane key="ShareSiteRight" title="5"><ShareSiteRight /></a-tab-pane>-->
+        <a-tab-pane v-if='vipIdentity' key="ShareSiteRight" title="5"><SearchRes /></a-tab-pane>
+        <a-tab-pane v-if='!vipIdentity' key="ShareSiteRight" title="5"><VipInformPage /></a-tab-pane>
       </a-tabs>
     </a-layout-content>
   </a-layout>

@@ -104,51 +104,51 @@ export default defineComponent({
     }
 
     const handleDownload = async (item: string, fileItem:IAliGetFileModel|undefined) => {
-        let url = ''
-        if (item == '1080P') url = videoPreview.value?.urlFHD || ''
-        if (item == '720P') url = videoPreview.value?.urlHD || ''
-        if (item == '540P') url = videoPreview.value?.urlSD || ''
-        if (item == '480P') url = videoPreview.value?.urlLD || ''
-        const baseUrl = parseBaseUrl(url);
-        if (baseUrl && fileItem) {
-            const urls = await parseM3U8Url(url, baseUrl)
-            if (urls && urls.length > 0) {
-                const settingStore = useSettingStore()
-                const savePath = settingStore.AriaIsLocal ? settingStore.downSavePath : settingStore.ariaSavePath
-                const fullSavePath = savePath + path.sep + fileItem.name
-                const fileList: IAliGetFileModel[] = []
-                let m3u8FileNames = ''
-                for (let i = 0; i < urls.length; i++) {
-                    m3u8FileNames += 'file ' + fullSavePath + path.sep + (i + '.ts') + '\n'
-                    const url = urls[i];
-                    fileList.push({
-                        __v_skip: true,
-                        drive_id: fileItem.drive_id,
-                        file_id: fileItem.file_id + i,
-                        parent_file_id: fileItem.parent_file_id,
-                        name: i + '.ts',
-                        namesearch: fileItem.namesearch,
-                        ext: "ts",
-                        category: fileItem.category,
-                        icon: fileItem.icon,
-                        size: fileItem.size / urls.length,
-                        sizeStr: humanSize(fileItem.size / urls.length),
-                        time: fileItem.time,
-                        timeStr: fileItem.timeStr,
-                        starred: fileItem.starred,
-                        isDir: false,
-                        thumbnail: fileItem.thumbnail,
-                        description: fileItem.description,
-                        download_url: url,
-                        m3u8_total_file_nums: urls.length,
-                        m3u8_parent_file_name: fileItem.name,
-                    })
-                }
+      let url = ''
+      if (item == '1080P') url = videoPreview.value?.urlFHD || ''
+      if (item == '720P') url = videoPreview.value?.urlHD || ''
+      if (item == '540P') url = videoPreview.value?.urlSD || ''
+      if (item == '480P') url = videoPreview.value?.urlLD || ''
+      const baseUrl = parseBaseUrl(url);
+      if (baseUrl && fileItem) {
+        const urls = await parseM3U8Url(url, baseUrl)
+        if (urls && urls.length > 0) {
+          const settingStore = useSettingStore()
+          const savePath = settingStore.AriaIsLocal ? settingStore.downSavePath : settingStore.ariaSavePath
+          const fullSavePath = savePath + path.sep + fileItem.name
+          const fileList: IAliGetFileModel[] = []
+          let m3u8FileNames = ''
+          for (let i = 0; i < urls.length; i++) {
+            m3u8FileNames += 'file ' + fullSavePath + path.sep + (i + '.ts') + '\n'
+            const url = urls[i];
+            fileList.push({
+              __v_skip: true,
+              drive_id: fileItem.drive_id,
+              file_id: fileItem.file_id + i,
+              parent_file_id: fileItem.parent_file_id,
+              name: i + '.ts',
+              namesearch: fileItem.namesearch,
+              ext: "ts",
+              category: fileItem.category,
+              icon: fileItem.icon,
+              size: fileItem.size / urls.length,
+              sizeStr: humanSize(fileItem.size / urls.length),
+              time: fileItem.time,
+              timeStr: fileItem.timeStr,
+              starred: fileItem.starred,
+              isDir: false,
+              thumbnail: fileItem.thumbnail,
+              description: fileItem.description,
+              download_url: url,
+              m3u8_total_file_nums: urls.length,
+              m3u8_parent_file_name: fileItem.name,
+            })
+          }
 
-                M3u8DownloadDAL.aAddDownload(fileList, fullSavePath, false, true)
+          M3u8DownloadDAL.aAddDownload(fileList, fullSavePath, false, true)
 
-            }
         }
+      }
     }
 
     const handleCopyUrl = (item: string) => {

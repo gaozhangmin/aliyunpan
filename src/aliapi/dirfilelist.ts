@@ -265,7 +265,7 @@ export default class AliDirFileList {
 
   
   private static async _ApiDirFileListCount(dir: IAliFileResp, type: string): Promise<number> {
-    const url = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/search'
+    const url = 'adrive/v1.0/openFile/search'
     const postData = {
       drive_id: dir.m_drive_id,
       marker: '',
@@ -364,7 +364,7 @@ export default class AliDirFileList {
   }
 
   static async _ApiSearchFileListOnePage(orderby: string, order: string, dir: IAliFileResp, pageIndex: number): Promise<boolean> {
-    let url = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/search'
+    let url = 'adrive/v1.0/openFile/search'
     let query = ''
     if (dir.dirID.startsWith('color')) {
       const color = dir.dirID.substring('color'.length).split(' ')[0].replace('#', 'c')
@@ -439,7 +439,7 @@ export default class AliDirFileList {
   }
 
   static async _ApiSearchFileListCount(dir: IAliFileResp): Promise<number> {
-    const url = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/search'
+    const url = 'adrive/v1.0/openFile/search'
 
     let query = ''
     if (dir.dirID.startsWith('color')) {
@@ -523,7 +523,7 @@ export default class AliDirFileList {
   }
 
   static async _ApiVideoListRecent(orderby: string, order: string, dir: IAliFileResp, pageIndex: number): Promise<boolean> {
-    const url = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/video/recentList'
+    const url = 'adrive/v1.0/openFile/video/recentList'
     const postData = {}
     const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
     return AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)

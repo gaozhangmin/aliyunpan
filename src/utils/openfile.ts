@@ -11,7 +11,7 @@ import DebugLog from './debuglog'
 import { CleanStringForCmd } from './filehelper'
 import message from './message'
 import { modalArchive, modalArchivePassword, modalSelectPanDir } from './modal'
-import { humanTime, Sleep } from './format'
+import { humanTime } from './format'
 import levenshtein from 'fast-levenshtein'
 import { SpawnOptions } from 'child_process'
 
@@ -100,14 +100,13 @@ async function Archive(drive_id: string, file_id: string, file_name: string, par
     message.error('违规文件，操作取消')
     return
   }
-  message.loading('Loading...', 2)
   const user_id = useUserStore().user_id
   const token = await UserDAL.GetUserTokenFromDB(user_id)
   if (!token || !token.access_token) {
     message.error('在线预览失败 账号失效，操作取消')
     return
   }
-
+  message.loading('Loading...', 2)
   const info = await AliFile.ApiFileInfoOpenApi(user_id, drive_id, file_id)
   if (!info) {
     message.error('在线预览失败 获取文件信息出错，操作取消')
@@ -154,10 +153,15 @@ async function Video(token: ITokenInfo, drive_id: string, file_id: string, paren
     message.error('在线预览失败 无法预览违规文件')
     return
   }
+  message.loading('加载视频中...', 2)
   // 获取文件信息
   let play_cursor: number = 0
   if (useSettingStore().uiVideoPlayer == 'web' || useSettingStore().uiVideoPlayerHistory) {
     const info = await AliFile.ApiFileInfoOpenApi(token.user_id, drive_id, file_id)
+    if (!info) {
+      message.error('在线预览失败 获取文件信息出错：' + info)
+      return
+    }
     if (info?.play_cursor) {
       play_cursor = info?.play_cursor
     } else if (info?.user_meta) {
@@ -167,8 +171,6 @@ async function Video(token: ITokenInfo, drive_id: string, file_id: string, paren
       }
     }
   }
-
-  message.loading('加载视频中...', 2)
   const settingStore = useSettingStore()
   if (settingStore.uiAutoColorVideo && !dec) {
     AliFileCmd.ApiFileColorBatch(token.user_id, drive_id, 'c5b89b8', [file_id])
@@ -375,7 +377,7 @@ async function Code(drive_id: string, file_id: string, name: string, codeExt: st
   message.loading('Loading...', 2)
   const data = await AliFile.ApiFileDownloadUrlOpenApi(user_id, drive_id, file_id, 14400)
   if (typeof data == 'string') {
-    message.error('获取文件预览链接失败，操作取消')
+    message.error('获取文件预览链接失败: ' + data)
     return
   }
   const pageCode: IPageCode = {

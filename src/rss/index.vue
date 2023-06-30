@@ -51,10 +51,10 @@ const appStore = useAppStore()
           <template #icon><i class="iconfont iconchuanshu2" /></template>
           网盘相册间复制
         </a-menu-item>
-        <a-menu-item key="RssUserCopy">
-          <template #icon><i class="iconfont iconyonghu" /></template>
-          帐号间复制 x
-        </a-menu-item>
+<!--        <a-menu-item key="RssUserCopy">-->
+<!--          <template #icon><i class="iconfont iconyonghu" /></template>-->
+<!--          帐号间复制 x-->
+<!--        </a-menu-item>-->
       </a-menu>
     </a-layout-sider>
     <a-layout-content>

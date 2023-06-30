@@ -3,13 +3,13 @@ import AliUser from '../aliapi/user'
 import message from '../utils/message'
 import useUserStore, { ITokenInfo } from './userstore'
 import {
-  usePanTreeStore,
-  usePanFileStore,
-  useMyShareStore,
-  useMyFollowingStore,
-  useOtherFollowingStore,
   useAppStore,
   useFootStore,
+  useMyFollowingStore,
+  useMyShareStore,
+  useOtherFollowingStore,
+  usePanFileStore,
+  usePanTreeStore,
   useSettingStore
 } from '../store'
 import PanDAL from '../pan/pandal'
@@ -83,12 +83,14 @@ export default class UserDAL {
       default_sbox_drive_id: '',
       role: '',
       status: '',
+      phone:'',
       expire_time: '',
       state: '',
       pin_setup: false,
       is_first_login: false,
       need_rp_verify: false,
       name: '',
+      vipIcon: '',
       spu_id: '',
       is_expires: false,
       used_size: 0,

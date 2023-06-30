@@ -16,6 +16,7 @@ declare global {
     WebToElectron: any
     WebClearCache: any
     WebRelaunch: any
+    WebGetCookies: any
     WebClearCookies: any
     WebShutDown: any
     WebOpenWindow: any

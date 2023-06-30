@@ -107,6 +107,11 @@ window.WebSetProgressBar = function (data: any) {
     ipcRenderer.send('WebSetProgressBar', data) 
   } catch {}
 }
+window.WebGetCookies = async function (data: any) {
+  try {
+    return await ipcRenderer.invoke('WebGetCookies', data)
+  } catch {}
+}
 window.WebSetCookies = function (cookies: any) {
   try {
     ipcRenderer.send('WebSetCookies', cookies) 

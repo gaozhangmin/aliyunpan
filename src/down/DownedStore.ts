@@ -1,12 +1,11 @@
 import fuzzysort from 'fuzzysort'
 import { defineStore } from 'pinia'
-import { IStateDownFile } from './DownDAL'
-import { GetSelectedList, GetFocusNext, SelectAll, MouseSelectOne, KeyboardSelectOne } from '../utils/selecthelper'
+import DownDAL, { IStateDownFile } from './DownDAL'
+import { GetFocusNext, GetSelectedList, KeyboardSelectOne, MouseSelectOne, SelectAll } from '../utils/selecthelper'
 import { humanSize } from '../utils/format'
 import message from '../utils/message'
 import fs from 'fs'
 import path from 'path'
-import DBDown from '../utils/dbdown'
 
 type Item = IStateDownFile
 type State = DownState
@@ -203,34 +202,36 @@ const useDownStore = defineStore('down', {
 
     /**
      * 删除下载完成，修改为“待删除”状态，并从列表中删除 <br/>
-     * @param uploadIDList
+     * @param downedIDList
      */
-    mDeleteUploaded(uploadIDList: string[]) {
-      const UploadedList = this.ListDataRaw
+    async mDeleteDowned(downedIDList: string[]) {
       const newListSelected = new Set(this.ListSelected)
       const newList: Item[] = []
-      for (let j = 0; j < UploadedList.length; j++) {
-        const downID = UploadedList[j].DownID
-        if (uploadIDList.includes(downID)) {
-          UploadedList[j].Down.DownState = '待删除'
+      const downedList: Item[] = this.ListDataRaw
+      const deleteList: Item[] = []
+      for (let j = 0; j < downedList.length; j++) {
+        const downID = downedList[j].DownID
+        if (downedIDList.includes(downID)) {
+          downedList[j].Down.DownState = '待删除'
+          deleteList.push(downedList[j])
           if (newListSelected.has(downID)) newListSelected.delete(downID)
         } else {
-          newList.push(UploadedList[j])
+          newList.push(downedList[j])
         }
       }
       this.ListDataRaw = newList
       this.ListSelected = newListSelected
-      DBDown.deleteDowneds(uploadIDList)
+      await DownDAL.deleteDowned(false, deleteList)
       this.mRefreshListDataShow(true)
     },
 
     /**
      * 删除全部
      */
-    mDeleteAllUploaded() {
+    async mDeleteAllDowned() {
+      await DownDAL.deleteDowned(true, this.ListDataRaw)
       this.ListSelected = new Set<string>()
       this.ListDataRaw.splice(0, this.ListDataRaw.length)
-      DBDown.deleteDownedAll()
       this.mRefreshListDataShow(true)
     },
 
@@ -243,7 +244,6 @@ const useDownStore = defineStore('down', {
      */
     mOpenUploadedFile(file: Item | null, downIDList: string[], isDir: boolean) {
       const DownedList = this.ListDataRaw
-
       const openDir = (localFilePath: string) => {
         try {
           if (fs.existsSync(localFilePath)) {

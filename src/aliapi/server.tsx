@@ -1,11 +1,11 @@
 import { B64decode, b64decode, humanSize } from '../utils/format'
+import { getPkgVersion } from '../utils/utils'
 import axios, { AxiosResponse } from 'axios'
-import Config from '../utils/config'
 import message from '../utils/message'
 import { IShareSiteModel, useServerStore } from '../store'
 import { Modal, Button, Space } from '@arco-design/web-vue'
 import { h } from 'vue'
-import { getAppNewPath, getResourcesPath, openExternal, getUserDataPath } from '../utils/electronhelper'
+import { getAppNewPath, getResourcesPath, getUserDataPath, openExternal } from '../utils/electronhelper'
 import ShareDAL from '../share/share/ShareDAL'
 import DebugLog from '../utils/debuglog'
 import { writeFile, rmSync, existsSync, readFileSync } from 'fs'
@@ -25,7 +25,7 @@ export default class ServerHttp {
   static baseApi = b64decode('aHR0cDovLzEyMS41LjE0NC44NDo1MjgyLw==')
 
   static async PostToServer(postData: any): Promise<IServerRespData> {
-    postData.appVersion = Config.appVersion
+    postData.appVersion = getPkgVersion()
     const str = JSON.stringify(postData)
     if (window.postdataFunc) {
       let enstr = ''
@@ -158,7 +158,7 @@ export default class ServerHttp {
           }
         }
         if (tagName) {
-          let configVer = Config.appVersion.replaceAll('v', '').trim()
+          let configVer = getPkgVersion().replaceAll('v', '').trim()
           if (process.platform !== 'linux') {
             let localVersion = getResourcesPath('localVersion')
             if (localVersion && existsSync(localVersion)) {

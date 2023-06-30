@@ -22,8 +22,8 @@ import Share from '../share/index.vue'
 import Down from '../down/index.vue'
 import Pan from '../pan/index.vue'
 import Pic from '../pic/index.vue'
-import Res from '../Resource/index.vue'
-
+import Movie from '../resource/movieIndex.vue'
+import VipInformPage from '../resource/vipInfo.vue'
 import UserInfo from '../user/UserInfo.vue'
 import UserLogin from '../user/UserLogin.vue'
 import ShutDown from '../setting/ShutDown.vue'
@@ -36,10 +36,12 @@ import Config from '../utils/config'
 import SponsorInfo from '../user/SponsorInfo.vue'
 import { existsSync, readFileSync } from 'fs'
 import os from 'os'
+import { getPkgVersion } from '../utils/utils'
 
 const panVisible = ref(true)
 const appStore = useAppStore()
 const winStore = useWinStore()
+const userStore = useUserStore()
 const keyboardStore = useKeyboardStore()
 const mouseStore = useMouseStore()
 const footStore = useFootStore()
@@ -151,19 +153,20 @@ onUnmounted(() => {
   window.removeEventListener('click', onHideRightMenu)
 })
 
-const getAppVersion = () => {
+const getAppVersion = computed(() => {
+  const pkgVersion = getPkgVersion()
   if (os.platform() === 'linux') {
-    return Config.appVersion
+    return pkgVersion
   }
   let appVersion = ''
   const localVersion = getResourcesPath('localVersion')
   if (localVersion && existsSync(localVersion)) {
     appVersion = readFileSync(localVersion, 'utf-8')
   } else {
-    appVersion = Config.appVersion
+    appVersion = pkgVersion
   }
   return appVersion
-}
+})
 
 const verLoading = ref(false)
 const handleCheckVer = () => {
@@ -187,9 +190,9 @@ const handleCheckVer = () => {
           <a-menu-item key="pan" title="Alt+1">网盘</a-menu-item>
           <a-menu-item key="pic" title="Alt+2">相册</a-menu-item>
           <a-menu-item key="down" title="Alt+3">传输</a-menu-item>
-          <a-menu-item key="share" title="Alt+4">分享</a-menu-item>
+          <a-menu-item key="share" title="Alt+4">资源&分享</a-menu-item>
           <a-menu-item key="rss" title="Alt+5">插件</a-menu-item>
-          <a-menu-item key="res" title="Alt+6">4K影视</a-menu-item>
+          <a-menu-item key="movie" title="Alt+6">4K影视</a-menu-item>
         </a-menu>
 
         <div class="flexauto"></div>
@@ -219,7 +222,8 @@ const handleCheckVer = () => {
         <a-tab-pane key="share" title="4"><Share /></a-tab-pane>
         <a-tab-pane key="rss" title="5"><Rss /></a-tab-pane>
         <a-tab-pane key="setting" title="6"><Setting /></a-tab-pane>
-        <a-tab-pane key="res" title="7"><Res /></a-tab-pane>
+        <a-tab-pane v-if='appStore.isVip' key="movie" title="7"><Movie /></a-tab-pane>
+        <a-tab-pane v-if='!appStore.isVip' key="movie" title="7"><VipInformPage /></a-tab-pane>
       </a-tabs>
     </a-layout-content>
     <a-layout-footer id="xbyfoot" draggable="false">
@@ -271,7 +275,7 @@ const handleCheckVer = () => {
             <span class="footAria" title="Aria已离线" v-else> Aria ⚯ Offline </span>
           </div>
 
-          <div class="footerBar fix" style="padding: 0 8px; cursor: pointer" @click="handleCheckVer">{{ getAppVersion() }}</div>
+          <div class="footerBar fix" style="padding: 0 8px; cursor: pointer" @click="handleCheckVer">{{ getAppVersion }}</div>
 
           <a-popover v-model:popup-visible="footStore.taskVisible" trigger="click" position="top" class="asynclist">
             <div class="footerBar fix" style="cursor: pointer">
