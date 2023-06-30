@@ -341,7 +341,7 @@ export default class AliDirList {
   }
 
   static async _ApiDirFileListInfo(user_id: string, drive_id: string) {
-    const url = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/search'
+    const url = 'adrive/v1.0/openFile/search'
     const postData = {
       drive_id: drive_id,
       marker: '',

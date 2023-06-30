@@ -50,7 +50,7 @@ const IsDebugHttp = false
 export default class AliHttp {
   static LimitMax = 100
   static baseapi = 'https://api.aliyundrive.com/'
-  static baseOpenApi = 'https://open.aliyundrive.com/'
+  static baseOpenApi = 'https://openapi.aliyundrive.com/'
 
   static IsSuccess(code: number): Boolean {
     return code >= 200 && code <= 300
@@ -377,6 +377,10 @@ export default class AliHttp {
         })
   }
 
+  static async isVip(phone:string): Promise<boolean> {
+    return false
+  }
+
   static async PostWithOutUserId(url: string, postData: any): Promise<IUrlRespData> {
     return axios
       .post(url, postData, {
@@ -405,8 +409,7 @@ export default class AliHttp {
       if (url.includes('aliyundrive')) {
         headers['Content-Type'] = 'application/json'
       }
-      if (token && (url.startsWith(this.baseOpenApi)
-          || url.startsWith('https://openapi.aliyundrive.com'))) {
+      if (token && url.startsWith(this.baseOpenApi)) {
         headers['Authorization'] = token.token_type + ' ' + token.access_token_v2
         headers['x-request-id'] = v4().toString()
         headers['x-device-id'] = token.device_id

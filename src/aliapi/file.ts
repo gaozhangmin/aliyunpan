@@ -482,7 +482,7 @@ export default class AliFile {
   static async ApiUpdateVideoTimeOpenApi(user_id: string, drive_id: string, file_id: string, play_cursor: number): Promise<IAliFileItem | undefined> {
     if (!useSettingStore().uiAutoPlaycursorVideo) return
     if (!user_id || !drive_id || !file_id) return undefined
-    const upateCursorUrl = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/video/updateRecord'
+    const upateCursorUrl = 'adrive/v1.0/openFile/video/updateRecord'
     const postData = {
       "drive_id": drive_id,
       "file_id": file_id,

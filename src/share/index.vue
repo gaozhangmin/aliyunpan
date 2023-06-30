@@ -41,10 +41,10 @@ appStore.$subscribe((mutation) => {
           <template #icon><i class="iconfont icontuijian" /></template>
           公众号推荐
         </a-menu-item>
-<!--        <a-menu-item key="ShareSiteRight">-->
-<!--          <template #icon><i class="iconfont iconrvip" /></template>-->
-<!--          资源分享网站-->
-<!--        </a-menu-item>-->
+        <a-menu-item key="ShareSiteRight">
+          <template #icon><i class="iconfont iconrvip" /></template>
+          资源分享网站
+        </a-menu-item>
       </a-menu>
     </a-layout-sider>
     <a-layout-content class="xbyright">
@@ -53,7 +53,7 @@ appStore.$subscribe((mutation) => {
         <a-tab-pane key="MyShareRight" title="1"><MyShareRight /></a-tab-pane>
         <a-tab-pane key="MyFollowingRight" title="3"><MyFollowingRight /></a-tab-pane>
         <a-tab-pane key="OtherFollowingRight" title="6"><OtherFollowingRight /></a-tab-pane>
-<!--        <a-tab-pane key="ShareSiteRight" title="5"><ShareSiteRight /></a-tab-pane>-->
+        <a-tab-pane key="ShareSiteRight" title="5"><ShareSiteRight /></a-tab-pane>
       </a-tabs>
     </a-layout-content>
   </a-layout>

@@ -22,8 +22,6 @@ import Share from '../share/index.vue'
 import Down from '../down/index.vue'
 import Pan from '../pan/index.vue'
 import Pic from '../pic/index.vue'
-import Res from '../Resource/index.vue'
-
 import UserInfo from '../user/UserInfo.vue'
 import UserLogin from '../user/UserLogin.vue'
 import ShutDown from '../setting/ShutDown.vue'
@@ -36,10 +34,13 @@ import Config from '../utils/config'
 import SponsorInfo from '../user/SponsorInfo.vue'
 import { existsSync, readFileSync } from 'fs'
 import os from 'os'
+import UserDAL from '../user/userdal'
+import AliHttp from '../aliapi/alihttp'
 
 const panVisible = ref(true)
 const appStore = useAppStore()
 const winStore = useWinStore()
+const userStore = useUserStore()
 const keyboardStore = useKeyboardStore()
 const mouseStore = useMouseStore()
 const footStore = useFootStore()
@@ -132,13 +133,14 @@ const handleAudioStop = () => {
   footStore.mSaveAudioUrl('')
 }
 
-onMounted(() => {
+onMounted( () => {
+
   onResize()
   DebugLog.aLoadFromDB()
   window.addEventListener('resize', onResize, { passive: true })
   window.addEventListener('keydown', onKeyDown, true)
   window.addEventListener('mousedown', onMouseDown, true)
-  setTimeout(() => {
+  setTimeout(async () => {
     onHideRightMenu()
   }, 300)
   window.addEventListener('click', onHideRightMenu, { passive: true })
@@ -189,7 +191,6 @@ const handleCheckVer = () => {
           <a-menu-item key="down" title="Alt+3">传输</a-menu-item>
           <a-menu-item key="share" title="Alt+4">分享</a-menu-item>
           <a-menu-item key="rss" title="Alt+5">插件</a-menu-item>
-          <a-menu-item key="res" title="Alt+6">4K影视</a-menu-item>
         </a-menu>
 
         <div class="flexauto"></div>
@@ -219,7 +220,6 @@ const handleCheckVer = () => {
         <a-tab-pane key="share" title="4"><Share /></a-tab-pane>
         <a-tab-pane key="rss" title="5"><Rss /></a-tab-pane>
         <a-tab-pane key="setting" title="6"><Setting /></a-tab-pane>
-        <a-tab-pane key="res" title="7"><Res /></a-tab-pane>
       </a-tabs>
     </a-layout-content>
     <a-layout-footer id="xbyfoot" draggable="false">

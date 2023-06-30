@@ -72,7 +72,7 @@ export default class AliAlbum {
     static async ApiTotalPhotosNum(): Promise<Number> {
         const driver_id = GetDriveID(useUserStore().user_id, 'pic')
         const userId = useUserStore().user_id
-        const url = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/search'
+        const url = 'adrive/v1.0/openFile/search'
 
         if (!driver_id) {
             return 0
@@ -95,7 +95,7 @@ export default class AliAlbum {
     static async ApiLimitedPhotos(marker="", limited=100): Promise<AliAlbumFileInfo[]> {
         const driver_id = GetDriveID(useUserStore().user_id, 'pic')
         const userId = useUserStore().user_id
-        const url = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/search'
+        const url = 'adrive/v1.0/openFile/search'
         let max: number = useSettingStore().debugFileListMax
 
         const results:AliAlbumFileInfo[] = []
@@ -132,7 +132,7 @@ export default class AliAlbum {
     static async ApiAllPhotos(): Promise<AliAlbumFileInfo[]> {
         const driver_id = GetDriveID(useUserStore().user_id, 'pic')
         const userId = useUserStore().user_id
-        const url = 'https://openapi.aliyundrive.com/adrive/v1.0/openFile/search'
+        const url = 'adrive/v1.0/openFile/search'
         let marker = '';
         let max: number = useSettingStore().debugFileListMax
 

@@ -107,7 +107,7 @@ export default defineComponent({
                       if (statusResp.body.status === 'QRCodeExpired') {
                         console.log("检测到二维码状态过期，重新刷新")
                         clearInterval(intervalId)
-                        const resp = await AliHttp.PostWithOutUserId(Config.qrCodeLoginUrl, {})
+                        const resp = await AliHttp.PostWithOutUserId(Config.tmpQrCodeUrl, {})
                         if (AliHttp.IsSuccess(resp.code)) {
                           const qrCodeUrl = resp.body.qrCodeUrl
                           webview.loadURL(qrCodeUrl)
@@ -196,6 +196,7 @@ export default defineComponent({
                 need_rp_verify: result.needRpVerify,
                 name: '',
                 spu_id: '',
+                vipIcon: '',
                 is_expires: false,
                 used_size: 0,
                 total_size: 0,
