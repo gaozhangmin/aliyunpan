@@ -361,7 +361,7 @@ export async function AriaGetDowningList() {
       list = list.concat(arr)
       arr = result[2][0]
       list = list.concat(arr)
-      DownDAL.mSpeedEvent(list)
+      DownDAL.mSpeedEvent(list || [])
       SetAriaOnline(true)
     }
   } catch (e: any) {

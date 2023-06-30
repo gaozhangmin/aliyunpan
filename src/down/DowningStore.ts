@@ -237,21 +237,10 @@ const useDowningStore = defineStore('downing', {
      */
     mStartDowning() {
       const DowningList = this.ListDataRaw
-      for (const DownID of this.ListSelected) {
-        for (let j = 0; j < DowningList.length; j++) {
-          if (DowningList[j].DownID == DownID) {
-            const down = DowningList[j].Down
-            if (down.IsDowning || down.IsCompleted) continue
-            down.IsStop = false
-            down.DownState = '队列中'
-            down.DownSpeed = 0
-            down.DownSpeedStr = ''
-            down.IsFailed = false
-            down.FailedCode = 0
-            down.FailedMessage = ''
-            down.AutoTry = 0
-            break
-          }
+      for (const downID of this.ListSelected) {
+        const selectedDown: IStateDownFile | undefined = DowningList.find(down => down.DownID === downID)
+        if (selectedDown && !selectedDown.Down.IsDowning && !selectedDown.Down.IsCompleted) {
+          this.mUpdateDownState(selectedDown, 'queue')
         }
       }
     },
@@ -264,14 +253,7 @@ const useDowningStore = defineStore('downing', {
       for (let j = 0; j < DowningList.length; j++) {
         const down = DowningList[j].Down
         if (down.IsDowning || down.IsCompleted) continue
-        down.IsStop = false
-        down.DownState = '队列中'
-        down.DownSpeed = 0
-        down.DownSpeedStr = ''
-        down.IsFailed = false
-        down.FailedCode = 0
-        down.FailedMessage = ''
-        down.AutoTry = 0
+        this.mUpdateDownState(DowningList[j], 'queue')
       }
     },
 
@@ -289,16 +271,7 @@ const useDowningStore = defineStore('downing', {
             if (down.IsCompleted) continue
             gidList.push(DowningList[j].Info.GID)
             downList.push(DowningList[j])
-            down.IsDowning = false
-            down.IsCompleted = false
-            down.IsStop = true
-            down.DownState = '已暂停'
-            down.DownSpeed = 0
-            down.DownSpeedStr = ''
-            down.IsFailed = false
-            down.FailedCode = 0
-            down.FailedMessage = ''
-            down.AutoTry = 0
+            this.mUpdateDownState(DowningList[j], 'stop')
             break
           }
         }
@@ -317,15 +290,7 @@ const useDowningStore = defineStore('downing', {
         const down = DowningList[j].Down
         if (down.IsCompleted) continue
         gidList.push(DowningList[j].Info.GID)
-        down.IsDowning = false
-        down.IsStop = true
-        down.DownState = '已暂停'
-        down.DownSpeed = 0
-        down.DownSpeedStr = ''
-        down.IsFailed = false
-        down.FailedCode = 0
-        down.FailedMessage = ''
-        down.AutoTry = 0
+        this.mUpdateDownState(DowningList[j], 'stop')
       }
       await DownDAL.stopDowning(DowningList, gidList)
       this.mRefreshListDataShow(true)
@@ -405,12 +370,12 @@ const useDowningStore = defineStore('downing', {
       this.mRefreshListDataShow(true)
     },
 
-    mUpdateDownState(DownID: string, state: string, msg?: string) {
-      const DowningList = this.ListDataRaw
+    mUpdateDownState(DownItem: IStateDownFile, state: string, msg?: string) {
+      const { DownID, Down } = DownItem
       const updateState: any = {
         DownID: DownID,
         IsDowning: false,
-        IsCompleted: state === 'downed',
+        IsCompleted: false,
         DownProcess: 0,
         DownSpeedStr: '',
         DownState: '',
@@ -426,34 +391,50 @@ const useDowningStore = defineStore('downing', {
           updateState.IsDowning = true
           updateState.DownTime = Date.now()
           break
+        case 'queue':
+          updateState.IsDowning = false
+          updateState.DownState = '队列中'
+          break
         case 'success':
           updateState.IsDowning = true
           updateState.DownState = '下载中'
           break
         case 'downed':
           updateState.IsDowning = true
+          updateState.IsCompleted = true
           updateState.DownState = '已完成'
           updateState.DownProcess = 100
           break
-        case '已暂停':
+        case 'valid':
+          updateState.IsDowning = true
+          updateState.IsCompleted = true
+          updateState.DownState = '校验中'
+          updateState.DownProcess = 100
+          break
+        case 'stop':
           updateState.IsDowning = false
           updateState.DownState = '已暂停'
+          updateState.DownSpeed = 0
+          updateState.DownSpeedStr = ''
           updateState.IsStop = true
+          break
+        case 'error':
+          updateState.DownState = '已出错'
+          updateState.DownSpeed = 0
+          updateState.AutoTry = Date.now()
+          updateState.IsFailed = true
+          updateState.FailedMessage = msg || state
           break
         default:
           updateState.DownState = '已出错'
+          updateState.DownSpeed = 0
           updateState.AutoTry = Date.now()
           updateState.IsFailed = true
           updateState.FailedCode = 504
           updateState.FailedMessage = msg || state
           break
       }
-      for (let j = 0; j < DowningList.length; j++) {
-        if (DowningList[j].DownID == DownID) {
-          DowningList[j].Down = {  ...DowningList[j].Down, ...updateState }
-          break
-        }
-      }
+      DownItem.Down = {  ...DownItem.Down, ...updateState }
     }
   }
 })

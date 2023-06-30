@@ -5,6 +5,7 @@ import UserDAL from '../user/userdal'
 import message from '../utils/message'
 import { modalUserSpace } from '../utils/modal'
 import AliUser from '../aliapi/user'
+
 export default defineComponent({
   setup() {
     const handleUserChange = (val: any, user_id: string) => {
@@ -54,21 +55,35 @@ export default defineComponent({
     <a-avatar v-else :size="28" style="margin-right: 12px" :style="{ backgroundColor: '#3370ff' }">登录</a-avatar>
 
     <template #content>
-      <div v-if="userStore.userLogined" style="width: 300px">
-        <a-row justify="center" align="stretch">
-          <a-col flex="150px">
-            <span class="username">Hi {{ userStore.GetUserToken.nick_name ? userStore.GetUserToken.nick_name : userStore.GetUserToken.user_name }}</span>
+      <div v-if='userStore.userLogined' style='width: 300px'>
+        <a-row justify='center' align='stretch'>
+          <a-col flex='150px'>
+            <div class='username'>
+              Hi {{ userStore.GetUserToken.nick_name || userStore.GetUserToken.user_name }}
+              <span v-if='userStore.GetUserToken.vipIcon'>
+                <img width='65'
+                     :src='userStore.GetUserToken.vipIcon'
+                     :title='userStore.GetUserToken.vipname + "，过期时间："+ userStore.GetUserToken.vipexpire'
+                     alt='会员信息' />
+              </span>
+            </div>
           </a-col>
-          <a-col flex="auto"></a-col>
-          <a-col flex="50px">
-            <a-button type="text" size="small" tabindex="-1" style="min-width: 46px; padding: 0 8px" title="刷新账号信息" @click="handleRefreshUserInfo()">刷新</a-button>
-          </a-col>
-          <a-col flex="none">
-            <a-button type="text" size="small" tabindex="-1" style="min-width: 46px; padding: 0 8px" title="每日签到"
-                      @click="handleSign()">签到</a-button>
-          </a-col>
-          <a-col flex="none">
-            <a-button type="text" size="small" tabindex="-1" style="min-width: 46px; padding: 0 8px" title="退出该账号" @click="handleLogOff()"> 退出 </a-button>
+          <a-col flex='none'>
+            <a-button type='text' size='small' tabindex='-1'
+                      style='min-width: 20px; padding: 0 8px'
+                      title='刷新账号信息'
+                      @click='handleRefreshUserInfo()'>刷新
+            </a-button>
+            <a-button type='text' size='small' tabindex='-1'
+                      style='min-width: 20px; padding: 0 8px'
+                      title='每日签到'
+                      @click='handleSign()'>签到
+            </a-button>
+            <a-button type='text' size='small' tabindex='-1'
+                      style='min-width: 20px; padding: 0 8px'
+                      title='退出该账号'
+                      @click='handleLogOff()'> 退出
+            </a-button>
           </a-col>
         </a-row>
 

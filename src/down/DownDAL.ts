@@ -65,7 +65,6 @@ export interface IStateDownInfo {
   crc64: string
 }
 
-
 export interface IAriaDownProgress {
   gid: string
   status: string
@@ -256,7 +255,8 @@ export default class DownDAL {
       }
       let downingCount = DowningList.filter((down: any) => down.Down.IsDowning).length
       for (let i = 0; i < DowningList.length; i++) {
-        const { DownID, Info, Down } = DowningList[i]
+        const DownItem = DowningList[i]
+        const { DownID, Info, Down } = DownItem
         if (Info.ariaRemote !== ariaRemote) continue
         if (Down.IsCompleted && Down.DownState === '已完成') {
           // 将下载标记为已完成并添加到列表以供稍后处理
@@ -277,9 +277,9 @@ export default class DownDAL {
           i--
         } else if (downingCount < downFileMax && !shouldSkipDown(Down)) {
           downingCount++
-          downingStore.mUpdateDownState(DownID, 'start')
-          let state = await AriaAddUrl(DowningList[i])
-          downingStore.mUpdateDownState(DownID, state)
+          downingStore.mUpdateDownState(DownItem, 'start')
+          let state = await AriaAddUrl(DownItem)
+          downingStore.mUpdateDownState(DownItem, state)
         }
       }
     } else {
@@ -295,26 +295,13 @@ export default class DownDAL {
   static mSpeedEvent(list: IAriaDownProgress[]) {
     const downingStore = useDowningStore()
     const settingStore = useSettingStore()
-    const DowningList = downingStore.ListDataRaw
+    const DowningList: IStateDownFile[] = downingStore.ListDataRaw
     const ariaRemote = !settingStore.AriaIsLocal
 
     const dellist: string[] = []
     const saveList: IStateDownFile[] = []
 
     let hasSpeed = 0
-
-    for (const downingItem of DowningList) {
-      if (!downingItem.Down.DownSpeedStr) continue
-      const gid = downingItem.Info.GID
-      const foundItem = list.find((item: any) => item.gid === gid && item.status === 'active')
-      if (!foundItem) {
-        if (downingItem.Down.DownState != '已暂停') {
-          downingItem.Down.DownState = '队列中'
-        }
-        downingItem.Down.DownSpeed = 0
-        downingItem.Down.DownSpeedStr = ''
-      }
-    }
 
     for (const listItem of list) {
       try {
@@ -323,10 +310,9 @@ export default class DownDAL {
         const isDowning = isComplete || status === 'active' || status === 'waiting'
         const isStop = status === 'paused' || status === 'removed'
         const isError = status === 'error'
-        const downingItem: any = DowningList.find((item) => item.Info.ariaRemote === ariaRemote && item.Info.GID === gid)
+        const downingItem: IStateDownFile | undefined = DowningList.find((item) => item.Info.ariaRemote === ariaRemote && item.Info.GID === gid)
         if (!downingItem) continue
-        const { Down } = downingItem
-        const { size } = downingItem.Info
+        const { DownID, Down, Info } = downingItem
         const totalLengthInt = parseInt(totalLength) || 0
         Down.DownSize = parseInt(completedLength) || 0
         Down.DownSpeed = parseInt(downloadSpeed) || 0
@@ -341,36 +327,25 @@ export default class DownDAL {
           Down.FailedMessage = FormatAriaError(errorCode, errorMessage)
         }
         if (isComplete) {
-          Down.DownSize = size
-          Down.DownSpeed = 0
-          Down.DownSpeedStr = ''
-          Down.DownProcess = 100
-          Down.FailedCode = 0
-          Down.FailedMessage = ''
-          Down.DownState = '校验中'
+          downingStore.mUpdateDownState(downingItem, 'valid')
           const check = AriaHashFile(downingItem)
           if (check.Check) {
             if (useSettingStore().downFinishAudio && !sound.playing()) {
               sound.play()
             }
-            downingStore.mUpdateDownState(check.DownID, 'downed')
+            downingStore.mUpdateDownState(downingItem, 'downed')
           } else {
-            downingStore.mUpdateDownState(check.DownID, 'error', '移动文件失败，请重新下载')
+            downingStore.mUpdateDownState(downingItem, 'error', '移动文件失败，请重新下载')
           }
         } else if (isStop) {
-          Down.DownState = '已暂停'
-          Down.DownSpeed = 0
-          Down.DownSpeedStr = ''
-          Down.FailedCode = 0
-          Down.FailedMessage = ''
-        } else if (isStop || isError) {
-          Down.DownState = '已出错'
-          Down.DownSpeed = 0
-          Down.DownSpeedStr = ''
-          Down.AutoTry = Date.now()
+          downingStore.mUpdateDownState(downingItem, 'stop')
+          dellist.push(gid)
+        } else if (isError) {
           if (!Down.FailedMessage) {
             Down.FailedMessage = '下载失败'
           }
+          downingStore.mUpdateDownState(downingItem, 'error', Down.FailedMessage)
+          dellist.push(gid)
         } else if (isDowning) {
           hasSpeed += Down.DownSpeed
           let lastTime = ((totalLengthInt - Down.DownSize) / (Down.DownSpeed + 1)) % 356400
@@ -384,9 +359,6 @@ export default class DownDAL {
             saveList.push(downingItem)
           }
         }
-        if (isStop || isError) {
-          dellist.push(gid)
-        }
         downingStore.mRefreshListDataShow(true)
       } catch {
         // Ignore any errors
@@ -398,8 +370,7 @@ export default class DownDAL {
       DBDown.saveDownings(JSON.parse(JSON.stringify(saveList)))
     }
     if (dellist.length) {
-      AriaDeleteList(dellist).then(r => {
-      })
+      AriaDeleteList(dellist).then()
     }
     useFootStore().mSaveDownTotalSpeedInfo(hasSpeed && humanSizeSpeed(hasSpeed) || '')
   }
