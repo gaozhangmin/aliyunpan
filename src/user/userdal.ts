@@ -89,6 +89,7 @@ export default class UserDAL {
       is_first_login: false,
       need_rp_verify: false,
       name: '',
+      vipIcon: '',
       spu_id: '',
       is_expires: false,
       used_size: 0,

@@ -279,7 +279,9 @@ export default class AliUser {
       token.vipname = resp.body.identity
       if (resp.body.expire  && new Date(resp.body.expire * 1000) > new Date()) {
         token.vipexpire = humanDateTime(resp.body.expire)
+        token.vipIcon = ''
       } else {
+        token.vipIcon = ''
         token.vipexpire = '';
       }
       return true

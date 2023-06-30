@@ -196,6 +196,7 @@ export default defineComponent({
                 need_rp_verify: result.needRpVerify,
                 name: '',
                 spu_id: '',
+                vipIcon: '',
                 is_expires: false,
                 used_size: 0,
                 total_size: 0,
