@@ -50,7 +50,7 @@ const IsDebugHttp = false
 export default class AliHttp {
   static LimitMax = 100
   static baseapi = 'https://api.aliyundrive.com/'
-  static baseOpenApi = 'https://open.aliyundrive.com/'
+  static baseOpenApi = 'https://openapi.aliyundrive.com/'
 
   static IsSuccess(code: number): Boolean {
     return code >= 200 && code <= 300
@@ -377,6 +377,32 @@ export default class AliHttp {
         })
   }
 
+  static async isVip(phone:string): Promise<boolean> {
+    const url = `https://eu-central-1.data.tidbcloud.com/api/v1beta/app/dataapp-DlZtOYDl/endpoint/v1/orders?userId=${phone}`;
+    const config = {
+      auth: {
+        username: 'gGXrSK30',
+        password: '4c4468a9-0fd6-497e-87e3-b77eb2f71e68'
+      }
+    };
+    return axios
+      .get(url, config)
+      .then((resp: AxiosResponse) => {
+        if (AliHttp.IsSuccess(resp.status)) {
+          const data  = resp.data.rows as {vip_type_text:string}[];
+          console.log("tidbdata", data)
+          if(data.length > 0 && data[0].vip_type_text !== '') {
+            return true;
+          }
+          return false;
+        }
+        return false;
+      })
+      .catch(function (err: any) {
+        return false;
+      })
+  }
+
   static async PostWithOutUserId(url: string, postData: any): Promise<IUrlRespData> {
     return axios
       .post(url, postData, {
@@ -405,8 +431,7 @@ export default class AliHttp {
       if (url.includes('aliyundrive')) {
         headers['Content-Type'] = 'application/json'
       }
-      if (token && (url.startsWith(this.baseOpenApi)
-          || url.startsWith('https://openapi.aliyundrive.com'))) {
+      if (token && url.startsWith(this.baseOpenApi)) {
         headers['Authorization'] = token.token_type + ' ' + token.access_token_v2
         headers['x-request-id'] = v4().toString()
         headers['x-device-id'] = token.device_id

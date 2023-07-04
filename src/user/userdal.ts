@@ -83,6 +83,7 @@ export default class UserDAL {
       default_sbox_drive_id: '',
       role: '',
       status: '',
+      phone:'',
       expire_time: '',
       state: '',
       pin_setup: false,

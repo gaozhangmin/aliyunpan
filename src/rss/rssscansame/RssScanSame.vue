@@ -87,6 +87,22 @@ const handleSelectAll = () => {
     })
 }
 
+const handleSmartSelect = () => {
+  isAllChecked.value = !isAllChecked.value
+  checkedKeys.value.clear()
+  checkedSize.value = 0
+  checkedCount.value = 0
+  treeData.value.forEach((node) => {
+    if (node.files.length > 1) {
+      const firstFile = node.files[0]
+      checkedKeys.value.add(firstFile.file_id)
+      checkedSize.value += firstFile.size
+    }
+  })
+  checkedCount.value = checkedKeys.value.size
+}
+
+
 const handleCheck = (file_id: string) => {
   if (checkedKeys.value.has(file_id)) checkedKeys.value.delete(file_id)
   else checkedKeys.value.add(file_id)
@@ -193,7 +209,7 @@ const handleScan = () => {
 
     <div class="settingcard scanauto" style="padding: 4px; margin-top: 4px">
       <a-row justify="space-between" align="center" style="margin: 12px; height: 28px; flex-grow: 0; flex-shrink: 0; flex-wrap: nowrap; overflow: hidden">
-        <AntdCheckbox :disabled="scanLoaded == false" :checked="isAllChecked" style="margin-left: 12px; margin-right: 12px" @click.stop.prevent="handleSelectAll">全选</AntdCheckbox>
+        <AntdCheckbox :disabled="scanLoaded == false" :checked="isAllChecked" style="margin-left: 12px; margin-right: 12px" @click.stop.prevent="handleSmartSelect">全选</AntdCheckbox>
         <span v-if="scanLoaded" class="checkedInfo">已选中 {{ checkedCount }} 个文件 {{ humanSize(checkedSize) }}</span>
 
         <span v-else-if="totalDirCount > 0" class="checkedInfo">正在列出文件 {{ Processing }} / {{ totalDirCount }}</span>

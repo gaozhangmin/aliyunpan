@@ -38,6 +38,7 @@ export interface ITokenInfo {
   used_size: number
   total_size: number
   spaceinfo: string
+  phone: string
   vipname: string
   vipIcon: string
   vipexpire: string

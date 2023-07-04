@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ShareSiteRight from './share/ShareSiteRight.vue'
+import SearchRes from '../resource/searchIndex.vue'
 import MyShareRight from './share/MyShareRight.vue'
 import OtherShareRight from './share/OtherShareRight.vue'
 import MyFollowingRight from './following/MyFollowingRight.vue'
@@ -13,7 +14,7 @@ const appStore = useAppStore()
 appStore.$subscribe((mutation) => {
   const appPage = appStore.GetAppTabMenu
 
-  if (appPage == 'ShareSiteRight') ShareDAL.aLoadShareSite()
+  // if (appPage == 'ShareSiteRight') ShareDAL.aLoadShareSite()
   if (appPage == 'MyShareRight') ShareDAL.aReloadMyShare(useUserStore().user_id, false)
   if (appPage == 'MyFollowingRight') FollowingDAL.aReloadMyFollowing(useUserStore().user_id, false)
   if (appPage == 'OtherFollowingRight') FollowingDAL.aReloadOtherFollowingList(useUserStore().user_id, false)
@@ -41,10 +42,10 @@ appStore.$subscribe((mutation) => {
           <template #icon><i class="iconfont icontuijian" /></template>
           公众号推荐
         </a-menu-item>
-<!--        <a-menu-item key="ShareSiteRight">-->
-<!--          <template #icon><i class="iconfont iconrvip" /></template>-->
-<!--          资源分享网站-->
-<!--        </a-menu-item>-->
+        <a-menu-item key="ShareSiteRight">
+          <template #icon><i class="iconfont iconrvip" /></template>
+          资源分享网站
+        </a-menu-item>
       </a-menu>
     </a-layout-sider>
     <a-layout-content class="xbyright">
@@ -53,7 +54,7 @@ appStore.$subscribe((mutation) => {
         <a-tab-pane key="MyShareRight" title="1"><MyShareRight /></a-tab-pane>
         <a-tab-pane key="MyFollowingRight" title="3"><MyFollowingRight /></a-tab-pane>
         <a-tab-pane key="OtherFollowingRight" title="6"><OtherFollowingRight /></a-tab-pane>
-<!--        <a-tab-pane key="ShareSiteRight" title="5"><ShareSiteRight /></a-tab-pane>-->
+        <a-tab-pane key="ShareSiteRight" title="5"><SearchRes /></a-tab-pane>
       </a-tabs>
     </a-layout-content>
   </a-layout>

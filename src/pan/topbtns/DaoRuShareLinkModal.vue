@@ -28,8 +28,6 @@ export default defineComponent({
       sharelink: '',
       password: ''
     })
-
-    console.log('props.shareUrl', props.shareUrl)
     if (props.shareUrl !== '') {
       // 自动填入值
       form.sharelink = props.shareUrl

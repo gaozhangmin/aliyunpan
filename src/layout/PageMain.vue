@@ -22,8 +22,8 @@ import Share from '../share/index.vue'
 import Down from '../down/index.vue'
 import Pan from '../pan/index.vue'
 import Pic from '../pic/index.vue'
-import Res from '../Resource/index.vue'
-
+import Res from '../resource/index.vue'
+import VIP from '../resource/vipInfo.vue'
 import UserInfo from '../user/UserInfo.vue'
 import UserLogin from '../user/UserLogin.vue'
 import ShutDown from '../setting/ShutDown.vue'
@@ -36,10 +36,13 @@ import Config from '../utils/config'
 import SponsorInfo from '../user/SponsorInfo.vue'
 import { existsSync, readFileSync } from 'fs'
 import os from 'os'
+import UserDAL from '../user/userdal'
+import AliHttp from '../aliapi/alihttp'
 
 const panVisible = ref(true)
 const appStore = useAppStore()
 const winStore = useWinStore()
+const userStore = useUserStore()
 const keyboardStore = useKeyboardStore()
 const mouseStore = useMouseStore()
 const footStore = useFootStore()
@@ -132,15 +135,22 @@ const handleAudioStop = () => {
   footStore.mSaveAudioUrl('')
 }
 
-onMounted(() => {
+let isVip = false
+onMounted( () => {
+
   onResize()
   DebugLog.aLoadFromDB()
   window.addEventListener('resize', onResize, { passive: true })
   window.addEventListener('keydown', onKeyDown, true)
   window.addEventListener('mousedown', onMouseDown, true)
-  setTimeout(() => {
+  setTimeout(async () => {
     onHideRightMenu()
+    isVip = await AliHttp.isVip(UserDAL.GetUserToken(userStore.user_id).phone)
   }, 300)
+  setTimeout(async () => {
+    console.log("timeout12345", UserDAL.GetUserToken(userStore.user_id))
+    isVip = await AliHttp.isVip(UserDAL.GetUserToken(userStore.user_id).phone)
+  }, 5000)
   window.addEventListener('click', onHideRightMenu, { passive: true })
 })
 
@@ -219,7 +229,8 @@ const handleCheckVer = () => {
         <a-tab-pane key="share" title="4"><Share /></a-tab-pane>
         <a-tab-pane key="rss" title="5"><Rss /></a-tab-pane>
         <a-tab-pane key="setting" title="6"><Setting /></a-tab-pane>
-        <a-tab-pane key="res" title="7"><Res /></a-tab-pane>
+        <a-tab-pane v-if='isVip' key="res" title="7"><Res /></a-tab-pane>
+        <a-tab-pane v-if='!isVip' key="res" title="7"><VIP /></a-tab-pane>
       </a-tabs>
     </a-layout-content>
     <a-layout-footer id="xbyfoot" draggable="false">
