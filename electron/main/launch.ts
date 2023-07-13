@@ -187,8 +187,9 @@ export default class launch extends EventEmitter {
 
   handleAppActivate() {
     app.on('activate', () => {
-      if (!AppWindow.mainWindow || AppWindow.mainWindow.isDestroyed()) createMainWindow()
-      else {
+      if (!AppWindow.mainWindow || AppWindow.mainWindow.isDestroyed()){
+        createMainWindow()
+      } else {
         if (AppWindow.mainWindow.isMinimized()) AppWindow.mainWindow.restore()
         AppWindow.mainWindow.show()
         AppWindow.mainWindow.focus()

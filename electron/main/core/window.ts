@@ -1,9 +1,11 @@
 import { app, BrowserWindow, Menu, MenuItem, MessageChannelMain, nativeTheme, screen, Tray } from 'electron'
 // @ts-ignore
-import { getAsarPath, getStaticPath, getUserDataPath } from '../utils/mainfile'
+import { getAsarPath, getResourcesPath, getStaticPath, getUserDataPath } from '../utils/mainfile'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import is from 'electron-is'
 import { ShowErrorAndRelaunch } from './dialog'
+import { ElectronBlocker, fullLists, Request } from '@cliqz/adblocker-electron';
+import fetch from 'cross-fetch';
 
 const DEBUGGING = !app.isPackaged
 export const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36 Edg/102.0.1245.33'
@@ -77,21 +79,23 @@ export function createMainWindow() {
       AppWindow.winWidth = configData.width
       AppWindow.winHeight = configData.height
     }
-  } catch {}
+  } catch {
+  }
   try {
     const themeJson = getUserDataPath('theme.json')
     if (existsSync(themeJson)) {
       const themeData = JSON.parse(readFileSync(themeJson, 'utf-8'))
       AppWindow.winTheme = themeData.theme
     }
-  } catch {}
+  } catch {
+  }
   if (AppWindow.winWidth <= 0) {
     try {
       const size = screen.getPrimaryDisplay().workAreaSize
       let width = size.width * 0.677
       const height = size.height * 0.866
       if (width > AppWindow.winWidth) AppWindow.winWidth = width
-      if (size.width >= 970 && width < 970) width = 970 
+      if (size.width >= 970 && width < 970) width = 970
       if (AppWindow.winWidth > 1080) AppWindow.winWidth = 1080
       if (height > AppWindow.winHeight) AppWindow.winHeight = height
       if (AppWindow.winHeight > 720) AppWindow.winHeight = 720
@@ -103,14 +107,15 @@ export function createMainWindow() {
   AppWindow.mainWindow = createElectronWindow(AppWindow.winWidth, AppWindow.winHeight, true, 'main', AppWindow.winTheme)
 
   AppWindow.mainWindow.on('resize', () => {
-    debounceResize(function () {
+    debounceResize(function() {
       try {
         if (AppWindow.mainWindow && AppWindow.mainWindow.isMaximized() == false && AppWindow.mainWindow.isMinimized() == false && AppWindow.mainWindow.isFullScreen() == false) {
-          const s = AppWindow.mainWindow!.getSize() 
+          const s = AppWindow.mainWindow!.getSize()
           const configJson = getUserDataPath('config.json')
           writeFileSync(configJson, `{"width":${s[0].toString()},"height": ${s[1].toString()}}`, 'utf-8')
         }
-      } catch {}
+      } catch {
+      }
     }, 3000)
   })
 
@@ -127,16 +132,16 @@ export function createMainWindow() {
     app.quit()
   })
 
-  AppWindow.mainWindow.on('ready-to-show', function () {
+  AppWindow.mainWindow.on('ready-to-show', function() {
     AppWindow.mainWindow!.webContents.send('setPage', { page: 'PageMain' })
     AppWindow.mainWindow!.webContents.send('setTheme', { dark: nativeTheme.shouldUseDarkColors })
     AppWindow.mainWindow!.setTitle('阿里云盘小白羊')
     if (is.windows() && process.argv && process.argv.join(' ').indexOf('--openAsHidden') < 0) {
       AppWindow.mainWindow!.show()
-    } else if (is.macOS() && !app.getLoginItemSettings().wasOpenedAsHidden){
+    } else if (is.macOS() && !app.getLoginItemSettings().wasOpenedAsHidden) {
       AppWindow.mainWindow!.show()
     }
-    if (is.linux()){
+    if (is.linux()) {
       AppWindow.mainWindow!.show()
     }
     creatUploadPort()
@@ -239,6 +244,46 @@ export function createElectronWindow(width: number, height: number, center: bool
       preload: getAsarPath('dist/electron/preload/index.js')
     }
   })
+
+  const blocker =  ElectronBlocker.fromLists(
+    fetch,
+    fullLists,
+    {
+      enableCompression: true,
+    },
+    {
+      path: getResourcesPath('engine.bin'),
+      read: async (...args) => readFileSync(...args),
+      write: async (...args) => writeFileSync(...args),
+    },
+  ).then((blocker) => {
+    blocker.enableBlockingInSession(win.webContents.session);
+
+    blocker.on('request-blocked', (request: Request) => {
+      console.log('blocked', request.tabId, request.url);
+    })
+
+    blocker.on('request-redirected', (request: Request) => {
+      console.log('redirected', request.tabId, request.url);
+    })
+
+    blocker.on('request-whitelisted', (request: Request) => {
+      console.log('whitelisted', request.tabId, request.url);
+    })
+
+    blocker.on('csp-injected', (request: Request) => {
+      console.log('csp', request.url);
+    })
+
+    blocker.on('script-injected', (script: string, url: string) => {
+      console.log('script', script.length, url);
+    })
+
+    blocker.on('style-injected', (style: string, url: string) => {
+      console.log('style', style.length, url);
+    })
+  })
+
   win.removeMenu()
   if (DEBUGGING) {
     const url = `http://localhost:${process.env.VITE_DEV_SERVER_PORT}`
@@ -270,7 +315,7 @@ export function createElectronWindow(width: number, height: number, center: bool
   })
   win.webContents.on('did-create-window', (childWindow) => {
     if (is.windows()) {
-      childWindow.setMenu(null) 
+      childWindow.setMenu(null)
     }
   })
   return win

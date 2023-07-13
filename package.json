@@ -50,6 +50,8 @@
     "isomorphic-fetch": "^3.0.0",
     "jschardet": "^3.0.0",
     "lodash": "^4.17.21",
+    "@cliqz/adblocker-electron": "^1.26.6",
+    "cross-fetch": "^4.0.0",
     "pinia": "^2.0.35",
     "secp256k1": "^5.0.0",
     "socks-proxy-agent": "^7.0.0",

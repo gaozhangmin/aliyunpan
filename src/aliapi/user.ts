@@ -58,11 +58,10 @@ export default class AliUser {
     const postData = {
       refresh_token: token.refresh_token_v2,
       grant_type: 'refresh_token',
-      client_secret: 'a3d3a7036fa9417399eef14891f6084f',
-      client_id: 'e90a7b360e894c60b7b314579f42827d'
+      client_secret: 'f33ca6d0287f46369326df8bec30b5f4',
+      client_id: 'df43e22f022d4c04b6e29964f3b8b46d'
     }
     return await AliHttp.Post(Config.accessTokenUrl, postData, '', '')
-
   }
 
 // {
@@ -100,10 +99,10 @@ export default class AliUser {
       return true
     }
 
-    const resp = await this.ApiTokenRefreshAccountV2_TMP(token)
+    const resp = await this.ApiTokenRefreshAccountV2(token)
     TokenLockMapV2.delete(token.user_id)
     if (AliHttp.IsSuccess(resp.code)) {
-      TokenReTimeMapV2.set(resp.body.user_id, Date.now())
+      TokenReTimeMapV2.set(token.user_id, Date.now())
       token.tokenfrom = 'account'
 
       token.refresh_token_v2 = resp.body.refresh_token
@@ -115,7 +114,7 @@ export default class AliUser {
       return true
     } else {
       if (resp.body?.code != 'InvalidParameter.RefreshToken') {
-        DebugLog.mSaveWarning('ApiTokenRefreshAccount err=' + (resp.code || '') + ' ' + (resp.body?.code || ''))
+        DebugLog.mSaveWarning('ApiTokenRefreshAccountV2 err=' + (resp.code || '') + ' ' + (resp.body?.code || ''))
       }
       if (showMessage) {
         message.error('刷新账号[' + token.user_name + '] v2 token 失败,需要重新登录')
