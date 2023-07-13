@@ -1,7 +1,7 @@
 {
   "name": "xbyyunpan",
   "description": "小白羊云盘",
-  "version": "3.11.16",
+  "version": "3.11.17",
   "license": "MIT",
   "main": "dist/electron/main/index.js",
   "author": {
@@ -10,12 +10,11 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build && electron-builder -wml"
+    "build": "vue-tsc --noEmit && vite build && electron-builder --win --x64"
   },
   "engines": {
     "node": ">=16.0.0"
   },
-  "dependencies": {},
   "devDependencies": {
     "@arco-design/web-vue": "^2.45.3",
     "@electron/remote": "^2.0.9",
