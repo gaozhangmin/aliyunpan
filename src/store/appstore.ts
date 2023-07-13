@@ -77,7 +77,7 @@ const useAppStore = defineStore('app', {
     appTheme: 'light',
     appPage: 'PageLoading',
     appTab: 'pan',
-    isVip: false,
+    isVip: true,
     appTabMenuMap: new Map<string, string>([
       ['pan', 'wangpan'],
       ['pic', 'allpic'],
@@ -146,7 +146,7 @@ const useAppStore = defineStore('app', {
         this.appTab = tab
         if (tab == 'setting') DebugLog.aLoadFromDB()
         if (tab == 'movie') {
-          if (useUserStore().userLogined && !this.isVip) {
+          if (useUserStore().userLogined) {
             this.isVip = await AliHttp.isVip(UserDAL.GetUserToken(useUserStore().user_id).phone)
           }
         }

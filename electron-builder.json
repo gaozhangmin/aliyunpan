@@ -8,6 +8,7 @@
   "files": [ "dist" ],
   "extraResources": [
     { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
+    { "from": "./static/engine/ads_block.txt", "to": "./engine/ads_block.txt"},
     { "from": "./static/crx", "to": "./crx"},
     { "from": "./public/images/qrcode_1280.jpg", "to": "./images/qrcode_1280.jpg"},
     { "from": "./static/images/icon_24.png", "to": "./images/icon_24.png"},

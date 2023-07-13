@@ -15,11 +15,11 @@ import VipInformPage from '../resource/vipInfo.vue'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
-let vipIdentity = false
+let vipIdentity = true
 appStore.$subscribe(async (mutation) => {
   const appPage = appStore.GetAppTabMenu
   if (appPage == 'ShareSiteRight') {
-    if (userStore.userLogined && !vipIdentity) {
+    if (userStore.userLogined) {
       vipIdentity = await AliHttp.isVip(UserDAL.GetUserToken(userStore.user_id).phone)
     }
   }
