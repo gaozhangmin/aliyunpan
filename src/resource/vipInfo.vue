@@ -12,9 +12,8 @@ export default defineComponent({
 <template>
   <div class="container1">
       <div class="content-text3">
-        <p class="image-viptext2">会员开放功能，购买任意类型会员后可解锁。请支持小白羊继续维护下去</p>
         <div class="image-container2">
-          <img src="/images/WechatIMG89.png" alt="公众号">
+          <img src="/images/alicode.png" alt="公众号">
         </div>
       </div>
   </div>
