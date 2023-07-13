@@ -65,7 +65,8 @@
     "vite-plugin-electron": "^0.9.2",
     "vite-plugin-resolve": "^2.1.2",
     "vue": "^3.2.47",
-    "vue-tsc": "^1.6.4"
+    "vue-tsc": "^1.6.4",
+    "xmlhttprequest": "^1.8.0"
   },
   "debug": {
     "env": {

@@ -1,13 +1,12 @@
-import { app, BrowserWindow, Menu, MenuItem, MessageChannelMain, nativeTheme, screen, Tray } from 'electron'
+import { app, BrowserWindow, Menu, MenuItem, MessageChannelMain, nativeTheme, screen, session, Tray } from 'electron'
 // @ts-ignore
 import { getAsarPath, getResourcesPath, getStaticPath, getUserDataPath } from '../utils/mainfile'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import is from 'electron-is'
 import { ShowErrorAndRelaunch } from './dialog'
-import { ElectronBlocker, fullLists, Request } from '@cliqz/adblocker-electron';
+import { ElectronBlocker } from '@cliqz/adblocker-electron';
 import fetch from 'cross-fetch';
 
-const DEBUGGING = !app.isPackaged
 export const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36 Edg/102.0.1245.33'
 export const Referer = 'https://www.aliyundrive.com/'
 export const AppWindow: {
@@ -245,47 +244,12 @@ export function createElectronWindow(width: number, height: number, center: bool
     }
   })
 
-  const blocker =  ElectronBlocker.fromLists(
-    fetch,
-    fullLists,
-    {
-      enableCompression: true,
-    },
-    {
-      path: getResourcesPath('engine.bin'),
-      read: async (...args) => readFileSync(...args),
-      write: async (...args) => writeFileSync(...args),
-    },
-  ).then((blocker) => {
-    blocker.enableBlockingInSession(win.webContents.session);
-
-    blocker.on('request-blocked', (request: Request) => {
-      console.log('blocked', request.tabId, request.url);
-    })
-
-    blocker.on('request-redirected', (request: Request) => {
-      console.log('redirected', request.tabId, request.url);
-    })
-
-    blocker.on('request-whitelisted', (request: Request) => {
-      console.log('whitelisted', request.tabId, request.url);
-    })
-
-    blocker.on('csp-injected', (request: Request) => {
-      console.log('csp', request.url);
-    })
-
-    blocker.on('script-injected', (script: string, url: string) => {
-      console.log('script', script.length, url);
-    })
-
-    blocker.on('style-injected', (style: string, url: string) => {
-      console.log('style', style.length, url);
-    })
+  ElectronBlocker.fromPrebuiltAdsAndTracking(fetch).then((blocker) => {
+    blocker.enableBlockingInSession(session.defaultSession);
   })
 
   win.removeMenu()
-  if (DEBUGGING) {
+  if (is.dev()) {
     const url = `http://localhost:${process.env.VITE_DEV_SERVER_PORT}`
     win.loadURL(url, { userAgent: ua, httpReferrer: Referer })
   } else {
@@ -295,7 +259,7 @@ export function createElectronWindow(width: number, height: number, center: bool
     })
   }
 
-  if (DEBUGGING && devTools) {
+  if (is.dev() && devTools) {
     if (width < 100) win.setSize(800, 600)
     win.show()
     win.webContents.openDevTools({ mode: 'bottom' })

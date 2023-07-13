@@ -20,6 +20,12 @@ const appStore = useAppStore()
 const winStore = useWinStore()
 const uploadingStore = useUploadingStore()
 
+const rangIsSelecting = ref(false)
+const rangSelectID = ref('')
+const rangSelectStart = ref('')
+const rangSelectEnd = ref('')
+const rangSelectFiles = ref<{ [k: string]: any }>({})
+
 const menuShowDir = ref(false)
 const menuShowTask = ref(false)
 uploadingStore.$subscribe((_m: any, state: any) => {
@@ -53,6 +59,23 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
   const key = e.node.key
   if (!uploadingStore.ListSelected.has(key)) uploadingStore.mMouseSelect(key, false, false)
   onShowRightMenu('rightuploadingmenu', e.event.clientX, e.event.clientY)
+}
+
+const onSelectRangStart = () => {
+  onHideRightMenuScroll()
+  rangIsSelecting.value = !rangIsSelecting.value
+  rangSelectID.value = ''
+  rangSelectStart.value = ''
+  rangSelectEnd.value = ''
+  rangSelectFiles.value = {}
+  uploadingStore.mRefreshListDataShow(false)
+}
+
+const onSelectCancel = () => {
+  onHideRightMenuScroll()
+  uploadingStore.ListSelected.clear()
+  uploadingStore.ListFocusKey = 0
+  uploadingStore.mRefreshListDataShow(false)
 }
 </script>
 
@@ -107,6 +130,27 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
       </AntdTooltip>
     </div>
     <div class="selectInfo">{{ uploadingStore.ListDataSelectCountInfo }}</div>
+    <div style='margin: 0 2px'>
+      <AntdTooltip placement='rightTop'>
+        <a-button shape='square' type='text' tabindex='-1' class='qujian'
+                  :status="rangIsSelecting ? 'danger' : 'normal'" title='Ctrl+Q' @click='onSelectRangStart'>
+          {{ rangIsSelecting ? '取消选择' : '区间选择' }}
+        </a-button>
+        <template #title>
+          <div>
+            第1步: 点击 区间选择 这个按钮
+            <br />
+            第2步: 鼠标点击一个文件
+            <br />
+            第3步: 移动鼠标点击另外一个文件
+          </div>
+        </template>
+      </AntdTooltip>
+      <a-button shape='square' v-if='!rangIsSelecting && uploadingStore.ListSelected.size > 0' type='text' tabindex='-1' class='qujian'
+                status='normal' @click='onSelectCancel'>
+        取消已选
+      </a-button>
+    </div>
 
     <div style="flex-grow: 1"></div>
     <div class="cell tiquma">瞬时速度</div>
