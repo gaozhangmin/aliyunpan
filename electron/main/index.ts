@@ -130,6 +130,9 @@ ipcMain.on('renderer-msg', (event, arg) => {
     win.setAlwaysOnTop(true);
     event.reply('main-msg', '好的');  // 给渲染进程回复消息
   }
+  if (arg === 'qxzhiding') {
+    win.setAlwaysOnTop(false);
+  }
   if (arg === 'minsize') {
     win.minimize();
   }

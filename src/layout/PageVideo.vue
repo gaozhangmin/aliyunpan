@@ -1,6 +1,6 @@
 <script setup lang='ts'>
 import { useAppStore, usePanFileStore, useSettingStore } from '../store'
-import { onBeforeUnmount, onMounted } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import Artplayer from 'artplayer'
 import HlsJs from 'hls.js'
 import AliFile from '../aliapi/file'
@@ -16,6 +16,7 @@ const pageVideo = appStore.pageVideo!
 let autoPlayNumber = 0
 let playbackRate = 1
 let ArtPlayerRef: Artplayer
+let zhiding=ref(true)
 
 const options: Option = {
   id: 'artPlayer',
@@ -61,7 +62,7 @@ const playM3U8 = (video: HTMLMediaElement, url: string, art: Artplayer) => {
     hls.loadSource(url)
     hls.attachMedia(video)
     hls.on(HlsJs.Events.MANIFEST_PARSED, async () => {
-      await art.play().catch((err) => {})
+      await art.play().catch((err) => { })
       await getVideoCursor(art, pageVideo.play_cursor)
       art.playbackRate = playbackRate
     })
@@ -164,7 +165,7 @@ const createVideo = async (name: string) => {
   ArtPlayerRef.on('ready', async () => {
     // @ts-ignore
     if (!ArtPlayerRef.hls) {
-      await ArtPlayerRef.play().catch((err) => {})
+      await ArtPlayerRef.play().catch((err) => { })
       await getVideoCursor(ArtPlayerRef, pageVideo.play_cursor)
       ArtPlayerRef.playbackRate = playbackRate
     }
@@ -191,16 +192,16 @@ const createVideo = async (name: string) => {
     }
   })
 
-// // 视频跳转
-//   ArtPlayerRef.on('video:seeked', () => {
-//     updateVideoTime()
-//   })
+  // // 视频跳转
+  //   ArtPlayerRef.on('video:seeked', () => {
+  //     updateVideoTime()
+  //   })
 
-// 播放已暂停
+  // 播放已暂停
   ArtPlayerRef.on('video:pause', async () => {
     await updateVideoTime()
   })
-// 音量发生变化
+  // 音量发生变化
   ArtPlayerRef.on('video:volumechange', () => {
     storage.set('videoVolume', ArtPlayerRef.volume)
     storage.set('videoMuted', ArtPlayerRef.muted ? 'true' : 'false')
@@ -215,8 +216,8 @@ const createVideo = async (name: string) => {
     const totalDuration = pageVideo.duration
     const endDuration = storage.get('autoSkipEnd')
     if (totalDuration
-        && totalDuration - ArtPlayerRef.currentTime > 0
-        && totalDuration - ArtPlayerRef.currentTime <= endDuration) {
+      && totalDuration - ArtPlayerRef.currentTime > 0
+      && totalDuration - ArtPlayerRef.currentTime <= endDuration) {
       ArtPlayerRef.seek = totalDuration
     }
   });
@@ -307,32 +308,32 @@ const defaultSetting = async (art: Artplayer) => {
     })
   }
   art.setting.add(
-      {
-        name: 'autoSkipBegin',
-        width: 250,
-        html: '跳过片头',
-        icon: '<i class="iconfont iconarrow-right-1-icon"></i>',
-        tooltip:  art.storage.get('autoSkipBegin') + 's',
-        range: [0, 0, 10, 1],
-        onChange(item: SettingOption) {
-          art.storage.set('autoSkipBegin', item.range*10)
-          return item.range*10 + 's'
-        }
+    {
+      name: 'autoSkipBegin',
+      width: 250,
+      html: '跳过片头',
+      icon: '<i class="iconfont iconarrow-right-1-icon"></i>',
+      tooltip: art.storage.get('autoSkipBegin') + 's',
+      range: [0, 0, 10, 1],
+      onChange(item: SettingOption) {
+        art.storage.set('autoSkipBegin', item.range * 10)
+        return item.range * 10 + 's'
       }
+    }
   )
   art.setting.add(
-      {
-        name: 'autoSkipEnd',
-        width: 250,
-        html: '跳过片尾',
-        tooltip: art.storage.get('autoSkipEnd') + 's',
-        icon: '<i class="iconfont iconarrow-right-1-icon"></i>',
-        range: [0, 0, 10, 1],
-        onChange(item: SettingOption) {
-          art.storage.set('autoSkipEnd', item.range*10)
-          return item.range*10 + 's'
-        }
+    {
+      name: 'autoSkipEnd',
+      width: 250,
+      html: '跳过片尾',
+      tooltip: art.storage.get('autoSkipEnd') + 's',
+      icon: '<i class="iconfont iconarrow-right-1-icon"></i>',
+      range: [0, 0, 10, 1],
+      onChange(item: SettingOption) {
+        art.storage.set('autoSkipEnd', item.range * 10)
+        return item.range * 10 + 's'
       }
+    }
   )
   art.setting.add({
     name: 'playListMode',
@@ -460,7 +461,7 @@ const getPlayList = async (art: Artplayer, file_id?: string) => {
 }
 
 const getVideoCursor = async (art: Artplayer, play_cursor?: number) => {
-  const autoSkipBegin  = art.storage.get('autoSkipBegin')
+  const autoSkipBegin = art.storage.get('autoSkipBegin')
   if (art.storage.get('autoJumpCursor')) {
     let cursor = 0
     if (!play_cursor) {
@@ -492,7 +493,7 @@ const loadOnlineSub = async (art: Artplayer, item: any) => {
   if (data) {
     const blob = new Blob([data], { type: item.ext })
     onlineSubBlobUrl = URL.createObjectURL(blob)
-    await art.subtitle.switch(onlineSubBlobUrl, { escape:false, name: item.name, type: item.ext })
+    await art.subtitle.switch(onlineSubBlobUrl, { escape: false, name: item.name, type: item.ext })
     return item.html
   } else {
     art.notice.show = `加载${item.name}字幕失败`
@@ -614,7 +615,7 @@ const getSubTitleList = async (art: Artplayer) => {
       if (art.subtitle.show) {
         if (!item.file_id) {
           art.notice.show = ''
-          await art.subtitle.switch(item.url, { escape:false, name: item.name})
+          await art.subtitle.switch(item.url, { escape: false, name: item.name })
           return item.html
         } else {
           return await loadOnlineSub(art, item)
@@ -628,12 +629,12 @@ const getSubTitleList = async (art: Artplayer) => {
   })
 }
 
-const updateVideoTime =  async () => {
+const updateVideoTime = async () => {
   await AliFile.ApiUpdateVideoTimeOpenApi(
-      pageVideo.user_id,
-      pageVideo.drive_id,
-      pageVideo.file_id,
-      ArtPlayerRef.currentTime
+    pageVideo.user_id,
+    pageVideo.drive_id,
+    pageVideo.file_id,
+    ArtPlayerRef.currentTime
   )
 }
 const handleHideClick = async () => {
@@ -646,8 +647,19 @@ const handleHideClick = async () => {
   window.close()
 }
 
+const handleZhiDingClick = (_e: any) => {
+  console.log(zhiding.value)
+  if (zhiding.value) {
+    zhiding.value = false
+    ipcRenderer.send('renderer-msg', 'qxzhiding')
+  }
+  else {
+    zhiding.value = true
+    ipcRenderer.send('renderer-msg', '把我置顶🔝')
+  }
+}
+
 const handleMinClick = (_e: any) => {
-  // if (window.WebToElectron) window.WebToElectron({ cmd: 'minsize' })
   ipcRenderer.send('renderer-msg', 'minsize')
 }
 const handleMaxClick = (_e: any) => {
@@ -669,12 +681,15 @@ onBeforeUnmount(() => {
         </a-button>
         <div class='title'>{{ appStore.pageVideo?.file_name || '视频在线预览' }}</div>
         <div class='flexauto'></div>
+        <a-button type="text" tabindex="-1" @click="handleZhiDingClick" :class="{'active': zhiding}">
+          <i class="iconfont iconzhiding"></i>
+        </a-button>
         <a-button type="text" tabindex="-1" @click="handleMinClick">
-            <i class="iconfont iconzuixiaohua"></i>
-          </a-button>
-          <a-button type="text" tabindex="-1" @click="handleMaxClick">
-            <i class="iconfont iconfullscreen"></i>
-          </a-button>
+          <i class="iconfont iconzuixiaohua"></i>
+        </a-button>
+        <a-button type="text" tabindex="-1" @click="handleMaxClick">
+          <i class="iconfont iconfullscreen"></i>
+        </a-button>
         <a-button type='text' tabindex='-1' @click='handleHideClick()'>
           <i class='iconfont iconclose'></i>
         </a-button>
@@ -693,10 +708,12 @@ onBeforeUnmount(() => {
   background-color: transparent;
   color: #ACA899;
 }
+
 .iconfont.iconarrow-right-1-icon {
   font-size: 20px;
   color: #ffffff;
 }
+
 .icon-playlist {
   font-size: 20px;
   color: #ffffff;
