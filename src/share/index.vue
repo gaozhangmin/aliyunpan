@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ShareSiteRight from './share/ShareSiteRight.vue'
+import SearchRes from '../resource/searchIndex.vue'
 import MyShareRight from './share/MyShareRight.vue'
 import OtherShareRight from './share/OtherShareRight.vue'
 import MyFollowingRight from './following/MyFollowingRight.vue'
@@ -13,7 +14,7 @@ const appStore = useAppStore()
 appStore.$subscribe((mutation) => {
   const appPage = appStore.GetAppTabMenu
 
-  if (appPage == 'ShareSiteRight') ShareDAL.aLoadShareSite()
+  // if (appPage == 'ShareSiteRight') ShareDAL.aLoadShareSite()
   if (appPage == 'MyShareRight') ShareDAL.aReloadMyShare(useUserStore().user_id, false)
   if (appPage == 'MyFollowingRight') FollowingDAL.aReloadMyFollowing(useUserStore().user_id, false)
   if (appPage == 'OtherFollowingRight') FollowingDAL.aReloadOtherFollowingList(useUserStore().user_id, false)

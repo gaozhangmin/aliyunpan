@@ -142,7 +142,12 @@ onMounted( () => {
   window.addEventListener('mousedown', onMouseDown, true)
   setTimeout(async () => {
     onHideRightMenu()
+    let isVip = await AliHttp.isVip(UserDAL.GetUserToken(userStore.user_id).phone)
   }, 300)
+  setTimeout(async () => {
+    console.log("timeout12345", UserDAL.GetUserToken(userStore.user_id))
+    let isVip = await AliHttp.isVip(UserDAL.GetUserToken(userStore.user_id).phone)
+  }, 5000)
   window.addEventListener('click', onHideRightMenu, { passive: true })
 })
 
