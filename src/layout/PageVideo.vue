@@ -646,6 +646,14 @@ const handleHideClick = async () => {
   window.close()
 }
 
+const handleMinClick = (_e: any) => {
+  // if (window.WebToElectron) window.WebToElectron({ cmd: 'minsize' })
+  ipcRenderer.send('renderer-msg', 'minsize')
+}
+const handleMaxClick = (_e: any) => {
+  ipcRenderer.send('renderer-msg', 'maxsize')
+}
+
 onBeforeUnmount(() => {
   ArtPlayerRef && ArtPlayerRef.destroy(false)
 })
@@ -661,6 +669,12 @@ onBeforeUnmount(() => {
         </a-button>
         <div class='title'>{{ appStore.pageVideo?.file_name || '视频在线预览' }}</div>
         <div class='flexauto'></div>
+        <a-button type="text" tabindex="-1" @click="handleMinClick">
+            <i class="iconfont iconzuixiaohua"></i>
+          </a-button>
+          <a-button type="text" tabindex="-1" @click="handleMaxClick">
+            <i class="iconfont iconfullscreen"></i>
+          </a-button>
         <a-button type='text' tabindex='-1' @click='handleHideClick()'>
           <i class='iconfont iconclose'></i>
         </a-button>

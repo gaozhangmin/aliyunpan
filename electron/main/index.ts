@@ -124,10 +124,23 @@ ipcMain.on('WebUserToken', (event, data) => {
 })
 
 ipcMain.on('renderer-msg', (event, arg) => {
-  console.log(arg) // prints '把我置顶🔝'
   let win = BrowserWindow.getFocusedWindow();
-  win.setAlwaysOnTop(true);
-  event.reply('main-msg', '好的');  // 给渲染进程回复消息
+  console.log(arg) // prints '把我置顶🔝'
+  if (arg === '把我置顶🔝') {
+    win.setAlwaysOnTop(true);
+    event.reply('main-msg', '好的');  // 给渲染进程回复消息
+  }
+  if (arg === 'minsize') {
+    win.minimize();
+  }
+  if (arg === 'maxsize') {
+    if(win.isMaximized()) {
+      win.unmaximize();
+    }
+    else {
+      win.maximize();
+    }
+  }
 });
 
 // ipcMain.on('CheckUpdate', () => {
