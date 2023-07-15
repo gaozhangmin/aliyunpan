@@ -377,7 +377,7 @@ export default class AliHttp {
         })
   }
 
-  static async isVip(phone:string): Promise<boolean> {
+  static async isVip(phone?:string): Promise<boolean> {
     return false
   }
 
