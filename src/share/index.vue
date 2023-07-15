@@ -54,7 +54,7 @@ appStore.$subscribe((mutation) => {
         <a-tab-pane key="MyShareRight" title="1"><MyShareRight /></a-tab-pane>
         <a-tab-pane key="MyFollowingRight" title="3"><MyFollowingRight /></a-tab-pane>
         <a-tab-pane key="OtherFollowingRight" title="6"><OtherFollowingRight /></a-tab-pane>
-        <a-tab-pane key="ShareSiteRight" title="5"><SearchRes /></a-tab-pane>
+        <a-tab-pane key="ShareSiteRight" title="5"><ShareSiteRight /></a-tab-pane>
       </a-tabs>
     </a-layout-content>
   </a-layout>

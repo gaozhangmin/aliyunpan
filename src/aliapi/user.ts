@@ -65,12 +65,6 @@ export default class AliUser {
 
   }
 
-// {
-//   "token_type": "Bearer",
-//   "access_token": "",
-//   "refresh_token": "",
-//   "expires_in": 7200
-// }
   static async ApiTokenRefreshAccountV2_TMP(token: ITokenInfo): Promise<IUrlRespData> {
     const postData = {
       refresh_token: token.refresh_token_v2,

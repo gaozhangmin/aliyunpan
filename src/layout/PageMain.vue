@@ -22,8 +22,6 @@ import Share from '../share/index.vue'
 import Down from '../down/index.vue'
 import Pan from '../pan/index.vue'
 import Pic from '../pic/index.vue'
-import Res from '../resource/index.vue'
-import VIP from '../resource/vipInfo.vue'
 import UserInfo from '../user/UserInfo.vue'
 import UserLogin from '../user/UserLogin.vue'
 import ShutDown from '../setting/ShutDown.vue'
@@ -135,7 +133,6 @@ const handleAudioStop = () => {
   footStore.mSaveAudioUrl('')
 }
 
-let isVip = false
 onMounted( () => {
 
   onResize()
@@ -199,7 +196,6 @@ const handleCheckVer = () => {
           <a-menu-item key="down" title="Alt+3">传输</a-menu-item>
           <a-menu-item key="share" title="Alt+4">分享</a-menu-item>
           <a-menu-item key="rss" title="Alt+5">插件</a-menu-item>
-          <a-menu-item key="res" title="Alt+6">4K影视</a-menu-item>
         </a-menu>
 
         <div class="flexauto"></div>
@@ -229,8 +225,6 @@ const handleCheckVer = () => {
         <a-tab-pane key="share" title="4"><Share /></a-tab-pane>
         <a-tab-pane key="rss" title="5"><Rss /></a-tab-pane>
         <a-tab-pane key="setting" title="6"><Setting /></a-tab-pane>
-        <a-tab-pane v-if='isVip' key="res" title="7"><Res /></a-tab-pane>
-        <a-tab-pane v-if='!isVip' key="res" title="7"><VIP /></a-tab-pane>
       </a-tabs>
     </a-layout-content>
     <a-layout-footer id="xbyfoot" draggable="false">
