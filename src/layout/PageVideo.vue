@@ -9,6 +9,7 @@ import levenshtein from 'fast-levenshtein'
 import { type SettingOption } from 'artplayer/types/setting'
 import { type Option } from 'artplayer/types/option'
 import AliFileCmd from '../aliapi/filecmd'
+import { ipcRenderer } from 'electron'
 
 const appStore = useAppStore()
 const pageVideo = appStore.pageVideo!
@@ -110,6 +111,13 @@ onMounted(async () => {
   await getVideoInfo(ArtPlayerRef)
   // 加载设置
   await defaultSetting(ArtPlayerRef)
+
+  // 监听主进程发送的消息
+  ipcRenderer.on('main-msg', (event, arg) => {
+    console.log(arg) // prints '好的'
+  })
+  // 给主进程发消息
+  ipcRenderer.send('renderer-msg', '把我置顶🔝')
 })
 
 const getCurrentVideoIndex = () => {

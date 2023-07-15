@@ -123,6 +123,12 @@ ipcMain.on('WebUserToken', (event, data) => {
   }
 })
 
+ipcMain.on('renderer-msg', (event, arg) => {
+  console.log(arg) // prints '把我置顶🔝'
+  let win = BrowserWindow.getFocusedWindow();
+  win.setAlwaysOnTop(true);
+  event.reply('main-msg', '好的');  // 给渲染进程回复消息
+});
 
 // ipcMain.on('CheckUpdate', () => {
 //   checkForUpdates()

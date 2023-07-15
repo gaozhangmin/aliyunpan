@@ -5,6 +5,7 @@
 </template>
 
 <script lang="ts">
+// @ts-nocheck
 import { ref, onMounted } from 'vue';
 import { modalDaoRuShareLink } from '../utils/modal';
 

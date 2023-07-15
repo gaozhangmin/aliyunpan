@@ -1,4 +1,5 @@
 <script lang="ts">
+// @ts-nocheck
 import { defineComponent } from 'vue'
 import { useUserStore, ITokenInfo } from '../store'
 import UserDAL from '../user/userdal'
