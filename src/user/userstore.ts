@@ -42,7 +42,7 @@ export interface ITokenInfo {
   vipname: string
   vipIcon: string
   vipexpire: string
-
+  xbyVIP:boolean
 
   pic_drive_id: string
 

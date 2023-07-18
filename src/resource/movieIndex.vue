@@ -93,6 +93,6 @@ export default {
 <style scoped>
 .custom-webview {
   width: 100%;
-  height: 900px;
+  height: 1000px;
 }
 </style>

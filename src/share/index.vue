@@ -20,7 +20,7 @@ appStore.$subscribe(async (mutation) => {
   const appPage = appStore.GetAppTabMenu
   if (appPage == 'ShareSiteRight') {
     if (userStore.userLogined) {
-      vipIdentity = await AliHttp.isVip(UserDAL.GetUserToken(userStore.user_id).phone)
+      vipIdentity = UserDAL.GetUserToken(useUserStore().user_id).xbyVIP
     }
   }
   if (appPage == 'MyShareRight') ShareDAL.aReloadMyShare(useUserStore().user_id, false)

@@ -213,6 +213,7 @@ export default class AliUser {
     if (AliHttp.IsSuccess(resp.code)) {
       token.spu_id = ''
       token.phone = resp.body.phone
+      token.xbyVIP = await AliHttp.isVip(resp.body.phone)
       token.is_expires = resp.body.status === 'enabled'
       token.name = resp.body.nick_name===''?resp.body.phone:resp.body.nick_name
       return true
