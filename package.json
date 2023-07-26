@@ -1,7 +1,7 @@
 {
   "name": "xbyyunpan",
   "description": "小白羊云盘",
-  "version": "3.11.16",
+  "version": "3.11.17",
   "license": "MIT",
   "main": "dist/electron/main/index.js",
   "author": {
