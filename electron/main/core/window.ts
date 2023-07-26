@@ -4,7 +4,6 @@ import { getAsarPath, getResourcesPath, getStaticPath, getUserDataPath } from '.
 import fs, { existsSync, readFileSync, writeFileSync } from 'fs'
 import is from 'electron-is'
 import { ShowErrorAndRelaunch } from './dialog'
-import { ElectronBlocker } from '@cliqz/adblocker-electron';
 import path from 'path'
 
 export const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36 Edg/102.0.1245.33'
@@ -243,10 +242,6 @@ export function createElectronWindow(width: number, height: number, center: bool
       preload: getAsarPath('dist/electron/preload/index.js')
     }
   })
-  const adsRulePath: string = path.join(getStaticPath('engine'), 'ads_block.txt')
-  const blocker =
-    ElectronBlocker.parse(fs.readFileSync(adsRulePath, 'utf-8'));
-  blocker.enableBlockingInSession(session.defaultSession);
 
   win.removeMenu()
   if (is.dev()) {

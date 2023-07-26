@@ -84,11 +84,14 @@ export default defineComponent({
                   const qrCodeUrl = resp.body.qrCodeUrl
                   const codeStatusUrl = qrCodeUrl + '/status'
                   const qrCodeStatus = document.getElementById('qr-code-status') as any
-                  webview.loadURL(qrCodeUrl)
+                  webview.stop()
+                  document.getElementById('loginiframe').loadURL(qrCodeUrl)
+                  console.log("load qr code url: ", qrCodeUrl)
                   webview.addEventListener('did-stop-loading', () => {
                     const loading = document.getElementById('loginframedivloading')
                     if (loading) loading.parentNode!.removeChild(loading)
                     document.getElementById('loginframediverror')!.style.display = 'none'
+                    console.log("load qr code url1: ", qrCodeUrl)
 
                     // Start polling QR code status
                     const intervalId = setInterval(async () => {
@@ -311,6 +314,7 @@ export default defineComponent({
                     tk2.access_token_v2 = response.body.access_token
                     tk2.expires_in_v2 =  Date.now() + response.body.expires_in * 1000
                     tk2.token_type_v2 = response.body.token_type
+                    tk2.refresh_token_v2 = response.body.refresh_token
                     UserDAL.UserLogin(tk2)
                       .then(() => {
                         useUserStore().userShowLogin = false

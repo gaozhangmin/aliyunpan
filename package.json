@@ -15,7 +15,10 @@
   "engines": {
     "node": ">=16.0.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@cliqz/adblocker-electron": "^1.26.6",
+    "@cliqz/adblocker-electron-preload": "^1.26.6"
+  },
   "devDependencies": {
     "@arco-design/web-vue": "^2.45.3",
     "@electron/remote": "^2.0.9",
@@ -50,7 +53,6 @@
     "isomorphic-fetch": "^3.0.0",
     "jschardet": "^3.0.0",
     "lodash": "^4.17.21",
-    "@cliqz/adblocker-electron": "^1.26.6",
     "pinia": "^2.0.35",
     "secp256k1": "^5.0.0",
     "socks-proxy-agent": "^7.0.0",
