@@ -148,7 +148,7 @@ export default class AliFile {
     if (!user_id || !drive_id || !file_id) return undefined
 
     const url = 'adrive/v1.0/openFile/getVideoPreviewPlayInfo'
-    const postData = { drive_id: drive_id, file_id: file_id, category: 'live_transcoding', template_id: '', get_subtitle_info: true, url_expire_sec: 14400 }
+    const postData = { drive_id: drive_id, file_id: file_id, category: 'live_transcoding', template_id: '', get_subtitle_info: true, url_expire_sec: 14400, with_play_cursor:true }
     const resp = await AliHttp.Post(url, postData, user_id, '')
 
     if (resp.body.code == 'VideoPreviewWaitAndRetry') {
@@ -168,6 +168,7 @@ export default class AliFile {
       height: 0,
       url: '',
       duration: 0,
+      play_cursor: 0,
       urlQHD: '',
       urlFHD: '',
       urlHD: '',
@@ -201,6 +202,7 @@ export default class AliFile {
       data.width = resp.body.video_preview_play_info?.meta?.width || 0
       data.height = resp.body.video_preview_play_info?.meta?.height || 0
       data.expire_sec = GetOssExpires(data.url)
+      data.play_cursor = Number(resp.body.play_cursor)
       return data
     } else {
       DebugLog.mSaveWarning('ApiVideoPreviewUrl err=' + file_id + ' ' + (resp.code || ''))

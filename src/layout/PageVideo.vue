@@ -451,23 +451,10 @@ const getPlayList = async (art: Artplayer, file_id?: string) => {
   }
 }
 
-const getVideoCursor = async (art: Artplayer, play_cursor?: number) => {
+const getVideoCursor = async (art: Artplayer, play_cursor: number) => {
   const autoSkipBegin  = art.storage.get('autoSkipBegin')
   if (art.storage.get('autoJumpCursor')) {
-    let cursor = 0
-    if (!play_cursor) {
-      const info = await AliFile.ApiFileInfoOpenApi(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id)
-      if (info?.play_cursor) {
-        cursor = info?.play_cursor
-      } else if (info?.user_meta) {
-        const meta = JSON.parse(info?.user_meta)
-        if (meta.play_cursor) {
-          cursor = parseFloat(meta.play_cursor)
-        }
-      }
-    } else {
-      cursor = play_cursor
-    }
+    let cursor = play_cursor
     if (cursor > autoSkipBegin) {
       art.currentTime = cursor
     } else {

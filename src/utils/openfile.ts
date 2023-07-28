@@ -155,21 +155,14 @@ async function Video(token: ITokenInfo, drive_id: string, file_id: string, paren
   }
   message.loading('加载视频中...', 2)
   // 获取文件信息
-  let play_cursor: number = 0
+  let play_cursor: number = -1;
   if (useSettingStore().uiVideoPlayer == 'web' || useSettingStore().uiVideoPlayerHistory) {
-    const info = await AliFile.ApiFileInfoOpenApi(token.user_id, drive_id, file_id)
+    const info = await AliFile.ApiVideoPreviewUrlOpenApi(token.user_id, drive_id, file_id)
     if (!info) {
       message.error('在线预览失败 获取文件信息出错：' + info)
       return
     }
-    if (info?.play_cursor) {
-      play_cursor = info?.play_cursor
-    } else if (info?.user_meta) {
-      const meta = JSON.parse(info?.user_meta)
-      if (meta.play_cursor) {
-        play_cursor = parseFloat(meta.play_cursor)
-      }
-    }
+    play_cursor = info.play_cursor
   }
   const settingStore = useSettingStore()
   if (settingStore.uiAutoColorVideo && !dec) {
@@ -222,7 +215,7 @@ async function Video(token: ITokenInfo, drive_id: string, file_id: string, paren
   // 自定义播放器
   let title = mode + '__' + name
   let titleStr = CleanStringForCmd(title)
-  let referer = 'https://open.aliyundrive.com/'
+  let referer = 'https://openapi.aliyundrive.com/'
   let command = settingStore.uiVideoPlayerPath
   let playCursor = humanTime(play_cursor)
   if (url.indexOf('x-oss-additional-headers=referer') > 0) {
