@@ -48,7 +48,7 @@ export default defineComponent({
   setup() {
     const handleOpen = () => {
       setTimeout(() => {
-        const webview = document.getElementById('loginiframe') as any
+        let webview = document.getElementById('loginiframe') as any
         if (!webview) {
           message.error('严重错误：无法打开登录弹窗，请退出小白羊后重新运行')
           return
@@ -85,13 +85,12 @@ export default defineComponent({
                   const codeStatusUrl = qrCodeUrl + '/status'
                   const qrCodeStatus = document.getElementById('qr-code-status') as any
                   webview.stop()
-                  document.getElementById('loginiframe').loadURL(qrCodeUrl)
-                  console.log("load qr code url: ", qrCodeUrl)
+                  webview = document.getElementById('loginiframe') as any
+                  webview.loadURL(qrCodeUrl)
                   webview.addEventListener('did-stop-loading', () => {
                     const loading = document.getElementById('loginframedivloading')
                     if (loading) loading.parentNode!.removeChild(loading)
                     document.getElementById('loginframediverror')!.style.display = 'none'
-                    console.log("load qr code url1: ", qrCodeUrl)
 
                     // Start polling QR code status
                     const intervalId = setInterval(async () => {

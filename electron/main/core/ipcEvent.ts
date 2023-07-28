@@ -400,7 +400,7 @@ export default class ipcEvent {
         center: true,
         minWidth: 680,
         minHeight: 500,
-        icon: getStaticPath('icon_256.ico'),
+        icon: getStaticPath('icon_256x256.ico'),
         useContentSize: true,
         frame: true,
         hasShadow: true,

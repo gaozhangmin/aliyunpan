@@ -6,7 +6,7 @@ app.setAboutPanelOptions({
   applicationName: '小白羊云盘',
   copyright: 'Zhangmin Gao',
   website: 'https://github.com/gaozhangmin/aliyunpan',
-  iconPath: getStaticPath('icon_64.png'),
+  iconPath: getStaticPath('icon_64x64.png'),
   applicationVersion: '30'
 })
 

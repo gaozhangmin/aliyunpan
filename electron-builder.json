@@ -8,11 +8,12 @@
   "files": [ "dist" ],
   "extraResources": [
     { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
+    { "from": "./static/engine/ads_block.txt", "to": "./engine/ads_block.txt"},
     { "from": "./static/crx", "to": "./crx"},
     { "from": "./public/images/qrcode_1280.jpg", "to": "./images/qrcode_1280.jpg"},
-    { "from": "./static/images/icon_24.png", "to": "./images/icon_24.png"},
-    { "from": "./static/images/icon_64.png", "to": "./images/icon_64.png"},
-    { "from": "./static/images/icon_256.png", "to": "./images/icon_256.png"}
+    { "from": "./static/images/icon_24x24.png", "to": "./images/icon_24x24.png"},
+    { "from": "./static/images/icon_64x64.png", "to": "./images/icon_64x64.png"},
+    { "from": "./static/images/icon_256x256.png", "to": "./images/icon_256x256.png"}
   ],
   "mac": {
     "icon": "./static/images/icon.icns",
@@ -30,7 +31,7 @@
     ]
   },
   "linux": {
-    "icon": "./static/images/icon_256.png",
+    "icon": "./static/images/icon_256x256.png",
     "category": "Network",
     "artifactName": "XBYDriver-${version}-linux-${arch}.${ext}",
     "extraResources": [
@@ -42,12 +43,12 @@
     ]
   },
   "win": {
-    "icon": "./static/images/icon_256.ico",
+    "icon": "./static/images/icon_256x256.ico",
     "artifactName": "XBYDriver-${version}-win-${arch}.${ext}",
     "requestedExecutionLevel": "asInvoker",
     "extraResources": [
       { "from": "./static/engine/win32/${arch}", "to": "./engine"},
-      { "from": "./static/images/icon_256.ico", "to": "./images/icon_256.ico"}
+      { "from": "./static/images/icon_256x256.ico", "to": "./images/icon_256x256.ico"}
     ],
     "target": [
       { "target": "nsis", "arch": [ "x64", "ia32" ] }

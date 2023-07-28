@@ -21,11 +21,7 @@ export default {
           // @ts-ignore
           const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
           const intervalId = setInterval(() => {
-            const element = iframeDocument.querySelector('._76lauz9 ')
-            if (element) {
-              element.click()
-            }
-            const element2 = iframeDocument.querySelector('._ntlgt3m ')
+            const element2 = iframeDocument.querySelector('div._4zmcr4t')
             if (element2) {
               element2.click()
             }

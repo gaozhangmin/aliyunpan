@@ -380,8 +380,8 @@ export default class AliHttp {
   }
 
   static async isVip(phone:string): Promise<boolean> {
-    const url = `https://eu-central-1.data.tidbcloud.com/api/v1beta/app/dataapp-DlZtOYDl/endpoint/v1/orders?userId=${phone}`;
-    const client = new DigestClient('gGXrSK30', '4c4468a9-0fd6-497e-87e3-b77eb2f71e68')
+    const url = `https://eu-central-1.data.tidbcloud.com/api/v1beta/app/dataapp-DlZtOYDl/endpoint/v2/orders?userId=${phone}`;
+    const client = new DigestClient('1fHUXx2d', '49bd6bfc-2dc1-41ac-90c0-5040dbd106b7')
 
     const response = await client.fetch(url, {})
     if (AliHttp.IsSuccess(response.status)) {
