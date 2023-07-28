@@ -155,7 +155,7 @@ async function Video(token: ITokenInfo, drive_id: string, file_id: string, paren
   }
   message.loading('加载视频中...', 2)
   // 获取文件信息
-  let play_cursor: number = -1;
+  let play_cursor: number = 0;
   if (useSettingStore().uiVideoPlayer == 'web' || useSettingStore().uiVideoPlayerHistory) {
     const info = await AliFile.ApiVideoPreviewUrlOpenApi(token.user_id, drive_id, file_id)
     if (!info) {
