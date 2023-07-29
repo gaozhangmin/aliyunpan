@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import useSettingStore from './settingstore'
 import MySwitch from '../layout/MySwitch.vue'
-import {AriaGlobalDownSpeed} from "../utils/aria2c";
+import {AriaGlobalSpeed} from "../utils/aria2c";
 const settingStore = useSettingStore()
 const cb = async (val: any) => {
-    settingStore.updateStore(val)
-    if (val.downGlobalSpeed > 0) {
-        await AriaGlobalDownSpeed()
+    // 限速实时生效
+    if (Object.hasOwn(val, 'downGlobalSpeed')){
+        await AriaGlobalSpeed()
     }
+    await settingStore.updateStore(val)
 }
 const handleSelectDownSavePath = () => {
   if (window.WebShowOpenDialogSync) {

@@ -51,7 +51,7 @@
       { "from": "./static/images/icon_256x256.ico", "to": "./images/icon_256x256.ico"}
     ],
     "target": [
-      { "target": "nsis", "arch": [ "x64", "ia32" ] }
+      { "target": "nsis", "arch": [ "x64", "ia32", "arm64"] }
     ]
   },
   "dmg": {
