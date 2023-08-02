@@ -83,10 +83,6 @@ onUnmounted(() => {
           <template #icon><i class="iconfont iconchuanshu" /></template>
           远程Aria
         </a-menu-item>
-<!--        <a-menu-item key="SettingLocalAria">-->
-<!--            <template #icon><i class="iconfont iconchuanshu" /></template>-->
-<!--            本地Aria-->
-<!--        </a-menu-item>-->
         <a-menu-item key="SettingLog">
           <template #icon><i class="iconfont icondebug" /></template>
           运行日志
@@ -152,13 +148,6 @@ onUnmounted(() => {
           </div>
           <SettingAria />
         </div>
-<!--        <div id="SettingLocalAria">-->
-<!--            <div>-->
-<!--                <div style="height: 10px"></div>-->
-<!--                <a-divider orientation="center" class="settinghr">本地Aria</a-divider>-->
-<!--            </div>-->
-<!--            <SettingLocalAria />-->
-<!--        </div>-->
         <div id="SettingLog">
           <div>
             <div style="height: 10px"></div>
