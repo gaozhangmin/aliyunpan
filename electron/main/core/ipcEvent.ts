@@ -84,8 +84,8 @@ export default class ipcEvent {
         app.setLoginItemSettings(settings)
       } else if (data.cmd && Object.hasOwn(data.cmd, 'appUserDataPath')) {
         const userDataPath = data.cmd.appUserDataPath
-        const localVersion = getResourcesPath('userdir.config')
-        writeFileSync(localVersion, userDataPath, 'utf-8')
+        const userCachePath = getResourcesPath('userdir.config')
+        writeFileSync(userCachePath, userDataPath, 'utf-8')
       }  else {
         event.sender.send('ElectronToWeb', 'mainsenddata')
       }

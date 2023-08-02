@@ -49,17 +49,17 @@ export default class AppCache {
     const userData = getUserData()
     if (!userData) return
     const dirSize = await AppCache.LoadDirSize(userData)
-    if (dirSize > 800 * 1024 * 1024) message.warning('缓存文件夹体积较大，该去 设置 里清理了')
 
-    useSettingStore().debugCacheSize = humanSize(dirSize) 
+    useSettingStore().debugCacheSize = humanSize(dirSize)
+    if (dirSize > 500 * 1024 * 1024) {
+      message.warning('缓存文件夹体积较大，该去设置点击"清理缓存", 否则会影响启动速度')
+    }
   }
 
   
   static async aClearCache(delby: string): Promise<void> {
     const dir = getUserData()
-    // await AppCache.DeleteDir(path.join(dir, 'Cache'))
     if (delby == 'all') {
-      // window.WebClearCache({ cache: true })
       if (window.WebClearCache)
         window.WebClearCache({
           storages: ['appcache', 'cookies', 'filesystem', 'shadercache', 'serviceworkers', 'cachestorage', 'indexdb', 'localstorage', 'websql'],
@@ -81,6 +81,7 @@ export default class AppCache {
     } else if (delby == 'db') {
       await AppCache.DeleteDir(path.join(dir, 'databases')).catch(() => {})
     }
+    await AppCache.DeleteDir(path.join(dir, 'Cache'))
     await AppCache.DeleteDir(path.join(dir, 'Code Cache', 'js')).catch(() => {})
     await AppCache.DeleteDir(path.join(dir, 'Code Cache', 'wasm')).catch(() => {})
 

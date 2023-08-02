@@ -281,7 +281,7 @@ function _loadSetting(val: any) {
 
 
   setting.downSavePath = defaultString(val.downSavePath, '')
-  setting.appUserDataPath = defaultString(val.appUserDataPath, getUserData())
+  setting.appUserDataPath = defaultString(val.appUserDataPath, '')
   setting.downSavePathDefault = defaultBool(val.downSavePathDefault, true)
   setting.downSavePathFull = defaultBool(val.downSavePathFull, true)
   setting.downSaveBreakWeiGui = defaultBool(val.downSaveBreakWeiGui, true)
@@ -341,6 +341,9 @@ function LoadSetting() {
       const val = JSON.parse(settingstr)
       _loadSetting(val)
       useAppStore().toggleTheme(setting.uiTheme)
+      if (setting.appUserDataPath !== '') {
+        window.WebToElectron({ cmd: { appUserDataPath: setting.appUserDataPath} })
+      }
     } else {
       SaveSetting()
     }
