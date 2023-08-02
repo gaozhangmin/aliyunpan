@@ -1,0 +1,76 @@
+{
+  "appId": "com.xby.app",
+  "productName": "小白羊云盘",
+  "copyright": "copyright ©2023 Zhangmin gao",
+  "asar": true,
+  "compression": "maximum",
+  "directories": { "output": "release" },
+  "files": [ "dist" ],
+  "extraResources": [
+    { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
+    { "from": "./static/crx", "to": "./crx"},
+    { "from": "./public/images/qrcode_1280.jpg", "to": "./images/qrcode_1280.jpg"},
+    { "from": "./static/images/icon_24x24.png", "to": "./images/icon_24x24.png"},
+    { "from": "./static/images/icon_64x64.png", "to": "./images/icon_64x64.png"},
+    { "from": "./static/images/icon_256x256.png", "to": "./images/icon_256x256.png"}
+  ],
+  "mac": {
+    "icon": "./static/images/icon.icns",
+    "type": "distribution",
+    "artifactName": "XBYDriver-${version}-mac-${arch}.${ext}",
+    "darkModeSupport": true,
+    "hardenedRuntime": true,
+    "category": "public.app-category.utilities",
+    "extraResources": [
+      { "from": "./static/engine/darwin/${arch}", "to": "./engine" },
+      { "from": "./static/images/icon.icns", "to": "./images/icon.icns"}
+    ],
+    "target": [
+      { "target": "dmg", "arch": [ "x64", "arm64" ] }
+    ]
+  },
+  "linux": {
+    "icon": "./static/images/icon_256x256.png",
+    "category": "Network",
+    "artifactName": "XBYDriver-${version}-linux-${arch}.${ext}",
+    "extraResources": [
+      { "from": "./static/engine/linux/${arch}", "to": "./engine"}
+    ],
+    "target": [
+      { "target": "AppImage", "arch": [  "x64", "arm64", "armv7l" ] },
+      { "target": "deb", "arch": [ "x64",  "arm64", "armv7l" ] }
+    ]
+  },
+  "win": {
+    "icon": "./static/images/icon_256x256.ico",
+    "artifactName": "XBYDriver-${version}-win-${arch}.${ext}",
+    "requestedExecutionLevel": "asInvoker",
+    "extraResources": [
+      { "from": "./static/engine/win32/${arch}", "to": "./engine"},
+      { "from": "./static/images/icon_256x256.ico", "to": "./images/icon_256x256.ico"}
+    ],
+    "target": [
+      { "target": "nsis", "arch": [ "x64", "ia32", "arm64"] }
+    ]
+  },
+  "dmg": {
+    "window": { "width": 540, "height": 380 },
+    "contents": [
+      { "x": 410, "y": 230, "type": "link", "path": "/Applications" },
+      { "x": 130, "y": 230, "type": "file" }
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": true,
+    "allowElevation": true,
+    "allowToChangeInstallationDirectory": true,
+    "deleteAppDataOnUninstall": false
+  },
+  "publish": [
+    {
+      "provider": "github",
+      "releaseType": "draft"
+    }
+  ]
+}
