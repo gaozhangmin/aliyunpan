@@ -94,7 +94,6 @@ export default class UserDAL {
       name: '',
       vipIcon: '',
       spu_id: '',
-      xbyVIP:false,
       is_expires: false,
       used_size: 0,
       total_size: 0,

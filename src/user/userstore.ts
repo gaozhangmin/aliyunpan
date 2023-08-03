@@ -44,7 +44,6 @@ export interface ITokenInfo {
   viplevel:string
   vipIcon: string
   vipexpire: string
-  xbyVIP:boolean
 
   pic_drive_id: string
 

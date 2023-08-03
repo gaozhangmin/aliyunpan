@@ -289,7 +289,6 @@ export default defineComponent({
                   phone: '',
                   spu_id: '',
                   vipIcon: '',
-                  xbyVIP:false,
                   is_expires: false,
                   used_size: 0,
                   total_size: 0,

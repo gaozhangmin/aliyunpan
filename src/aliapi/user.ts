@@ -215,7 +215,6 @@ export default class AliUser {
       token.phone = resp.body.phone
       token.default_drive_id = resp.body.backup_drive_id;
       token.resource_drive_id = resp.body.resource_drive_id;
-      token.xbyVIP = await AliHttp.isVip(resp.body.phone)
       token.is_expires = resp.body.status === 'enabled'
       token.name = resp.body.nick_name===''?resp.body.phone:resp.body.nick_name
       return true
