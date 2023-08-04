@@ -185,8 +185,10 @@ export default class UserDAL {
     PanDAL.aReLoadDrive(token.user_id, token.backup_drive_id)
     PanDAL.aReLoadQuickFile(token.user_id)
 
-    ResPanDAL.aReLoadDrive(token.user_id, token.resource_drive_id)
-    ResPanDAL.aReLoadQuickFile(token.user_id)
+    if (token.resource_drive_id != '') {
+      ResPanDAL.aReLoadDrive(token.user_id, token.resource_drive_id)
+      ResPanDAL.aReLoadQuickFile(token.user_id)
+    }
     message.success('加载用户成功!', 2, loadingKey)
   }
 
