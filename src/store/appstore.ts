@@ -79,7 +79,7 @@ const useAppStore = defineStore('app', {
     appTab: 'pan',
     isVip: true,
     appTabMenuMap: new Map<string, string>([
-      ['pan', 'wangpan'],
+      ['pan', 'backupPan'],
       ['pic', 'allpic'],
       ['down', 'DowningRight'],
       ['share', 'OtherShareRight'],
@@ -130,7 +130,7 @@ const useAppStore = defineStore('app', {
       this.$patch({
         appTab: 'pan',
         appTabMenuMap: new Map<string, string>([
-          ['pan', 'wangpan'],
+          ['pan', 'backupPan'],
           ['pic', 'allpic'],
           ['down', 'DowningRight'],
           ['share', 'OtherShareRight'],
@@ -223,7 +223,7 @@ const useAppStore = defineStore('app', {
 
       switch (this.appTab) {
         case 'pan': {
-          next(this.appTabMenuMap, this.appTab, ['wangpan', 'kuaijie', 'fangying'])
+          next(this.appTabMenuMap, this.appTab, ['backupPan','resourcePan', 'kuaijie'])
           break
         }
         case 'pic': {

@@ -80,12 +80,14 @@ export default class UserDAL {
       avatar: '',
       nick_name: '',
       default_drive_id: '',
+      resource_drive_id: '',
       default_sbox_drive_id: '',
       role: '',
       status: '',
       phone:'',
       expire_time: '',
       state: '',
+      viplevel:'',
       pin_setup: false,
       is_first_login: false,
       need_rp_verify: false,
@@ -181,6 +183,7 @@ export default class UserDAL {
     useFootStore().mSaveUserInfo(token)
     // 刷新数据
     PanDAL.aReLoadDrive(token.user_id, token.default_drive_id)
+    PanDAL.aReLoadDrive(token.user_id, token.resource_drive_id)
     PanDAL.aReLoadQuickFile(token.user_id)
     message.success('加载用户成功!', 2, loadingKey)
   }

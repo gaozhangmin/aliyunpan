@@ -213,6 +213,8 @@ export default class AliUser {
     if (AliHttp.IsSuccess(resp.code)) {
       token.spu_id = ''
       token.phone = resp.body.phone
+      token.default_drive_id = resp.body.backup_drive_id;
+      token.resource_drive_id = resp.body.resource_drive_id;
       token.xbyVIP = await AliHttp.isVip(resp.body.phone)
       token.is_expires = resp.body.status === 'enabled'
       token.name = resp.body.nick_name===''?resp.body.phone:resp.body.nick_name
@@ -273,7 +275,7 @@ export default class AliUser {
 
   static async ApiUserVip(token: ITokenInfo): Promise<boolean> {
     if (!token.user_id) return false
-    const url = 'adrive/v1.0/user/getVipInfo'
+    const url = 'v1.0/user/getVipInfo'
     const postData = {}
     const resp = await AliHttp.Post(url, postData, token.user_id, '')
     if (AliHttp.IsSuccess(resp.code)) {
@@ -283,7 +285,8 @@ export default class AliUser {
       if (resp.body.identity === 'member') {
         token.vipexpire = ''
       } else {
-        token.vipexpire = humanDateTime(resp.body.expire)
+          token.viplevel =  resp.body.level
+          token.vipexpire = humanDateTime(resp.body.expire)
       }
       return true
     } else {

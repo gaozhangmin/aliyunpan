@@ -23,6 +23,7 @@ export interface ITokenInfo {
   avatar: string
   nick_name: string
   default_drive_id: string
+  resource_drive_id: string
   default_sbox_drive_id: string
   role: string
   status: string
@@ -40,6 +41,7 @@ export interface ITokenInfo {
   spaceinfo: string
   phone: string
   vipname: string
+  viplevel:string
   vipIcon: string
   vipexpire: string
   xbyVIP:boolean
