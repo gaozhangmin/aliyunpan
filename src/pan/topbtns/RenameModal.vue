@@ -88,7 +88,7 @@ export default defineComponent({
     ]
 
     const handleMulti = () => {
-      modalRename(props.istree, true)
+      modalRename('backupPan', props.istree, true)
     }
 
     return { okLoading, form, formRef, handleOpen, handleClose, rules, handleMulti }

@@ -3,29 +3,46 @@ import { defineComponent } from 'vue'
 import { useModalStore } from '../store'
 import UserSpaceModal from '../user/UserSpaceModal.vue'
 import CreatNewFileModal from '../pan/topbtns/CreatNewFileModal.vue'
+import CreatNewFileResModal from '../resPan/topbtns/CreatNewFileModal.vue'
 import RenameModal from '../pan/topbtns/RenameModal.vue'
+import RenameResModal from '../resPan/topbtns/RenameModal.vue'
 import RenameMultiModal from '../pan/topbtns/RenameMultiModal.vue'
+import RenameMultiResModal from '../resPan/topbtns/RenameMultiModal.vue'
 import CreatNewDirModal from '../pan/topbtns/CreatNewDirModal.vue'
-import DaoRuShareLinkModal from '../pan/topbtns/DaoRuShareLinkModal.vue'
+import CreatNewDirResModal from '../ResPan/topbtns/CreatNewDirModal.vue'
+import DaoRuShareLinkResModal from '../resPan/topbtns/DaoRuShareLinkModal.vue'
 import EditShareLinkModal from '../share/share/EditShareLinkModal.vue'
-import DaoRuShareLinkMultiModal from '../pan/topbtns/DaoRuShareLinkMultiModal.vue'
+import DaoRuShareLinkMultiResModal from '../ResPan/topbtns/DaoRuShareLinkMultiModal.vue'
 import ShowShareLinkModal from '../share/share/ShowShareLinkModal.vue'
 import SelectPanDirModal from '../pan/topbtns/SelectPanDirModal.vue'
-import CreatNewShareLinkModal from '../pan/topbtns/CreatNewShareLinkModal.vue'
+import SelectPanDirResModal from '../ResPan/topbtns/SelectPanDirModal.vue'
+import CreatNewShareLinkResModal from '../resPan/topbtns/CreatNewShareLinkModal.vue'
 import ShuXingModal from '../pan/topbtns/ShuXingModal.vue'
+import ShuXingResModal from '../ResPan/topbtns/ShuXingModal.vue'
 import ShuXingMultiModal from '../pan/topbtns/ShuXingMultiModal.vue'
+import ShuXingMultiResModal from '../pan/topbtns/ShuXingMultiModal.vue'
 import SearchPanModal from '../pan/topbtns/SearchPanModal.vue'
+import SearchPanResModal from '../ResPan/topbtns/SearchPanModal.vue'
 import DLNAPlayerModal from '../pan/topbtns/DLNAPlayerModal.vue'
 import M3U8DownloadModal from '../pan/topbtns/M3U8DownloadModal.vue'
+import M3U8DownloadResModal from '../ResPan/topbtns/M3U8DownloadModal.vue'
 import CopyFileTreeModal from '../pan/topbtns/CopyFileTreeModal.vue'
+import CopyFileTreeResModal from '../ResPan/topbtns/CopyFileTreeModal.vue'
 import ArchiveModal from '../pan/topbtns/ArchiveModal.vue'
+import ArchiveResModal from '../ResPan/topbtns/ArchiveModal.vue'
 import ArchivePasswordModal from '../pan/topbtns/ArchivePasswordModal.vue'
+import ArchivePasswordResModal from '../ResPan/topbtns/ArchivePasswordModal.vue'
 import AlphaModal from '../pan/topbtns/AlphaModal.vue'
+import AlphaResModal from '../ResPan/topbtns/AlphaModal.vue'
 import UploadModal from '../pan/topbtns/UploadModal.vue'
+import UploadResModal from '../ResPan/topbtns/UploadModal.vue'
 import DownloadModal from '../pan/topbtns/DownloadModal.vue'
+import DownloadResModal from '../ResPan/topbtns/DownloadModal.vue'
 import SelectSubTitleModal from '../pan/topbtns/SelectSubTitleModal.vue'
 import CreatNewAlbumModal from "../pan/topbtns/CreatNewAlbumModal.vue";
+import CreatNewAlbumResModal from "../ResPan/topbtns/CreatNewAlbumModal.vue";
 import MoveToAlbumModal from '../pan/topbtns/MoveToAlbumModal.vue'
+import MoveToAlbumResModal from '../ResPan/topbtns/MoveToAlbumModal.vue'
 
 export default defineComponent({
   components: {
@@ -33,26 +50,40 @@ export default defineComponent({
     CreatNewAlbumModal,
     UserSpaceModal,
     CreatNewFileModal,
+    CreatNewFileResModal,
     RenameModal,
+    RenameResModal,
     RenameMultiModal,
+    RenameMultiResModal,
     CreatNewDirModal,
-    DaoRuShareLinkModal,
+    CreatNewDirResModal,
+    DaoRuShareLinkResModal,
     EditShareLinkModal,
-    DaoRuShareLinkMultiModal,
+    DaoRuShareLinkMultiResModal,
     ShowShareLinkModal,
     SelectPanDirModal,
-    CreatNewShareLinkModal,
+    SelectPanDirResModal,
+    CreatNewShareLinkResModal,
     ShuXingModal,
+    ShuXingResModal,
     ShuXingMultiModal,
+    ShuXingMultiResModal,
     SearchPanModal,
+    SearchPanResModal,
     DLNAPlayerModal,
     M3U8DownloadModal,
+    M3U8DownloadResModal,
     AlphaModal,
     CopyFileTreeModal,
+    CopyFileTreeResModal,
     ArchiveModal,
+    ArchiveResModal,
     ArchivePasswordModal,
+    ArchivePasswordResModal,
     UploadModal,
-    DownloadModal
+    UploadResModal,
+    DownloadModal,
+    DownloadResModal
   },
   setup() {
     const modalStore = useModalStore()
@@ -65,26 +96,44 @@ export default defineComponent({
   <AlphaModal />
 
   <UserSpaceModal :visible="modalStore.modalName == 'userspace'" />
-  <CreatNewFileModal :visible="modalStore.modalName == 'creatfile'" />
+  <CreatNewFileModal :visible="modalStore.modalName == 'createBackupPanFile'" />
+  <CreatNewFileResModal :visible="modalStore.modalName == 'createResourcePanFile'" />
   <CreatNewAlbumModal :visible="modalStore.modalName == 'createalbum'" />
   <MoveToAlbumModal :visible="modalStore.modalName == 'movetoalubm'"  :photos_file_id='modalStore.modalData.photos_file_id' :album_id='modalStore.modalData.album_id' />
-  <CreatNewDirModal :visible="modalStore.modalName == 'creatdir'" :dirtype="modalStore.modalData.dirtype || ''" :parentdirid="modalStore.modalData.parentdirid || ''" :callback="modalStore.modalData.callback" />
-  <CreatNewShareLinkModal :visible="modalStore.modalName == 'creatshare'" :sharetype="modalStore.modalData.sharetype || ''" :filelist="modalStore.modalData.filelist || []" />
+  <CreatNewDirModal :visible="modalStore.modalName == 'creatBackupPanDir'" :dirtype="modalStore.modalData.dirtype || ''" :parentdirid="modalStore.modalData.parentdirid || ''" :callback="modalStore.modalData.callback" />
+  <CreatNewDirResModal :visible="modalStore.modalName == 'creatResourcePanDir'" :dirtype="modalStore.modalData.dirtype || ''" :parentdirid="modalStore.modalData.parentdirid || ''" :callback="modalStore.modalData.callback" />
 
-  <DaoRuShareLinkModal :visible="modalStore.modalName == 'daorushare'" :shareUrl="modalStore.modalData.shareUrl || ''" :sharePwd="modalStore.modalData.sharePwd || ''" />
-  <DaoRuShareLinkMultiModal :visible="modalStore.modalName == 'daorusharemulti'" />
+  <CreatNewShareLinkResModal :visible="modalStore.modalName == 'createShare'" :sharetype="modalStore.modalData.sharetype || ''" :filelist="modalStore.modalData.filelist || []" />
 
-  <RenameModal :visible="modalStore.modalName == 'rename'" :istree="modalStore.modalData.istree || false" />
-  <RenameMultiModal :visible="modalStore.modalName == 'renamemulti'" :istree="modalStore.modalData.istree || false" />
-  <ShuXingModal :visible="modalStore.modalName == 'shuxing'" :istree="modalStore.modalData.istree || false" />
-  <ShuXingMultiModal :visible="modalStore.modalName == 'shuxingmulti'" :istree="modalStore.modalData.istree || false" />
-  <SearchPanModal :visible="modalStore.modalName == 'searchpan'" />
+  <DaoRuShareLinkResModal :visible="modalStore.modalName == 'importShare'" :shareUrl="modalStore.modalData.shareUrl || ''" :sharePwd="modalStore.modalData.sharePwd || ''" />
+  <DaoRuShareLinkMultiResModal :visible="modalStore.modalName == 'importMultipleShare'" />
 
-  <DLNAPlayerModal :visible="modalStore.modalName == 'dlna'" />
-  <M3U8DownloadModal :visible="modalStore.modalName == 'm3u8download'" />
-  <CopyFileTreeModal :visible="modalStore.modalName == 'copyfiletree'" :filelist="modalStore.modalData.filelist || []" />
+  <RenameModal :visible="modalStore.modalName == 'renameBackupPan'" :istree="modalStore.modalData.istree || false" />
+  <RenameResModal :visible="modalStore.modalName == 'renameResourcePan'" :istree="modalStore.modalData.istree || false" />
+  <RenameMultiModal :visible="modalStore.modalName == 'renameBackupPanMultiple'" :istree="modalStore.modalData.istree || false" />
+  <RenameMultiResModal :visible="modalStore.modalName == 'renameResourcePanMultiple'" :istree="modalStore.modalData.istree || false" />
+  <ShuXingModal :visible="modalStore.modalName == 'backupPanAttribute'" :istree="modalStore.modalData.istree || false" />
+  <ShuXingResModal :visible="modalStore.modalName == 'resourcePanAttribute'" :istree="modalStore.modalData.istree || false" />
+  <ShuXingMultiModal :visible="modalStore.modalName == 'backupPanMultipleAttribute'" :istree="modalStore.modalData.istree || false" />
+  <ShuXingMultiResModal :visible="modalStore.modalName == 'resourcePanMultipleAttribute'" :istree="modalStore.modalData.istree || false" />
+  <SearchPanModal :visible="modalStore.modalName == 'searchBackupPan'" />
+  <SearchPanResModal :visible="modalStore.modalName == 'searchResourcePan'" />
+
+<!--  <DLNAPlayerModal :visible="modalStore.modalName == 'dlna'" />-->
+  <M3U8DownloadModal :visible="modalStore.modalName == 'backupPanM3u8download'" />
+  <M3U8DownloadResModal :visible="modalStore.modalName == 'resourcePanM3u8download'" />
+  <CopyFileTreeModal :visible="modalStore.modalName == 'copyBackupPanFileTree'" :filelist="modalStore.modalData.filelist || []" />
+  <CopyFileTreeResModal :visible="modalStore.modalName == 'copyResourcePanFileTree'" :filelist="modalStore.modalData.filelist || []" />s
   <ArchiveModal
-    :visible="modalStore.modalName == 'archive'"
+    :visible="modalStore.modalName == 'archiveBackupPan'"
+    :user_id="modalStore.modalData.user_id || ''"
+    :drive_id="modalStore.modalData.drive_id || ''"
+    :file_id="modalStore.modalData.file_id || ''"
+    :file_name="modalStore.modalData.file_name || ''"
+    :parent_file_id="modalStore.modalData.parent_file_id || ''"
+    :password="modalStore.modalData.password || ''" />
+  <ArchiveResModal
+    :visible="modalStore.modalName == 'archiveResourcePan'"
     :user_id="modalStore.modalData.user_id || ''"
     :drive_id="modalStore.modalData.drive_id || ''"
     :file_id="modalStore.modalData.file_id || ''"
@@ -92,7 +141,17 @@ export default defineComponent({
     :parent_file_id="modalStore.modalData.parent_file_id || ''"
     :password="modalStore.modalData.password || ''" />
   <ArchivePasswordModal
-    :visible="modalStore.modalName == 'archivepassword'"
+    :visible="modalStore.modalName == 'archiveBackupPanPassword'"
+    :user_id="modalStore.modalData.user_id || ''"
+    :drive_id="modalStore.modalData.drive_id || ''"
+    :file_id="modalStore.modalData.file_id || ''"
+    :file_name="modalStore.modalData.file_name || ''"
+    :parent_file_id="modalStore.modalData.parent_file_id || ''"
+    :password="modalStore.modalData.password || ''"
+    :domain_id="modalStore.modalData.domain_id || ''"
+    :ext="modalStore.modalData.ext || ''" />
+  <ArchivePasswordResModal
+    :visible="modalStore.modalName == 'archiveResourcePanPassword'"
     :user_id="modalStore.modalData.user_id || ''"
     :drive_id="modalStore.modalData.drive_id || ''"
     :file_id="modalStore.modalData.file_id || ''"
@@ -111,10 +170,18 @@ export default defineComponent({
     :withsave="modalStore.modalData.withsave || false"
     :file_id_list="modalStore.modalData.file_id_list || []" />
 
-  <UploadModal :visible="modalStore.modalName == 'upload'" :file_id="modalStore.modalData.file_id || ''" :filelist="modalStore.modalData.filelist || []" />
-  <DownloadModal :visible="modalStore.modalName == 'download'" :istree="modalStore.modalData.istree || false" />
+  <UploadModal :visible="modalStore.modalName == 'uploadBackupPan'" :file_id="modalStore.modalData.file_id || ''" :filelist="modalStore.modalData.filelist || []" />
+  <UploadResModal :visible="modalStore.modalName == 'uploadResourcePan'" :file_id="modalStore.modalData.file_id || ''" :filelist="modalStore.modalData.filelist || []" />
+  <DownloadModal :visible="modalStore.modalName == 'downloadBackupPan'" :istree="modalStore.modalData.istree || false" />
+  <DownloadResModal :visible="modalStore.modalName == 'downloadResourcePan'" :istree="modalStore.modalData.istree || false" />
 
-  <SelectPanDirModal :visible="modalStore.modalName == 'selectpandir'"
+  <SelectPanDirModal :visible="modalStore.modalName == 'selectBackupPanDir'"
+                     :selecttype="modalStore.modalData.selecttype || ''"
+                     :selectid="modalStore.modalData.selectid || ''"
+                     :category="modalStore.modalData.category"
+                     :extFilter="modalStore.modalData.extFilter"
+                     :callback='modalStore.modalData.callback' />
+  <SelectPanDirResModal :visible="modalStore.modalName == 'selectResourcePanDir'"
                      :selecttype="modalStore.modalData.selecttype || ''"
                      :selectid="modalStore.modalData.selectid || ''"
                      :category="modalStore.modalData.category"

@@ -80,6 +80,7 @@ const useAppStore = defineStore('app', {
     isVip: true,
     appTabMenuMap: new Map<string, string>([
       ['pan', 'backupPan'],
+      ['resPan', 'resourcePan'],
       ['pic', 'allpic'],
       ['down', 'DowningRight'],
       ['share', 'OtherShareRight'],
@@ -131,6 +132,7 @@ const useAppStore = defineStore('app', {
         appTab: 'pan',
         appTabMenuMap: new Map<string, string>([
           ['pan', 'backupPan'],
+          ['resPan', 'resourcePan'],
           ['pic', 'allpic'],
           ['down', 'DowningRight'],
           ['share', 'OtherShareRight'],
@@ -177,6 +179,10 @@ const useAppStore = defineStore('app', {
     toggleTabNext() {
       switch (this.appTab) {
         case 'pan': {
+          this.appTab = 'resPan'
+          break
+        }
+        case 'resPan': {
           this.appTab = 'pic'
           break
         }
@@ -223,7 +229,11 @@ const useAppStore = defineStore('app', {
 
       switch (this.appTab) {
         case 'pan': {
-          next(this.appTabMenuMap, this.appTab, ['backupPan','resourcePan', 'kuaijie'])
+          next(this.appTabMenuMap, this.appTab, ['backupPan', 'kuaijie', 'fangying'])
+          break
+        }
+        case 'resPan': {
+          next(this.appTabMenuMap, this.appTab, ['resourcePan', 'resKuaijie'])
           break
         }
         case 'pic': {

@@ -42,7 +42,7 @@ export function handleUpload(uploadType: string, album_id?:string) {
   if (uploadType == 'file') {
     window.WebShowOpenDialogSync({ title: '选择多个文件上传到网盘', buttonLabel: '上传选中的文件', properties: ['openFile', 'multiSelections', 'showHiddenFiles', 'noResolveAliases', 'treatPackageAsDirectory', 'dontAddToRecent'] }, (files: string[] | undefined) => {
       if (files && files.length > 0) {
-        modalUpload(pantreeStore.selectDir.file_id, files)
+        modalUpload('backupPan', pantreeStore.selectDir.file_id, files)
       }
     })
   } else if (uploadType == 'pic' && album_id !== undefined) {
@@ -60,7 +60,7 @@ export function handleUpload(uploadType: string, album_id?:string) {
   } else {
     window.WebShowOpenDialogSync({ title: '选择多个文件夹上传到网盘', buttonLabel: '上传文件夹', properties: ['openDirectory', 'multiSelections', 'showHiddenFiles', 'noResolveAliases', 'treatPackageAsDirectory', 'dontAddToRecent'] }, (files: string[] | undefined) => {
       if (files && files.length > 0) {
-        modalUpload(pantreeStore.selectDir.file_id, files)
+        modalUpload('backupPan', pantreeStore.selectDir.file_id, files)
       }
     })
   }
@@ -83,7 +83,7 @@ export function menuDownload(istree: boolean, tips: boolean = true) {
   const downSavePathDefault = settingStore.downSavePathDefault
   if (isEmpty(savePath)) {
     message.error('未设置保存路径')
-    modalDownload(istree)
+    modalDownload('backupPan', istree)
     return
   }
   if (topbtnLock.has('menuDownload')) return
@@ -108,7 +108,7 @@ export function menuDownload(istree: boolean, tips: boolean = true) {
     if (downSavePathDefault || !tips) {
       DownDAL.aAddDownload(files, savePath, savePathFull)
     } else {
-      modalDownload(istree)
+      modalDownload('backupPan', istree)
     }
   } catch (err: any) {
     message.error(err.message)
@@ -292,7 +292,7 @@ export function menuCopySelectedFile(istree: boolean, copyby: string) {
     message.error('没有可以复制移动的文件')
     return
   }
-  modalSelectPanDir(copyby, parent_file_id, async function (user_id: string, drive_id: string, dirID: string) {
+  modalSelectPanDir('backupPan', copyby, parent_file_id, async function (user_id: string, drive_id: string, dirID: string) {
     if (!drive_id || !dirID) return
 
     if (parent_file_id == dirID) {
@@ -585,7 +585,7 @@ export async function topRecoverSelectedFile() {
 export async function topSearchAll(word: string) {
 
   if (word == 'topSearchAll高级搜索') {
-    modalSearchPan()
+    modalSearchPan("backupPan")
     return
   }
 
@@ -648,7 +648,7 @@ export function menuM3U8Download() {
     message.error('没有选中任何文件')
     return
   }
-  modalM3U8Download()
+  modalM3U8Download("backupPan")
 }
 
 export function menuCopyFileName() {
@@ -681,5 +681,5 @@ export function menuCopyFileTree() {
     message.error('没有选中任何文件！')
     return
   }
-  modalCopyFileTree(list)
+  modalCopyFileTree('backupPan', list)
 }

@@ -59,12 +59,10 @@ export default {
           iframeDocument.addEventListener('click', (event: any) => {
             const target = event.target;
             const url = target.href || '';
+            event.preventDefault();
 
             if (url.includes('aliyundrive')) {
-              event.preventDefault();
               modalDaoRuShareLink(url);
-            } else {
-              event.preventDefault();
             }
           })
         })

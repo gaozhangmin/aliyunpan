@@ -53,7 +53,7 @@ export default defineComponent({
         </a-doption>
       </template>
     </a-dropdown>
-    <a-button type="text" size="small" tabindex="-1" title="Ctrl+L" @click="modalDaoRuShareLink()"><i class="iconfont iconlink2" />导入分享</a-button>
+<!--    <a-button type="text" size="small" tabindex="-1" title="Ctrl+L" @click="modalDaoRuShareLink()"><i class="iconfont iconlink2" />导入分享</a-button>-->
   </div>
 </template>
 <style></style>

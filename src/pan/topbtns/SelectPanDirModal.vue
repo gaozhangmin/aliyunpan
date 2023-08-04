@@ -69,7 +69,7 @@ export default defineComponent({
       user_id.value = pantreeStore.user_id
       drive_id.value = pantreeStore.drive_id
       const expandedKeys: string[] = ['root']
-      const selectid = props.selectid || localStorage.getItem('selectpandir-' + drive_id.value) || ''
+      const selectid = props.selectid || localStorage.getItem('selectBackupPanDir-' + drive_id.value) || ''
       if (selectid) {
         const data = TreeStore.GetDirPath(pantreeStore.drive_id, selectid)
         if (data && data.length > 0) {
@@ -133,7 +133,7 @@ export default defineComponent({
       nativeEvent: MouseEvent;
       node: EventDataNode
     }) => {
-      localStorage.setItem('selectpandir-' + drive_id.value, info.node.key as string)
+      localStorage.setItem('selectBackupPanDir-' + drive_id.value, info.node.key as string)
       selectDir.value = { dirID: info.node.key as string, dirName: info.node.title as string, isLeaf: info.node.isLeaf || false }
       treeSelectedKeys.value = [info.node.key as string]
       treeSelectToExpand(keys, info)

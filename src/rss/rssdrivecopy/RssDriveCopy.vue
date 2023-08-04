@@ -102,7 +102,7 @@ const handleLeftUser = (driveType: any) => {
   if (!userToken) return
   TreeState.LeftInfo.user_id = userToken.user_id
   TreeState.LeftInfo.driveType = driveType
-  if (driveType == 'pan') TreeState.LeftInfo.drive_id = userToken.default_drive_id
+  if (driveType == 'pan') TreeState.LeftInfo.drive_id = userToken.backup_drive_id
   if (driveType == 'pic') TreeState.LeftInfo.drive_id = userToken.pic_drive_id
   if (driveType == 'safe') TreeState.LeftInfo.drive_id = userToken.default_sbox_drive_id
   TreeState.LeftCheckedKeys = []
@@ -114,7 +114,7 @@ const handleRightUser = (driveType: any) => {
   if (!userToken) return
   TreeState.RightInfo.user_id = userToken.user_id
   TreeState.RightInfo.driveType = driveType
-  if (driveType == 'pan') TreeState.RightInfo.drive_id = userToken.default_drive_id
+  if (driveType == 'pan') TreeState.RightInfo.drive_id = userToken.backup_drive_id
   if (driveType == 'pic') TreeState.RightInfo.drive_id = userToken.pic_drive_id
   if (driveType == 'safe') TreeState.RightInfo.drive_id = userToken.default_sbox_drive_id
   LoadDir('root', TreeState.RightInfo, TreeState.RightTreeData, true)

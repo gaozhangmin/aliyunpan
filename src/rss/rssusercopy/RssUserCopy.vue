@@ -104,7 +104,7 @@ const handleLeftUser = (user_id: any) => {
   const userToken = UserTokenMap.get(user_id)
   if (!userToken) return
   LeftData.user_id = userToken.user_id
-  LeftData.drive_id = userToken.default_drive_id
+  LeftData.drive_id = userToken.backup_drive_id
   LeftCheckedKeys.value = []
   LoadDir('root', LeftData, LeftTreeData)
 }
@@ -118,7 +118,7 @@ const handleRightUser = (user_id: any) => {
   const userToken = UserTokenMap.get(user_id)
   if (!userToken) return
   RightData.user_id = userToken.user_id
-  RightData.drive_id = userToken.default_drive_id
+  RightData.drive_id = userToken.backup_drive_id
   LoadDir('root', RightData, RightTreeData)
 }
 </script>

@@ -103,7 +103,7 @@ const handleDelete = () => {
     return
   }
   delLoading.value = true
-  AliFileCmd.ApiTrashBatch(user.user_id, user.default_drive_id, checkedKeys.value).then((success: string[]) => {
+  AliFileCmd.ApiTrashBatch(user.user_id, user.backup_drive_id, checkedKeys.value).then((success: string[]) => {
     delLoading.value = false
     if (checkedKeys.value.length == checkedKeysBak.length) {
       handleReset() 
@@ -123,10 +123,10 @@ const handleMove = () => {
     message.error('账号错误')
     return
   }
-  modalSelectPanDir('cut', '', function (user_id: string, drive_id: string, dirID: string) {
+  modalSelectPanDir('resourcePan','cut', '', function (user_id: string, drive_id: string, dirID: string) {
     if (!drive_id || !dirID) return 
     delLoading.value = true
-    AliFileCmd.ApiMoveBatch(user.user_id, user.default_drive_id, checkedKeys.value, drive_id, dirID).then((success: string[]) => {
+    AliFileCmd.ApiMoveBatch(user.user_id, user.resource_drive_id, checkedKeys.value, drive_id, dirID).then((success: string[]) => {
       delLoading.value = false
       if (checkedKeys.value.length == checkedKeysBak.length) {
         handleReset() 
@@ -167,7 +167,7 @@ const handleScan = () => {
   }
   setTimeout(refresh, 3000)
 
-  LoadScanDir(user.user_id, user.default_drive_id, totalDirCount, Processing, ScanPanData)
+  LoadScanDir(user.user_id, user.resource_drive_id, totalDirCount, Processing, ScanPanData)
     .then(() => {
       
       return GetWeiGuiFile(user.user_id, ScanPanData, Processing, scanCount, totalFileCount, scanType.value)

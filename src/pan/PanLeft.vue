@@ -46,7 +46,6 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
 
 const switchValues = [
   { key: 'backupPan', title: '网盘文件', alt: '' },
-  { key: 'resourcePan', title: '网盘文件', alt: '' },
   { key: 'kuaijie', title: '快捷方式', alt: '' }
 ]
 
@@ -131,7 +130,7 @@ const onRowItemDrop = (ev: any, movetodirid: string) => {
       const path = filesList[i].path
       files.push(path)
     }
-    modalUpload(movetodirid, files)
+    modalUpload('backupPan', movetodirid, files)
   } else {
     
     dropMoveSelectedFile(movetodirid)
@@ -210,40 +209,6 @@ const handleQuickSelect = (index: number) => {
               <span v-if="dataRef.key.length == 40 || dataRef.key == 'root'" class="dirtitle treedragnode" @drop="onRowItemDrop($event, dataRef.key)" @dragover="onRowItemDragOver" @dragenter="onRowItemDragEnter" @dragleave="onRowItemDragLeave">{{ dataRef.title }}</span>
               <span v-else class="dirtitle">{{ dataRef.title }}</span>
             </template>
-          </AntdTree>
-        </a-tab-pane>
-        <a-tab-pane key="resourcePan" title="1">
-          <AntdTree
-              ref="treeref"
-              :tabindex="-1"
-              :focusable="false"
-              class="dirtree"
-              block-node
-              selectable
-              :auto-expand-parent="false"
-              show-icon
-              :height="treeHeight"
-              :style="{ height: treeHeight + 'px' }"
-              :item-height="30"
-              :show-line="{ showLeafIcon: false }"
-              :open-animation="{}"
-              :expanded-keys="pantreeStore.treeExpandedKeys"
-              :selected-keys="pantreeStore.treeSelectedKeys"
-              :tree-data="pantreeStore.treeData"
-              @select="(_:any[],e:any)=>pantreeStore.mTreeSelected(e.node.key)"
-              @expand="(_:any[],e:any)=>pantreeStore.mTreeExpand(e.node.key)"
-              @right-click="handleTreeRightClick"
-              @scroll="onHideRightMenuScroll">
-              <template #switcherIcon>
-                  <i class="ant-tree-switcher-icon iconfont Arrow" />
-              </template>
-              <template #icon>
-                  <i class="iconfont iconfile-folder" />
-              </template>
-              <template #title="{ dataRef }">
-                  <span v-if="dataRef.key.length == 40 || dataRef.key == 'root'" class="dirtitle treedragnode" @drop="onRowItemDrop($event, dataRef.key)" @dragover="onRowItemDragOver" @dragenter="onRowItemDragEnter" @dragleave="onRowItemDragLeave">{{ dataRef.title }}</span>
-                  <span v-else class="dirtitle">{{ dataRef.title }}</span>
-              </template>
           </AntdTree>
         </a-tab-pane>
         <a-tab-pane key="kuaijie" title="2">

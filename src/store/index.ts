@@ -14,6 +14,8 @@ import useUserStore from '../user/userstore'
 import type { ITokenInfo } from '../user/userstore'
 import usePanTreeStore from '../pan/pantreestore'
 import usePanFileStore from '../pan/panfilestore'
+import useResPanTreeStore from '../resPan/pantreestore'
+import useResPanFileStore from '../resPan/panfilestore'
 
 import useServerStore from './serverstore'
 import type { IOtherShareLinkModel } from '../share/share/OtherShareStore'
@@ -51,6 +53,8 @@ export {
   ITokenInfo,
   usePanTreeStore,
   usePanFileStore,
+  useResPanTreeStore,
+  useResPanFileStore,
   useServerStore,
   IOtherShareLinkModel,
   IShareSiteModel,

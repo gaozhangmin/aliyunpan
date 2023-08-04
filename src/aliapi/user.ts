@@ -163,7 +163,6 @@ export default class AliUser {
       token.user_name = resp.body.user_name
       token.avatar = resp.body.avatar
       token.nick_name = resp.body.nick_name
-      token.default_drive_id = resp.body.default_drive_id
       token.default_sbox_drive_id = resp.body.default_sbox_drive_id
       token.role = resp.body.role
       token.status = resp.body.status
@@ -213,7 +212,7 @@ export default class AliUser {
     if (AliHttp.IsSuccess(resp.code)) {
       token.spu_id = ''
       token.phone = resp.body.phone
-      token.default_drive_id = resp.body.backup_drive_id;
+      token.backup_drive_id = resp.body.backup_drive_id;
       token.resource_drive_id = resp.body.resource_drive_id;
       token.is_expires = resp.body.status === 'enabled'
       token.name = resp.body.nick_name===''?resp.body.phone:resp.body.nick_name
@@ -370,7 +369,7 @@ export default class AliUser {
     if (!token) return 0
     const url = 'adrive/v1.0/openFile/search'
     const postData = {
-      drive_id: token?.default_drive_id,
+      drive_id: token?.backup_drive_id,
       marker: '',
       limit: 1,
       all: false,

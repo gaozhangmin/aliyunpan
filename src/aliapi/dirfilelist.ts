@@ -1,4 +1,4 @@
-import { usePanFileStore, useSettingStore } from '../store'
+import { usePanFileStore, useResPanFileStore, useSettingStore } from '../store'
 import TreeStore from '../store/treestore'
 import DebugLog from '../utils/debuglog'
 import { OrderDir, OrderFile } from '../utils/filenameorder'
@@ -639,7 +639,12 @@ export default class AliDirFileList {
 
         if (pageIndex >= 0 && type == '') {
           const pan = usePanFileStore()
-          if (pan.DriveID == dir.m_drive_id) pan.mSaveDirFileLoadingPart(pageIndex, dirPart, dir.itemsTotal || 0)
+          if (pan.DriveID == dir.m_drive_id) {
+            pan.mSaveDirFileLoadingPart(pageIndex, dirPart, dir.itemsTotal || 0)
+          } else {
+            const resPan = useResPanFileStore();
+            resPan.mSaveDirFileLoadingPart(pageIndex, dirPart, dir.itemsTotal || 0)
+          }
         }
         if (dirPart.next_marker == 'cancel') dir.next_marker = 'cancel'
         if (isVideo && dir.items.length >= 500) dir.next_marker = ''

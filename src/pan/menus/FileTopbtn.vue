@@ -37,7 +37,7 @@ export default defineComponent({
 <template>
   <div v-show="isselected && dirtype !== 'trash' && dirtype !== 'recover'" class="toppanbtn">
     <a-button type="text" size="small" tabindex="-1" title="Ctrl+D" @click="() => menuDownload(istree)"><i class="iconfont icondownload" />下载</a-button>
-    <a-button v-show="dirtype == 'pan'" type="text" size="small" tabindex="-1" title="Ctrl+S" @click="() => menuCreatShare(istree, 'pan')"><i class="iconfont iconfenxiang" />分享</a-button>
+<!--    <a-button v-show="dirtype == 'pan'" type="text" size="small" tabindex="-1" title="Ctrl+S" @click="() => menuCreatShare(istree, 'pan')"><i class="iconfont iconfenxiang" />分享</a-button>-->
     <a-button v-show="!isallfavored" type="text" size="small" tabindex="-1" title="Ctrl+G" @click="() => menuFavSelectFile(istree, true)"><i class="iconfont iconcrown" />收藏</a-button>
     <a-button v-show="isallfavored" type="text" size="small" tabindex="-1" title="Ctrl+G" @click="() => menuFavSelectFile(istree, false)"><i class="iconfont iconcrown2" />取消收藏</a-button>
 
@@ -64,7 +64,7 @@ export default defineComponent({
     <a-dropdown trigger="hover" class="rightmenu" position="bl">
       <a-button type="text" size="small" tabindex="-1">更多<i class="iconfont icondown" /></a-button>
       <template #content>
-        <a-doption title="F2 / Ctrl+E" @click="() => modalRename(istree, isselectedmulti)">
+        <a-doption title="F2 / Ctrl+E" @click="() => modalRename('backupPan', istree, isselectedmulti)">
           <template #icon> <i class="iconfont iconedit-square" /> </template>
           <template #default>重命名</template>
         </a-doption>
@@ -76,7 +76,7 @@ export default defineComponent({
           <template #icon> <i class="iconfont iconcopy" /> </template>
           <template #default>复制到...</template>
         </a-doption>
-        <a-doption title="Ctrl+P" @click="() => modalShuXing(istree, isselectedmulti)">
+        <a-doption title="Ctrl+P" @click="() => modalShuXing('backupPan', istree, isselectedmulti)">
           <template #icon> <i class="iconfont iconshuxing" /> </template>
           <template #default>属性</template>
         </a-doption>

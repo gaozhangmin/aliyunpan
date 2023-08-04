@@ -43,10 +43,10 @@ export default defineComponent({
         <template #icon> <i class="iconfont icondownload" /> </template>
         <template #default>下载</template>
       </a-doption>
-      <a-doption @click="() => menuCreatShare(istree, 'pan')">
-        <template #icon> <i class="iconfont iconfenxiang" /> </template>
-        <template #default>分享</template>
-      </a-doption>
+<!--      <a-doption @click="() => menuCreatShare(istree, 'pan')">-->
+<!--        <template #icon> <i class="iconfont iconfenxiang" /> </template>-->
+<!--        <template #default>分享</template>-->
+<!--      </a-doption>-->
 
       <a-doption v-show="!isallfavored" @click="() => menuFavSelectFile(istree, true)">
         <template #icon> <i class="iconfont iconcrown" /> </template>
@@ -123,7 +123,7 @@ export default defineComponent({
         </template>
       </a-dsubmenu>
 
-      <a-doption v-show="dirtype != 'video'" @click="() => modalRename(istree, isselectedmulti)">
+      <a-doption v-show="dirtype != 'video'" @click="() => modalRename('backupPan', istree, isselectedmulti)">
         <template #icon> <i class="iconfont iconedit-square" /> </template>
         <template #default>重命名</template>
       </a-doption>
@@ -135,7 +135,7 @@ export default defineComponent({
           </div>
         </template>
         <template #content>
-          <a-doption @click="() => modalShuXing(istree, isselectedmulti)">
+          <a-doption @click="() => modalShuXing('backupPan', istree, isselectedmulti)">
             <template #icon> <i class="iconfont iconshuxing" /> </template>
             <template #default>属性</template>
           </a-doption>

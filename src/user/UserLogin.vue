@@ -274,7 +274,7 @@ export default defineComponent({
                   user_name: result.userName,
                   avatar: result.avatar,
                   nick_name: result.nickName,
-                  default_drive_id: '',
+                  backup_drive_id: '',
                   resource_drive_id:'',
                   default_sbox_drive_id: '',
                   viplevel:'',

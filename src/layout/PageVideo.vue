@@ -1,5 +1,5 @@
 <script setup lang='ts'>
-import { useAppStore, usePanFileStore, useSettingStore } from '../store'
+import { useAppStore, usePanFileStore, useResPanFileStore, useSettingStore } from '../store'
 import { onBeforeUnmount, onMounted } from 'vue'
 import Artplayer from 'artplayer'
 import HlsJs from 'hls.js'
@@ -258,7 +258,11 @@ const refreshSetting = async (art: Artplayer, item: any) => {
   if (settingStore.uiAutoColorVideo && !item.description) {
     AliFileCmd.ApiFileColorBatch(pageVideo.user_id, pageVideo.drive_id, 'c5b89b8', [item.file_id])
       .then((success) => {
-        usePanFileStore().mColorFiles('c5b89b8', success)
+        if (pageVideo.drive_id == usePanFileStore().DriveID) {
+          usePanFileStore().mColorFiles('c5b89b8', success)
+        } else {
+          useResPanFileStore().mColorFiles('c5b89b8', success)
+        }
       })
   }
   // 释放字幕Blob
@@ -321,8 +325,8 @@ const defaultSetting = async (art: Artplayer) => {
         icon: '<i class="iconfont iconarrow-right-1-icon"></i>',
         range: [0, 0, 10, 1],
         onChange(item: SettingOption) {
-          art.storage.set('autoSkipEnd', item.range*10)
-          return item.range*10 + 's'
+          art.storage.set('autoSkipEnd', item.range*60)
+          return item.range*60 + 's'
         }
       }
   )

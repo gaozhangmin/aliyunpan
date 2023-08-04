@@ -93,7 +93,7 @@ const handleDelete = () => {
   }
   delLoading.value = true
   const idList = Array.from(checkedKeys)
-  AliFileCmd.ApiTrashBatch(user.user_id, user.default_drive_id, idList).then((success: string[]) => {
+  AliFileCmd.ApiTrashBatch(user.user_id, user.backup_drive_id, idList).then((success: string[]) => {
     delLoading.value = false
     handleScan()
   })
@@ -124,7 +124,7 @@ const handleScan = () => {
   }
   setTimeout(refresh, 3000)
 
-  LoadScanDir(user.user_id, user.default_drive_id, totalDirCount, Processing, ScanPanData)
+  LoadScanDir(user.user_id, user.backup_drive_id, totalDirCount, Processing, ScanPanData)
     .then(() => {
       return GetSameFile(user.user_id, ScanPanData, Processing, scanCount, totalFileCount, scanType.value)
     })

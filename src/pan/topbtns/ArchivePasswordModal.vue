@@ -94,7 +94,7 @@ export default defineComponent({
           message.error('解压密码错误，请重试')
         } else if (resp.state == 'Succeed' || resp.state == 'Running') {
           
-          modalArchive(props.user_id, props.drive_id, props.file_id, props.file_name, props.parent_file_id, this.form.password)
+          modalArchive('backupPan', props.user_id, props.drive_id, props.file_id, props.file_name, props.parent_file_id, this.form.password)
         } else {
           message.error('在线解压失败 ' + resp.state + '，请重试')
           DebugLog.mSaveDanger('在线解压失败 ' + resp.state, props.drive_id + ' ' + props.file_id)

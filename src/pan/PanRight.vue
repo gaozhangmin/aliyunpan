@@ -101,18 +101,18 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
   if (TestCtrl('f', state.KeyDownEvent, () => inputsearch.value.focus())) return
   if (TestKey('f3', state.KeyDownEvent, () => inputsearch.value.focus())) return
   if (TestKey(' ', state.KeyDownEvent, () => inputsearch.value.focus())) return
-  if (TestCtrlShift('n', state.KeyDownEvent, () => modalCreatNewDir('folder'))) return
-  if (TestCtrl('n', state.KeyDownEvent, modalCreatNewFile)) return
+  if (TestCtrlShift('n', state.KeyDownEvent, () => modalCreatNewDir('backupPan','folder'))) return
+  if (TestCtrl('n', state.KeyDownEvent, () => modalCreatNewFile('backupPan'))) return
   if (TestCtrlShift('u', state.KeyDownEvent, () => handleUpload('folder'))) return
   if (TestCtrl('u', state.KeyDownEvent, () => handleUpload('file'))) return
-  if (TestCtrl('l', state.KeyDownEvent, modalDaoRuShareLink)) return
+  // if (TestCtrl('l', state.KeyDownEvent, modalDaoRuShareLink)) return
   if (TestCtrl('h', state.KeyDownEvent, handleHome)) return
   if (TestKey('f5', state.KeyDownEvent, handleRefresh)) return
   if (TestKey('f6', state.KeyDownEvent, handleDingWei)) return
   if (TestKey('Backspace', state.KeyDownEvent, handleBack)) return
-  if (TestKey('f2', state.KeyDownEvent, () => modalRename(false, panfileStore.IsListSelectedMulti))) return
-  if (TestCtrl('e', state.KeyDownEvent, () => modalRename(false, panfileStore.IsListSelectedMulti))) return
-  if (TestCtrl('s', state.KeyDownEvent, () => menuCreatShare(false, 'pan'))) return
+  if (TestKey('f2', state.KeyDownEvent, () => modalRename('backupPan',false, panfileStore.IsListSelectedMulti))) return
+  if (TestCtrl('e', state.KeyDownEvent, () => modalRename('backupPan', false, panfileStore.IsListSelectedMulti))) return
+  // if (TestCtrl('s', state.KeyDownEvent, () => menuCreatShare(false, 'pan'))) return
   if (TestCtrl('g', state.KeyDownEvent, () => menuFavSelectFile(false, !panfileStore.IsListSelectedFavAll))) return
   if (TestCtrl('q', state.KeyDownEvent, onSelectRangStart)) return
   if (TestKeyboardSelect(state.KeyDownEvent, viewlist.value, panfileStore, handleOpenFile)) return
@@ -436,7 +436,7 @@ const onPanDrop = (e: any) => {
       files.push(path)
     }
 
-    modalUpload(panfileStore.DirID, files)
+    modalUpload('backupPan', panfileStore.DirID, files)
   }
 }
 const onPanDragEnter = (ev: any) => {

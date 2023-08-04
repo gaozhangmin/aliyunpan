@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { KeyboardState, useAppStore, useKeyboardStore, usePanFileStore, useWinStore } from '../store'
+import { KeyboardState, useAppStore, useKeyboardStore, usePanFileStore, useResPanFileStore, useWinStore } from '../store'
 import {
   onHideRightMenuScroll,
   onShowRightMenu, RefreshScroll,
@@ -19,6 +19,7 @@ import { IStateUploadTask } from '../utils/dbupload'
 import message from '../utils/message'
 import AliFile from '../aliapi/file'
 import PanDAL from '../pan/pandal'
+import ResPanDAL from '../resPan/pandal'
 import { humanSize } from '../utils/format'
 
 const fs = window.require('fs')
@@ -108,11 +109,16 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
   }
   if (cmd == 'pan') {
 
-    if (item.TaskFileID) {
+    if (item.TaskFileID ) {
       AliFile.ApiGetFile(item.user_id, item.drive_id, item.TaskFileID).then(async (file) => {
-        if (file) {
+        if (file && item?.drive_id == usePanFileStore().DriveID) {
           await PanDAL.aReLoadOneDirToShow('', file.parent_file_id, true)
           usePanFileStore().mMouseSelect(file.file_id, false, false)
+          useAppStore().toggleTab('pan')
+        } else if (file && item?.drive_id == useResPanFileStore().DriveID) {
+
+          await ResPanDAL.aReLoadOneDirToShow('', file.parent_file_id, true)
+          useResPanFileStore().mMouseSelect(file.file_id, false, false)
           useAppStore().toggleTab('pan')
         } else {
           message.error('找不到文件，可能已被删除')

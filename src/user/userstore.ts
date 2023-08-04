@@ -4,8 +4,6 @@ import UserDAL from './userdal'
 
 export interface ITokenInfo {
   tokenfrom: 'token' | 'account'
-
-
   access_token: string
   refresh_token: string
   expires_in: number
@@ -22,7 +20,7 @@ export interface ITokenInfo {
   user_name: string
   avatar: string
   nick_name: string
-  default_drive_id: string
+  backup_drive_id: string
   resource_drive_id: string
   default_sbox_drive_id: string
   role: string

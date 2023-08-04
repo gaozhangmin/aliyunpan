@@ -1,11 +1,10 @@
 import { defineStore } from 'pinia'
 import DebugLog from '../utils/debuglog'
-import {getResourcesPath, getUserData, getUserDataPath} from '../utils/electronhelper'
+import {getUserDataPath} from '../utils/electronhelper'
 import {useAppStore, useUserStore} from '../store'
 import PanDAL from '../pan/pandal'
-import { existsSync, readFileSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import UserDAL from "../user/userdal"
-import message from "../utils/message"
 
 declare type ProxyType = 'none' | 'http' | 'https' | 'socks4' | 'socks4a' | 'socks5' | 'socks5h'
 
@@ -341,7 +340,10 @@ function LoadSetting() {
       const val = JSON.parse(settingstr)
       _loadSetting(val)
       useAppStore().toggleTheme(setting.uiTheme)
-      if (setting.appUserDataPath !== '') {
+      if (setting.appUserDataPath !== '' ) {
+        if (!existsSync(setting.appUserDataPath)) {
+          mkdirSync(setting.appUserDataPath)
+        }
         window.WebToElectron({ cmd: { appUserDataPath: setting.appUserDataPath} })
       }
     } else {

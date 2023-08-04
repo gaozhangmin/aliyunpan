@@ -185,8 +185,8 @@ export function RefreshScrollTo(element: any, top: number) {
   }
 }
 
-const menulist = ['leftpansubmove', 'leftpansubzhankai', 'leftpanmenu', 'rightpansubmove', 'rightpansubbiaoji',
-  'rightpansubmore', 'rightpanmenu', 'rightpantrashmenu', 'rightmysharemenu', 'rightothersharemenu',
+const menulist = ['leftpansubmove', 'leftrespansubmove','leftpansubzhankai', 'leftrespansubzhankai', 'leftpanmenu','leftrespanmenu', 'rightpansubmove', 'rightrespansubmove', 'rightpansubbiaoji',
+  'rightrespansubbiaoji', 'rightpansubmore', 'rightpanmenu', 'rightpantrashmenu',  'rightrespansubmore', 'rightrespanmenu', 'rightrespantrashmenu', 'rightmysharemenu', 'rightothersharemenu',
   'uploadingrightmenu', 'uploadedrightmenu', 'downingrightmenu', 'downedrightmenu', 'rightuploadedmenu', 'rightuploadingmenu']
 const menuliststate = new Set()
 

@@ -21,6 +21,7 @@ import Rss from '../rss/index.vue'
 import Share from '../share/index.vue'
 import Down from '../down/index.vue'
 import Pan from '../pan/index.vue'
+import ResourcePan from '../resPan/index.vue'
 import Pic from '../pic/index.vue'
 import Movie from '../resource/movieIndex.vue'
 import VipInformPage from '../resource/vipInfo.vue'
@@ -69,11 +70,12 @@ const handleHelpPage = () => {
 
 keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
   if (TestAlt('1', state.KeyDownEvent, () => appStore.toggleTab('pan'))) return
-  if (TestAlt('2', state.KeyDownEvent, () => appStore.toggleTab('pic'))) return
-  if (TestAlt('3', state.KeyDownEvent, () => appStore.toggleTab('down'))) return
-  if (TestAlt('4', state.KeyDownEvent, () => appStore.toggleTab('share'))) return
-  if (TestAlt('5', state.KeyDownEvent, () => appStore.toggleTab('rss'))) return
-  if (TestAlt('6', state.KeyDownEvent, () => appStore.toggleTab('setting'))) return
+    if (TestAlt('2', state.KeyDownEvent, () => appStore.toggleTab('resPan'))) return
+  if (TestAlt('3', state.KeyDownEvent, () => appStore.toggleTab('pic'))) return
+  if (TestAlt('4', state.KeyDownEvent, () => appStore.toggleTab('down'))) return
+  if (TestAlt('5', state.KeyDownEvent, () => appStore.toggleTab('share'))) return
+  if (TestAlt('6', state.KeyDownEvent, () => appStore.toggleTab('rss'))) return
+  if (TestAlt('7', state.KeyDownEvent, () => appStore.toggleTab('setting'))) return
   if (TestAlt('f4', state.KeyDownEvent, () => handleHideClick(undefined))) return
   if (TestAlt('m', state.KeyDownEvent, () => handleMinClick(undefined))) return
   if (TestAlt('enter', state.KeyDownEvent, () => handleMaxClick(undefined))) return
@@ -187,12 +189,13 @@ const handleCheckVer = () => {
         <div v-show="appStore.appTab !== 'pic'" class="title">小白羊 {{ Config.appVersion }}</div>
 
         <a-menu class="custom-menu" mode="horizontal" :selected-keys="[appStore.appTab]" @update:selected-keys="appStore.toggleTab($event[0])">
-          <a-menu-item key="pan" title="Alt+1">网盘</a-menu-item>
-          <a-menu-item key="pic" title="Alt+2">相册</a-menu-item>
-          <a-menu-item key="down" title="Alt+3">传输</a-menu-item>
-          <a-menu-item key="share" title="Alt+4">资源&分享</a-menu-item>
-          <a-menu-item key="rss" title="Alt+5">插件</a-menu-item>
-          <a-menu-item key="movie" title="Alt+6">4K影视</a-menu-item>
+          <a-menu-item key="pan" title="Alt+1">备份盘</a-menu-item>
+          <a-menu-item key="resPan" title="Alt+2">资源盘</a-menu-item>
+          <a-menu-item key="pic" title="Alt+3">相册</a-menu-item>
+          <a-menu-item key="down" title="Alt+4">传输</a-menu-item>
+          <a-menu-item key="share" title="Alt+5">资源&分享</a-menu-item>
+          <a-menu-item key="rss" title="Alt+6">插件</a-menu-item>
+          <a-menu-item key="movie" title="Alt+7">4K影视</a-menu-item>
         </a-menu>
 
         <div class="flexauto"></div>
@@ -217,13 +220,14 @@ const handleCheckVer = () => {
     <a-layout-content id="xbybody">
       <a-tabs type="text" :direction="'horizontal'" class="hidetabs" :justify="true" :active-key="appStore.appTab">
         <a-tab-pane key="pan" title="1"><Pan :visible="panVisible"/></a-tab-pane>
-        <a-tab-pane key="pic" title="2"><Pic /></a-tab-pane>
-        <a-tab-pane key="down" title="3"><Down /></a-tab-pane>
-        <a-tab-pane key="share" title="4"><Share /></a-tab-pane>
-        <a-tab-pane key="rss" title="5"><Rss /></a-tab-pane>
-        <a-tab-pane key="setting" title="6"><Setting /></a-tab-pane>
-        <a-tab-pane v-if='appStore.isVip' key="movie" title="7"><Movie /></a-tab-pane>
-        <a-tab-pane v-if='!appStore.isVip' key="movie" title="7"><VipInformPage /></a-tab-pane>
+        <a-tab-pane key="resPan" title="2"><ResourcePan :visible="panVisible"/></a-tab-pane>
+        <a-tab-pane key="pic" title="3"><Pic /></a-tab-pane>
+        <a-tab-pane key="down" title="4"><Down /></a-tab-pane>
+        <a-tab-pane key="share" title="5"><Share /></a-tab-pane>
+        <a-tab-pane key="rss" title="6"><Rss /></a-tab-pane>
+        <a-tab-pane key="setting" title="7"><Setting /></a-tab-pane>
+        <a-tab-pane v-if='appStore.isVip' key="movie" title="8"><Movie /></a-tab-pane>
+        <a-tab-pane v-if='!appStore.isVip' key="movie" title="8"><VipInformPage /></a-tab-pane>
       </a-tabs>
     </a-layout-content>
     <a-layout-footer id="xbyfoot" draggable="false">

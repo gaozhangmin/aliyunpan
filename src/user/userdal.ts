@@ -13,6 +13,7 @@ import {
   useSettingStore
 } from '../store'
 import PanDAL from '../pan/pandal'
+import ResPanDAL from '../resPan/pandal'
 import DebugLog from '../utils/debuglog'
 
 export const UserTokenMap = new Map<string, ITokenInfo>()
@@ -79,7 +80,7 @@ export default class UserDAL {
       user_name: '',
       avatar: '',
       nick_name: '',
-      default_drive_id: '',
+      backup_drive_id: '',
       resource_drive_id: '',
       default_sbox_drive_id: '',
       role: '',
@@ -181,9 +182,11 @@ export default class UserDAL {
     useOtherFollowingStore().$reset()
     useFootStore().mSaveUserInfo(token)
     // 刷新数据
-    PanDAL.aReLoadDrive(token.user_id, token.default_drive_id)
-    PanDAL.aReLoadDrive(token.user_id, token.resource_drive_id)
+    PanDAL.aReLoadDrive(token.user_id, token.backup_drive_id)
     PanDAL.aReLoadQuickFile(token.user_id)
+
+    ResPanDAL.aReLoadDrive(token.user_id, token.resource_drive_id)
+    ResPanDAL.aReLoadQuickFile(token.user_id)
     message.success('加载用户成功!', 2, loadingKey)
   }
 

@@ -3,7 +3,7 @@ import AliArchive from '../aliapi/archive'
 import AliFile from '../aliapi/file'
 import AliFileCmd from '../aliapi/filecmd'
 import ServerHttp from '../aliapi/server'
-import { ITokenInfo, useFootStore, usePanFileStore, useSettingStore, useUserStore } from '../store'
+import { ITokenInfo, useFootStore, usePanFileStore, useResPanFileStore, useSettingStore, useUserStore } from '../store'
 import { IPageCode, IPageImage, IPageOffice, IPageVideo } from '../store/appstore'
 import UserDAL from '../user/userdal'
 import { clickWait } from './debounce'
@@ -75,10 +75,18 @@ export async function menuOpenFile(file: IAliGetFileModel): Promise<void> {
       }, { distance: Infinity, index: -1 })
       subTitleFileId = (similarity.index !== -1) ? subTitlesList[similarity.index].file_id : ''
     } else if (uiVideoSubtitleMode === 'select') {
-      modalSelectPanDir('select', parent_file_id, async (_user_id: string, _drive_id: string, dirID: string, _dirName: string) => {
-        Video(token, drive_id, file_id, parent_file_id, file.name, isViolation, file.description, dirID)
-      }, '', /srt|vtt|ass/)
-      return
+      if (drive_id === token.backup_drive_id) {
+        modalSelectPanDir('backupPan','select', parent_file_id, async (_user_id: string, _drive_id: string, dirID: string, _dirName: string) => {
+          Video(token, drive_id, file_id, parent_file_id, file.name, isViolation, file.description, dirID)
+        }, '', /srt|vtt|ass/)
+        return
+      } else {
+        modalSelectPanDir('resourcePan','select', parent_file_id, async (_user_id: string, _drive_id: string, dirID: string, _dirName: string) => {
+          Video(token, drive_id, file_id, parent_file_id, file.name, isViolation, file.description, dirID)
+        }, '', /srt|vtt|ass/)
+        return
+      }
+
     }
     Video(token, drive_id, file_id, parent_file_id, file.name, isViolation, file.description, subTitleFileId)
     return
@@ -138,9 +146,18 @@ async function Archive(drive_id: string, file_id: string, file_name: string, par
   }
 
   if (resp.state == '密码错误') {
-    modalArchivePassword(user_id, drive_id, file_id, file_name, parent_file_id, info.domain_id, info.file_extension || '')
+    if (drive_id === token.resource_drive_id) {
+      modalArchivePassword('resourcePan', user_id, drive_id, file_id, file_name, parent_file_id, info.domain_id, info.file_extension || '')
+    } else {
+      modalArchivePassword('backupPan', user_id, drive_id, file_id, file_name, parent_file_id, info.domain_id, info.file_extension || '')
+    }
   } else if (resp.state == 'Succeed' || resp.state == 'Running') {
-    modalArchive(user_id, drive_id, file_id, file_name, parent_file_id, password)
+    if (drive_id === token.resource_drive_id) {
+      modalArchive('resourcePan', user_id, drive_id, file_id, file_name, parent_file_id, password)
+    } else {
+      modalArchive('backupPan', user_id, drive_id, file_id, file_name, parent_file_id, password)
+    }
+
   } else {
     message.error('在线解压失败 ' + resp.state + '，操作取消')
     DebugLog.mSaveDanger('在线解压失败 ' + resp.state, drive_id + ' ' + file_id)
@@ -168,7 +185,11 @@ async function Video(token: ITokenInfo, drive_id: string, file_id: string, paren
   if (settingStore.uiAutoColorVideo && !dec) {
     AliFileCmd.ApiFileColorBatch(token.user_id, drive_id, 'c5b89b8', [file_id])
       .then((success) => {
-        usePanFileStore().mColorFiles('c5b89b8', success)
+        if (drive_id == usePanFileStore().DriveID) {
+          usePanFileStore().mColorFiles('c5b89b8', success)
+        } else {
+          useResPanFileStore().mColorFiles('c5b89b8', success)
+        }
       })
   }
 

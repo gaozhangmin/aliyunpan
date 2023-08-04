@@ -49,10 +49,10 @@ export default defineComponent({
         <template #icon> <i class="iconfont icondownload" /> </template>
         <template #default>下载</template>
       </a-doption>
-      <a-doption @click="() => menuCreatShare(istree, 'pan')">
-        <template #icon> <i class="iconfont iconfenxiang" /> </template>
-        <template #default>分享</template>
-      </a-doption>
+<!--      <a-doption @click="() => menuCreatShare(istree, 'pan')">-->
+<!--        <template #icon> <i class="iconfont iconfenxiang" /> </template>-->
+<!--        <template #default>分享</template>-->
+<!--      </a-doption>-->
 
       <a-dsubmenu id="leftpansubmove" class="rightmenu" trigger="hover">
         <template #default>
@@ -76,12 +76,12 @@ export default defineComponent({
         </template>
       </a-dsubmenu>
 
-      <a-doption @click="() => modalRename(istree, false)">
+      <a-doption @click="() => modalRename('backupPan', istree, false)">
         <template #icon> <i class="iconfont iconedit-square" /> </template>
         <template #default>重命名</template>
       </a-doption>
 
-      <a-doption @click="() => modalShuXing(istree, false)">
+      <a-doption @click="() => modalShuXing('backupPan',istree, false)">
         <template #icon> <i class="iconfont iconshuxing" /> </template>
         <template #default>属性</template>
       </a-doption>

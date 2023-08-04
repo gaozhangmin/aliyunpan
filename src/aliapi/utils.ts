@@ -18,7 +18,7 @@ export function GetDriveID(user_id: string, drive: Drive): string {
   if (token) {
     switch (drive) {
       case 'pan':
-        return token.default_drive_id
+        return token.backup_drive_id
       case 'pic':
         return token.pic_drive_id
       case 'safe':
@@ -33,7 +33,7 @@ export function GetDriveID2(token: ITokenInfo, driveName: string): string {
   if (token) {
     switch (driveName) {
       case 'pan':
-        return token.default_drive_id
+        return token.backup_drive_id
       case 'pic':
         return token.pic_drive_id
       case 'safe':

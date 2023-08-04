@@ -251,7 +251,7 @@ export default defineComponent({
       console.log('selectNodes', selectNodes)
       const share_id = this.share_id
       const share_token = this.shareToken
-      modalSelectPanDir('share', '', async function(user_id: string, drive_id: string, dirID: string) {
+      modalSelectPanDir('resourcePan','share', '', async function(user_id: string, drive_id: string, dirID: string) {
         if (!drive_id || !dirID) return
         const result = await SaveLink(saveType, share_id, share_token, user_id, drive_id, dirID, selectNodes)
         if (result) message.error('保存文件出错,' + result)

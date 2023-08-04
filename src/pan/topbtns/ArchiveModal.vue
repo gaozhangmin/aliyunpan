@@ -210,7 +210,7 @@ export default defineComponent({
       const checkedKeys = savetype == 'all' ? [] : this.treeref.checkedKeys
       const domain_id = (this.fileInfo as IAliFileItem).domain_id || ''
       const file_extension = (this.fileInfo as IAliFileItem).file_extension || ''
-      modalSelectPanDir('unzip', this.parent_file_id, async (user_id: string, drive_id: string, dirID: string) => {
+      modalSelectPanDir('backupPan','unzip', this.parent_file_id, async (user_id: string, drive_id: string, dirID: string) => {
         if (!drive_id || !dirID) return 
 
         const result = await AliArchive.ApiArchiveUncompress(this.user_id, this.drive_id, this.file_id, domain_id, file_extension, drive_id, dirID, this.password, checkedKeys)

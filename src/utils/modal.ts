@@ -8,11 +8,20 @@ export function modalCloseAll() {
 export function modalUserSpace() {
   useModalStore().showModal('userspace', {})
 }
-export function modalCreatNewFile() {
-  useModalStore().showModal('creatfile', {})
+export function modalCreatNewFile(panType: string) {
+  if (panType == 'backupPan') {
+    useModalStore().showModal('createBackupPanFile', {})
+  } else if (panType == 'resourcePan') {
+    useModalStore().showModal('createResourcePanFile', {})
+  }
+
 }
-export function modalCreatNewDir(dirtype: string, parentdirid: string = '', callback: any = undefined) {
-  useModalStore().showModal('creatdir', { dirtype, parentdirid, callback })
+export function modalCreatNewDir(panType: string, dirtype: string, parentdirid: string = '', callback: any = undefined) {
+  if (panType == 'backupPan') {
+    useModalStore().showModal('creatBackupPanDir', { dirtype, parentdirid, callback })
+  } else {
+    useModalStore().showModal('creatResourcePanDir', { dirtype, parentdirid, callback })
+  }
 }
 
 export function modalCreatNewAlbum() {
@@ -24,18 +33,23 @@ export function modalMoveToAlbum(photos_file_id:string[]) {
 }
 
 export function modalCreatNewShareLink(sharetype: string, filelist: IAliGetFileModel[]) {
-  useModalStore().showModal('creatshare', { sharetype, filelist })
+  useModalStore().showModal('createShare', { sharetype, filelist })
 }
 
 export function modalDaoRuShareLink(shareUrl='', sharePwd='') {
-  useModalStore().showModal('daorushare', {shareUrl, sharePwd})
+  useModalStore().showModal('importShare', {shareUrl, sharePwd})
 }
 export function modalDaoRuShareLinkMulti() {
-  useModalStore().showModal('daorusharemulti', {})
+  useModalStore().showModal('importMultipleShare', {})
 }
 
-export function modalRename(istree: boolean, ismulti: boolean) {
-  useModalStore().showModal(ismulti ? 'renamemulti' : 'rename', { istree })
+export function modalRename(panType: string, istree: boolean, ismulti: boolean) {
+  if (panType == 'backupPan') {
+    useModalStore().showModal(ismulti ? 'renameBackupPanMultiple' : 'renameBackupPan', { istree })
+  } else {
+    useModalStore().showModal(ismulti ? 'renameResourcePanMultiple' : 'renameResourcePan', { istree })
+  }
+
 }
 
 export function modalEditShareLink(sharelist: IAliShareItem[]) {
@@ -46,45 +60,90 @@ export function modalShowShareLink(share_id: string, share_pwd: string, share_to
   useModalStore().showModal('showshare', { share_id, share_pwd, share_token, withsave, file_id_list })
 }
 
-export function modalSelectPanDir(selecttype: string, selectid: string,
+export function modalSelectPanDir(panType: string, selecttype: string, selectid: string,
                                   callback: (user_id: string, drive_id: string, dirID: string, dirName: string) => void,
                                   category?: string,
                                   extFilter?: RegExp) {
-  useModalStore().showModal('selectpandir', { selecttype, selectid, category, extFilter, callback })
+  if (panType == 'backupPan') {
+    useModalStore().showModal('selectBackupPanDir', { selecttype, selectid, category, extFilter, callback })
+  } else {
+    useModalStore().showModal('selectResourcePanDir', { selecttype, selectid, category, extFilter, callback })
+  }
+
 }
 
-export function modalShuXing(istree: boolean, ismulti: boolean) {
+export function modalShuXing(panType: string, istree: boolean, ismulti: boolean) {
   ismulti = false
-  useModalStore().showModal(ismulti ? 'shuxingmulti' : 'shuxing', { istree })
+  if (panType == 'backupPan') {
+    useModalStore().showModal(ismulti ? 'backupPanMultipleAttribute' : 'backupPanAttribute', { istree })
+  } else {
+    useModalStore().showModal(ismulti ? 'resourcePanMultipleAttribute' : 'resourcePanAttribute', { istree })
+  }
+
 }
 
-export function modalSearchPan() {
-  useModalStore().showModal('searchpan', {})
+export function modalSearchPan(panType: string) {
+  if (panType == 'backupPan') {
+    useModalStore().showModal('searchBackupPan', {})
+  } else {
+    useModalStore().showModal('searchResourcePan', {})
+  }
+
 }
 
 export function modalDLNAPlayer() {
   useModalStore().showModal('dlna', {})
 }
-export function modalM3U8Download() {
-  useModalStore().showModal('m3u8download', {})
+export function modalM3U8Download(panType: string) {
+  if (panType == 'backupPan') {
+    useModalStore().showModal('backupPanM3u8download', {})
+  } else {
+    useModalStore().showModal('resourcePanM3u8download', {})
+  }
+
 }
 
-export function modalCopyFileTree(filelist: IAliGetFileModel[]) {
-  useModalStore().showModal('copyfiletree', { filelist })
+export function modalCopyFileTree(panType: string, filelist: IAliGetFileModel[]) {
+  if (panType == 'backupPan') {
+    useModalStore().showModal('copyBackupPanFileTree', { filelist })
+  } else {
+    useModalStore().showModal('copyResourcePanFileTree', { filelist })
+  }
+
 }
 
-export function modalArchive(user_id: string, drive_id: string, file_id: string, file_name: string, parent_file_id: string, password: string) {
-  useModalStore().showModal('archive', { user_id, drive_id, file_id, file_name, parent_file_id, password })
+export function modalArchive(panType: string, user_id: string, drive_id: string, file_id: string, file_name: string, parent_file_id: string, password: string) {
+  if (panType == 'backupPan') {
+    useModalStore().showModal('archiveBackupPan', { user_id, drive_id, file_id, file_name, parent_file_id, password })
+  } else {
+    useModalStore().showModal('archiveResourcePan', { user_id, drive_id, file_id, file_name, parent_file_id, password })
+  }
+
 }
 
-export function modalArchivePassword(user_id: string, drive_id: string, file_id: string, file_name: string, parent_file_id: string, domain_id: string, ext: string) {
-  useModalStore().showModal('archivepassword', { user_id, drive_id, file_id, file_name, parent_file_id, domain_id, ext })
+export function modalArchivePassword(panType: string, user_id: string, drive_id: string, file_id: string, file_name: string, parent_file_id: string, domain_id: string, ext: string) {
+  if (panType == 'backupPan') {
+    useModalStore().showModal('archiveBackupPanPassword', { user_id, drive_id, file_id, file_name, parent_file_id, domain_id, ext })
+  } else {
+    useModalStore().showModal('archiveResourcePanPassword', { user_id, drive_id, file_id, file_name, parent_file_id, domain_id, ext })
+
+  }
 }
 
-export function modalUpload(file_id: string, filelist: string[]) {
-  useModalStore().showModal('upload', { file_id, filelist })
+export function modalUpload(panType: string, file_id: string, filelist: string[]) {
+  if (panType == 'backupPan') {
+    useModalStore().showModal('uploadBackupPan', { file_id, filelist })
+  } else {
+    useModalStore().showModal('uploadResourcePan', { file_id, filelist })
+  }
+
 }
 
-export function modalDownload(istree: boolean) {
-  useModalStore().showModal('download', { istree })
+export function modalDownload(panType: string, istree: boolean) {
+  if (panType == 'backupPan') {
+    useModalStore().showModal('downloadBackupPan', { istree })
+  } else {
+    useModalStore().showModal('downloadResourcePan', { istree })
+  }
+
 }
