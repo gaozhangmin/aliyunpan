@@ -117,6 +117,29 @@ export default class ServerHttp {
       })
   }
 
+  static compareVersions(version1: string, version2: string): number {
+    // Split version strings into arrays of numbers
+    const v1Parts = version1.split('.').map(Number);
+    const v2Parts = version2.split('.').map(Number);
+
+    // Pad the shorter version with zeros to make their lengths equal
+    const maxLength = Math.max(v1Parts.length, v2Parts.length);
+    v1Parts.push(...Array(maxLength - v1Parts.length).fill(0));
+    v2Parts.push(...Array(maxLength - v2Parts.length).fill(0));
+
+    // Compare each part of the version numbers
+    for (let i = 0; i < maxLength; i++) {
+      if (v1Parts[i] > v2Parts[i]) {
+        return 1;
+      } else if (v1Parts[i] < v2Parts[i]) {
+        return -1;
+      }
+    }
+
+    // Version numbers are equal
+    return 0;
+  }
+
   static async CheckUpgrade(showMessage: boolean = true): Promise<void> {
     axios
       .get(ServerHttp.updateUrl, {
@@ -171,7 +194,7 @@ export default class ServerHttp {
           if (updateData.url) {
             verUrl = 'https://ghproxy.com/' + updateData.url
           }
-          if (remoteVer !== configVer) {
+          if (this.compareVersions(remoteVer, configVer) > 0) {
             Modal.confirm({
               mask: true,
               alignCenter: true,
@@ -260,8 +283,8 @@ export default class ServerHttp {
                 })
               ])
             })
-          } else if (showMessage && remoteVer <= configVer) {
-            message.info('已经是最新版 ' + tagName, 6)
+          } else if (showMessage ) {
+            message.info('已经是最新版 ', 6)
           }
         }
       })
