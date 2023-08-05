@@ -26,15 +26,15 @@ export default defineComponent({
     <a-dropdown trigger="hover" class="rightmenu" position="bl">
       <a-button type="text" size="small" tabindex="-1"><i class="iconfont iconplus" />新建<i class="iconfont icondown" /></a-button>
       <template #content>
-        <a-doption value="newfile" title="Ctrl+N" @click="modalCreatNewFile">
+        <a-doption value="newfile" title="Ctrl+N" @click="modalCreatNewFile('backupPan')">
           <template #icon> <i class="iconfont iconwenjian" /> </template>
           <template #default>新建文件</template>
         </a-doption>
-        <a-doption value="newfolder" title="Ctrl+Shift+N" @click="() => modalCreatNewDir('folder')">
+        <a-doption value="newfolder" title="Ctrl+Shift+N" @click="() => modalCreatNewDir('backupPan', 'folder')">
           <template #icon> <i class="iconfont iconfile-folder" /> </template>
           <template #default>新建文件夹</template>
         </a-doption>
-        <a-doption value="newdatefolder" @click="() => modalCreatNewDir('datefolder')">
+        <a-doption value="newdatefolder" @click="() => modalCreatNewDir('backupPan', 'datefolder')">
           <template #icon> <i class="iconfont iconfolderadd" /> </template>
           <template #default>日期+序号</template>
         </a-doption>
