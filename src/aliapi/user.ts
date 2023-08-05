@@ -276,7 +276,7 @@ export default class AliUser {
 
   static async ApiUserVip(token: ITokenInfo): Promise<boolean> {
     if (!token.user_id) return false
-    const url = 'v1.0/user/getVipInfo'
+    const url = 'https://openapi.aliyundrive.com/v1.0/user/getVipInfo'
     const postData = {}
     const resp = await AliHttp.Post(url, postData, token.user_id, '')
     if (AliHttp.IsSuccess(resp.code)) {
