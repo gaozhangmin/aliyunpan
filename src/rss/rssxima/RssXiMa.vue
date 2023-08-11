@@ -64,7 +64,7 @@ const handleClickXiMa = async () => {
     <div class="settingcard">
       <div class="settinghead">1:选择要洗码的文件夹</div>
       <div class="settingrow">
-        <a-input-search style="max-width: 125px" tabindex="-1" :readonly="true" button-text="选择" search-button :model-value="dirPath" @search="handleSelectDir" />
+        <a-input-search style="max-width: 500px" tabindex="-1" :readonly="true" button-text="选择" search-button :model-value="dirPath" @search="handleSelectDir" />
       </div>
       <div class="settinghead"></div>
       <div class="settingrow">

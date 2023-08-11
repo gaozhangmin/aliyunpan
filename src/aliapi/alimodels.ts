@@ -222,7 +222,8 @@ export interface IAliShareItem {
   created_at: string 
   creator: string 
   description: string 
-  display_name: string 
+  display_name: string
+  display_label: string
   download_count: number
   drive_id: string 
   expiration: string 
@@ -235,13 +236,17 @@ export interface IAliShareItem {
   save_count: number
   share_id: string 
   
-  share_msg: string 
-  share_name: string 
+  share_msg: string
+  full_share_msg: string
+  share_name: string
   share_policy: string 
   share_pwd: string 
   share_url: string 
   status: string 
-  updated_at: string 
+  updated_at: string
+
+  is_share_saved: boolean
+  share_saved: string
 }
 
 export interface IAliShareAnonymous {

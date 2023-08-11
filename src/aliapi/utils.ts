@@ -43,6 +43,21 @@ export function GetDriveID2(token: ITokenInfo, driveName: string): string {
   return driveName
 }
 
+export function GetDriveType(user_id: string, drive_id: string): any {
+  const token = UserDAL.GetUserToken(user_id)
+  if (token) {
+    switch (drive_id) {
+      case token.backup_drive_id:
+        return { title: '备份盘', key: 'backup_root' }
+      case token.resource_drive_id:
+        return { title: '资源盘', key: 'resource_root' }
+      case token.default_sbox_drive_id:
+        return { title: '安全盘', key: 'safe_root' }
+    }
+  }
+  return { title: '', key: '' }
+}
+
 export function GetSignature(nonce: number, user_id: string, deviceId: string) {
   const toHex = (bytes: Uint8Array) => {
     const hashArray = Array.from(bytes) // convert buffer to byte array

@@ -17,6 +17,8 @@ import ShowShareLinkModal from '../share/share/ShowShareLinkModal.vue'
 import SelectPanDirModal from '../pan/topbtns/SelectPanDirModal.vue'
 import SelectPanDirResModal from '../ResPan/topbtns/SelectPanDirModal.vue'
 import CreatNewShareLinkResModal from '../resPan/topbtns/CreatNewShareLinkModal.vue'
+import CreatRapidLinkModal from '../pan/topbtns/CreatNewShareLinkModal.vue'
+
 import ShuXingModal from '../pan/topbtns/ShuXingModal.vue'
 import ShuXingResModal from '../ResPan/topbtns/ShuXingModal.vue'
 import ShuXingMultiModal from '../pan/topbtns/ShuXingMultiModal.vue'
@@ -64,6 +66,7 @@ export default defineComponent({
     SelectPanDirModal,
     SelectPanDirResModal,
     CreatNewShareLinkResModal,
+    CreatRapidLinkModal,
     ShuXingModal,
     ShuXingResModal,
     ShuXingMultiModal,
@@ -104,6 +107,7 @@ export default defineComponent({
   <CreatNewDirResModal :visible="modalStore.modalName == 'creatResourcePanDir'" :dirtype="modalStore.modalData.dirtype || ''" :parentdirid="modalStore.modalData.parentdirid || ''" :callback="modalStore.modalData.callback" />
 
   <CreatNewShareLinkResModal :visible="modalStore.modalName == 'createShare'" :sharetype="modalStore.modalData.sharetype || ''" :filelist="modalStore.modalData.filelist || []" />
+  <CreatRapidLinkModal :visible="modalStore.modalName == 'createRapidLink'" :sharetype="modalStore.modalData.sharetype || ''" :filelist="modalStore.modalData.filelist || []" />
 
   <DaoRuShareLinkResModal :visible="modalStore.modalName == 'importShare'" :shareUrl="modalStore.modalData.shareUrl || ''" :sharePwd="modalStore.modalData.sharePwd || ''" />
   <DaoRuShareLinkMultiResModal :visible="modalStore.modalName == 'importMultipleShare'" />

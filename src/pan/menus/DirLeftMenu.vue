@@ -49,10 +49,10 @@ export default defineComponent({
         <template #icon> <i class="iconfont icondownload" /> </template>
         <template #default>下载</template>
       </a-doption>
-<!--      <a-doption @click="() => menuCreatShare(istree, 'pan')">-->
-<!--        <template #icon> <i class="iconfont iconfenxiang" /> </template>-->
-<!--        <template #default>分享</template>-->
-<!--      </a-doption>-->
+      <a-doption @click="() => menuCreatShare(istree, 'pan')">
+        <template #icon> <i class="iconfont iconfenxiang" /> </template>
+        <template #default>快传</template>
+      </a-doption>
 
       <a-dsubmenu id="leftpansubmove" class="rightmenu" trigger="hover">
         <template #default>

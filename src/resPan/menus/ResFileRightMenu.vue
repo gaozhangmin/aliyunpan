@@ -43,9 +43,13 @@ export default defineComponent({
         <template #icon> <i class="iconfont icondownload" /> </template>
         <template #default>下载</template>
       </a-doption>
-      <a-doption @click="() => menuCreatShare(istree, 'pan')">
+      <a-doption @click="() => menuCreatShare(istree, 'share')">
         <template #icon> <i class="iconfont iconfenxiang" /> </template>
         <template #default>分享</template>
+      </a-doption>
+      <a-doption @click="() => menuCreatShare(istree, 'rapid')">
+        <template #icon> <i class="iconfont iconfenxiang" /> </template>
+        <template #default>快传</template>
       </a-doption>
 
       <a-doption v-show="!isallfavored" @click="() => menuFavSelectFile(istree, true)">

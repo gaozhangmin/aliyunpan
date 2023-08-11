@@ -36,6 +36,10 @@ export function modalCreatNewShareLink(sharetype: string, filelist: IAliGetFileM
   useModalStore().showModal('createShare', { sharetype, filelist })
 }
 
+export function modalCreatRapidLink(sharetype: string, filelist: IAliGetFileModel[]) {
+  useModalStore().showModal('createRapidLink', { sharetype, filelist })
+}
+
 export function modalDaoRuShareLink(shareUrl='', sharePwd='') {
   useModalStore().showModal('importShare', {shareUrl, sharePwd})
 }

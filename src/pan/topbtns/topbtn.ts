@@ -8,7 +8,7 @@ import DebugLog from '../../utils/debuglog'
 import message from '../../utils/message'
 import {
   modalCopyFileTree,
-  modalCreatNewShareLink,
+  modalCreatNewShareLink, modalCreatRapidLink,
   modalDLNAPlayer,
   modalDownload,
   modalM3U8Download,
@@ -435,7 +435,7 @@ export function menuCreatShare(istree: boolean, shareby: string) {
     message.error('没有可以分享的文件！')
     return
   }
-  modalCreatNewShareLink(shareby, list)
+  modalCreatRapidLink(shareby, list)
 }
 
 
