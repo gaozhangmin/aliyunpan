@@ -3,7 +3,7 @@ import { IAliUserDriveCapacity } from '../aliapi/models'
 import AliUser from '../aliapi/user'
 import { humanDateTimeDateStrYMD, humanSize } from '../utils/format'
 import { modalCloseAll } from '../utils/modal'
-import { defineComponent, ref, reactive } from 'vue'
+import { defineComponent, reactive, ref } from 'vue'
 import useUserStore from './userstore'
 
 export default defineComponent({
@@ -20,6 +20,8 @@ export default defineComponent({
       drive_used_size: 0,
       drive_total_size: 0,
       default_drive_used_size: 0,
+      backup_drive_used_size: 0,
+      resource_drive_used_size: 0,
       album_drive_used_size: 0,
       note_drive_used_size: 0,
       sbox_drive_used_size: 0,
@@ -101,6 +103,8 @@ export default defineComponent({
         drive_used_size: 0,
         drive_total_size: 0,
         default_drive_used_size: 0,
+        backup_drive_used_size: 0,
+        resource_drive_used_size: 0,
         album_drive_used_size: 0,
         note_drive_used_size: 0,
         sbox_drive_used_size: 0,
@@ -134,19 +138,22 @@ export default defineComponent({
     <template #title>
       <span class="modaltitle">容量详情</span>
     </template>
-    <div class="modalbody" style="width: 660px; height: calc(80vh); overflow-y: auto; padding-right: 6px">
+    <div class="modalbody" style="width: 760px; height: calc(80vh); overflow-y: auto; padding-right: 6px">
       <a-card :bordered="false">
         <div class="arco-card-header-title">
           网盘合计<span class="headinfo">{{ userVip }}</span>
         </div>
         <div class="mt-5">
           <b class="font-extrabold text-3xl textjianbian" style="margin-right: 8px"> {{ humanSize(driveDetails.drive_used_size) }} </b>
-          <b class="mt-0.5 text-sm dark:text-gray-500 text-gray-400"> Total of {{ humanSize(driveDetails.drive_total_size) }} Used </b>
+          <b class="mt-0.5 text-sm dark:text-gray-500 text-gray-400"> / {{ humanSize(driveDetails.drive_total_size) }} </b>
         </div>
         <div class="mt-5">
           <div class="mb-4 flex h-2.5 items-center rounded bg-light-300 dark:bg-2x-dark-foreground" style="display: flex">
             <div class="chart-wrapper" :style="{ minWidth: '10px', width: ((driveDetails.default_drive_used_size * 100) / driveDetails.drive_total_size).toFixed(2) + '%' }">
               <span class="chart-progress block h-2.5 w-full rounded-tl-lg rounded-bl-lg border-r-2 border-white dark:border-gray-800 border-r-2 border-white dark:border-gray-800 success"></span>
+            </div>
+            <div class="chart-wrapper" :style="{ minWidth: '10px', width: ((driveDetails.resource_drive_used_size * 100) / driveDetails.drive_total_size).toFixed(2) + '%' }">
+              <span class="chart-progress block h-2.5 w-full border-r-2 border-white dark:border-gray-800 danger"></span>
             </div>
             <div class="chart-wrapper" :style="{ minWidth: '10px', width: ((driveDetails.album_drive_used_size * 100) / driveDetails.drive_total_size).toFixed(2) + '%' }">
               <span class="chart-progress block h-2.5 w-full border-r-2 border-white dark:border-gray-800 info"></span>
@@ -160,7 +167,10 @@ export default defineComponent({
           </div>
           <footer class="flex w-full items-center overflow-x-auto">
             <div class="label mr-5">
-              <span class="label-dot success"></span> <b class="label-title"> 网盘 </b><span class="label-size">{{ humanSize(driveDetails.default_drive_used_size) }}</span>
+              <span class="label-dot success"></span> <b class="label-title"> 备份盘 </b><span class="label-size">{{ humanSize(driveDetails.backup_drive_used_size) }}</span>
+            </div>
+            <div class="label mr-5">
+              <span class="label-dot danger"></span> <b class="label-title"> 资源盘 </b><span class="label-size">{{ humanSize(driveDetails.resource_drive_used_size) }}</span>
             </div>
             <div class="label mr-5">
               <span class="label-dot info"></span> <b class="label-title"> 相册 </b><span class="label-size">{{ humanSize(driveDetails.album_drive_used_size) }}</span>

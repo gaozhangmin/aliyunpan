@@ -340,11 +340,13 @@ export default class AliUser {
 
   static async ApiUserDriveDetails(user_id: string): Promise<IAliUserDriveDetails> {
     const detail: IAliUserDriveDetails = {
-      drive_used_size: 0,
-      drive_total_size: 0,
-      default_drive_used_size: 0,
       album_drive_used_size: 0,
+      backup_drive_used_size: 0,
+      default_drive_used_size: 0,
+      drive_total_size: 0,
+      drive_used_size: 0,
       note_drive_used_size: 0,
+      resource_drive_used_size: 0,
       sbox_drive_used_size: 0,
       share_album_drive_used_size: 0
     }
@@ -353,11 +355,13 @@ export default class AliUser {
     const postData = '{}'
     const resp = await AliHttp.Post(url, postData, user_id, '')
     if (AliHttp.IsSuccess(resp.code)) {
-      detail.drive_used_size = resp.body.drive_used_size || 0
-      detail.drive_total_size = resp.body.drive_total_size || 0
-      detail.default_drive_used_size = resp.body.default_drive_used_size || 0
       detail.album_drive_used_size = resp.body.album_drive_used_size || 0
+      detail.backup_drive_used_size = resp.body.backup_drive_used_size || 0
+      detail.default_drive_used_size = resp.body.default_drive_used_size || 0
+      detail.drive_total_size = resp.body.drive_total_size || 0
+      detail.drive_used_size = resp.body.drive_used_size || 0
       detail.note_drive_used_size = resp.body.note_drive_used_size || 0
+      detail.resource_drive_used_size = resp.body.resource_drive_used_size || 0
       detail.sbox_drive_used_size = resp.body.sbox_drive_used_size || 0
       detail.share_album_drive_used_size = resp.body.share_album_drive_used_size || 0
     } else {
