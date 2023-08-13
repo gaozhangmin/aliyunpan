@@ -48,7 +48,7 @@ export default defineComponent({
         <template #default>分享</template>
       </a-doption>
       <a-doption @click="() => menuCreatShare(istree, 'rapid')">
-        <template #icon> <i class="iconfont iconfenxiang" /> </template>
+        <template #icon> <i class="iconfont iconrss" /> </template>
         <template #default>快传</template>
       </a-doption>
 

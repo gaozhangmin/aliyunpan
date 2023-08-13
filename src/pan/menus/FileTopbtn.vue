@@ -37,7 +37,7 @@ export default defineComponent({
 <template>
   <div v-show="isselected && dirtype !== 'trash' && dirtype !== 'recover'" class="toppanbtn">
     <a-button type="text" size="small" tabindex="-1" title="Ctrl+D" @click="() => menuDownload(istree)"><i class="iconfont icondownload" />下载</a-button>
-    <a-button v-show="dirtype == 'pan'" type="text" size="small" tabindex="-1" title="Ctrl+S" @click="() => menuCreatShare(istree, 'pan')"><i class="iconfont iconfenxiang" />快传</a-button>
+    <a-button v-show="dirtype == 'pan'" type="text" size="small" tabindex="-1" title="Ctrl+S" @click="() => menuCreatShare(istree, 'pan')"><i class="iconfont iconrss" />快传</a-button>
     <a-button v-show="!isallfavored" type="text" size="small" tabindex="-1" title="Ctrl+G" @click="() => menuFavSelectFile(istree, true)"><i class="iconfont iconcrown" />收藏</a-button>
     <a-button v-show="isallfavored" type="text" size="small" tabindex="-1" title="Ctrl+G" @click="() => menuFavSelectFile(istree, false)"><i class="iconfont iconcrown2" />取消收藏</a-button>
 

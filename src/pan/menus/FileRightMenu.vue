@@ -44,7 +44,7 @@ export default defineComponent({
         <template #default>下载</template>
       </a-doption>
       <a-doption @click="() => menuCreatShare(istree, 'pan')">
-        <template #icon> <i class="iconfont iconfenxiang" /> </template>
+        <template #icon> <i class="iconfont iconrss" /> </template>
         <template #default>快传</template>
       </a-doption>
 

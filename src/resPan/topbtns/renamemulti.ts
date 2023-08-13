@@ -429,6 +429,10 @@ function RunIndex(isDir: boolean, title: string, config: any, nodeIndex: number)
     const title1 = name + formate
     const title2 = name + '<i>' + formate + '</i>'
     return [title1 + ext, title2 + ext]
+  } else if (config.type == 'cover') {
+    const title1 = formate
+    const title2 = '<i>' + formate + '</i>'
+    return [title1 + ext, title2 + ext]
   }
 
   return [title, title]
