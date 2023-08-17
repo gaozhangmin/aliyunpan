@@ -57,13 +57,13 @@ const handleCheckVer = () => {
     <div class="settingspace"></div>
     <div class="settinghead">检查更新</div>
     <div class="settingrow">
-        <a-button type="outline" size="mini" tabindex="-1" :loading="verLoading" @click="handleCheckVer">检查更新</a-button>
+        <a-button type="outline" size="small" tabindex="-1"  @click="handleCheckVer">检查更新</a-button>
     </div>
     <div class="settingspace"></div>
     <div class='settinghead'>阿里云盘账号</div>
     <div class='settingrow'>
       <a-button type='outline' size='small' tabindex='-1' @click='copyCookies()'>
-        复制Cookies
+        复制Cookie
       </a-button>
     </div>
     <div class="settingspace"></div>

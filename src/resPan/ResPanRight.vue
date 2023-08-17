@@ -83,7 +83,10 @@ watchEffect(() => {
 
 const keyboardStore = useKeyboardStore()
 keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
-  if (appStore.appTab != 'pan') return
+  if (appStore.appTab != 'resPan') {
+    console.log('appStore.appTab', appStore.appTab)
+    return
+  }
 
   if (TestCtrl('a', state.KeyDownEvent, () => panfileStore.mSelectAll())) return
   if (TestCtrl('c', state.KeyDownEvent, () => menuCopySelectedFile(false, 'copy'))) return

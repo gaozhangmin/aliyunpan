@@ -58,7 +58,13 @@ export async function menuOpenFile(file: IAliGetFileModel): Promise<void> {
     // 选择字幕
     let subTitleFileId = ''
     const { uiVideoPlayer, uiVideoSubtitleMode } = useSettingStore()
-    const listDataRaw = usePanFileStore().ListDataRaw || []
+    let listDataRaw = []
+    if (drive_id === token.backup_drive_id) {
+       listDataRaw = usePanFileStore().ListDataRaw || []
+    } else {
+       listDataRaw = useResPanFileStore().ListDataRaw || []
+    }
+
     const subTitlesList = listDataRaw.filter(file => /srt|vtt|ass/.test(file.ext))
     const isViolation = file.icon == 'iconweifa'
     if (uiVideoPlayer === 'other' && uiVideoSubtitleMode === 'auto') {

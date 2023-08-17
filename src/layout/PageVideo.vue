@@ -562,11 +562,11 @@ const getSubTitleList = async (art: Artplayer) => {
       },
       {
         html: '字幕列表',
-        tooltip: art.storage.get('subTitleListMode') ? '含子文件夹' : '同文件夹',
+        tooltip: art.storage.get('subTitleListMode') ? '子文件夹内' : '同文件夹内',
         switch: art.storage.get('subTitleListMode'),
         onSwitch: async (item: SettingOption) => {
           item.tooltip = item.switch ? '同文件夹' : '含子文件夹'
-          art.storage.set('subTitleListMode', !item.switch)
+          art.storage.set('subTitleListMode', item.switch)
           await getSubTitleList(art)
           return !item.switch
         }
