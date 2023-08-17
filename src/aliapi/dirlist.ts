@@ -264,6 +264,13 @@ export default class AliDirList {
       for (let i = 0, maxi = dirList.length; i < maxi; i++) {
         if (i > 0) postData = postData + ','
         const query = 'type="folder" and ' + dirList[i].dirID
+        let id = dirList[i].dirID
+          .replaceAll('"', '')
+          .replaceAll(' ', '')
+          .replaceAll('-', '')
+          .replaceAll(':', '')
+          .replaceAll(',', '')
+        if (id.includes('root')) id = 'root'
         const data2 = {
           body: {
             drive_id: drive_id,
@@ -273,7 +280,7 @@ export default class AliDirList {
             fields: 'thumbnail'
           },
           headers: { 'Content-Type': 'application/json' },
-          id: dirList[i].dirID.replaceAll('"', '').replaceAll(' ', '').replaceAll('-', '').replaceAll(':', '').replaceAll(',', ''),
+          id: id,
           method: 'POST',
           url: '/file/search'
         }

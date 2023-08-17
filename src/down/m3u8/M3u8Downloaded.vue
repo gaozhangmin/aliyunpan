@@ -14,12 +14,6 @@ const appStore = useAppStore()
 const winStore = useWinStore()
 const downedStore = useM3u8DownloadedStore()
 
-const rangIsSelecting = ref(false)
-const rangSelectID = ref('')
-const rangSelectStart = ref('')
-const rangSelectEnd = ref('')
-const rangSelectFiles = ref<{ [k: string]: any }>({})
-
 const keyboardStore = useKeyboardStore()
 keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
   if (appStore.appTab != 'down' || appStore.GetAppTabMenu != 'DownedRight') return
@@ -62,22 +56,6 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
   let key = e.node.key
   if (!downedStore.ListSelected.has(key)) downedStore.mMouseSelect(key, false, false)
   onShowRightMenu('downedrightmenu', e.event.clientX, e.event.clientY)
-}
-const onSelectRangStart = () => {
-  onHideRightMenuScroll()
-  rangIsSelecting.value = !rangIsSelecting.value
-  rangSelectID.value = ''
-  rangSelectStart.value = ''
-  rangSelectEnd.value = ''
-  rangSelectFiles.value = {}
-  downedStore.mRefreshListDataShow(false)
-}
-
-const onSelectCancel = () => {
-  onHideRightMenuScroll()
-  downedStore.ListSelected.clear()
-  downedStore.ListFocusKey = ''
-  downedStore.mRefreshListDataShow(false)
 }
 </script>
 
@@ -127,28 +105,7 @@ const onSelectCancel = () => {
         </a-button>
       </AntdTooltip>
     </div>
-    <div class="selectInfo">{{ downedStore.ListDataSelectCountInfo }}</div>
-    <div style='margin: 0 2px'>
-      <AntdTooltip placement='rightTop'>
-        <a-button shape='square' type='text' tabindex='-1' class='qujian'
-                  :status="rangIsSelecting ? 'danger' : 'normal'" title='Ctrl+Q' @click='onSelectRangStart'>
-          {{ rangIsSelecting ? '取消选择' : '区间选择' }}
-        </a-button>
-        <template #title>
-          <div>
-            第1步: 点击 区间选择 这个按钮
-            <br />
-            第2步: 鼠标点击一个文件
-            <br />
-            第3步: 移动鼠标点击另外一个文件
-          </div>
-        </template>
-      </AntdTooltip>
-      <a-button shape='square' v-if='!rangIsSelecting && downedStore.ListSelected.size > 0' type='text' tabindex='-1' class='qujian'
-                status='normal' @click='onSelectCancel'>
-        取消已选
-      </a-button>
-    </div>
+    <div class="selectInfo" style="min-width: 266px">{{ downedStore.ListDataSelectCountInfo }}</div>
   </div>
   <div class="toppanlist" @keydown.space.prevent="() => true">
     <a-list

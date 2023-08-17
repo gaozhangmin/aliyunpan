@@ -677,6 +677,7 @@ export default class AliDirFileList {
     for (let i = 0, maxi = file_idList.length; i < maxi; i++) {
       list.set(file_idList[i], { dirID: file_idList[i], size: 0 })
       if (i > 0) postData = postData + ','
+      let id = file_idList[i].includes('root') ? 'root' : file_idList[i]
       const data2 = {
         body: {
           drive_id: drive_id,
@@ -686,7 +687,7 @@ export default class AliDirFileList {
           order_by: 'size DESC'
         },
         headers: { 'Content-Type': 'application/json' },
-        id: file_idList[i],
+        id: id,
         method: 'POST',
         url: '/file/search'
       }
