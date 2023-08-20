@@ -196,7 +196,7 @@ export default class AliDirFileList {
             dir.itemsTotal = total
           })
         }
-        isGet = await AliDirFileList._ApiDirFileListOnePageOpenApi(orders[0], orders[1], dir, type, pageIndex)
+        isGet = await AliDirFileList._ApiDirFileListOnePage(orders[0], orders[1], dir, type, pageIndex)
       }
 
       if (!isGet) {

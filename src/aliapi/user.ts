@@ -212,9 +212,9 @@ export default class AliUser {
     if (AliHttp.IsSuccess(resp.code)) {
       token.spu_id = ''
       token.phone = resp.body.phone
-      token.backup_drive_id = resp.body.backup_drive_id || "";
-      token.resource_drive_id = resp.body.resource_drive_id;
-      if (token.backup_drive_id) {
+      token.backup_drive_id = resp.body.backup_drive_id || '';
+      token.resource_drive_id = resp.body.resource_drive_id || ''
+      if (token.backup_drive_id === '') {
         token.backup_drive_id = resp.body.default_drive_id
       }
       token.is_expires = resp.body.status === 'enabled'

@@ -8,24 +8,6 @@ const cb = (val: any) => {
   settingStore.updateStore(val)
 }
 const userData = getUserData()
-
-const handleSelectAppUserDataPath = () => {
-  if (window.WebShowOpenDialogSync) {
-    window.WebShowOpenDialogSync(
-        {
-          title: '选择一个文件夹，保存应用缓存数据',
-          buttonLabel: '选择',
-          properties: ['openDirectory', 'createDirectory'],
-          defaultPath: settingStore.appUserDataPath
-        },
-        (result: string[] | undefined) => {
-          if (result && result[0]) {
-            settingStore.updateStore({ appUserDataPath: result[0] })
-          }
-        }
-    )
-  }
-}
 </script>
 
 <template>
@@ -131,21 +113,10 @@ const handleSelectAppUserDataPath = () => {
       缓存路径
       <span class="opblue" style="margin-left: 12px; padding: 0 12px">( {{ settingStore.debugCacheSize }} )</span>
     </div>
-<!--    <div class="settingrow">-->
-<!--      <a-input :style="{ width: '250px' }" tabindex="-1" :model-value="userData" placeholder="C:\Users\用户名\AppData\Roaming\alixby" :readonly="true" />-->
-<!--    </div>-->
     <div class="settingrow">
-      <a-input-search tabindex="-1" style="max-width: 420px" :readonly="true" button-text="更改" search-button :model-value="settingStore.appUserDataPath" @search="handleSelectAppUserDataPath" />
-      <a-popover position="bottom">
-        <i class="iconfont iconbulb" />
-        <template #content>
-          <div>
-            <hr />
-            修改缓存路径，需要重启应用才会生效。<br />
-          </div>
-        </template>
-      </a-popover>
+      <a-input tabindex="-1" :model-value="userData" placeholder="C:\Users\用户名\AppData\Roaming\alixby" :readonly="true" />
     </div>
+    <div class="settingspace"></div>
     <div class="settingrow">
       <a-popconfirm content="确认要清理数据库？" @ok="AppCache.aClearCache('db')">
         <a-button type="outline" size="small" tabindex="-1" status="danger" style="margin-right: 16px">清理数据库</a-button>

@@ -84,11 +84,7 @@ export default class ipcEvent {
           !launchStartShow && settings.args.push('--openAsHidden')
         }
         app.setLoginItemSettings(settings)
-      } else if (data.cmd && Object.hasOwn(data.cmd, 'appUserDataPath')) {
-        const userDataPath = data.cmd.appUserDataPath
-        const userCachePath = getResourcesPath('userdir.config')
-        writeFileSync(userCachePath, userDataPath, 'utf-8')
-      }  else {
+      } else {
         event.sender.send('ElectronToWeb', 'mainsenddata')
       }
     })

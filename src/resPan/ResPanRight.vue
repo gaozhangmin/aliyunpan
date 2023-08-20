@@ -49,6 +49,7 @@ import { menuOpenFile } from '../utils/openfile'
 import { throttle } from '../utils/debounce'
 import { TestButton } from '../utils/mosehelper'
 import useResPanTreeStore from './pantreestore'
+import { shell } from 'electron'
 
 const viewlist = ref()
 const inputsearch = ref()
@@ -465,10 +466,17 @@ const onPanDragEnd = (ev: any) => {
     showDragUpload.value = false
   }
 }
+
 </script>
 
 <template>
   <div style='height: 7px'></div>
+<!--    <div class='toppanbtns' style='height: 26px'>-->
+<!--        <a id='imageLink' href='https://kdocs.cn/l/cvpwcQWAA22Q'>-->
+<!--            <img src='/images/ads.jpg' width='1100' height='100'>-->
+<!--        </a>-->
+<!--    </div>-->
+<!--    <div style='height: 50px'></div>-->
   <div class='toppanbtns' style='height: 26px'>
     <ResDirTopPath />
     <div style='flex-grow: 1'></div>
@@ -574,7 +582,7 @@ const onPanDragEnd = (ev: any) => {
     </div>
     <div class='selectInfo'>{{ panfileStore.ListDataSelectCountInfo }}</div>
     <div style='margin: 0 2px'>
-      <AntdTooltip placement='rightTop'>
+      <AntdTooltip placement='rightTop' v-if="panfileStore.SelectDirType !== 'video'">
         <a-button shape='square' type='text' tabindex='-1' class='qujian'
                   :status="rangIsSelecting ? 'danger' : 'normal'" title='Ctrl+Q' @click='onSelectRangStart'>
           {{ rangIsSelecting ? '取消选择' : '区间选择' }}

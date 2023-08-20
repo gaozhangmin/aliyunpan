@@ -53,7 +53,6 @@ export default class launch extends EventEmitter {
   start() {
     exception.handler()
     this.setInitArgv()
-    this.loadUserData()
     this.handleEvents()
     this.handleAppReady()
   }

@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build && electron-builder -wml"
+    "build": "vue-tsc --noEmit && vite build && electron-builder -m"
   },
   "engines": {
     "node": ">=16.0.0"

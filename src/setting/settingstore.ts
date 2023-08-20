@@ -344,12 +344,6 @@ function LoadSetting() {
       const val = JSON.parse(settingstr)
       _loadSetting(val)
       useAppStore().toggleTheme(setting.uiTheme)
-      if (setting.appUserDataPath !== '' ) {
-        if (!existsSync(setting.appUserDataPath)) {
-          mkdirSync(setting.appUserDataPath)
-        }
-        window.WebToElectron({ cmd: { appUserDataPath: setting.appUserDataPath} })
-      }
     } else {
       SaveSetting()
     }

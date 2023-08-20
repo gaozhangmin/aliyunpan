@@ -1,8 +1,7 @@
 <!-- eslint-disable no-irregular-whitespace -->
 <script setup lang='ts'>
 import { IAliGetFileModel } from '../aliapi/alimodels'
-import {
-  KeyboardState, MouseState,
+import { KeyboardState, MouseState,
   useAppStore,
   useFootStore,
   useKeyboardStore,
@@ -571,7 +570,7 @@ const onPanDragEnd = (ev: any) => {
     </div>
     <div class='selectInfo'>{{ panfileStore.ListDataSelectCountInfo }}</div>
     <div style='margin: 0 2px'>
-      <AntdTooltip placement='rightTop'>
+      <AntdTooltip placement='rightTop' v-if="panfileStore.SelectDirType !== 'video'">
         <a-button shape='square' type='text' tabindex='-1' class='qujian'
                   :status="rangIsSelecting ? 'danger' : 'normal'" title='Ctrl+Q' @click='onSelectRangStart'>
           {{ rangIsSelecting ? '取消选择' : '区间选择' }}
