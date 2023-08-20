@@ -14,15 +14,18 @@ import FollowingDAL from './following/FollowingDAL'
 import AliHttp from '../aliapi/alihttp'
 import UserDAL from '../user/userdal'
 import VipInformPage from '../resource/vipInfo.vue'
+import { ref } from 'vue'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
-let vipIdentity = true
+let vipIdentity = ref(true)
 appStore.$subscribe(async (mutation) => {
   const appPage = appStore.GetAppTabMenu
   if (appPage == 'ShareSiteRight') {
     if (userStore.userLogined) {
-      vipIdentity = await AliHttp.isVip(UserDAL.GetUserToken(useUserStore().user_id).phone);
+      AliHttp.isVip(useUserStore().GetUserToken.phone).then((res: any) => {
+        vipIdentity.value = res
+      })
     }
   }
   if (appPage == 'MyShareRight') ShareDAL.aReloadMyShare(useUserStore().user_id, false)

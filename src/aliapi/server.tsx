@@ -86,7 +86,7 @@ export default class ServerHttp {
     )
   }
 
-  static configUrl = b64decode('aHR0cHM6Ly9hcGkuZ2l0aHViLmNvbS9yZXBvcy9nYW96aGFuZ21pbi9zdGF0aWNSZXNvdXJjZS9jb250ZW50cy9pbWFnZXMvc2hhcmVfY29uZmlnLmpzb24=')
+  static configUrl = b64decode('aHR0cHM6Ly9naXRlZS5jb20vemhhbm5hby9yZXNvdXJjZS9yYXcvbWFzdGVyL2ltYWdlcy9zaGFyZV9jb25maWcuanNvbg==')
   static updateUrl = b64decode('aHR0cHM6Ly9hcGkuZ2l0aHViLmNvbS9yZXBvcy9nYW96aGFuZ21pbi9hbGl5dW5wYW4vcmVsZWFzZXMvbGF0ZXN0')
 
   static async CheckConfigUpgrade(): Promise<void> {

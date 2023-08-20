@@ -21,9 +21,6 @@ export default defineComponent({
   <div class="container1">
       <div class="content-text3">
         <div class="image-container2">
-<!--          <a id='imageLink' @click="openExternalLink('https://kdocs.cn/l/cvpwcQWAA22Q')">-->
-<!--            <img src="/images/ads.jpg" alt="公众号" width='1025' height='200' style='margin-bottom: 10px'>-->
-<!--          </a>-->
           <img src="/images/sales.png"  alt="公众号">
         </div>
       </div>

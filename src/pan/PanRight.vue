@@ -1,13 +1,14 @@
 <!-- eslint-disable no-irregular-whitespace -->
 <script setup lang='ts'>
 import { IAliGetFileModel } from '../aliapi/alimodels'
-import { KeyboardState, MouseState,
+import {
+  KeyboardState, MouseState,
   useAppStore,
   useFootStore,
   useKeyboardStore,
   useMouseStore,
   usePanFileStore,
-  useSettingStore
+  useSettingStore, useUserStore
 } from '../store'
 import useWinStore from '../store/winstore'
 import {
@@ -48,6 +49,11 @@ import { menuOpenFile } from '../utils/openfile'
 import { throttle } from '../utils/debounce'
 import { TestButton } from '../utils/mosehelper'
 import usePanTreeStore from './pantreestore'
+import { shell } from 'electron'
+import axios, { AxiosResponse } from 'axios'
+import ServerHttp from '../aliapi/server'
+import AliHttp from '../aliapi/alihttp'
+import UserDAL from '../user/userdal'
 
 const viewlist = ref()
 const inputsearch = ref()
@@ -58,6 +64,10 @@ const winStore = useWinStore()
 const panfileStore = usePanFileStore()
 
 let dirID = ''
+let adsImage = ''
+let adsUrl = ''
+let vip = ref(false)
+
 panfileStore.$subscribe((_m: any, state: PanFileState) => {
   if (state.DirID != dirID) {
     dirID = state.DirID
@@ -240,6 +250,26 @@ const onGridResize = throttle(() => {
 }, 100)
 
 onMounted(() => {
+  axios
+    .get(ServerHttp.configUrl, {
+      withCredentials: false,
+      responseType: 'json',
+      timeout: 3000
+    })
+    .then(async (response: AxiosResponse) => {
+      const config = response.data
+      if (config.adsUrl && config.addUrl != '') {
+        adsUrl = config.adsUrl
+        adsImage = config.adsImgUrl
+      }
+    }).catch((error: any) => {
+      console.log(error)
+    })
+  setTimeout(() => {
+    AliHttp.isVip(useUserStore().GetUserToken.phone).then((res: any) => {
+      vip.value = res
+    })
+  }, 5000)
   resizeObserver.observe(document.getElementById('panfilelist')!)
 })
 
@@ -461,10 +491,17 @@ const onPanDragEnd = (ev: any) => {
     showDragUpload.value = false
   }
 }
+const openExternalLink = (targetUrl: string) => {
+  shell.openExternal(targetUrl);
+}
 </script>
 
 <template>
-  <div style='height: 7px'></div>
+  <div >
+    <a v-if='!vip && adsUrl != ""' id='imageLink' @click="openExternalLink(adsUrl)">
+      <img :src=adsImage alt="" width='1125' height='100' style='margin-bottom: 10px'>
+    </a>
+  </div>
   <div class='toppanbtns' style='height: 26px'>
     <DirTopPath />
     <div style='flex-grow: 1'></div>
@@ -647,7 +684,7 @@ const onPanDragEnd = (ev: any) => {
     id='panfilelist'
     :class="'toppanlist' + (showDragUpload ? ' pandraging' : '') + (dragingRowItem ? ' draging' : '') + (rangIsSelecting ? ' ranging' : '')"
     tabindex='-1'
-    :style='{ height: winStore.GetListHeight }'
+    :style="{ height: adsUrl === '' || vip ? winStore.GetListHeight : winStore.GetListHeightWithAds }"
     @keydown.space.prevent='() => true'
     @drop='onPanDrop'
     @dragenter='onPanDragEnter'>
@@ -659,9 +696,9 @@ const onPanDragEnd = (ev: any) => {
       ref='viewlist'
       :bordered='false'
       :split='false'
-      :max-height='winStore.GetListHeightNumber'
+      :max-height='adsUrl === "" || vip ? winStore.GetListHeightNumber : winStore.GetListHeightNumberWithAds'
       :virtual-list-props="{
-        height: winStore.GetListHeightNumber,
+        height: adsUrl == '' || vip ? winStore.GetListHeightNumber : winStore.GetListHeightNumberWithAds,
         fixedSize: true,
         estimatedSize: 50,
         threshold: 1,
@@ -778,9 +815,9 @@ const onPanDragEnd = (ev: any) => {
       ref='viewlist'
       :bordered='false'
       :split='false'
-      :max-height='winStore.GetListHeightNumber'
+      :max-height='adsUrl === "" || vip ? winStore.GetListHeightNumber : winStore.GetListHeightNumberWithAds'
       :virtual-list-props="{
-        height: winStore.GetListHeightNumber,
+        height: adsUrl == '' || vip ? winStore.GetListHeightNumber : winStore.GetListHeightNumberWithAds,
         fixedSize: true,
         estimatedSize: 200,
         threshold: 1,
@@ -899,9 +936,9 @@ const onPanDragEnd = (ev: any) => {
       ref='viewlist'
       :bordered='false'
       :split='false'
-      :max-height='winStore.GetListHeightNumber'
+      :max-height='adsUrl === "" || vip ? winStore.GetListHeightNumber : winStore.GetListHeightNumberWithAds'
       :virtual-list-props="{
-        height: winStore.GetListHeightNumber,
+        height: adsUrl == '' || vip ? winStore.GetListHeightNumber : winStore.GetListHeightNumberWithAds,
         fixedSize: true,
         estimatedSize: 260,
         threshold: 1,

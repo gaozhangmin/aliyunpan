@@ -149,7 +149,7 @@ const useAppStore = defineStore('app', {
         if (tab == 'setting') DebugLog.aLoadFromDB()
         if (tab == 'movie') {
           if (useUserStore().userLogined) {
-            this.isVip = await AliHttp.isVip(UserDAL.GetUserToken(useUserStore().user_id).phone);
+            this.isVip = await AliHttp.isVip(useUserStore().GetUserToken.phone);
           }
         }
         onHideRightMenu()
