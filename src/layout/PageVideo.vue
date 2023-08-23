@@ -9,12 +9,14 @@ import levenshtein from 'fast-levenshtein'
 import { type SettingOption } from 'artplayer/types/setting'
 import { type Option } from 'artplayer/types/option'
 import AliFileCmd from '../aliapi/filecmd'
+import ASS from 'ass-html5'
 
 const appStore = useAppStore()
 const pageVideo = appStore.pageVideo!
 let autoPlayNumber = 0
 let playbackRate = 1
 let ArtPlayerRef: Artplayer
+let AssSubtitleRef: ASS
 
 const options: Option = {
   id: 'artPlayer',
@@ -60,7 +62,7 @@ const playM3U8 = (video: HTMLMediaElement, url: string, art: Artplayer) => {
     hls.loadSource(url)
     hls.attachMedia(video)
     hls.on(HlsJs.Events.MANIFEST_PARSED, async () => {
-      await art.play().catch((err) => {})
+      await art.play().catch()
       await getVideoCursor(art, pageVideo.play_cursor)
       art.playbackRate = playbackRate
     })
@@ -145,6 +147,8 @@ const createVideo = async (name: string) => {
   if (storage.get('curDirList') === undefined) storage.set('curDirList', true)
   if (storage.get('autoJumpCursor') === undefined) storage.set('autoJumpCursor', true)
   if (storage.get('autoSkipEnd') === undefined) storage.set('autoSkipEnd', 0)
+  if (storage.get('subTitleListMode') === undefined) storage.set('subTitleListMode', false)
+  if (storage.get('subtitleSize') === undefined) storage.set('subtitleSize', 30)
   if (storage.get('autoSkipBegin') === undefined) storage.set('autoSkipBegin', 0)
   if (storage.get('autoPlayNext') === undefined) storage.set('autoPlayNext', true)
   if (storage.get('videoVolume')) ArtPlayerRef.volume = parseFloat(storage.get('videoVolume'))
@@ -270,6 +274,11 @@ const refreshSetting = async (art: Artplayer, item: any) => {
     URL.revokeObjectURL(onlineSubBlobUrl)
     onlineSubBlobUrl = ''
   }
+
+  if (AssSubtitleRef) {
+    AssSubtitleRef.destroy()
+  }
+
   // 刷新信息
   await getVideoInfo(art)
 }
@@ -392,7 +401,7 @@ const getVideoInfo = async (art: Artplayer) => {
         })
       }
       art.subtitle.url = embedSubSelector[0].url
-      let subtitleSize = art.storage.get('subtitleSize') || '30px'
+      let subtitleSize = art.storage.get('subtitleSize') + 'px'
       art.subtitle.style('fontSize', subtitleSize)
     }
     // 字幕列表
@@ -473,12 +482,33 @@ let onlineSubBlobUrl: string = ''
 const loadOnlineSub = async (art: Artplayer, item: any) => {
   const data = await AliFile.ApiFileDownText(pageVideo.user_id, pageVideo.drive_id, item.file_id, -1, -1)
   if (data) {
-    const blob = new Blob([data], { type: item.ext })
-    onlineSubBlobUrl = URL.createObjectURL(blob)
-    await art.subtitle.switch(onlineSubBlobUrl, { escape:false, name: item.name, type: item.ext })
+    if (item.ext === 'ass') {
+      art.subtitle.show = true
+      art.notice.show = `切换字幕：${item.name}`
+      await renderAssSubtitle(art, data)
+    } else {
+      const blob = new Blob([data], { type: item.ext })
+      onlineSubBlobUrl = URL.createObjectURL(blob)
+      await art.subtitle.switch(onlineSubBlobUrl, { name: item.name, type: item.ext, escape: false })
+    }
     return item.html
   } else {
     art.notice.show = `加载${item.name}字幕失败`
+  }
+}
+
+const renderAssSubtitle = async (art: Artplayer, assText: string) => {
+  if (AssSubtitleRef) {
+    AssSubtitleRef.destroy()
+  }
+  const ass = new ASS({
+    assText: assText,
+    video: art.video
+  })
+  await ass.init()
+  if (ass.canvas) {
+    ass.canvas.style.zIndex = '9999'
+    AssSubtitleRef = ass
   }
 }
 
@@ -519,7 +549,7 @@ const getSubTitleList = async (art: Artplayer) => {
     if (similarity.index !== -1) {
       subSelector.forEach(v => v.default = false)
       subSelector[similarity.index].default = true
-      let subtitleSize = art.storage.get('subtitleSize') || '30px'
+      let subtitleSize = art.storage.get('subtitleSize') + 'px'
       art.subtitle.style('fontSize', subtitleSize)
       await loadOnlineSub(art, subSelector[similarity.index])
     }
@@ -541,6 +571,12 @@ const getSubTitleList = async (art: Artplayer) => {
             item.tooltip = item.switch ? '关闭' : '开启'
             art.subtitle.show = !item.switch
             art.notice.show = '字幕' + item.tooltip
+            let subtitleSize = art.storage.get('subtitleSize') + 'px'
+            if (AssSubtitleRef && AssSubtitleRef.canvas) {
+              AssSubtitleRef.canvas.style.display = art.subtitle.show ? '' : 'none'
+            } else {
+              art.subtitle.style('fontSize', subtitleSize)
+            }
             let currentItem = Artplayer.utils.queryAll('.art-setting-panel.art-current .art-setting-item:nth-of-type(n+3)')
             if (currentItem.length > 0) {
               currentItem.forEach((current: HTMLElement) => {
@@ -585,6 +621,7 @@ const getSubTitleList = async (art: Artplayer) => {
         tooltip: '30px',
         range: [30, 20, 50, 5],
         onChange: (item: SettingOption) => {
+          if (AssSubtitleRef) return '无法设置'
           let size = item.range + 'px'
           art.storage.set('subtitleSize', size)
           art.subtitle.style('fontSize', size)
@@ -630,6 +667,9 @@ const handleHideClick = async () => {
 }
 
 onBeforeUnmount(() => {
+  if (AssSubtitleRef) {
+    AssSubtitleRef.destroy()
+  }
   ArtPlayerRef && ArtPlayerRef.destroy(false)
 })
 

@@ -188,7 +188,7 @@ export async function menuTrashSelectFile(istree: boolean, isDelete: boolean) {
       useResPanFileStore().mDeleteFiles(selectedData.dirID, successList, selectedData.dirID !== 'trash')
 
       if (selectedData.dirID !== 'trash') {
-        // PanDAL.aReLoadOneDirToRefreshTree(selectedData.user_id, selectedData.drive_id, selectedData.dirID)
+        await PanDAL.aReLoadOneDirToRefreshTree(selectedData.user_id, selectedData.drive_id, selectedData.dirID)
         TreeStore.ClearDirSize(selectedData.drive_id, selectedData.selectedParentKeys)
       }
     }

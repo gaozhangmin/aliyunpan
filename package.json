@@ -46,6 +46,7 @@
     "electron-log": "^4.4.8",
     "fast-levenshtein": "^3.0.0",
     "fix-path": "^4.0.0",
+    "ass-html5": "^0.3.5",
     "fuzzysort": "^2.0.1",
     "hls.js": "^1.4.3",
     "howler": "^2.2.3",

@@ -327,48 +327,6 @@
     "@babel/helper-validator-identifier" "^7.18.6"
     to-fast-properties "^2.0.0"
 
-"@cliqz/adblocker-content@^1.26.6":
-  version "1.26.6"
-  resolved "https://registry.npmmirror.com/@cliqz/adblocker-content/-/adblocker-content-1.26.6.tgz#bff151e1a0262ab5add5bca84e1818a57e15f73b"
-  integrity sha512-cebc5AjL/quVVdcClJ7dqqvW5SrqATfUhwqn5MzWtponZ3t3fRpgpFgkt2fNa5rd3iz1UfTcAtWrgpshHYurTA==
-  dependencies:
-    "@cliqz/adblocker-extended-selectors" "^1.26.6"
-
-"@cliqz/adblocker-electron-preload@^1.26.6":
-  version "1.26.6"
-  resolved "https://registry.npmmirror.com/@cliqz/adblocker-electron-preload/-/adblocker-electron-preload-1.26.6.tgz#14867be98d3b296df182891e2d6a79e7286ba208"
-  integrity sha512-G564oo1YANQR7mAzuQi7aYsgKwmRurYo0d9E8YaZr6ZD/kDHKxgHLfGPflKuOsYz2gf9zWQT89RsyQxDrjI49g==
-  dependencies:
-    "@cliqz/adblocker-content" "^1.26.6"
-
-"@cliqz/adblocker-electron@^1.26.6":
-  version "1.26.6"
-  resolved "https://registry.npmmirror.com/@cliqz/adblocker-electron/-/adblocker-electron-1.26.6.tgz#9b61749cc341cd4d562ab420c1a8e5357e431b08"
-  integrity sha512-OE0Qh2+OGrx53DkV9gj1JzYdUV1IM7JigpU++5sA6yhsdbZBFijto0SK3iDsMsHeEUVq8DV1oLYspe0UpIU4SA==
-  dependencies:
-    "@cliqz/adblocker" "^1.26.6"
-    "@cliqz/adblocker-electron-preload" "^1.26.6"
-    tldts-experimental "^6.0.1"
-
-"@cliqz/adblocker-extended-selectors@^1.26.6":
-  version "1.26.6"
-  resolved "https://registry.npmmirror.com/@cliqz/adblocker-extended-selectors/-/adblocker-extended-selectors-1.26.6.tgz#fe0d83d661d0f6458c3c5850d91e65c4aa13a806"
-  integrity sha512-Gpvg6eLO2aHiY7r2y0jueve6YbGkYvWaZ4MiwhQ1wPTwj/MxFqAh9cVHnz3EzoJUtsqoy9bvkhmfkRUatpvvzw==
-
-"@cliqz/adblocker@^1.26.6":
-  version "1.26.6"
-  resolved "https://registry.npmmirror.com/@cliqz/adblocker/-/adblocker-1.26.6.tgz#e0f2393a6a9b3762535e6f692deadbd17b30f36b"
-  integrity sha512-fSNCvyl0FRgKcc2NmHEhaQqeTT0QCLBT3eVZ15ah6baPdCaQm7N5IN/annv9bRalS8Lwbxymb3TBLzXpFTghrw==
-  dependencies:
-    "@cliqz/adblocker-content" "^1.26.6"
-    "@cliqz/adblocker-extended-selectors" "^1.26.6"
-    "@remusao/guess-url-type" "^1.1.2"
-    "@remusao/small" "^1.1.2"
-    "@remusao/smaz" "^1.7.1"
-    "@types/chrome" "^0.0.228"
-    "@types/firefox-webext-browser" "^111.0.0"
-    tldts-experimental "^6.0.1"
-
 "@ctrl/tinycolor@^3.4.0":
   version "3.4.1"
   resolved "https://registry.npmmirror.com/@ctrl/tinycolor/-/tinycolor-3.4.1.tgz"
@@ -491,41 +449,6 @@
     lodash "^4.17.15"
     tmp-promise "^3.0.2"
 
-"@remusao/guess-url-type@^1.1.2":
-  version "1.2.1"
-  resolved "https://registry.npmmirror.com/@remusao/guess-url-type/-/guess-url-type-1.2.1.tgz#b3e7c32abdf98d0fb4f93cc67cad580b5fe4ba57"
-  integrity sha512-rbOqre2jW8STjheOsOaQHLgYBaBZ9Owbdt8NO7WvNZftJlaG3y/K9oOkl8ZUpuFBisIhmBuMEW6c+YrQl5inRA==
-
-"@remusao/small@^1.1.2":
-  version "1.2.1"
-  resolved "https://registry.npmmirror.com/@remusao/small/-/small-1.2.1.tgz#63bfe4548832289f94ac868a0c305970c9a0e5f9"
-  integrity sha512-7MjoGt0TJMVw1GPKgWq6SJPws1SLsUXQRa43Umht+nkyw2jnpy3WpiLNqGdwo5rHr5Wp9B2W/Pm5RQp656UJdw==
-
-"@remusao/smaz-compress@^1.9.1":
-  version "1.9.1"
-  resolved "https://registry.npmmirror.com/@remusao/smaz-compress/-/smaz-compress-1.9.1.tgz#fc75eaf9bcac2d58bc4c3d518183a7cb9612d275"
-  integrity sha512-E2f48TwloQu3r6BdLOGF2aczeH7bJ/32oJGqvzT9SKur0cuUnLcZ7ZXP874E2fwmdE+cXzfC7bKzp79cDnmeyw==
-  dependencies:
-    "@remusao/trie" "^1.4.1"
-
-"@remusao/smaz-decompress@^1.9.1":
-  version "1.9.1"
-  resolved "https://registry.npmmirror.com/@remusao/smaz-decompress/-/smaz-decompress-1.9.1.tgz#8094f997e8fb591a678cda9cf08c209c825eba5b"
-  integrity sha512-TfjKKprYe3n47od8auhvJ/Ikj9kQTbDTe71ynKlxslrvvUhlIV3VQSuwYuMWMbdz1fIs0H/fxCN1Z8/H3km6/A==
-
-"@remusao/smaz@^1.7.1":
-  version "1.9.1"
-  resolved "https://registry.npmmirror.com/@remusao/smaz/-/smaz-1.9.1.tgz#a2b9b045385f81e1615a68d932b7cc8b04c9db8d"
-  integrity sha512-e6BLuP8oaXCZ9+v46Is4ilAZ/Vq6YLgmBP204Ixgk1qTjXmqvFYG7+AS7v9nsZdGOy96r9DWGFbbDVgMxwu1rA==
-  dependencies:
-    "@remusao/smaz-compress" "^1.9.1"
-    "@remusao/smaz-decompress" "^1.9.1"
-
-"@remusao/trie@^1.4.1":
-  version "1.4.1"
-  resolved "https://registry.npmmirror.com/@remusao/trie/-/trie-1.4.1.tgz#755d09f8a007476334e611f42719b2d581f00720"
-  integrity sha512-yvwa+aCyYI/UjeD39BnpMypG8N06l86wIDW1/PAc6ihBRnodIfZDwccxQN3n1t74wduzaz74m4ZMHZnB06567Q==
-
 "@simonwep/pickr@~1.8.0":
   version "1.8.2"
   resolved "https://registry.npmmirror.com/@simonwep/pickr/-/pickr-1.8.2.tgz"
@@ -551,14 +474,6 @@
   resolved "https://registry.npmmirror.com/@tootallnate/once/-/once-2.0.0.tgz"
   integrity sha512-XCuKFP5PS55gnMVu3dty8KPatLqUoy/ZYzDzAGCQ8JNFCkLXzmI7vNHCR+XpbZaMWQK/vQubr7PkYq8g470J/A==
 
-"@types/chrome@^0.0.228":
-  version "0.0.228"
-  resolved "https://registry.npmmirror.com/@types/chrome/-/chrome-0.0.228.tgz#e507fe23ecbc7369774520255c1b7011b30ceced"
-  integrity sha512-rDmyVEF+l9H+6FQYqsEGqQOjBw/uaSx6KJ6o47FwbQmPPcskmt8XlPbKjy5KeQXU3ZLiV2x45Fk4kdtRMSghfQ==
-  dependencies:
-    "@types/filesystem" "*"
-    "@types/har-format" "*"
-
 "@types/crypto-js@^4.1.1":
   version "4.1.1"
   resolved "https://registry.npmjs.org/@types/crypto-js/-/crypto-js-4.1.1.tgz"
@@ -576,23 +491,6 @@
   resolved "https://registry.npmmirror.com/@types/fast-levenshtein/-/fast-levenshtein-0.0.2.tgz#9f618cff4469da8df46c9ee91b1c95b9af1d8f6a"
   integrity sha512-h9AGeNlFimLtFUlEZgk+hb3LUT4tNHu8y0jzCUeTdi1BM4e86sBQs/nQYgHk70ksNyNbuLwpymFAXkb0GAehmw==
 
-"@types/filesystem@*":
-  version "0.0.32"
-  resolved "https://registry.npmmirror.com/@types/filesystem/-/filesystem-0.0.32.tgz#307df7cc084a2293c3c1a31151b178063e0a8edf"
-  integrity sha512-Yuf4jR5YYMR2DVgwuCiP11s0xuVRyPKmz8vo6HBY3CGdeMj8af93CFZX+T82+VD1+UqHOxTq31lO7MI7lepBtQ==
-  dependencies:
-    "@types/filewriter" "*"
-
-"@types/filewriter@*":
-  version "0.0.29"
-  resolved "https://registry.npmmirror.com/@types/filewriter/-/filewriter-0.0.29.tgz#a48795ecadf957f6c0d10e0c34af86c098fa5bee"
-  integrity sha512-BsPXH/irW0ht0Ji6iw/jJaK8Lj3FJemon2gvEqHKpCdDCeemHa+rI3WBGq5z7cDMZgoLjY40oninGxqk+8NzNQ==
-
-"@types/firefox-webext-browser@^111.0.0":
-  version "111.0.1"
-  resolved "https://registry.npmmirror.com/@types/firefox-webext-browser/-/firefox-webext-browser-111.0.1.tgz#1ab4eacbe8eab48bb8c450c44519bac08a041a70"
-  integrity sha512-mmHWdQTCT68X0hh0URrsIyWhJeFzZHaiprj6nni/CmsAmqYq27T0eZyu1ePeKJ/zuDD3wqtTzm5TwRFAso+oPw==
-
 "@types/fs-extra@^9.0.11":
   version "9.0.13"
   resolved "https://registry.npmmirror.com/@types/fs-extra/-/fs-extra-9.0.13.tgz"
@@ -607,11 +505,6 @@
   dependencies:
     "@types/minimatch" "*"
     "@types/node" "*"
-
-"@types/har-format@*":
-  version "1.2.11"
-  resolved "https://registry.npmmirror.com/@types/har-format/-/har-format-1.2.11.tgz#26aff34e9c782b2648cc45778abadcd930f7db43"
-  integrity sha512-T232/TneofqK30AD1LRrrf8KnjLvzrjWDp7eWST5KoiSzrBfRsLrWDPk4STQPW4NZG6v2MltnduBVmakbZOBIQ==
 
 "@types/howler@^2.2.7":
   version "2.2.7"
@@ -1010,6 +903,11 @@ asar@^3.1.0:
     minimatch "^3.0.4"
   optionalDependencies:
     "@types/glob" "^7.1.1"
+
+ass-html5@^0.3.5:
+  version "0.3.5"
+  resolved "https://registry.npmmirror.com/ass-html5/-/ass-html5-0.3.5.tgz#36d3b9be0a09fe4d0b1e8acac732fe785161a354"
+  integrity sha512-Suu3rbtXnuKPjWBRvSZqBd12KJOmtsZOg6gGqGaoQYNA0OdxMmuhVzVQbYXZK+YD6v1cDZaUVxykOPzrej3HIA==
 
 assert-plus@^1.0.0:
   version "1.0.0"
@@ -1497,9 +1395,9 @@ detect-node@^2.0.4:
   resolved "https://registry.npmmirror.com/detect-node/-/detect-node-2.1.0.tgz"
   integrity sha512-T0NIuQpnTvFDATNuHN5roPwSBG83rFsuO+MXXH9/3N1eFbn4wcPjttvjMLEPWJ0RGUYgQE7cGgS3tNxbqCGM7g==
 
-dexie@^3.2.3:
+dexie@^3.2.4:
   version "3.2.4"
-  resolved "https://registry.yarnpkg.com/dexie/-/dexie-3.2.4.tgz#b22a9729be1102acb2eee16102ea6e2bc76454cf"
+  resolved "https://registry.npmmirror.com/dexie/-/dexie-3.2.4.tgz#b22a9729be1102acb2eee16102ea6e2bc76454cf"
   integrity sha512-VKoTQRSv7+RnffpOJ3Dh6ozknBqzWw/F3iqMdsZg958R0AS8AnY9x9d1lbwENr0gzeGJHXKcGhAMRaqys6SxqA==
 
 digest-fetch@^3.0.4:
@@ -3136,18 +3034,6 @@ terser@^5.15.0:
     acorn "^8.5.0"
     commander "^2.20.0"
     source-map-support "~0.5.20"
-
-tldts-core@^6.0.11:
-  version "6.0.11"
-  resolved "https://registry.npmmirror.com/tldts-core/-/tldts-core-6.0.11.tgz#2b9649ecdca1b45124401da17131c2790cf7514e"
-  integrity sha512-+RbG0WSUVGNWtA96rAPwjQq8ElqbYwuFPwbe2jxQ9fvoC/3aTwy5zUL0JjE2VPblvORSVykS8suREEjwKy2bEw==
-
-tldts-experimental@^6.0.1:
-  version "6.0.11"
-  resolved "https://registry.npmmirror.com/tldts-experimental/-/tldts-experimental-6.0.11.tgz#3da38888717cc71e1b737526bb35b9e390521e2d"
-  integrity sha512-CLl/wr4L3QiLDKEZxFTe/ALsC/CjjgkPF2BqCeTRQ1hdxkP7Hk1Sg1t1/vGztYbWbuxjoEFpBIPNb/JzxcCNhA==
-  dependencies:
-    tldts-core "^6.0.11"
 
 tmp-promise@^3.0.2:
   version "3.0.3"
