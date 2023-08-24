@@ -102,6 +102,20 @@ window.WebRelaunchAria = async function() {
     return 0
   }
 }
+window.WebRelaunchAlist = async function() {
+  try {
+    return await ipcRenderer.invoke('WebRelaunchAlist')
+  } catch {
+    return 0
+  }
+}
+window.WebResetAlistPwd = async function(data: any) {
+  try {
+    return await ipcRenderer.invoke('WebResetAlistPwd', data)
+  } catch {
+    return 0
+  }
+}
 window.WebSetProgressBar = function (data: any) {
   try {
     ipcRenderer.send('WebSetProgressBar', data) 

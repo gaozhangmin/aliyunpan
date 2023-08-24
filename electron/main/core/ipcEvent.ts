@@ -30,6 +30,8 @@ export default class ipcEvent {
     this.handleWebReload()
     this.handleWebRelaunch()
     this.handleWebRelaunchAria()
+    this.handleWebRelaunchAlist()
+    this.handleWebResetAlistPwd()
     this.handleWebSetProgressBar()
     this.handleWebShutDown()
     this.handleWebSetProxy()
@@ -302,6 +304,66 @@ export default class ipcEvent {
         ]
         spawn(`${argsToStr(ariaFilePath)}`, args, options)
         return listenPort
+      } catch (e: any) {
+        console.log(e)
+      }
+      return 0
+    })
+  }
+  private static handleWebRelaunchAlist() {
+    ipcMain.handle('WebRelaunchAlist', async (event, data) => {
+      try {
+        const enginePath: string = getStaticPath('engine')
+        const alistPath = is.windows() ? 'alist.exe' : 'alist'
+        const basePath: string = path.join(enginePath, is.dev() ? path.join(process.platform, process.arch) : '')
+        const alistFilePath: string = path.join(basePath, alistPath)
+        if (!existsSync(alistFilePath)) {
+          ShowError('找不到alist程序文件', alistFilePath)
+          return 0
+        }
+        const argsToStr = (args: any) => is.windows() ? `"${args}"` : `'${args}'`
+        const options: SpawnOptions = {
+          shell: true,
+          stdio: is.dev() ? 'pipe' : 'ignore',
+          windowsHide: false,
+          windowsVerbatimArguments: true
+        }
+        const alistArgs = [
+          `--stop-with-process=${argsToStr(process.pid)}`,
+          '-D'
+        ]
+        spawn(`${argsToStr(alistFilePath + ' start')}`, alistArgs, options)
+        return 0
+      } catch (e: any) {
+        console.log(e)
+      }
+      return 0
+    })
+  }
+
+  private static handleWebResetAlistPwd() {
+    ipcMain.handle('WebResetAlistPwd', async (event, data) => {
+      try {
+        if (data.cmd ) {
+          const password = data.cmd.password
+          const enginePath: string = getStaticPath('engine')
+          const alistPath = is.windows() ? 'alist.exe' : 'alist'
+          const basePath: string = path.join(enginePath, is.dev() ? path.join(process.platform, process.arch) : '')
+          const alistFilePath: string = path.join(basePath, alistPath)
+          if (!existsSync(alistFilePath)) {
+            ShowError('找不到alist程序文件', alistFilePath)
+            return 0
+          }
+          const argsToStr = (args: any) => is.windows() ? `"${args}"` : `'${args}'`
+          const options: SpawnOptions = {
+            shell: true,
+            stdio: is.dev() ? 'pipe' : 'ignore',
+            windowsHide: false,
+            windowsVerbatimArguments: true
+          }
+          spawn(`${argsToStr(alistFilePath + ' admin set '+password)}`, options)
+        }
+        return 0
       } catch (e: any) {
         console.log(e)
       }

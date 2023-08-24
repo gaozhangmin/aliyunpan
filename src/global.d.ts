@@ -8,6 +8,8 @@ declare global {
     Electron: any
     openDatabase: any
     WebRelaunchAria: () => Promise<number>
+    WebRelaunchAlist: () => Promise<number>
+    WebResetAlistPwd:any
     platform: string
     WinMsg: any
     postdataFunc: any
