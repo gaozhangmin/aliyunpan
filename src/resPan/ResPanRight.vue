@@ -268,11 +268,14 @@ onMounted(() => {
     }).catch((error: any) => {
       console.log(error)
     })
-  setTimeout(() => {
-    AliHttp.isVip(useUserStore().GetUserToken.phone).then((res: any) => {
-      vip.value = res
-    })
-  }, 5000)
+  const intervalId = setInterval(() => {
+    if (useUserStore().userLogined && useUserStore().GetUserToken.phone != '') {
+      AliHttp.isVip(useUserStore().GetUserToken.phone).then((res: any) => {
+        vip.value = res
+      })
+      clearInterval(intervalId)
+    }
+  }, 1000)
 
   resizeObserver.observe(document.getElementById('panfilelist')!)
 })

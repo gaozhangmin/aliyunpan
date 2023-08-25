@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="fullscroll" style="padding-left: 12px; padding-right: 16px; overflow-x: hidden">
     <iframe class="custom-webview" :src="iframeSrc" ref="iframeRef"></iframe>
   </div>
 </template>
@@ -15,7 +15,7 @@ export default {
 
     onMounted(() => {
       // setTimeout(() => {
-      //   iframeSrc.value = 'http://127.0.0.1:5244/'
+      //   iframeSrc.value = 'http://127.0.0.1:5244/'d
       // }, 3000)
       const iframe = iframeRef.value
 
@@ -57,7 +57,12 @@ export default {
 
 <style scoped>
 .custom-webview {
-    width: 100%;
-    height: 800px;
+  width: 100%;
+  height: 1000px;
+}
+.fullscroll {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
 }
 </style>
