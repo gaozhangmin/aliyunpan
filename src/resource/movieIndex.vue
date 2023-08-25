@@ -18,37 +18,6 @@ import DownDAL from '../down/DownDAL'
 export default {
   setup: function() {
     const iframeRef = ref(null)
-
-
-    // const handleDownload = async (url: string, filmname:string) => {
-    //   const user = UserDAL.GetUserToken(useUserStore().user_id)
-    //   const settingStore = useSettingStore()
-    //   const savePath = settingStore.AriaIsLocal ? settingStore.downSavePath : settingStore.ariaSavePath
-    //   const fullSavePath = path.join(savePath, filmname)
-    //   const fileList: IAliGetFileModel[] = []
-    //   fileList.push({
-    //     __v_skip: true,
-    //     drive_id: UserDAL.GetUserToken(useUserStore().user_id).default_drive_id,
-    //     file_id: '1234567',
-    //     parent_file_id: '',
-    //     name: filmname,
-    //     namesearch: '',
-    //     ext: 'ts',
-    //     category: 'video',
-    //     icon: '',
-    //     size: 52.13*1024*1024*1024,
-    //     sizeStr: '52.13G',
-    //     time: 0,
-    //     timeStr: '',
-    //     starred: false,
-    //     isDir: false,
-    //     thumbnail: '',
-    //     description: '',
-    //     download_url: url,
-    //   })
-    //   DownDAL.aAddDownload(fileList, fullSavePath, false)
-    // }
-
     onMounted(() => {
       const iframe = iframeRef.value
 

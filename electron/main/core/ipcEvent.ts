@@ -3,7 +3,7 @@ import path from 'path'
 import is from 'electron-is'
 import { app, BrowserWindow, dialog, ipcMain, session, shell } from 'electron'
 import { existsSync, writeFileSync } from 'fs'
-import { exec, spawn, SpawnOptions } from 'child_process'
+import { exec, execFile, spawn, SpawnOptions } from 'child_process'
 import { ShowError } from './dialog'
 // @ts-ignore
 import {getResourcesPath, getStaticPath, getUserDataPath} from '../utils/mainfile'
@@ -317,22 +317,29 @@ export default class ipcEvent {
         const alistPath = is.windows() ? 'alist.exe' : 'alist'
         const basePath: string = path.join(enginePath, is.dev() ? path.join(process.platform, process.arch) : '')
         const alistFilePath: string = path.join(basePath, alistPath)
+        const alistDataPath = getUserDataPath('alist-data')
         if (!existsSync(alistFilePath)) {
           ShowError('找不到alist程序文件', alistFilePath)
           return 0
         }
         const argsToStr = (args: any) => is.windows() ? `"${args}"` : `'${args}'`
-        const options: SpawnOptions = {
+
+        const alistArgs = [
+          'server',
+          '--data ' + `${argsToStr(alistDataPath)}`
+        ]
+        const options = {
           shell: true,
-          stdio: is.dev() ? 'pipe' : 'ignore',
-          windowsHide: false,
           windowsVerbatimArguments: true
         }
-        const alistArgs = [
-          `--stop-with-process=${argsToStr(process.pid)}`,
-          '-D'
-        ]
-        spawn(`${argsToStr(alistFilePath + ' start')}`, alistArgs, options)
+        console.log(`${argsToStr(alistFilePath + ' server')}`)
+        execFile(`${argsToStr(alistFilePath)}`, alistArgs, options,
+          async (error, stdout, stderr) => {
+          if (error) {
+            console.log(`启动AList失败 : ${error}`)
+            return 0
+          }
+        })
         return 0
       } catch (e: any) {
         console.log(e)
@@ -344,30 +351,39 @@ export default class ipcEvent {
   private static handleWebResetAlistPwd() {
     ipcMain.handle('WebResetAlistPwd', async (event, data) => {
       try {
-        if (data.cmd ) {
-          const password = data.cmd.password
-          const enginePath: string = getStaticPath('engine')
-          const alistPath = is.windows() ? 'alist.exe' : 'alist'
-          const basePath: string = path.join(enginePath, is.dev() ? path.join(process.platform, process.arch) : '')
-          const alistFilePath: string = path.join(basePath, alistPath)
-          if (!existsSync(alistFilePath)) {
-            ShowError('找不到alist程序文件', alistFilePath)
-            return 0
-          }
-          const argsToStr = (args: any) => is.windows() ? `"${args}"` : `'${args}'`
-          const options: SpawnOptions = {
-            shell: true,
-            stdio: is.dev() ? 'pipe' : 'ignore',
-            windowsHide: false,
-            windowsVerbatimArguments: true
-          }
-          spawn(`${argsToStr(alistFilePath + ' admin set '+password)}`, options)
+        const enginePath: string = getStaticPath('engine')
+        const alistPath = is.windows() ? 'alist.exe' : 'alist'
+        const basePath: string = path.join(enginePath, is.dev() ? path.join(process.platform, process.arch) : '')
+        const alistFilePath: string = path.join(basePath, alistPath)
+        const alistDataPath = getUserDataPath('alist-data')
+        if (!existsSync(alistFilePath)) {
+          ShowError('找不到alist程序文件', alistFilePath)
+          return 0
         }
-        return 0
+
+        const argsToStr = (args: any) => is.windows() ? `"${args}"` : `'${args}'`
+        const password = data.cmd
+
+        const alistArgs = [
+          'admin set ' + `${argsToStr(password)}`,
+          '--data ' + `${argsToStr(alistDataPath)}`
+        ]
+        console.log(`修改AList密码 : `, password)
+        const options = {
+          shell: true,
+          windowsVerbatimArguments: true
+        }
+        execFile(`${argsToStr(alistFilePath)}`, alistArgs, options,
+          async (error, stdout, stderr) => {
+            if (error) {
+              console.log(`修改AList密码失败 : ${error}`)
+            } else {
+              console.log(`修改AList密码成功 : ${stdout}`)
+            }
+          })
       } catch (e: any) {
         console.log(e)
       }
-      return 0
     })
   }
 

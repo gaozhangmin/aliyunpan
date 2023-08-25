@@ -1,68 +1,61 @@
 <template>
   <div>
-    <iframe class="custom-webview" src="http://127.0.0.1:5244" ref="iframeRef"></iframe>
+    <iframe class="custom-webview" :src="iframeSrc" ref="iframeRef"></iframe>
   </div>
 </template>
 
 <script lang="ts">
 import { ref, onMounted } from 'vue';
-import { modalDaoRuShareLink } from '../utils/modal';
-import { IAliGetFileModel } from '../aliapi/alimodels'
-import { useSettingStore, useUserStore } from '../store'
-import path from 'path'
-import { humanSize } from '../utils/format'
-import UserDAL from '../user/userdal'
-import DownDAL from '../down/DownDAL'
-
+import useSettingStore from '../setting/settingstore'
 
 export default {
-  setup: function() {
-    const iframeRef = ref(null)
+  setup() {
+    const iframeRef = ref(null);
+    const iframeSrc = ref(''); // 初始的 iframe URL
 
     onMounted(() => {
-      // const iframe = iframeRef.value
+      setTimeout(() => {
+        iframeSrc.value = 'http://127.0.0.1:5244/';
+      }, 5000);
+      const iframe = iframeRef.value;
 
-      // if (iframe) {
-      //   // @ts-ignore
-      //   iframe.addEventListener('load', () => {
-      //     // @ts-ignore
-      //     const iframeDocument = iframe.contentDocument || iframe.contentWindow.document
-      //
-      //     const element = iframeDocument.querySelector('.swal2-close')
-      //     if (element) {
-      //       element.click()
-      //     }
-      //     const iframeElements = iframeDocument.querySelectorAll('iframe[src^="https://player.bilibili.com/"]')
-      //     // @ts-ignore
-      //     iframeElements.forEach((iframeElement) => {
-      //       if (iframeElement) {
-      //         iframeElement.remove()
-      //       }
-      //     })
-      //
-      //     iframeDocument.addEventListener('click', (event: any) => {
-      //       const target = event.target
-      //       const url = target.href || ''
-      //
-      //       if (url.includes('aliyundrive')) {
-      //         event.preventDefault()
-      //         modalDaoRuShareLink(url)
-      //       }
-      //     })
-      //   })
-      // }
+      if (iframe) {
+        const intervalId = setInterval(() => {
+          // @ts-ignore
+          iframe.addEventListener('load', () => {
+            // @ts-ignore
+            const iframeDocument = iframe.contentDocument || iframe.contentWindow.document
+
+            const usernameInput = iframeDocument.querySelector('input[name="username"]');
+            const passwordInput = iframeDocument.querySelector('input[name="password"]');
+            const loginButton = iframeDocument.querySelector('.login-button');
+
+            if (usernameInput && passwordInput && loginButton && useSettingStore().alistPwd != '') {
+              // @ts-ignore
+              usernameInput.value = 'admin';
+              // @ts-ignore
+              passwordInput.value = useSettingStore().alistPwd
+              // @ts-ignore
+              loginButton.click();
+              clearInterval(intervalId)
+            }
+          });
+        }, 1000)
+
+      }
     })
 
     return {
-      iframeRef
-    }
+      iframeRef,
+      iframeSrc
+    };
   }
-}
+};
 </script>
 
 <style scoped>
 .custom-webview {
-  width: 100%;
-  height: 1000px;
+    width: 100%;
+    height: 1000px;
 }
 </style>

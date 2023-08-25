@@ -16,6 +16,7 @@ const ariaLoading = ref(settingStore.ariaLoading)
 const ariaSavePath = ref(settingStore.ariaSavePath)
 const ariaUrl = ref(settingStore.ariaUrl)
 const ariaPwd = ref(settingStore.ariaPwd)
+const alistPwd = ref(settingStore.alistPwd)
 
 const handleAriaConn = () => {
   ariaSavePath.value = ariaSavePath.value.trim()
@@ -87,6 +88,13 @@ const handleAriaOff = (tip: boolean) => {
       settingStore.ariaLoading = false
       message.error('已经从远程断开，连接到本地Aria失败')
     })
+}
+
+const handleResetAListPwd = () => {
+  if (window.WebResetAlistPwd) {
+    window.WebResetAlistPwd({ cmd: alistPwd.value })
+    message.info("重置成功")
+  }
 }
 </script>
 
@@ -172,6 +180,12 @@ const handleAriaOff = (tip: boolean) => {
     </div>
     <div class="settingrow" v-show="!settingStore.AriaIsLocal">
       <a-button type="primary" size="small" tabindex="-1" :loading="settingStore.ariaLoading" @click="handleAriaOff(false)">当前是 远程Aria模式，点击切换</a-button>
+    </div>
+    <div class="settingspace"></div>
+    <div class="settinghead">重置AList登录密码</div>
+    <div class="settingrow">
+      <a-input tabindex="-1" :style="{ width: '100px' }" placeholder="AList登录密码" v-model:model-value="alistPwd" />
+      <a-button type="primary" size="small" tabindex="-1" @click="handleResetAListPwd()">重置AList登录密码</a-button>
     </div>
   </div>
 </template>

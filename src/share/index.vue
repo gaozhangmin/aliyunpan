@@ -6,6 +6,7 @@ import MyTransferShareRight from './share/MyTransferShareRight.vue'
 import OtherShareRight from './share/OtherShareRight.vue'
 import MyFollowingRight from './following/MyFollowingRight.vue'
 import OtherFollowingRight from './following/OtherFollowingRight.vue'
+import AList from '../resource/alist.vue'
 
 import { useAppStore, useUserStore } from '../store'
 import ShareDAL from './share/ShareDAL'
@@ -59,6 +60,10 @@ appStore.$subscribe(async (mutation) => {
           <template #icon><i class="iconfont iconrvip" /></template>
           全网资源搜索
         </a-menu-item>
+        <a-menu-item key="alist">
+          <template #icon><i class="iconfont iconrvip" /></template>
+          AList 挂载
+        </a-menu-item>
       </a-menu>
     </a-layout-sider>
     <a-layout-content class="xbyright">
@@ -70,6 +75,7 @@ appStore.$subscribe(async (mutation) => {
         <a-tab-pane key="OtherFollowingRight" title="6"><OtherFollowingRight /></a-tab-pane>
         <a-tab-pane v-if='vipIdentity' key="ShareSiteRight" title="5"><SearchRes /></a-tab-pane>
         <a-tab-pane v-if='!vipIdentity' key="ShareSiteRight" title="5"><VipInformPage /></a-tab-pane>
+        <a-tab-pane key="alist" title="6"><AList /></a-tab-pane>
       </a-tabs>
     </a-layout-content>
   </a-layout>

@@ -109,6 +109,8 @@ export interface SettingState {
 
   ariaPwd: string
 
+  alistPwd: string
+
   ariaHttps: boolean
 
   ariaState: string
@@ -217,6 +219,7 @@ const setting: SettingState = {
   ariaSavePath: '',
   ariaUrl: '',
   ariaPwd: '',
+  alistPwd: '',
   ariaHttps: false,
   ariaState: 'local',
   ariaLoading: false,
@@ -303,6 +306,7 @@ function _loadSetting(val: any) {
   setting.ariaUrl = defaultString(val.ariaUrl, '')
   if (setting.ariaUrl.indexOf(':') < 0) setting.ariaUrl = ''
   setting.ariaPwd = defaultString(val.ariaPwd, '')
+  setting.alistPwd = defaultString(val.alistPwd, '')
   setting.ariaHttps = defaultBool(val.ariaHttps, false)
   setting.ariaState = defaultValue(val.ariaState, ['local', 'remote'])
   setting.ariaLoading = false

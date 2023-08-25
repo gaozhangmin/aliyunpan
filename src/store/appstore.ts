@@ -86,8 +86,7 @@ const useAppStore = defineStore('app', {
       ['share', 'OtherShareRight'],
       ['rss', 'AppSame'],
       ['setting', ''],
-      ['movie', ''],
-      ['alist', '']
+      ['movie', '']
     ]),
     appDark: false,
     appShutDown: false
@@ -139,8 +138,7 @@ const useAppStore = defineStore('app', {
           ['share', 'OtherShareRight'],
           ['rss', 'AppSame'],
           ['setting', ''],
-          ['movie', ''],
-          ['alist', '']
+          ['movie', '']
         ])
       })
     },
@@ -213,10 +211,6 @@ const useAppStore = defineStore('app', {
           this.appTab = 'movie'
           break
         }
-        case 'alist': {
-          this.appTab = 'alist'
-          break
-        }
       }
       onHideRightMenu()
     },
@@ -251,7 +245,7 @@ const useAppStore = defineStore('app', {
           break
         }
         case 'share': {
-          next(this.appTabMenuMap, this.appTab, ['OtherShareRight', 'MyShareRight', 'MyFollowingRight', 'OtherFollowingRight', 'ShareSiteRight'])
+          next(this.appTabMenuMap, this.appTab, ['OtherShareRight', 'MyShareRight', 'MyFollowingRight', 'OtherFollowingRight', 'ShareSiteRight', 'alist'])
           break
         }
         case 'rss': {
@@ -266,10 +260,6 @@ const useAppStore = defineStore('app', {
         }
         case 'movie': {
           next(this.appTabMenuMap, this.appTab, ['movie', ''])
-          break
-        }
-        case 'alist': {
-          next(this.appTabMenuMap, this.appTab, ['alist', ''])
           break
         }
       }
