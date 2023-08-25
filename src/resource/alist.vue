@@ -14,13 +14,15 @@ export default {
     const iframeSrc = ref(''); // 初始的 iframe URL
 
     onMounted(() => {
-      setTimeout(() => {
-        iframeSrc.value = 'http://127.0.0.1:5244/';
-      }, 5000);
-      const iframe = iframeRef.value;
+      // setTimeout(() => {
+      //   iframeSrc.value = 'http://127.0.0.1:5244/'
+      // }, 3000)
+      const iframe = iframeRef.value
 
       if (iframe) {
         const intervalId = setInterval(() => {
+          iframeSrc.value = ''
+          iframeSrc.value = 'http://127.0.0.1:5244/'
           // @ts-ignore
           iframe.addEventListener('load', () => {
             // @ts-ignore
@@ -56,6 +58,6 @@ export default {
 <style scoped>
 .custom-webview {
     width: 100%;
-    height: 1000px;
+    height: 800px;
 }
 </style>

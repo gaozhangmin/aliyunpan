@@ -21,7 +21,7 @@ export default defineComponent({
   <div class="container1">
       <div class="content-text3">
         <div class="image-container2">
-          <img src="/images/sales.png"  alt="公众号">
+          <img src="/images/sales1.png"  alt="公众号">
         </div>
       </div>
   </div>
