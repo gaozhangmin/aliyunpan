@@ -65,7 +65,7 @@ appStore.$subscribe(async (mutation) => {
         </a-menu-item>
         <a-menu-item key="alist">
           <template #icon><i class="iconfont iconrvip" /></template>
-          AList 挂载
+          AList
         </a-menu-item>
       </a-menu>
     </a-layout-sider>

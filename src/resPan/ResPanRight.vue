@@ -53,7 +53,6 @@ import { shell } from 'electron'
 import axios, { AxiosResponse } from 'axios'
 import ServerHttp from '../aliapi/server'
 import AliHttp from '../aliapi/alihttp'
-import UserDAL from '../user/userdal'
 
 const viewlist = ref()
 const inputsearch = ref()

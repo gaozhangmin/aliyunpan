@@ -222,7 +222,7 @@ const curDirFileList: any[] = []
 const childDirFileList: any[] = []
 const getDirFileList = async (dir_id: string, hasDir: boolean, category: string = '', filter?: RegExp): Promise<any[]> => {
   if (curDirFileList.length === 0 || (hasDir && childDirFileList.length === 0)) {
-    const dir = await AliDirFileList.ApiDirFileList(pageVideo.user_id, pageVideo.drive_id, dir_id, '', 'name asc', '')
+    const dir = await AliDirFileList.ApiDirFileList(pageVideo.user_id, pageVideo.drive_id, dir_id, '', 'name asc', '', true)
     if (!dir.next_marker) {
       for (let item of dir.items) {
         const fileInfo = {

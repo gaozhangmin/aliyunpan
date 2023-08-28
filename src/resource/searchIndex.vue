@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="fullscroll" style="padding-left: 12px; padding-right: 16px; overflow-x: hidden">
     <iframe class="custom-webview" src="https://www.upyunso.com/" ref="iframeRef"></iframe>
   </div>
 </template>
@@ -79,5 +79,10 @@ export default {
 .custom-webview {
   width: 100%;
   height: 1000px;
+}
+.fullscroll {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
 }
 </style>

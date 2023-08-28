@@ -126,7 +126,7 @@ export default class AliDirFileList {
   }
 
   
-  static async ApiDirFileList(user_id: string, drive_id: string, dirID: string, dirName: string, order: string, type: string = ''): Promise<IAliFileResp> {
+  static async ApiDirFileList(user_id: string, drive_id: string, dirID: string, dirName: string, order: string, type: string = '', openApi = false): Promise<IAliFileResp> {
     const dir: IAliFileResp = {
       items: [],
       itemsKey: new Set(),
@@ -196,7 +196,12 @@ export default class AliDirFileList {
             dir.itemsTotal = total
           })
         }
-        isGet = await AliDirFileList._ApiDirFileListOnePage(orders[0], orders[1], dir, type, pageIndex)
+        if (openApi) {
+          isGet = await AliDirFileList._ApiDirFileListOnePageOpenApi(orders[0], orders[1], dir, type, pageIndex)
+        } else {
+          isGet = await AliDirFileList._ApiDirFileListOnePage(orders[0], orders[1], dir, type, pageIndex)
+        }
+
       }
 
       if (!isGet) {

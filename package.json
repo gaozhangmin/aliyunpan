@@ -1,7 +1,7 @@
 {
   "name": "xbyyunpan",
   "description": "小白羊云盘",
-  "version": "3.11.19",
+  "version": "3.11.21",
   "license": "MIT",
   "main": "dist/electron/main/index.js",
   "author": {
@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build && electron-builder -m"
+    "build": "vue-tsc --noEmit && vite build && electron-builder -wml"
   },
   "engines": {
     "node": ">=16.0.0"
