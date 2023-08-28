@@ -379,22 +379,6 @@ export default class AliHttp {
         })
   }
 
-  static async isVip(phone:string): Promise<boolean> {
-    const url = `https://eu-central-1.data.tidbcloud.com/api/v1beta/app/dataapp-DlZtOYDl/endpoint/v2/orders?userId=${phone}`;
-    const client = new DigestClient('1fHUXx2d', '49bd6bfc-2dc1-41ac-90c0-5040dbd106b7')
-
-    const response = await client.fetch(url, {})
-    if (AliHttp.IsSuccess(response.status)) {
-      const json = await response.json();
-      const data = json.data.rows as {vip_type_text:string}[];
-      if(data.length > 0 && data[0].vip_type_text !== '') {
-        return true
-      }
-      return false
-    }
-    return false
-  }
-
   static async PostWithOutUserId(url: string, postData: any): Promise<IUrlRespData> {
     return axios
       .post(url, postData, {

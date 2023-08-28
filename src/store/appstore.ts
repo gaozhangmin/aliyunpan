@@ -1,9 +1,6 @@
 import DebugLog from '../utils/debuglog'
 import { onHideRightMenu } from '../utils/keyboardhelper'
 import { defineStore } from 'pinia'
-import AliHttp from "../aliapi/alihttp";
-import UserDAL from "../user/userdal";
-import {useUserStore} from "./index";
 
 export interface IPageOffice {
   user_id: string
@@ -85,8 +82,7 @@ const useAppStore = defineStore('app', {
       ['down', 'DowningRight'],
       ['share', 'OtherShareRight'],
       ['rss', 'AppSame'],
-      ['setting', ''],
-      ['movie', '']
+      ['setting', '']
     ]),
     appDark: false,
     appShutDown: false
@@ -138,7 +134,6 @@ const useAppStore = defineStore('app', {
           ['share', 'OtherShareRight'],
           ['rss', 'AppSame'],
           ['setting', ''],
-          ['movie', '']
         ])
       })
     },
@@ -147,11 +142,6 @@ const useAppStore = defineStore('app', {
       if (this.appTab != tab) {
         this.appTab = tab
         if (tab == 'setting') DebugLog.aLoadFromDB()
-        if (tab == 'movie') {
-          if (useUserStore().userLogined) {
-            this.isVip = await AliHttp.isVip(useUserStore().GetUserToken.phone);
-          }
-        }
         onHideRightMenu()
       }
     },
@@ -207,10 +197,6 @@ const useAppStore = defineStore('app', {
           this.appTab = 'pan'
           break
         }
-        case 'movie': {
-          this.appTab = 'movie'
-          break
-        }
       }
       onHideRightMenu()
     },
@@ -256,10 +242,6 @@ const useAppStore = defineStore('app', {
           next(this.appTabMenuMap, this.appTab, ['SettingUI', 'SettingDown', 'SettingPan', 'SettingDebug', 'SettingAria', 'SettingLog'])
           const menu = this.appTabMenuMap.get('setting')!
           document.getElementById(menu)?.scrollIntoView()
-          break
-        }
-        case 'movie': {
-          next(this.appTabMenuMap, this.appTab, ['movie', ''])
           break
         }
       }

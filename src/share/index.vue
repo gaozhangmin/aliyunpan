@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import ShareSiteRight from './share/ShareSiteRight.vue'
-import SearchRes from '../resource/searchIndex.vue'
 import MyShareRight from './share/MyShareRight.vue'
 import MyTransferShareRight from './share/MyTransferShareRight.vue'
 import OtherShareRight from './share/OtherShareRight.vue'
@@ -11,24 +10,14 @@ import AList from '../resource/alist.vue'
 import { useAppStore, useUserStore } from '../store'
 import ShareDAL from './share/ShareDAL'
 import FollowingDAL from './following/FollowingDAL'
-import AliHttp from '../aliapi/alihttp'
-import UserDAL from '../user/userdal'
-import VipInformPage from '../resource/vipInfo.vue'
-import { ref } from 'vue'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
-let vipIdentity = ref(true)
 appStore.$subscribe(async (mutation) => {
   const appPage = appStore.GetAppTabMenu
-  if (appPage == 'ShareSiteRight') {
-    if (userStore.userLogined) {
-      AliHttp.isVip(useUserStore().GetUserToken.phone).then((res: any) => {
-        vipIdentity.value = res
-      })
-    }
-  }
+  if (appPage == 'ShareSiteRight') ShareDAL.aLoadShareSite()
   if (appPage == 'MyShareRight') ShareDAL.aReloadMyShare(useUserStore().user_id, false)
+  if (appPage == 'MyTransferShareRight') ShareDAL.aReloadMyTransferShare(useUserStore().user_id, false)
   if (appPage == 'MyFollowingRight') FollowingDAL.aReloadMyFollowing(useUserStore().user_id, false)
   if (appPage == 'OtherFollowingRight') FollowingDAL.aReloadOtherFollowingList(useUserStore().user_id, false)
 })
@@ -61,7 +50,7 @@ appStore.$subscribe(async (mutation) => {
         </a-menu-item>
         <a-menu-item key="ShareSiteRight">
           <template #icon><i class="iconfont iconrvip" /></template>
-          全网资源搜索
+          资源网站
         </a-menu-item>
         <a-menu-item key="alist">
           <template #icon><i class="iconfont iconrvip" /></template>
@@ -76,9 +65,8 @@ appStore.$subscribe(async (mutation) => {
         <a-tab-pane key="MyTransferShareRight" title="1"><MyTransferShareRight /></a-tab-pane>
         <a-tab-pane key="MyFollowingRight" title="3"><MyFollowingRight /></a-tab-pane>
         <a-tab-pane key="OtherFollowingRight" title="6"><OtherFollowingRight /></a-tab-pane>
-        <a-tab-pane v-if='vipIdentity' key="ShareSiteRight" title="5"><SearchRes /></a-tab-pane>
-        <a-tab-pane v-if='!vipIdentity' key="ShareSiteRight" title="5"><VipInformPage /></a-tab-pane>
-        <a-tab-pane key="alist" title="6"><AList /></a-tab-pane>
+        <a-tab-pane key="ShareSiteRight" title="5"><ShareSiteRight /></a-tab-pane>
+        <a-tab-pane key="alist" title="7"><AList /></a-tab-pane>
       </a-tabs>
     </a-layout-content>
   </a-layout>

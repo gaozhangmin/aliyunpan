@@ -62,10 +62,7 @@ const settingStore = useSettingStore()
 const winStore = useWinStore()
 const panfileStore = useResPanFileStore()
 
-let adsImage = ''
-let adsUrl = ''
 let dirID = ''
-let vip = ref(false)
 
 panfileStore.$subscribe((_m: any, state: PanFileState) => {
   if (state.DirID != dirID) {
@@ -252,30 +249,6 @@ const onGridResize = throttle(() => {
 }, 100)
 
 onMounted(() => {
-  axios
-    .get(ServerHttp.configUrl, {
-      withCredentials: false,
-      responseType: 'json',
-      timeout: 10000
-    })
-    .then(async (response: AxiosResponse) => {
-      const config = response.data
-      if (config.adsUrl && config.addUrl != '') {
-        adsUrl = config.adsUrl
-        adsImage = config.adsImgUrl
-      }
-    }).catch((error: any) => {
-      console.log(error)
-    })
-  const intervalId = setInterval(() => {
-    if (useUserStore().userLogined && useUserStore().GetUserToken.phone != '') {
-      AliHttp.isVip(useUserStore().GetUserToken.phone).then((res: any) => {
-        vip.value = res
-      })
-      clearInterval(intervalId)
-    }
-  }, 1000)
-
   resizeObserver.observe(document.getElementById('panfilelist')!)
 })
 
@@ -504,11 +477,6 @@ const openExternalLink = (targetUrl: string) => {
 </script>
 
 <template>
-  <div >
-    <a v-if='!vip && adsUrl != ""' id='imageLink' @click="openExternalLink(adsUrl)">
-      <img :src=adsImage alt="" width='1125' height='100' style='margin-bottom: 10px'>
-    </a>
-  </div>
   <div class='toppanbtns' style='height: 26px'>
     <ResDirTopPath />
     <div style='flex-grow: 1'></div>
@@ -691,7 +659,7 @@ const openExternalLink = (targetUrl: string) => {
     id='panfilelist'
     :class="'toppanlist' + (showDragUpload ? ' pandraging' : '') + (dragingRowItem ? ' draging' : '') + (rangIsSelecting ? ' ranging' : '')"
     tabindex='-1'
-    :style="{ height: adsUrl === '' || vip ? winStore.GetListHeight : winStore.GetListHeightWithAds }"
+    :style="{ height: winStore.GetListHeight }"
     @keydown.space.prevent='() => true'
     @drop='onPanDrop'
     @dragenter='onPanDragEnter'>
@@ -703,9 +671,9 @@ const openExternalLink = (targetUrl: string) => {
       ref='viewlist'
       :bordered='false'
       :split='false'
-      :max-height='adsUrl === "" || vip ? winStore.GetListHeightNumber : winStore.GetListHeightNumberWithAds'
+      :max-height='winStore.GetListHeightNumber'
       :virtual-list-props="{
-        height: adsUrl == '' || vip ? winStore.GetListHeightNumber : winStore.GetListHeightNumberWithAds,
+        height: winStore.GetListHeightNumber,
         fixedSize: true,
         estimatedSize: 50,
         threshold: 1,
@@ -822,9 +790,9 @@ const openExternalLink = (targetUrl: string) => {
       ref='viewlist'
       :bordered='false'
       :split='false'
-      :max-height='adsUrl === "" || vip ? winStore.GetListHeightNumber : winStore.GetListHeightNumberWithAds'
+      :max-height='winStore.GetListHeightNumber'
       :virtual-list-props="{
-        height: adsUrl == '' || vip ? winStore.GetListHeightNumber : winStore.GetListHeightNumberWithAds,
+        height: winStore.GetListHeightNumber,
         fixedSize: true,
         estimatedSize: 200,
         threshold: 1,
@@ -943,9 +911,9 @@ const openExternalLink = (targetUrl: string) => {
       ref='viewlist'
       :bordered='false'
       :split='false'
-      :max-height='adsUrl === "" || vip ? winStore.GetListHeightNumber : winStore.GetListHeightNumberWithAds'
+      :max-height='winStore.GetListHeightNumber'
       :virtual-list-props="{
-        height: adsUrl == '' || vip ? winStore.GetListHeightNumber : winStore.GetListHeightNumberWithAds,
+        height: winStore.GetListHeightNumber,
         fixedSize: true,
         estimatedSize: 260,
         threshold: 1,

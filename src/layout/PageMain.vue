@@ -23,8 +23,6 @@ import Down from '../down/index.vue'
 import Pan from '../pan/index.vue'
 import ResourcePan from '../resPan/index.vue'
 import Pic from '../pic/index.vue'
-import Movie from '../resource/movieIndex.vue'
-import VipInformPage from '../resource/vipInfo.vue'
 import UserInfo from '../user/UserInfo.vue'
 import UserLogin from '../user/UserLogin.vue'
 import ShutDown from '../setting/ShutDown.vue'
@@ -195,7 +193,6 @@ const handleCheckVer = () => {
           <a-menu-item key="down" title="Alt+4">传输</a-menu-item>
           <a-menu-item key="share" title="Alt+5">资源&分享</a-menu-item>
           <a-menu-item key="rss" title="Alt+6">插件</a-menu-item>
-          <a-menu-item key="movie" title="Alt+7">4K影视</a-menu-item>
         </a-menu>
 
         <div class="flexauto"></div>
@@ -226,8 +223,6 @@ const handleCheckVer = () => {
         <a-tab-pane key="share" title="5"><Share /></a-tab-pane>
         <a-tab-pane key="rss" title="6"><Rss /></a-tab-pane>
         <a-tab-pane key="setting" title="7"><Setting /></a-tab-pane>
-        <a-tab-pane v-if='appStore.isVip' key="movie" title="8"><Movie /></a-tab-pane>
-        <a-tab-pane v-if='!appStore.isVip' key="movie" title="8"><VipInformPage /></a-tab-pane>
       </a-tabs>
     </a-layout-content>
     <a-layout-footer id="xbyfoot" draggable="false">
