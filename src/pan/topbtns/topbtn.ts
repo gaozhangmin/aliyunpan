@@ -248,7 +248,7 @@ export async function topRestoreSelectedFile() {
 }
 
 
-export function menuCopySelectedFile(istree: boolean, copyby: string) {
+export function menuCopySelectedFile(istree: boolean, copyby: string, copyToRes=false) {
   const selectedData = PanDAL.GetPanSelectedData(istree)
   if (selectedData.isError) {
     message.error('复制移动操作失败 父文件夹错误')
@@ -292,31 +292,55 @@ export function menuCopySelectedFile(istree: boolean, copyby: string) {
     message.error('没有可以复制移动的文件')
     return
   }
-  modalSelectPanDir('backupPan', copyby, parent_file_id, async function (user_id: string, drive_id: string, dirID: string) {
-    if (!drive_id || !dirID) return
+  if (copyToRes) {
+    modalSelectPanDir('resourcePan', copyby, parent_file_id, async function (user_id: string, drive_id: string, dirID: string) {
+      if (!drive_id || !dirID) return
 
-    if (parent_file_id == dirID) {
-      message.error('不能移动复制到原位置！')
-      return
-    }
-
-    let successList: string[]
-    if (copyby == 'copy') {
-      successList = await AliFileCmd.ApiCopyBatch(user_id, drive_id, file_idList, drive_id, dirID)
-      PanDAL.aReLoadOneDirToRefreshTree(selectedData.user_id, selectedData.drive_id, dirID)
-      TreeStore.ClearDirSize(drive_id, [dirID])
-    } else {
-      successList = await AliFileCmd.ApiMoveBatch(user_id, drive_id, file_idList, drive_id, dirID)
-      if (istree) {
-        PanDAL.aReLoadOneDirToShow(selectedData.drive_id, selectedData.parentDirID, false)
+      let successList: string[]
+      if (copyby == 'copy') {
+        successList = await AliFileCmd.ApiCopyBatch(user_id, selectedData.drive_id, file_idList, drive_id, dirID)
         PanDAL.aReLoadOneDirToRefreshTree(selectedData.user_id, selectedData.drive_id, dirID)
+        TreeStore.ClearDirSize(drive_id, [dirID])
       } else {
-        usePanFileStore().mDeleteFiles(selectedData.dirID, successList, true)
-        PanDAL.aReLoadOneDirToRefreshTree(selectedData.user_id, selectedData.drive_id, dirID)
+        successList = await AliFileCmd.ApiMoveBatch(user_id, selectedData.drive_id, file_idList, drive_id, dirID)
+        if (istree) {
+          PanDAL.aReLoadOneDirToShow(selectedData.drive_id, selectedData.parentDirID, false)
+          PanDAL.aReLoadOneDirToRefreshTree(selectedData.user_id, selectedData.drive_id, dirID)
+        } else {
+          usePanFileStore().mDeleteFiles(selectedData.dirID, successList, true)
+          PanDAL.aReLoadOneDirToRefreshTree(selectedData.user_id, selectedData.drive_id, dirID)
+        }
+        TreeStore.ClearDirSize(drive_id, [dirID, ...selectedData.selectedParentKeys])
       }
-      TreeStore.ClearDirSize(drive_id, [dirID, ...selectedData.selectedParentKeys])
-    }
-  })
+    })
+  } else {
+    modalSelectPanDir('backupPan', copyby, parent_file_id, async function (user_id: string, drive_id: string, dirID: string) {
+      if (!drive_id || !dirID) return
+
+      if (parent_file_id == dirID) {
+        message.error('不能移动复制到原位置！')
+        return
+      }
+
+      let successList: string[]
+      if (copyby == 'copy') {
+        successList = await AliFileCmd.ApiCopyBatch(user_id, drive_id, file_idList, drive_id, dirID)
+        PanDAL.aReLoadOneDirToRefreshTree(selectedData.user_id, selectedData.drive_id, dirID)
+        TreeStore.ClearDirSize(drive_id, [dirID])
+      } else {
+        successList = await AliFileCmd.ApiMoveBatch(user_id, drive_id, file_idList, drive_id, dirID)
+        if (istree) {
+          PanDAL.aReLoadOneDirToShow(selectedData.drive_id, selectedData.parentDirID, false)
+          PanDAL.aReLoadOneDirToRefreshTree(selectedData.user_id, selectedData.drive_id, dirID)
+        } else {
+          usePanFileStore().mDeleteFiles(selectedData.dirID, successList, true)
+          PanDAL.aReLoadOneDirToRefreshTree(selectedData.user_id, selectedData.drive_id, dirID)
+        }
+        TreeStore.ClearDirSize(drive_id, [dirID, ...selectedData.selectedParentKeys])
+      }
+    })
+  }
+
 }
 
 

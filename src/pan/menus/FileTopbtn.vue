@@ -76,6 +76,14 @@ export default defineComponent({
           <template #icon> <i class="iconfont iconcopy" /> </template>
           <template #default>复制到...</template>
         </a-doption>
+        <a-doption @click="() => menuCopySelectedFile(istree, 'cut', true)">
+          <template #icon> <i class="iconfont iconscissor" /> </template>
+          <template #default>移动到资源盘</template>
+        </a-doption>
+        <a-doption @click="() => menuCopySelectedFile(istree, 'copy', true)">
+          <template #icon> <i class="iconfont iconcopy" /> </template>
+          <template #default>复制到资源盘</template>
+        </a-doption>
         <a-doption title="Ctrl+P" @click="() => modalShuXing('backupPan', istree, isselectedmulti)">
           <template #icon> <i class="iconfont iconshuxing" /> </template>
           <template #default>属性</template>

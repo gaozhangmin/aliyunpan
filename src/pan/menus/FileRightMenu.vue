@@ -93,6 +93,14 @@ export default defineComponent({
             <template #icon> <i class="iconfont iconcopy" /> </template>
             <template #default>复制到...</template>
           </a-doption>
+          <a-doption @click="() => menuCopySelectedFile(istree, 'cut', true)">
+            <template #icon> <i class="iconfont iconscissor" /> </template>
+            <template #default>移动到资源盘</template>
+          </a-doption>
+          <a-doption @click="() => menuCopySelectedFile(istree, 'copy', true)">
+            <template #icon> <i class="iconfont iconcopy" /> </template>
+            <template #default>复制到资源盘</template>
+          </a-doption>
 <!--          <a-doption class="danger" @click="() => menuTrashSelectFile(istree, false)">-->
 <!--            <template #icon> <i class="iconfont icondelete" /> </template>-->
 <!--            <template #default>回收站</template>-->
