@@ -74,8 +74,8 @@ export default defineComponent({
             if (msg.indexOf('bizExt') > 0) {
               const qrCodeFetchdata = {
                   width: 350,
-                  client_secret: 'f33ca6d0287f46369326df8bec30b5f4',
-                  client_id: 'df43e22f022d4c04b6e29964f3b8b46d',
+                  client_secret: '',
+                  client_id: '',
                   scopes: ['user:base', 'file:all:read', 'file:all:write'],
                   height: 350
               }
