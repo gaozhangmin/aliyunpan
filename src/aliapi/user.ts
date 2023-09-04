@@ -58,8 +58,8 @@ export default class AliUser {
     const postData = {
       refresh_token: token.refresh_token_v2,
       grant_type: 'refresh_token',
-      client_secret: 'f33ca6d0287f46369326df8bec30b5f4',
-      client_id: 'df43e22f022d4c04b6e29964f3b8b46d'
+      client_secret: '',
+      client_id: ''
     }
     return await AliHttp.Post(Config.accessTokenUrl, postData, '', '')
   }
