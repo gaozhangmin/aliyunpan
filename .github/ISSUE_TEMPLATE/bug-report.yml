@@ -1,0 +1,86 @@
+name: Bug report
+description: Problems with the software
+title: '[Bug] {{请输入标题，不要留空 - Please enter a title, do not leave it blank.}}'
+labels: ['bug']
+body:
+    - type: markdown
+      attributes:
+          value: |
+            **非常感谢您的反馈！Thank you very much for your feedback!**
+
+            有关讨论、建议或者咨询的内容请去往[讨论区](https://github.com/gaozhangmin/aliyunpan/discussions)。
+
+            For suggestions or help, please consider using [Github Discussion](https://github.com/gaozhangmin/aliyunpan/discussions) instead.
+
+    - type: checkboxes
+      attributes:
+          label: Please search before asking
+          description: |
+            辛苦提 Bug 前，检索一下 [问题](https://github.com/gaozhangmin/aliyunpan/issues?q=) 列表是否已经存在类似问题。麻烦提供系统版本、录屏或者截图、复现步骤，有助于更好的解决问题。
+
+            非 Bug 相关，烦请移步 [讨论区](https://github.com/gaozhangmin/aliyunpan/discussions) 找寻有关讨论。
+
+            Please search [issues](https://github.com/gaozhangmin/aliyunpan/issues) to check if your issue has already been reported.
+            
+            Not related to bugs, please go to the [discussion area](https://github.com/gaozhangmin/aliyunpan/discussions) for relevant discussions.
+
+          options:
+              - label: >
+                    I searched in the [issues](https://github.com/gaozhangmin/aliyunpan/issues) and found nothing similar.
+                required: true
+    - type: checkboxes
+      attributes:
+          label: Please read README
+          description: |
+            辛苦提 Bug 前，请仔细阅读一下 README 中的 [Troubleshooting](https://github.com/gaozhangmin/aliyunpan/tree/main#troubleshooting) 是否已经给出相关解决方案
+            
+            Before reporting bugs (especially for issues such as missing icons in the desktop application, permission pop-ups, and damaged report files), please carefully read the [Troubleshooting](https://github.com/gaozhangmin/aliyunpan/tree/main#troubleshooting) section in README to see if relevant solutions have already been provided.
+            
+          options:
+              - label: I have read the troubleshooting section in the README in detail.
+                required: true
+
+    - type: input
+      attributes:
+          label: 使用的版本
+          description: >
+            请提供您正在使用的 小白羊 的版本。Please provide the version of 小白羊 you are using. For example, `3.11.7`.
+      validations:
+          required: true
+    - type: input
+      attributes:
+          label: 系统 System
+          description: >
+            请提供您正在使用的系统。Please provide the version of the System you are using. For example, `macOS 11.2.3`.
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: 复现步骤 Reproduce step
+          description: >
+            请提供完整且简明的复现步骤，以方便及时定位并解决问题。Please provide complete and concise reproduction steps to facilitate timely identification and resolution of the issue.
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: 你看到了什么错误？What errors do you see?
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: 你期望看到什么？What did you expect to see?
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: 还有其他的内容吗？Anything else?
+    - type: checkboxes
+      attributes:
+          label: 你是否愿意提交一份 PR 来修改这个错误？Are you willing to submit a PR?
+          description: >
+            我们期待开发人员和用户的帮助，以解决在 小白羊 中发现的任何问题。 如果您愿意通过提交 PR 来解决此问题，请勾选。We eagerly anticipate developers' and users' support and collaboration in resolving any issues found in 小白羊. If you are willing to offer a solution by submitting a PR to fix this matter, kindly mark the checkbox provided.
+          options:
+              - label: 我愿意提供 PR! I'm willing to submit a PR!
+    - type: markdown
+      attributes:
+          value: '非常感谢您的反馈！Thank you very much for your feedback!'
