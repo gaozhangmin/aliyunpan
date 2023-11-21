@@ -12,7 +12,8 @@
     { "from": "./public/images/qrcode_1280.jpg", "to": "./images/qrcode_1280.jpg"},
     { "from": "./static/images/icon_24x24.png", "to": "./images/icon_24x24.png"},
     { "from": "./static/images/icon_64x64.png", "to": "./images/icon_64x64.png"},
-    { "from": "./static/images/icon_256x256.png", "to": "./images/icon_256x256.png"}
+    { "from": "./static/images/icon_256x256.png", "to": "./images/icon_256x256.png"},
+    {"from": "./static/images/icon_mac_20x20@2x.png", "to": "./images/icon_mac_20x20@2x.png"}
   ],
   "mac": {
     "icon": "./static/images/icon.icns",

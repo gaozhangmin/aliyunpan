@@ -15,7 +15,7 @@ export function getAsarPath(fileName: string) {
     const baseNew = path.join(basePath, '..', 'app.new')
     const baseSave = path.join(basePath, '..', 'app.asar')
     if (!NewCopyed) {
-      // 热更新asar
+      // 热更新 asar
       if (existsSync(baseNew)) {
         try {
           console.log('copyFileSync', baseNew, '-->', baseSave)
@@ -43,8 +43,11 @@ export function getStaticPath(fileName: string) {
   let basePath = path.resolve(app.getAppPath(), '..')
   if (is.dev()) basePath = path.resolve(app.getAppPath(), './static')
   if (fileName.startsWith('icon')) {
-    if (fileName == 'icon_256x256.ico' && !is.windows()) {
+    if (fileName == 'icon_256x256.ico' && is.linux()) {
       fileName = path.join('images', 'icon_24x24.png')
+      console.log('getStaticPath', fileName)
+    } else if (fileName == 'icon_256x256.ico' && is.macOS()) {
+      fileName = path.join('images', 'icon_mac_20x20@2x.png')
     } else {
       fileName = path.join('images', fileName)
     }
