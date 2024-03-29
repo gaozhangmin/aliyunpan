@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/gaozhangmin/staticResource/blob/master/images/icon.png" alt="NebulaGraph Data Intelligence Suite(ngdi)">
+  <img src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/95fb537d-411d-41aa-8f73-9dc8adab760e" alt="NebulaGraph Data Intelligence Suite(ngdi)">
 </p>
 <p align="center">
     <br> English | <a href="README-CN.md">中文</a>
@@ -44,7 +44,6 @@
 
 </p>
 
-
 [![](https://img.shields.io/badge/-%E5%8A%9F%E8%83%BD-blue)](#功能-) [![](https://img.shields.io/badge/-%E7%95%8C%E9%9D%A2-blue)](#界面-) [![](https://img.shields.io/badge/-%E5%AE%89%E8%A3%85-blue)](#安装-) [![](https://img.shields.io/badge/-%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7-blue)](#小白羊公众号-) [![](https://img.shields.io/badge/-%E4%BA%A4%E6%B5%81%E7%A4%BE%E5%8C%BA-blue)](#交流社区-) [![](https://img.shields.io/badge/-%E9%B8%A3%E8%B0%A2-blue)](#鸣谢-) [![](https://img.shields.io/badge/-%E5%A3%B0%E6%98%8E-blue)](#免责声明-)
 
 
@@ -82,8 +81,8 @@
 </a>
 
 # 界面 [![](https://img.shields.io/badge/-%E7%95%8C%E9%9D%A2-blue)](#界面-)
-<img src="https://github.com/gaozhangmin/staticResource/blob/master/images/main_window.png" width="270"><img src="https://github.com/gaozhangmin/staticResource/blob/master/images/download_page.png" width="270"><img src="https://github.com/gaozhangmin/staticResource/blob/master/images/movie_page.png" width="270">
-<img src="https://github.com/gaozhangmin/staticResource/blob/master/images/plugin_page.png" width="270"><img src="https://github.com/gaozhangmin/staticResource/blob/master/images/settings_page.png" width="270"><img src="https://github.com/gaozhangmin/staticResource/blob/master/images/share_page.png" width="270">
+<img src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/24d892b8-f36e-4eaf-a277-e105e8dae8f1" width="270"><img src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/e789e557-f56f-41c5-80f9-1fad20b2ae1a" width="270"><img src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/0b40bf83-3e59-4f15-bd01-76b9a14ec86c" width="270">
+<img src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/8684a964-7682-4d62-86cb-191382eb9170" width="270"><img src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/8e10cad3-6252-4953-9e92-98175be3ddb9" width="270"><img src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/4a3d6a68-5fab-48f1-8146-1d47e9f633fd" width="270"><img src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/b5c3be0b-1038-4118-8a29-fa6e5d833148" width="270"><img src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/25b5ff29-203a-451f-97fe-31a13c4c98e2" width="270"><img src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/f32c0733-23ac-4099-9de6-5e94c20af48a" width="270">
 <a href="#readme">
 <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
 </a>
