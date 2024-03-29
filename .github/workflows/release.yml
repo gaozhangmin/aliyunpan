@@ -1,0 +1,101 @@
+name: Build Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'package.json'
+
+jobs:
+  release:
+    name: Build Release
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ windows-latest, macos-latest, ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Git repository
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          registry-url: https://registry.npmjs.org/
+
+      - uses: pnpm/action-setup@v3
+        name: Install pnpm
+        id: pnpm-install
+        with:
+          version: 8
+          run_install: false
+
+      - name: Get Pnpm Store Directory
+        shell: bash
+        run: |
+          echo "PNPM_STORE_PATH=$(pnpm store path)" >> $GITHUB_ENV
+
+      - name: Get Electron Store Directory
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            echo "ELECTRON_STORE_PATH=$LOCALAPPDATA\\electron\\cache" >> $GITHUB_ENV
+            echo "ELECTRON_BUILDER_STORE_PATH=$LOCALAPPDATA\\electron-builder\\cache" >> $GITHUB_ENV
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            echo "ELECTRON_STORE_PATH=$HOME/Library/Caches/electron" >> $GITHUB_ENV
+          else
+            echo "ELECTRON_STORE_PATH=$HOME/.cache/electron" >> $GITHUB_ENV
+            echo "ELECTRON_BUILDER_STORE_PATH=$HOME/.cache/electron-builder" >> $GITHUB_ENV
+          fi
+
+      - name: Setup Pnpm Cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Setup Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.ELECTRON_STORE_PATH }}
+          key: ${{ runner.os }}-electron-cache-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-cache-
+
+      - name: Setup Cache Electron Builder
+        uses: actions/cache@v4
+        if: matrix.os != 'macos-latest'
+        with:
+          path: ${{ env.ELECTRON_BUILDER_STORE_PATH }}
+          key: ${{ runner.os }}-electron-builder-cache-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-builder-cache-
+
+      - name: Install Dependencies
+        run: |
+          pnpm install
+
+      - name: Install Lib For Pacman Build
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get install libarchive-tools
+
+      - name: Make Aria2c Executable
+        if: matrix.os != 'windows-latest'
+        run: |
+          chmod -R 777 ./static/engine/
+
+      - name: Build Electron App
+        uses: paneron/action-electron-builder@v1.8.1
+        with:
+          package_manager: pnpm
+          release: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
