@@ -49,7 +49,7 @@
 
 
 # 功能 [![](https://img.shields.io/badge/-%E5%8A%9F%E8%83%BD-blue)](#功能-)
-1.根据阿里云盘Open平台api开发的网盘客户端，支持win7-11，macOS，linux <br>
+1.基于阿里云盘Open平台api开发的网盘客户端，支持win7-11，macOS，linux <br>
 
 2.支持同时登录多个账号管理。 <br>
 
@@ -68,6 +68,14 @@
 9.能够管理数万文件夹和数万文件，并一次性列出文件夹中的全部文件。<br>
 
 10.支持一次性上传/下载百万级的文件/文件夹。<br>
+
+11. 支持M3u8下载
+    
+12. 影院模式支持自动刮削视频信息。
+    
+13. 支持展示视频观看进度
+
+更多功能见小白羊官网：https://xbysite.pages.dev/
 
 <a href="#readme">
     <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
@@ -185,7 +193,7 @@
 
 4.在使用本程序之前，你应了解并承担相应的风险，包括但不限于账号被ban，下载限速等，与本程序无关；
 
-5.如有侵权，请通过邮件与我联系，会及时处理。
+5.如有侵权，请通过邮件zhangao456@proton.me与我联系，会及时处理。
 <a href="#readme">
 <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
 </a>
