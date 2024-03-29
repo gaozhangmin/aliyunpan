@@ -10,6 +10,7 @@ import { IAliFileItem, IAliGetFileModel } from './alimodels'
 import getFileIcon from './fileicon'
 import { DecodeEncName, GetDriveID } from './utils'
 import DB from '../utils/db'
+import Config from '../config'
 
 
 export interface IAliFileResp {
@@ -305,7 +306,7 @@ export default class AliDirFileList {
               fileItem.minfo.media_type = 'tv'
             }
           } else {
-            const urlTv = `${useServerStore().proxyUrl}/3/tv/${tmdb_id}?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN`
+            const urlTv = `${Config.tmdbProxyUrl}/3/tv/${tmdb_id}?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN`
             const resp = await AliHttp.GetWithOutUserId(urlTv)
             if (AliHttp.IsSuccess(resp.code)) {
               fileItem.minfo = resp.body
@@ -327,7 +328,7 @@ export default class AliDirFileList {
               fileItem.minfo.media_type = 'movie'
             }
           } else {
-            const url = `${useServerStore().proxyUrl}/3/movie/${tmdb_id}?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN`
+            const url = `${Config.tmdbProxyUrl}/3/movie/${tmdb_id}?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN`
             const resp = await AliHttp.GetWithOutUserId(url)
             if (AliHttp.IsSuccess(resp.code)) {
               fileItem.minfo = resp.body
@@ -352,7 +353,7 @@ export default class AliDirFileList {
           if (searchName.toLowerCase() == '4k'
             || searchName == '字幕' || searchName == 'test'
             || searchName.toLowerCase().includes('season')) continue
-          const url = `${useServerStore().proxyUrl}/3/search/multi?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN&query=${searchName}&page=1&include_adult=false`
+          const url = `${Config.tmdbProxyUrl}/3/search/multi?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN&query=${searchName}&page=1&include_adult=false`
           const resp = await AliHttp.GetWithOutUserId(url);
           if (AliHttp.IsSuccess(resp.code) && resp.body.results &&  resp.body.results.length > 0) {
             fileItem.minfo = resp.body.results[0]
@@ -376,7 +377,7 @@ export default class AliDirFileList {
         //       fileItem.season_poster = season_poster
         //       fileItem.episode_name = episode_name
         //     } else {
-        //       const urlSeason = `${useServerStore().proxyUrl}/3/tv/${fileItem.minfo.id}/season/${fileItem.season_num}?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN`
+        //       const urlSeason = `${Config.tmdbProxyUrl}/3/tv/${fileItem.minfo.id}/season/${fileItem.season_num}?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN`
         //       const resp = await AliHttp.GetWithOutUserId(urlSeason)
         //       if (AliHttp.IsSuccess(resp.code)) {
         //         fileItem.season_poster = resp.body.poster_path
@@ -399,7 +400,7 @@ export default class AliDirFileList {
         //     if (season_poster) {
         //       fileItem.season_poster = season_poster
         //     } else {
-        //       const tvApi = `${useServerStore().proxyUrl}/3/tv/${fileItem.minfo.id}?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN`
+        //       const tvApi = `${Config.tmdbProxyUrl}/3/tv/${fileItem.minfo.id}?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN`
         //       const tvResp = await AliHttp.GetWithOutUserId(tvApi)
         //       if (AliHttp.IsSuccess(tvResp.code) && tvResp.body.seasons && tvResp.body.seasons.length > 0) {
         //         // fileItem.tvSeason = tvResp.body.seasons

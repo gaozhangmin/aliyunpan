@@ -11,6 +11,7 @@ import { localPwd } from '../utils/aria2c'
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import AliUser from '../aliapi/user'
+import Config from '../config'
 
 const settingStore = useSettingStore()
 const qrCodeLoading = ref(false)
@@ -131,8 +132,8 @@ const refreshStatus = () => {
 }
 
 const refreshQrCode = async () => {
-  let client_id = ''
-  let client_secret = ''
+  let client_id = Config.client_id
+  let client_secret = Config.client_secret
   const { uiEnableOpenApiType, uiOpenApiClientId, uiOpenApiClientSecret } = storeToRefs(settingStore)
   if (uiEnableOpenApiType.value === 'custom') {
     if (!uiOpenApiClientId.value || !uiOpenApiClientSecret.value) {
@@ -141,9 +142,6 @@ const refreshQrCode = async () => {
     }
     client_id = uiOpenApiClientId.value
     client_secret = uiOpenApiClientSecret.value
-  } else {
-    client_id = ''
-    client_secret = ''
   }
   qrCodeLoading.value = true
   const token = await UserDAL.GetUserTokenFromDB(useUserStore().user_id)

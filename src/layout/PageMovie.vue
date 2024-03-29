@@ -7,6 +7,7 @@ import { humanTime } from '../utils/format'
 import DB from '../utils/db'
 import { menuOpenFile } from '../utils/openfile'
 import { useModalStore, useServerStore } from '../store'
+import Config from '../config'
 
 
 type Item = IAliGetFileModel
@@ -402,7 +403,7 @@ export default defineComponent({
           castdata.value = allCast.filter(cast => cast.profile_path !== null && cast.profile_path !== undefined)
         }
       } else {
-        const url = `${useServerStore().proxyUrl}/3/movie/${movieid.value}?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN&append_to_response=credits`
+        const url = `${Config.tmdbProxyUrl}/3/movie/${movieid.value}?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN&append_to_response=credits`
         const resp = await AliHttp.GetWithOutUserId(url)
         if (AliHttp.IsSuccess(resp.code)) {
           moviedet.value = resp.body
@@ -442,7 +443,7 @@ export default defineComponent({
         // @ts-ignore
         moviedet.value = movieFile.value.minfo
       } else {
-        const urlTv = `${useServerStore().proxyUrl}/3/tv/${movieid.value}?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN`
+        const urlTv = `${Config.tmdbProxyUrl}/3/tv/${movieid.value}?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN`
         const resp = await AliHttp.GetWithOutUserId(urlTv)
         if (AliHttp.IsSuccess(resp.code)) {
           tvSeriesMap.set(movieid.value, resp.body)
@@ -473,7 +474,7 @@ export default defineComponent({
           tvepisodedet.value.season_backdrop = moviedet.value.backdrop_path
         }
       } else {
-        const urlSeason = `${useServerStore().proxyUrl}/3/tv/${movieid.value}/season/${tvSeasonNum.value}?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN&append_to_response=credits`
+        const urlSeason = `${Config.tmdbProxyUrl}/3/tv/${movieid.value}/season/${tvSeasonNum.value}?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN&append_to_response=credits`
         const resp = await AliHttp.GetWithOutUserId(urlSeason)
         if (AliHttp.IsSuccess(resp.code)) {
           const allCast = resp.body.credits.cast
@@ -525,7 +526,7 @@ export default defineComponent({
         crewdata.value = allCrew.filter(crew => crew.profile_path !== null && crew.profile_path !== undefined)
         loader.value = false
       } else {
-        const url = `${useServerStore().proxyUrl}/3/tv/${movieid.value}/season/${tvSeasonNum.value}/credits?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN`
+        const url = `${Config.tmdbProxyUrl}/3/tv/${movieid.value}/season/${tvSeasonNum.value}/credits?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN`
         const resp = await AliHttp.GetWithOutUserId(url)
         if (AliHttp.IsSuccess(resp.code)) {
           castMap.set(movieid.value + tvSeasonNum.value, resp.body)
@@ -566,7 +567,7 @@ export default defineComponent({
         // @ts-ignore
         crewdata.value = allCrew.filter(crew => crew.profile_path !== null && crew.profile_path !== undefined)
       } else {
-        const url = `${useServerStore().proxyUrl}/3/movie/${movieid.value}/credits?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN`
+        const url = `${Config.tmdbProxyUrl}/3/movie/${movieid.value}/credits?api_key=87d8eb3d0895eaf37c2929fd5d9f7cce&language=zh-CN`
         const resp = await AliHttp.GetWithOutUserId(url)
         if (AliHttp.IsSuccess(resp.code)) {
           castMap.set(movieid.value, resp.body)
@@ -916,7 +917,6 @@ export default defineComponent({
   width: 100%;
   font-size: 10px;
   line-height: 18px;
-  //padding: 0 8px;
   position: absolute;
   left: 0;
   right:0;

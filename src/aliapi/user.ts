@@ -8,6 +8,7 @@ import { IAliUserDriveCapacity, IAliUserDriveDetails } from './models'
 import { GetSignature } from './utils'
 import getUuid from 'uuid-by-string'
 import { useSettingStore } from '../store'
+import Config from '../config'
 
 export const TokenReTimeMap = new Map<string, number>()
 export const TokenLockMap = new Map<string, number>()
@@ -147,8 +148,8 @@ export default class AliUser {
     }
     let { uiEnableOpenApiType, uiOpenApiClientId, uiOpenApiClientSecret } = useSettingStore()
     let url = 'https://openapi.alipan.com/oauth/access_token'
-    let client_id = ''
-    let client_secret = ''
+    let client_id = Config.client_id
+    let client_secret = Config.client_secret
     if (uiEnableOpenApiType === 'custom') {
       client_id = uiOpenApiClientId
       client_secret = uiOpenApiClientSecret

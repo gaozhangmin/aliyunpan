@@ -91,8 +91,8 @@ const handleOpen = () => {
 
 const handleClose = () => {
   loginLoading.value = true
-  client_id.value = ''
-  client_secret.value = ''
+  client_id.value = Config.client_id
+  client_secret.value = Config.client_secret
   clearInterval(intervalId.value)
   refreshStepTips('process', 1)
   refreshQrCodeStatus()
@@ -164,8 +164,8 @@ const loginStepFirst = async (msg: string) => {
         client_id.value = settingStore.uiOpenApiClientId.trim()
         client_secret.value = settingStore.uiOpenApiClientSecret.trim()
       } else {
-        client_id.value = ''
-        client_secret.value = ''
+        client_id.value = Config.client_id
+        client_secret.value = Config.client_secret
       }
       refreshStepTips('process', 2)
       loginStepSecond(token)
@@ -259,8 +259,8 @@ const handlerChangeType = () => {
       }
     })
   } else {
-    client_id.value = ''
-    client_secret.value = ''
+    client_id.value = Config.client_id
+    client_secret.value = Config.client_secret
     handleRefreshQrCodeUrl()
   }
 }
