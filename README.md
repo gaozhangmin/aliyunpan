@@ -74,8 +74,15 @@
 </a>
 
 # 界面 [![](https://img.shields.io/badge/-%E7%95%8C%E9%9D%A2-blue)](#界面-)
-<img src="https://github.com/gaozhangmin/staticResource/blob/master/images/main_window.png" width="270"><img src="https://github.com/gaozhangmin/staticResource/blob/master/images/download_page.png" width="270"><img src="https://github.com/gaozhangmin/staticResource/blob/master/images/movie_page.png" width="270">
-<img src="https://github.com/gaozhangmin/staticResource/blob/master/images/plugin_page.png" width="270"><img src="https://github.com/gaozhangmin/staticResource/blob/master/images/settings_page.png" width="270"><img src="https://github.com/gaozhangmin/staticResource/blob/master/images/share_page.png" width="270">
+![main_window](https://github.com/gaozhangmin/aliyunpan/assets/9278488/3f71ccbc-9276-47a9-af04-fda115ee43ca)
+![movie_detail](https://github.com/gaozhangmin/aliyunpan/assets/9278488/d6f21862-64fa-4fc7-b199-78118d0d5a28)
+![movie_detail1](https://github.com/gaozhangmin/aliyunpan/assets/9278488/aa23b6e1-799e-4c0d-bc9c-01d09cfd7841)
+![movie_page](https://github.com/gaozhangmin/aliyunpan/assets/9278488/3dc2c362-c17e-4664-a42d-4b8deda2a5a3)
+![plugin](https://github.com/gaozhangmin/aliyunpan/assets/9278488/d29653f8-2c0f-4a2d-aa8f-76d63e057f7f)
+![resource](https://github.com/gaozhangmin/aliyunpan/assets/9278488/903d55c7-acfa-4262-a0ef-190d76a19d79)
+![settings](https://github.com/gaozhangmin/aliyunpan/assets/9278488/3b02a817-3bb6-42ae-8079-2d5270b0ace2)
+![transfer](https://github.com/gaozhangmin/aliyunpan/assets/9278488/7b866b4b-e57c-4591-a311-7b42f6b86d7b)
+
 <a href="#readme">
 <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
 </a>
@@ -139,8 +146,9 @@
 </a>
 
 # 小白羊公众号 [![](https://img.shields.io/badge/-%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7-blue)](#小白羊公众号-)
+
 <p align="center">
-  <img height="360" src="https://github.com/gaozhangmin/staticResource/blob/master/images/qrcode_search_white.png" />
+  <img height="360" src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/7321f780-4176-470f-9602-a42a1a0131fb" />
 </p>
 <a href="#readme">
     <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
@@ -169,9 +177,10 @@
 
 
 # 鸣谢 [![](https://img.shields.io/badge/-%E9%B8%A3%E8%B0%A2-blue)](#鸣谢-)
-本项目基于 https://github.com/liupan1890/aliyunpan 仓库继续开发。
+1.本项目基于 https://github.com/liupan1890/aliyunpan 仓库继续开发。
+2.加密，WebDav，视频播放部分功能代码从 https://github.com/odom/aliyunpan 项目移植过来。
 
-感谢作者 [liupan1890](https://github.com/liupan1890)
+感谢作者 [liupan1890](https://github.com/liupan1890) [odom](https://github.com/odom)
 <a href="#readme">
 <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
 </a>
