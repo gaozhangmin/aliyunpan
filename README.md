@@ -74,8 +74,11 @@
 </a>
 
 # 界面 [![](https://img.shields.io/badge/-%E7%95%8C%E9%9D%A2-blue)](#界面-)
-<img src="https://github.com/gaozhangmin/staticResource/blob/master/images/main_window.png" width="270"><img src="https://github.com/gaozhangmin/staticResource/blob/master/images/download_page.png" width="270"><img src="https://github.com/gaozhangmin/staticResource/blob/master/images/movie_page.png" width="270">
-<img src="https://github.com/gaozhangmin/staticResource/blob/master/images/plugin_page.png" width="270"><img src="https://github.com/gaozhangmin/staticResource/blob/master/images/settings_page.png" width="270"><img src="https://github.com/gaozhangmin/staticResource/blob/master/images/share_page.png" width="270">
+![main_window](https://github.com/gaozhangmin/aliyunpan/assets/9278488/b01d09ec-9b9b-49d8-8281-aded4dbbbc3e)
+![movie_detail](https://github.com/gaozhangmin/aliyunpan/assets/9278488/f7a8d8d2-b132-4344-a193-56145199553c)
+![movie_detail1](https://github.com/gaozhangmin/aliyunpan/assets/9278488/c9aa112a-c7a2-4ac0-97c9-d0c38b4b67bf)
+![movie_page](https://github.com/gaozhangmin/aliyunpan/assets/9278488/b4bbb604-fdbd-4cf5-b191-e6a33c28eeaf)
+![album](https://github.com/gaozhangmin/aliyunpan/assets/9278488/1fe490ad-f6ee-4193-b4b6-ccb4ccb740c1)
 <a href="#readme">
 <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
 </a>
@@ -140,7 +143,7 @@
 
 # 小白羊公众号 [![](https://img.shields.io/badge/-%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7-blue)](#小白羊公众号-)
 <p align="center">
-  <img height="360" src="https://github.com/gaozhangmin/staticResource/blob/master/images/qrcode_search_white.png" />
+  <img height="360" src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/135f4ff3-4817-4306-9a1b-669e90384702" />
 </p>
 <a href="#readme">
     <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
@@ -161,11 +164,6 @@
 [//]: # (    <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">)
 
 [//]: # (</a>)
-
-# 交流社区 [![](https://img.shields.io/badge/-%E4%BA%A4%E6%B5%81%E7%A4%BE%E5%8C%BA-blue)](#交流社区-)
-
-#### Telegram
-[![Telegram-group](https://img.shields.io/badge/Telegram-%E7%BE%A4%E7%BB%84-blue)](https://t.me/+wjdFeQ7ZNNE1NmM1)
 
 
 # 鸣谢 [![](https://img.shields.io/badge/-%E9%B8%A3%E8%B0%A2-blue)](#鸣谢-)
