@@ -143,7 +143,7 @@
 
 # 小白羊公众号 [![](https://img.shields.io/badge/-%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7-blue)](#小白羊公众号-)
 <p align="center">
-  <img height="360" src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/135f4ff3-4817-4306-9a1b-669e90384702" />
+  <img height="360" src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/b47864c8-18a0-4f6d-97c5-9b6c47e54e6c" />
 </p>
 <a href="#readme">
     <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
