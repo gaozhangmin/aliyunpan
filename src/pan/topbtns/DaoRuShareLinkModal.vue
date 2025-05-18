@@ -132,7 +132,7 @@ export default defineComponent({
       <br />
     </div>
     <div class="modalfoot">
-      <a-button v-if="false" type="outline" size="small" @click="handleMulti">批量导入</a-button>
+      <a-button type="outline" size="small" @click="handleMulti">批量导入</a-button>
       <div style="flex-grow: 1"></div>
       <a-button v-if="!okLoading" type="outline" size="small" @click="handleHide">取消</a-button>
       <a-button type="primary" size="small" :loading="okLoading" @click="handleOK">导入</a-button>
