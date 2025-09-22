@@ -1,0 +1,14 @@
+node_modules
+.DS_Store
+dist*
+*.local
+.debug.env
+
+tmp
+**/.tmp
+release
+
+.idea
+yarn.lock
+localVersion
+
