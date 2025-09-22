@@ -1,0 +1,84 @@
+{
+  "appId": "com.alixby.app",
+  "productName": "阿里云盘小白羊",
+  "copyright": "copyright ©2023 gaozhangmin",
+  "asar": true,
+  "compression": "maximum",
+  "directories": { "output": "release" },
+  "files": [ "dist" ],
+  "extraResources": [
+    { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
+    { "from": "./static/crx", "to": "./crx"}
+  ],
+  "mac": {
+    "icon": "./static/images/icon.icns",
+    "type": "distribution",
+    "artifactName": "alixby-${version}-mac-${arch}.${ext}",
+    "darkModeSupport": true,
+    "hardenedRuntime": true,
+    "category": "public.app-category.utilities",
+    "extraResources": [
+      { "from": "./static/images/icon.icns", "to": "./images/icon.icns"},
+      { "from": "./static/images/icon_30x30.png", "to": "./images/icon_30x30.png"},
+      { "from": "./static/engine/darwin/${arch}", "to": "./engine"}
+    ],
+    "target": [
+      { "target": "dmg", "arch": [ "x64", "arm64" ] },
+      { "target": "zip", "arch": [ "x64", "arm64" ] }
+    ]
+  },
+  "linux": {
+    "icon": "./static/images/icon_256x256.png",
+    "category": "Network",
+    "artifactName": "alixby-${version}-linux-${arch}.${ext}",
+    "extraResources": [
+      { "from": "./static/images/icon_30x30.png", "to": "./images/icon_30x30.png"},
+      { "from": "./static/images/icon_64x64.png", "to": "./images/icon_64x64.png"},
+      { "from": "./static/images/icon_256x256.png", "to": "./images/icon_256x256.png"},
+      { "from": "./static/engine/linux/${arch}", "to": "./engine"}
+    ],
+    "target": [
+      { "target": "AppImage", "arch": [  "x64", "arm64", "armv7l" ] },
+      { "target": "deb", "arch": [ "x64",  "arm64", "armv7l" ] },
+      { "target": "pacman", "arch": [ "x64", "arm64", "armv7l" ] },
+      { "target": "zip", "arch": [ "x64", "arm64", "armv7l" ] }
+    ]
+  },
+  "win": {
+    "icon": "./static/images/icon_256x256.ico",
+    "artifactName": "alixby-${version}-win-${arch}.${ext}",
+    "requestedExecutionLevel": "asInvoker",
+    "extraResources": [
+      { "from": "./static/images/icon_64x64.png", "to": "./images/icon_64x64.png"},
+      { "from": "./static/images/icon_256x256.ico", "to": "./images/icon_256x256.ico"},
+      { "from": "./static/engine/win32/${arch}", "to": "./engine"}
+    ],
+    "target": [
+      { "target": "nsis", "arch": [ "x64", "ia32", "arm64" ] },
+      { "target": "zip", "arch": [ "x64", "ia32", "arm64" ] }
+    ]
+  },
+  "dmg": {
+    "window": { "width": 540, "height": 380 },
+    "contents": [
+      { "x": 410, "y": 230, "type": "link", "path": "/Applications" },
+      { "x": 130, "y": 230, "type": "file" }
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": true,
+    "allowElevation": true,
+    "allowToChangeInstallationDirectory": true,
+    "deleteAppDataOnUninstall": false
+  },
+  "publish": [
+    {
+      "owner": "gaozhangmin",
+      "repo": "aliyunpan",
+      "provider": "github",
+      "publishAutoUpdate": false,
+      "releaseType": "prerelease"
+    }
+  ]
+}

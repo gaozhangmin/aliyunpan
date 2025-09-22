@@ -1,0 +1,53 @@
+name: BUG提交 / BUG Report
+description: Report bugs to developers
+labels: ["BUG"]
+body:
+  - type: checkboxes
+    attributes:
+      label: 确认问题 / Assignments
+      description: 提交issue请确保完成以下前提，否则该issue可能被忽略，**不解决小白问题（自行搜索解决）**
+      options:
+        - label: 不存在相似或相关的issue（**搜索以前issue**） / No similar or related issues
+          required: true
+        - label: 不存在相似或相关的**Wiki/更新日志**问题说明 / No similar or related wiki
+          required: true
+        - label: 最新版本是否存在此问题 / Latest app does not work
+          required: false
+        - label: 旧版本是否存在此问题 / Oldest app does not work
+          required: false
+  - type: textarea
+    attributes:
+      label: 问题描述 / Describe Bugs
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 复现步骤 / How to reproduce
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 日志提交(**截取部分日志**) / 使用Ctrl+Shift+F12打开DevTools截图错误的网络请求
+      description: 设置-运行日志-复制日志(**截取部分日志**) / 使用Ctrl+Shift+F12打开DevTools截图错误的网络请求
+      placeholder: "请用```将日志内容包裹"
+  - type: input
+    attributes:
+      label: 软件版本 / App version
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: 系统类型 / System type
+      description: 运行环境
+      multiple: false
+      options:
+        - Windows
+        - Linux
+        - Mac
+    validations:
+      required: true 
+  - type: input
+    attributes:
+      label: 系统版本 / System Version
+      description: 系统版本
+      
