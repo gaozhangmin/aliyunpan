@@ -16,11 +16,45 @@ import {
   menuVideoXBT
 } from '../topbtns/topbtn'
 import { modalRename, modalShuXing } from '../../utils/modal'
-import { useSettingStore } from '../../store'
+import { useSettingStore, usePanFileStore, useAppStore } from '../../store'
 import { computed } from 'vue'
+import { MediaScanner } from '../../utils/mediaScanner'
+import message from '../../utils/message'
 
 let istree = false
 const settingStore = useSettingStore()
+const panFileStore = usePanFileStore()
+const appStore = useAppStore()
+const mediaScanner = MediaScanner.getInstance()
+
+// 扫描媒体库方法
+const handleScanMediaLibrary = async () => {
+  const selectedFiles = panFileStore.GetSelected()
+  if (selectedFiles.length === 0) {
+    message.warning('请先选择要扫描的文件夹')
+    return
+  }
+
+  // 只允许扫描文件夹
+  const folders = selectedFiles.filter(file => file.isDir)
+  if (folders.length === 0) {
+    message.warning('请选择文件夹进行媒体库扫描')
+    return
+  }
+
+  // 扫描第一个选中的文件夹
+  const folder = folders[0]
+  try {
+    await mediaScanner.scanAliyunFolder(folder, folder.drive_id)
+    message.success(`开始扫描文件夹 "${folder.name}" 的媒体库`)
+
+    // 切换到媒体库标签页
+    appStore.toggleTab('media')
+  } catch (error) {
+    console.error('媒体库扫描失败:', error)
+    message.error('媒体库扫描失败，请稍后重试')
+  }
+}
 
 const props = defineProps({
   dirtype: {
@@ -60,6 +94,12 @@ const isShowBtn = computed(() => {
 const isPic = computed(() => {
   return (props.dirtype === 'pic' && props.inputpicType == 'mypic')
 })
+
+// 检查是否选中了文件夹
+const isSelectedFolder = computed(() => {
+  const selectedFiles = panFileStore.GetSelected()
+  return selectedFiles.some(file => file.isDir)
+})
 </script>
 
 <template>
@@ -78,6 +118,13 @@ const isPic = computed(() => {
         <template #icon><i class='iconfont iconrss' /></template>
         <template #default>快传</template>
       </a-doption>
+
+      <!-- 扫描媒体库 -->
+      <a-doption v-show="isSelectedFolder && isShowBtn" @click="handleScanMediaLibrary">
+        <template #icon><i class='iconfont iconshipin' /></template>
+        <template #default>扫描媒体库</template>
+      </a-doption>
+
       <a-dsubmenu v-if="dirtype !== 'pic'" id='rightpansubbiaoji' class='rightmenu' trigger='hover'>
         <template #default>
           <div @click.stop='() => {}'>

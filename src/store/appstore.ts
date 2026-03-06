@@ -84,6 +84,7 @@ const useAppStore = defineStore('app', {
       ['down', 'DowningRight'],
       ['share', 'ShareSiteRight'],
       ['rss', 'RssXiMa'],
+      ['media', 'MediaLibrary'],
       ['setting', 'SettingUI']
     ]),
     appDark: false,
@@ -133,6 +134,7 @@ const useAppStore = defineStore('app', {
           ['down', 'DowningRight'],
           ['share', 'ShareSiteRight'],
           ['rss', 'RssXiMa'],
+          ['media', 'MediaLibrary'],
           ['setting', 'SettingUI']
         ])
       })

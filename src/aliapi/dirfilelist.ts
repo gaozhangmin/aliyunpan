@@ -239,7 +239,7 @@ export default class AliDirFileList {
     }
     let postData: any = {
       drive_id: dir.m_drive_id,
-      parent_file_id: dir.dirID.includes('root') ? 'root' : dir.dirID,
+      parent_file_id: (dir.dirID === 'resource_root' || dir.dirID === 'backup_root' || dir.dirID.includes('root')) ? 'root' : dir.dirID,
       marker: dir.next_marker,
       limit: 100,
       all: false,
@@ -266,7 +266,7 @@ export default class AliDirFileList {
     } else {
       url = 'adrive/v3/file/search'
     }
-    let parent_file_id = dir.dirID.includes('_root') ? 'root' : dir.dirID
+    let parent_file_id = (dir.dirID === 'resource_root' || dir.dirID === 'backup_root' || dir.dirID.includes('_root')) ? 'root' : dir.dirID
     const postData: any = {
       drive_id: dir.m_drive_id,
       marker: '',

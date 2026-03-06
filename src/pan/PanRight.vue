@@ -48,6 +48,7 @@ import PanTopbtn from './menus/PanTopbtn.vue'
 import FileTopbtn from './menus/FileTopbtn.vue'
 import FileRightMenu from './menus/FileRightMenu.vue'
 import TrashRightMenu from './menus/TrashRightMenu.vue'
+import MediaLibraryMenu from './menus/MediaLibraryMenu.vue'
 import TrashTopbtn from './menus/TrashTopbtn.vue'
 import DirTopPath from './menus/DirTopPath.vue'
 import message from '../utils/message'
@@ -89,6 +90,9 @@ panfileStore.$subscribe((_m: any, state: PanFileState) => {
   if (menuShowVideo.value != isShowVideo) menuShowVideo.value = isShowVideo
   const isShowZip = !isTrash && panfileStore.ListSelected.size == 1 && (selectItem?.ext == 'zip' || selectItem?.ext == 'rar')
   if (menuShowZip.value != isShowZip) menuShowZip.value = isShowZip
+  // 媒体库菜单：选中单个文件夹时显示
+  const isShowMediaLibrary = !isTrash && panfileStore.ListSelected.size == 1 && selectItem?.isdir
+  if (menuShowMediaLibrary.value != isShowMediaLibrary) menuShowMediaLibrary.value = isShowMediaLibrary
 })
 
 watchEffect(() => {
@@ -299,6 +303,7 @@ const handleSearchEnter = (event: any) => {
 
 const menuShowVideo = ref(false)
 const menuShowZip = ref(false)
+const menuShowMediaLibrary = ref(false)
 const handleRightClick = (e: { event: MouseEvent; node: any }) => {
   const key = e.node.key
   if (!panfileStore.ListSelected.has(key)) panfileStore.mMouseSelect(key, false, false)
@@ -1291,6 +1296,11 @@ const onPanDragEnd = (ev: any) => {
                    :inputpicType='inputpicType'
                    :isallfavored='panfileStore.IsListSelectedFavAll' />
     <TrashRightMenu :dirtype='panfileStore.SelectDirType' />
+    <MediaLibraryMenu v-if='menuShowMediaLibrary'
+                      :selectedItem='panfileStore.GetSelectedFirst()'
+                      :x='0'
+                      :y='0'
+                      @close='onHideRightMenuScroll' />
   </div>
 
   <div id='PanRightShowUpload' :style="{ display: showDragUpload ? '' : 'none' }" @drop='onPanDrop'

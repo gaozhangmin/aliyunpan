@@ -21,6 +21,7 @@ import Rss from '../rss/index.vue'
 import Share from '../share/index.vue'
 import Down from '../down/index.vue'
 import Pan from '../pan/index.vue'
+import MediaLibraryView from '../views/MediaLibraryView.vue'
 
 import UserInfo from '../user/UserInfo.vue'
 import UserLogin from '../user/UserLogin.vue'
@@ -84,7 +85,8 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
   if (TestAlt('2', state.KeyDownEvent, () => appStore.toggleTab('down'))) return
   if (TestAlt('3', state.KeyDownEvent, () => appStore.toggleTab('share'))) return
   if (TestAlt('4', state.KeyDownEvent, () => appStore.toggleTab('rss'))) return
-  if (TestAlt('5', state.KeyDownEvent, () => appStore.toggleTab('setting'))) return
+  if (TestAlt('5', state.KeyDownEvent, () => appStore.toggleTab('media'))) return
+  if (TestAlt('6', state.KeyDownEvent, () => appStore.toggleTab('setting'))) return
   if (TestAlt('f4', state.KeyDownEvent, () => handleHideClick(undefined))) return
   if (TestAlt('m', state.KeyDownEvent, () => handleMinClick(undefined))) return
   if (TestAlt('enter', state.KeyDownEvent, () => handleMaxClick(undefined))) return
@@ -187,6 +189,7 @@ onUnmounted(() => {
           <a-menu-item key='down' title='Alt+2'>传输</a-menu-item>
           <a-menu-item key='share' title='Alt+3'>资源</a-menu-item>
           <a-menu-item key='rss' title='Alt+4'>插件</a-menu-item>
+          <a-menu-item key='media' title='Alt+5'>媒体库</a-menu-item>
         </a-menu>
 
         <div class='flexauto'></div>
@@ -198,7 +201,7 @@ onUnmounted(() => {
              v-if="appStore.appTheme === 'dark' || (appStore.appTheme == 'system' && appStore.appDark)"></i>
           <i class='iconfont iconday' v-else></i>
         </a-button>
-        <a-button type='text' tabindex='-1' title='设置 Alt+6' :class="appStore.appTab == 'setting' ? 'active' : ''"
+        <a-button type='text' tabindex='-1' title='设置 Alt+7' :class="appStore.appTab == 'setting' ? 'active' : ''"
                   @click="appStore.toggleTab('setting')">
           <i class='iconfont iconsetting'></i>
         </a-button>
@@ -227,7 +230,10 @@ onUnmounted(() => {
         <a-tab-pane key='rss' title='4'>
           <Rss />
         </a-tab-pane>
-        <a-tab-pane key='setting' title='5'>
+        <a-tab-pane key='media' title='5'>
+          <MediaLibraryView />
+        </a-tab-pane>
+        <a-tab-pane key='setting' title='6'>
           <Setting />
         </a-tab-pane>
       </a-tabs>
