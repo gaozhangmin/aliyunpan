@@ -19,6 +19,7 @@ import DBDown from '../utils/dbdown'
 import fsPromises from 'fs/promises'
 import { DecodeEncName } from '../aliapi/utils'
 import { getEncType } from '../utils/proxyhelper'
+import { SHA256 } from 'crypto-js'
 
 export interface IStateDownFile {
   DownID: string
@@ -66,6 +67,11 @@ export interface IStateDownInfo {
   sha1: string
 
   crc64: string
+
+  localFilePath?: string
+  offlineProvider?: 'cloud123'
+  offlineTaskId?: string
+  offlineDirId?: string
 }
 
 export interface IAriaDownProgress {
@@ -85,6 +91,11 @@ const sound = new Howl({
   autoplay: false, // 是否自动播放
   volume: 1.0 // 音量，范围 0.0 ~ 1.0
 })
+
+const buildAriaTaskGid = (file: IAliGetFileModel) => {
+  const source = `${file.drive_id || ''}|${file.file_id || ''}|${file.size || 0}`
+  return SHA256(source).toString().toLowerCase().replace(/[^0-9a-f]/g, '').slice(0, 16)
+}
 
 export default class DownDAL {
 
@@ -181,15 +192,14 @@ export default class DownDAL {
         else fullPath = fullPath.replace(/\//g, '\\')
       }
 
-      let sizehex = file.size.toString(16).toLowerCase()
-      if (sizehex.length > 4) sizehex = sizehex.substr(0, 4)
+      const gid = buildAriaTaskGid(file)
 
       let downloadurl = ''
       let crc64 = ''
       const downitem: IStateDownFile = {
         DownID: userID + '|' + file.file_id,
         Info: {
-          GID: file.file_id.toLowerCase().substring(file.file_id.length - 16 + sizehex.length) + sizehex,
+          GID: gid,
           user_id: userID,
           DownSavePath: fullPath,
           ariaRemote: ariaRemote,
@@ -282,6 +292,8 @@ export default class DownDAL {
     } else {
       useFootStore().mSaveDownTotalSpeedInfo('')
     }
+    await DownDAL.aCloud123OfflineProgress()
+
     downingStore.mRefreshListDataShow(true)
     downedStore.mRefreshListDataShow(true)
   }
@@ -387,6 +399,7 @@ export default class DownDAL {
     // 删除临时文件
     for (let downFile of deleteList) {
       let downInfo = downFile.Info
+      if (downInfo.offlineProvider === 'cloud123') continue
       if (downInfo.ariaRemote) continue
       try {
         if (!downInfo.isDir) {
@@ -421,5 +434,102 @@ export default class DownDAL {
 
   static QueryIsDowning() {
     return useDowningStore().ListDataDowningCount > 0
+  }
+
+  static async aAddCloud123OfflineDownload(url: string, fileName: string, dirID: string | undefined) {
+    const userID = useUserStore().user_id
+    if (!userID) return { success: false, message: '请先登录' }
+    const { apiCloud123OfflineCreate } = await import('../cloud123/offline')
+    const resp = await apiCloud123OfflineCreate(userID, url, fileName, dirID)
+    if (!resp.taskId) return { success: false, message: resp.error || '创建离线下载失败' }
+    const downitem: IStateDownFile = {
+      DownID: `${userID}|cloud123_offline_${resp.taskId}`,
+      Info: {
+        GID: `cloud123_offline_${resp.taskId}`,
+        user_id: userID,
+        DownSavePath: '',
+        ariaRemote: false,
+        file_id: '',
+        drive_id: 'cloud123',
+        name: fileName || url,
+        size: 0,
+        sizestr: '',
+        icon: 'iconcloud-download',
+        isDir: false,
+        encType: '',
+        sha1: '',
+        crc64: '',
+        offlineProvider: 'cloud123',
+        offlineTaskId: String(resp.taskId),
+        offlineDirId: dirID || ''
+      },
+      Down: {
+        DownState: '离线下载中',
+        DownTime: Date.now(),
+        DownSize: 0,
+        DownSpeed: 0,
+        DownSpeedStr: '',
+        DownProcess: 0,
+        IsStop: false,
+        IsDowning: true,
+        IsCompleted: false,
+        IsFailed: false,
+        FailedCode: 0,
+        FailedMessage: '',
+        AutoTry: 0,
+        DownUrl: url
+      }
+    }
+    useDowningStore().mAddDownload({ downlist: [downitem] })
+    return { success: true, message: '' }
+  }
+
+  private static cloud123OfflineTick = 0
+
+  static async aCloud123OfflineProgress() {
+    const downingStore = useDowningStore()
+    const list = downingStore.ListDataRaw
+    if (!list.length) return
+    DownDAL.cloud123OfflineTick = (DownDAL.cloud123OfflineTick + 1) % 5
+    if (DownDAL.cloud123OfflineTick !== 0) return
+    const { apiCloud123OfflineProcess } = await import('../cloud123/offline')
+    const saveList: IStateDownFile[] = []
+    for (let i = 0; i < list.length; i++) {
+      const item = list[i]
+      if (item.Info.offlineProvider !== 'cloud123' || !item.Info.offlineTaskId) continue
+      if (item.Down.IsCompleted || item.Down.IsFailed) continue
+      const info = await apiCloud123OfflineProcess(item.Info.user_id, item.Info.offlineTaskId)
+      if (info.error) {
+        item.Down.IsFailed = true
+        item.Down.IsDowning = false
+        item.Down.DownState = '离线下载失败'
+        item.Down.FailedMessage = info.error
+        saveList.push(item)
+        continue
+      }
+      const process = Math.max(0, Math.min(100, info.process))
+      item.Down.DownProcess = process
+      item.Down.DownSpeedStr = ''
+      if (info.status === 2) {
+        item.Down.IsCompleted = true
+        item.Down.IsDowning = false
+        item.Down.DownState = '离线下载完成'
+        item.Down.DownProcess = 100
+      } else if (info.status === 1) {
+        item.Down.IsFailed = true
+        item.Down.IsDowning = false
+        item.Down.DownState = '离线下载失败'
+      } else if (info.status === 3) {
+        item.Down.IsDowning = true
+        item.Down.DownState = `离线下载重试中 ${process}%`
+      } else {
+        item.Down.IsDowning = true
+        item.Down.DownState = `离线下载中 ${process}%`
+      }
+      saveList.push(item)
+    }
+    if (saveList.length) {
+      DBDown.saveDownings(JSON.parse(JSON.stringify(saveList)))
+    }
   }
 }

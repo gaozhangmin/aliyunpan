@@ -3,7 +3,7 @@ import UserDAL from './userdal'
 
 
 export interface ITokenInfo {
-  tokenfrom: 'token' | 'account'
+  tokenfrom: 'aliyun' | 'cloud123' | '115' | 'baidu' | 'unknown'
 
   access_token: string
   refresh_token: string
@@ -41,6 +41,8 @@ export interface ITokenInfo {
   is_expires: boolean
   used_size: number
   total_size: number
+  free_size: number
+  space_expire: boolean
   spaceinfo: string
   vipname: string
   vipIcon: string

@@ -115,7 +115,7 @@
         >
           <i class="iconfont iconinfo_circle"></i>
           <span>未匹配</span>
-          <span v-if="mediaStore.unmatchedItems.length > 0" class="count error">
+          <span v-if="mediaStore.unmatchedItems.length > 0" class="count">
             {{ mediaStore.unmatchedItems.length }}
           </span>
         </div>
@@ -180,6 +180,9 @@
         >
           <i class="iconfont iconcrown2"></i>
           <span>评分</span>
+          <span v-if="mediaStore.ratingCategories.length > 0" class="count">
+            {{ mediaStore.ratingCategories.length }}
+          </span>
         </div>
 
         <!-- 年份 -->
@@ -214,8 +217,12 @@
           @contextmenu="handleFolderRightClick($event, folder)"
         >
           <i class="iconfont iconfolder"></i>
-          <span class="folder-name">{{ folder.name }}</span>
-          <span class="count">{{ folder.itemCount }}</span>
+          <div class="folder-main">
+            <span class="folder-name">{{ folder.name }}</span>
+            <span class="folder-source" :class="getFolderSourceClass(folder)">
+              {{ getFolderSourceLabel(folder) }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -225,11 +232,20 @@
       <a-button
         type="text"
         size="small"
-        @click="handleRefresh"
+        @click="handleImportLocalFolder"
         :loading="mediaStore.isScanning"
       >
-        <i class="iconfont iconreload-1-icon"></i>
-        刷新媒体库
+        <i class="iconfont iconfolder"></i>
+        导入本地文件夹
+      </a-button>
+      <a-button
+        type="text"
+        size="small"
+        @click="showWebDavModal = true"
+        :loading="webDavLoading"
+      >
+        <i class="iconfont iconlink"></i>
+        连接到 WebDAV
       </a-button>
     </div>
 
@@ -255,6 +271,31 @@
         </a-doption>
       </template>
     </a-dropdown>
+
+    <a-modal
+      v-model:visible="showWebDavModal"
+      title="连接到 WebDAV"
+      :ok-loading="webDavLoading"
+      @ok="handleConnectWebDav"
+    >
+      <a-form :model="webDavForm" layout="vertical">
+        <a-form-item field="name" label="名称">
+          <a-input v-model="webDavForm.name" placeholder="例如：NAS 影视库" allow-clear />
+        </a-form-item>
+        <a-form-item field="url" label="服务器地址">
+          <a-input v-model="webDavForm.url" placeholder="例如：http://127.0.0.1:5244/dav" allow-clear />
+        </a-form-item>
+        <a-form-item field="username" label="用户名">
+          <a-input v-model="webDavForm.username" allow-clear />
+        </a-form-item>
+        <a-form-item field="password" label="密码">
+          <a-input-password v-model="webDavForm.password" allow-clear />
+        </a-form-item>
+        <a-form-item field="rootPath" label="挂载路径">
+          <a-input v-model="webDavForm.rootPath" placeholder="默认：/" allow-clear />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -263,8 +304,12 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useMediaLibraryStore } from '../store/medialibrary'
 import type { MediaLibraryFolder } from '../types/media'
 import { Modal } from '@arco-design/web-vue'
+import { MediaScanner } from '../utils/mediaScanner'
+import message from '../utils/message'
+import { createWebDavConnection, getWebDavConnections, saveWebDavConnection, testWebDavConnection } from '../utils/webdavClient'
 
 const mediaStore = useMediaLibraryStore()
+const mediaScanner = MediaScanner.getInstance()
 
 // 状态
 const activeCategory = ref('recently-added')
@@ -273,9 +318,18 @@ const selectedGenre = ref('')
 const selectedYear = ref('')
 const selectedRating = ref('')
 const showAddFolderModal = ref(false)
+const showWebDavModal = ref(false)
+const webDavLoading = ref(false)
 const addFolderForm = ref({
   folderId: '',
   name: ''
+})
+const webDavForm = ref({
+  name: '',
+  url: '',
+  username: '',
+  password: '',
+  rootPath: '/'
 })
 
 // 右键菜单状态
@@ -321,17 +375,34 @@ const selectFolder = (folder: MediaLibraryFolder) => {
 // 计算属性
 const scanPercent = computed(() => {
   if (mediaStore.scanTotal === 0) return 0
-  return Math.round((mediaStore.scanProgress / mediaStore.scanTotal) * 100)
+  const raw = Math.round((mediaStore.scanProgress / mediaStore.scanTotal) * 100)
+  return Math.min(100, Math.max(0, raw))
 })
 
 // 方法
 const handleCategoryClick = (category: string) => {
-  activeCategory.value = category
-  selectedFolder.value = null
-  selectedGenre.value = ''
-  selectedYear.value = ''
-  selectedRating.value = ''
-  emit('categorySelected', category)
+  // 判断是否为分类聚合类型
+  const aggregationCategories = ['genres', 'ratings', 'years']
+
+  if (aggregationCategories.includes(category)) {
+    // 分类聚合模式：显示分类卡片网格
+    activeCategory.value = category
+    selectedFolder.value = null
+    selectedGenre.value = ''
+    selectedYear.value = ''
+    selectedRating.value = ''
+    emit('categorySelected', category)
+  } else {
+    // 直接筛选模式：显示具体媒体内容
+    activeCategory.value = category
+    selectedFolder.value = null
+    selectedGenre.value = ''
+    selectedYear.value = ''
+    selectedRating.value = ''
+    emit('categorySelected', category)
+    if (category === 'documentary') emit('genreSelected', '99')
+    if (category === 'animation') emit('genreSelected', '16')
+  }
 }
 
 const handleFolderClick = (folder: MediaLibraryFolder) => {
@@ -339,6 +410,32 @@ const handleFolderClick = (folder: MediaLibraryFolder) => {
   activeCategory.value = ''
   console.log('Folder clicked:', folder.name, 'ID:', folder.id)
   emit('folderSelected', folder)
+}
+
+const isWebDavFolderSource = (folder: MediaLibraryFolder) => {
+  const connectionIds = new Set(getWebDavConnections().map(item => item.id))
+  return folder.driveServerId === 'webdav'
+    || (folder.driveId || '').startsWith('webdav:')
+    || (!!folder.userId && connectionIds.has(folder.userId))
+    || folder.id.startsWith('webdav_')
+}
+
+const getFolderSourceLabel = (folder: MediaLibraryFolder) => {
+  if (isWebDavFolderSource(folder)) return 'WebDAV'
+  if (folder.driveId === 'local' || folder.driveServerId === 'local') return '本地'
+  if (folder.driveId === 'cloud123' || folder.driveServerId === 'cloud123') return '123'
+  if (folder.driveId === 'drive115' || folder.driveServerId === 'drive115') return '115'
+  if (folder.driveId === 'baidu' || folder.driveServerId === 'baidu') return '百度'
+  return '阿里'
+}
+
+const getFolderSourceClass = (folder: MediaLibraryFolder) => {
+  if (isWebDavFolderSource(folder)) return 'source-webdav'
+  if (folder.driveId === 'local' || folder.driveServerId === 'local') return 'source-local'
+  if (folder.driveId === 'cloud123' || folder.driveServerId === 'cloud123') return 'source-123'
+  if (folder.driveId === 'drive115' || folder.driveServerId === 'drive115') return 'source-115'
+  if (folder.driveId === 'baidu' || folder.driveServerId === 'baidu') return 'source-baidu'
+  return 'source-aliyun'
 }
 
 // 处理文件夹右键菜单
@@ -401,9 +498,72 @@ const selectRating = (rating: string) => {
   emit('ratingSelected', selectedRating.value)
 }
 
-const handleRefresh = () => {
-  emit('refresh')
+const handleImportLocalFolder = () => {
+  if (mediaStore.isScanning) return
+  if (window.WebShowOpenDialogSync) {
+    window.WebShowOpenDialogSync(
+      {
+        title: '选择本地媒体文件夹',
+        buttonLabel: '导入',
+        properties: ['openDirectory', 'createDirectory']
+      },
+      async (result: string[] | undefined) => {
+        if (!result || !result[0]) return
+        const folderPath = result[0]
+        try {
+          await mediaScanner.scanLocalFolder(folderPath)
+        } catch (error) {
+          console.error('导入本地文件夹失败:', error)
+          message.error('导入失败，请稍后重试')
+        }
+      }
+    )
+  } else {
+    message.error('当前环境不支持选择本地文件夹')
+  }
 }
+
+const handleConnectWebDav = async () => {
+  const form = webDavForm.value
+  if (!form.url.trim() || !form.username.trim() || !form.password.trim()) {
+    message.error('请填写完整的 WebDAV 连接信息')
+    return
+  }
+
+  webDavLoading.value = true
+  try {
+    const connection = createWebDavConnection(form)
+    await testWebDavConnection(connection)
+    saveWebDavConnection(connection)
+    mediaStore.addFolder({
+      id: `webdav_webdav:${connection.id}_/`,
+      fileId: '/',
+      name: connection.name,
+      path: '/',
+      userId: connection.id,
+      driveId: `webdav:${connection.id}`,
+      driveServerId: 'webdav',
+      scanDate: new Date(),
+      itemCount: 0
+    })
+    await mediaScanner.scanWebDavConnection(connection)
+    message.success('WebDAV 连接成功，已开始扫描视频元数据')
+    showWebDavModal.value = false
+    webDavForm.value = {
+      name: '',
+      url: '',
+      username: '',
+      password: '',
+      rootPath: '/'
+    }
+  } catch (error: any) {
+    console.error('连接 WebDAV 服务器失败:', error)
+    message.error(`连接 WebDAV 服务器失败: ${error?.message || '未知错误'}`)
+  } finally {
+    webDavLoading.value = false
+  }
+}
+
 
 const handleAddFolder = () => {
   // 这里需要调用扫描服务
@@ -424,7 +584,8 @@ const emit = defineEmits([
   'genreSelected',
   'yearSelected',
   'ratingSelected',
-  'refresh'
+  'refresh',
+  'categoryDrillDown'
 ])
 
 // 暴露给父组件的方法
@@ -442,6 +603,24 @@ const handleGlobalClick = (event: MouseEvent) => {
 }
 
 onMounted(() => {
+  const savedConnections = getWebDavConnections()
+  for (const connection of savedConnections) {
+    const folderId = `webdav_webdav:${connection.id}_/`
+    const exists = mediaStore.folders.some(folder => folder.id === folderId)
+    if (!exists) {
+      mediaStore.addFolder({
+        id: folderId,
+        fileId: '/',
+        name: connection.name,
+        path: '/',
+        userId: connection.id,
+        driveId: `webdav:${connection.id}`,
+        driveServerId: 'webdav',
+        scanDate: new Date(connection.createdAt),
+        itemCount: 0
+      })
+    }
+  }
   document.addEventListener('click', handleGlobalClick)
 })
 
@@ -476,6 +655,7 @@ onUnmounted(() => {
   line-height: 1.2;
   letter-spacing: -0.5px;
 }
+
 
 .scan-progress-section {
   padding: 16px;
@@ -560,6 +740,8 @@ onUnmounted(() => {
   user-select: none;
   position: relative;
   background: transparent;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .nav-item:hover {
@@ -613,6 +795,10 @@ onUnmounted(() => {
   flex: 1;
   line-height: 1.4;
   font-weight: inherit;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nav-item .count {
@@ -620,7 +806,7 @@ onUnmounted(() => {
   font-size: 12px;
   font-weight: 700;
   background: var(--color-neutral-4);
-  color: var(--color-text-4);
+  color: var(--color-text-2);
   padding: 4px 10px;
   border-radius: 20px;
   min-width: 24px;
@@ -642,12 +828,67 @@ onUnmounted(() => {
   box-shadow: 0 2px 8px rgba(var(--danger-6), 0.4);
 }
 
+.folder-item .folder-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
 .folder-item .folder-name {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   line-height: 1.4;
+}
+
+.folder-source {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  border: 1px solid transparent;
+}
+
+.folder-source.source-aliyun {
+  color: #1677ff;
+  background: rgba(22, 119, 255, 0.1);
+  border-color: rgba(22, 119, 255, 0.18);
+}
+
+.folder-source.source-123 {
+  color: #f08c00;
+  background: rgba(240, 140, 0, 0.12);
+  border-color: rgba(240, 140, 0, 0.18);
+}
+
+.folder-source.source-115 {
+  color: #2b8a3e;
+  background: rgba(43, 138, 62, 0.12);
+  border-color: rgba(43, 138, 62, 0.18);
+}
+
+.folder-source.source-baidu {
+  color: #5f3dc4;
+  background: rgba(95, 61, 196, 0.12);
+  border-color: rgba(95, 61, 196, 0.18);
+}
+
+.folder-source.source-local {
+  color: #495057;
+  background: rgba(73, 80, 87, 0.1);
+  border-color: rgba(73, 80, 87, 0.16);
+}
+
+.folder-source.source-webdav {
+  color: #0b7285;
+  background: rgba(11, 114, 133, 0.12);
+  border-color: rgba(11, 114, 133, 0.18);
 }
 
 .nav-actions {
@@ -669,6 +910,10 @@ onUnmounted(() => {
   background: var(--color-bg-1);
   transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.nav-actions .arco-btn + .arco-btn {
+  margin-top: 10px;
 }
 
 .nav-actions .arco-btn:hover {

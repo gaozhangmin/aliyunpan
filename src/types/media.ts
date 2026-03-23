@@ -11,17 +11,24 @@ export interface MediaLibraryItem {
   year?: string
   rating?: number
   genres: string[]
+  productionCountries?: string[]
   overview?: string
   driveFiles: DriveFileItem[]
   tmdbId?: number
   imdbId?: string
   tvdbId?: string
   seasons?: MediaSeason[]
-  episodes?: MediaEpisode[]
+  credits?: Credits
+  // 删除冗余的episodes?: MediaEpisode[] - 集数信息应该在seasons中管理
   lastWatched?: Date
   watchProgress?: number
+  lastPlayedFileId?: string
   addedAt: Date
 }
+
+export type FavoriteId = string
+
+export type PlaylistMap = Record<string, string[]>
 
 export interface MediaSeason {
   id: number
@@ -31,6 +38,8 @@ export interface MediaSeason {
   posterPath?: string
   episodeCount: number
   airDate?: string
+  credits?: Credits
+  episodes?: MediaEpisode[] // 添加缺少的episodes属性
 }
 
 export interface MediaEpisode {
@@ -42,6 +51,7 @@ export interface MediaEpisode {
   airDate?: string
   runtime?: number
   seasonNumber: number
+  crew?: CrewMember[]
   driveFiles: DriveFileItem[]
 }
 
@@ -49,6 +59,7 @@ export interface DriveFileItem {
   id: string
   name: string
   path: string
+  userId?: string
   driveId: string
   driveServerId: string
   fileSize: number
@@ -86,6 +97,7 @@ export interface MovieItem {
   selfPosterPath?: string
   posterFile?: DriveFileItem
   release_date?: string
+  credits: Credits
   title: string
   vote_average: number
   belongs_to_collection?: CollectionItem
@@ -204,7 +216,7 @@ export interface CastMember {
   id: number
   name: string
   character?: string
-  profilePath?: string
+  profile_path?: string
 }
 
 export interface CrewMember {
@@ -212,7 +224,7 @@ export interface CrewMember {
   name: string
   job?: string
   department?: string
-  profilePath?: string
+  profile_path?: string
 }
 
 // 保留原有的搜索结果类型（用于TMDB直接搜索）
@@ -242,6 +254,7 @@ export interface MediaLibraryFolder {
   fileId: string // 真正的阿里云盘文件ID
   name: string
   path: string
+  userId?: string
   driveId: string
   driveServerId: string
   scanDate: Date

@@ -263,6 +263,11 @@ export default class AliUploadDisk {
     return filePosMap.get(UploadID) || 0
   }
 
+  static RecordUploadProgress(UploadID: number, delta: number, pos: number): void {
+    if (delta > 0) UploadSpeedTotal += delta
+    filePosMap.set(UploadID, pos)
+  }
+
 
   static DelFileUploadSpeed(UploadID: number): void {
     filePosMap.delete(UploadID)

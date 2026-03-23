@@ -17,6 +17,8 @@ import { IAliGetFileModel } from '../../aliapi/alimodels'
 import { treeSelectToExpand } from '../../utils/antdtree'
 import { copyToClipboard } from '../../utils/electronhelper'
 import path from 'path'
+import { isCloud123User } from '../../aliapi/utils'
+import { apiCloud123RenameBatch } from '../../cloud123/filecmd'
 
 const iconfolder = h('i', { class: 'iconfont iconfile-folder' })
 const foldericonfn = () => iconfolder
@@ -361,7 +363,11 @@ const handleOK = (type: string) => {
   }
   okLoading.value = true
   const pantreeStore = usePanTreeStore()
-  AliFileCmd.ApiRenameBatch(pantreeStore.user_id, pantreeStore.drive_id, idList, nameList)
+  const renamePromise = isCloud123User(pantreeStore.user_id || '')
+    ? apiCloud123RenameBatch(pantreeStore.user_id, idList, nameList)
+    : AliFileCmd.ApiRenameBatch(pantreeStore.user_id, pantreeStore.drive_id, idList, nameList)
+
+  renamePromise
     .then((success) => {
       if (success.length > 0) {
         if (!multiOpt.value) {

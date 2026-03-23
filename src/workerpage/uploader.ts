@@ -13,6 +13,11 @@ import { humanSize, Sleep } from '../utils/format'
 import { RuningList } from './uiupload'
 import path from 'path'
 import fspromises from 'fs/promises'
+import Cloud123UploadDisk from '../cloud123/uploaddisk'
+import BaiduUploadDisk from '../cloudbaidu/uploaddisk'
+import Drive115UploadDisk from '../cloud115/uploaddisk'
+import { isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
+import { apiCloud123Mkdir } from '../cloud123/filecmd'
 
 export async function StartUpload(fileui: IUploadingUI): Promise<void> {
   const token = await UserDAL.GetUserTokenFromDB(fileui.user_id)
@@ -26,6 +31,50 @@ export async function StartUpload(fileui: IUploadingUI): Promise<void> {
   if (fileui.File.isDir) {
     return creatDirAndReadChildren(fileui)
   }
+
+  if (isCloud123User(fileui.user_id || '')) {
+    await checkFileSize(fileui)
+    const uploadResult = await Cloud123UploadDisk.UploadOneFile(fileui)
+    if (uploadResult == 'success') {
+      fileui.Info.uploadState = 'success'
+    } else if (!fileui.IsRunning) {
+      fileui.Info.uploadState = '已暂停'
+    } else if (fileui.Info.uploadState == 'running' || fileui.Info.uploadState == 'hashing') {
+      fileui.Info.uploadState = 'error'
+      fileui.Info.failedCode = 505
+      fileui.Info.failedMessage = uploadResult
+    }
+    return
+  }
+  if (isBaiduUser(fileui.user_id || '')) {
+    await checkFileSize(fileui)
+    const uploadResult = await BaiduUploadDisk.UploadOneFile(fileui)
+    if (uploadResult == 'success') {
+      fileui.Info.uploadState = 'success'
+    } else if (!fileui.IsRunning) {
+      fileui.Info.uploadState = '已暂停'
+    } else if (fileui.Info.uploadState == 'running' || fileui.Info.uploadState == 'hashing') {
+      fileui.Info.uploadState = 'error'
+      fileui.Info.failedCode = 505
+      fileui.Info.failedMessage = uploadResult
+    }
+    return
+  }
+  if (isDrive115User(fileui.user_id || '')) {
+    await checkFileSize(fileui)
+    const uploadResult = await Drive115UploadDisk.UploadOneFile(fileui)
+    if (uploadResult == 'success') {
+      fileui.Info.uploadState = 'success'
+    } else if (!fileui.IsRunning) {
+      fileui.Info.uploadState = '已暂停'
+    } else if (fileui.Info.uploadState == 'running' || fileui.Info.uploadState == 'hashing') {
+      fileui.Info.uploadState = 'error'
+      fileui.Info.failedCode = 505
+      fileui.Info.failedMessage = uploadResult
+    }
+    return
+  }
+
   await checkFileSize(fileui)
   const uploadInfo: IUploadInfo = {
     token_type: token.token_type,
@@ -122,14 +171,25 @@ async function creatDirAndReadChildren(fileui: IUploadingUI): Promise<void> {
 
   let uploaded_file_id = ''
   if (fileui.File.IsRoot) {
-    const data = await AliFileCmd.ApiCreatNewForder(fileui.user_id, fileui.drive_id, fileui.parent_file_id, fileui.File.name, fileui.encType)
-    if (data.error) {
-      fileui.Info.uploadState = 'error'
-      fileui.Info.failedCode = 503
-      fileui.Info.failedMessage = data.error
-      return
+    if (isCloud123User(fileui.user_id || '')) {
+      const data = await apiCloud123Mkdir(fileui.user_id, fileui.parent_file_id || '0', fileui.File.name)
+      if (data.error) {
+        fileui.Info.uploadState = 'error'
+        fileui.Info.failedCode = 503
+        fileui.Info.failedMessage = data.error
+        return
+      }
+      uploaded_file_id = data.file_id
+    } else {
+      const data = await AliFileCmd.ApiCreatNewForder(fileui.user_id, fileui.drive_id, fileui.parent_file_id, fileui.File.name, fileui.encType)
+      if (data.error) {
+        fileui.Info.uploadState = 'error'
+        fileui.Info.failedCode = 503
+        fileui.Info.failedMessage = data.error
+        return
+      }
+      uploaded_file_id = data.file_id
     }
-    uploaded_file_id = data.file_id
   }
 
   let childList: IStateUploadTaskFile[] = []

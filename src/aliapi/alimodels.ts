@@ -98,6 +98,7 @@ export interface IAliFileItem {
   }
 
   user_meta?: string
+  path?: string
 }
 
 
@@ -295,12 +296,14 @@ export interface IAliGetForderSizeModel {
 export interface IAliGetDirModel {
   __v_skip: true
   drive_id: string
+  user_id?: string
   file_id: string
   album_id?: string
   album_type?: string
   parent_file_id: string
   name: string
   namesearch: string
+  path?: string
   size: number
   time: number
   punish_flag?: number
@@ -315,6 +318,7 @@ export interface IAliGetFileModel {
   parent_file_id: string
   name: string
   namesearch: string
+  path?: string
   ext: string
   mime_type: string
   mime_extension: string

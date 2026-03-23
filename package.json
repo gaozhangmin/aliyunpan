@@ -1,7 +1,7 @@
 {
   "name": "alixby",
-  "description": "阿里云盘小白羊",
-  "version": "3.24.41217",
+  "description": "小白羊 BoxPlayer",
+  "version": "4.0.0-beta",
   "main": "dist/electron/main/index.js",
   "author": {
     "name": "gaozhangmin",
@@ -13,8 +13,10 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "build:version": "node version.mjs",
-    "build:electron": "pnpm run build && electron-builder",
-    "build:test": "pnpm run build && electron-builder --dir"
+    "build:electron": "npm run build && electron-builder",
+    "build:test": "npm run build && electron-builder --dir",
+    "build:mac": "npm run build && electron-builder --mac",
+    "build:mac:signed": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -22,6 +24,7 @@
   "devDependencies": {
     "@arco-design/web-vue": "2.55.1",
     "@arco-themes/vue-gi-demo": "^0.0.48",
+    "@electron/notarize": "^3.1.1",
     "@types/crypto-js": "^4.2.2",
     "@types/fast-levenshtein": "^0.0.4",
     "@types/howler": "^2.2.11",
@@ -39,7 +42,8 @@
     "@vue/runtime-dom": "3.4.21",
     "ant-design-vue": "4.1.2",
     "aria2-lib": "1.0.1",
-    "artplayer": "^5.1.1",
+    "artplayer": "^5.4.0",
+    "artplayer-plugin-danmuku": "^5.3.0",
     "axios": "^1.6.8",
     "chinese-simple2traditional": "^2.1.0",
     "consola": "^3.2.3",
@@ -85,6 +89,7 @@
     "vite-plugin-electron-renderer": "0.14.5",
     "vue": "3.4.21",
     "vue-tsc": "^2.0.10",
+    "webdav": "5.9.0",
     "webdav-server": "^2.6.2",
     "whacko": "^0.19.1"
   },

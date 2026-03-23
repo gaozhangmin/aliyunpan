@@ -5,7 +5,7 @@
     <br> English | <a href="README-CN.md">中文</a>
 </p>
 <p align="center">
-    <em>小白羊网盘 - powered by 阿里云盘Open.</em>
+    <em>小白羊网盘 - 多网盘统一管理 + 智能媒体库 + 高速下载.</em>
 </p>
 
 <p align="center">
@@ -49,33 +49,66 @@
 
 
 # 功能 [![](https://img.shields.io/badge/-%E5%8A%9F%E8%83%BD-blue)](#功能-)
-1.根据阿里云盘Open平台api开发的网盘客户端，支持win7-11，macOS，linux <br>
 
-2.支持同时登录多个账号管理。 <br>
+## 🌟 多网盘支持
+1. **多平台网盘接入**：支持阿里云盘、百度网盘、123网盘、115网盘等主流网盘服务 <br>
+2. **WebDAV 连接**：支持通过 WebDAV 协议连接夸克网盘、天翼云等更多网盘服务 <br>
+3. **多账号管理**：支持同时登录和管理多个网盘账号 <br>
 
-3.提供特有的文件夹树，方便快速操作。 <br>
+## 🎬 智能媒体库
+4. **TMDB 元数据刮削**：自动扫描网盘和本地文件，从 TMDB 获取电影、电视剧等媒体元数据 <br>
+5. **媒体库整理**：智能分类整理媒体文件，构建完整的个人媒体库 <br>
+6. **本地文件夹导入**：支持导入本地文件夹并识别刮削 TMDB 元数据 <br>
 
-4.在线播放网盘中各种格式的高清原画视频，并支持外挂字幕、音轨和播放速度调整，播放列表。<br>
+## 🎥 强大播放功能
+7. **在线高清播放**：支持网盘中各种格式的高清原画视频播放 <br>
+8. **外挂字幕音轨**：支持外挂字幕、多音轨切换和播放速度调整 <br>
+9. **播放列表管理**：支持创建和管理播放列表 <br>
+10. **第三方播放器**：支持 MPV、IINA 等专业播放器 <br>
 
-5.显示文件夹体积，支持文件夹和文件的混合排序（文件名/体积/时间）。<br>
+## 🔗 媒体服务器连接
+11. **媒体服务器支持**：支持连接 Emby、Jellyfin、Plex 等媒体服务器（部分功能待开发）<br>
 
-6.可以通过远程Aria2功能将文件直接下载到远程的VPS/NAS。<br>
+## ⚡ 高速下载
+12. **Aria2c 下载**：集成高速 Aria2c 下载引擎，支持多线程下载 <br>
+13. **远程下载**：可通过远程 Aria2 功能将文件直接下载到远程 VPS/NAS <br>
 
-7.支持批量重命名大量文件和多层嵌套的文件夹。<br>
+## 📁 文件管理
+14. **文件夹树视图**：提供特有的文件夹树，方便快速操作 <br>
+15. **智能排序**：显示文件夹体积，支持文件夹和文件的混合排序（文件名/体积/时间）<br>
+16. **批量操作**：支持批量重命名大量文件和多层嵌套的文件夹 <br>
+17. **快速预览**：可以快速复制文件，预览视频的雪碧图，并直接删除文件 <br>
+18. **海量文件处理**：能够管理数万文件夹和数万文件，一次性列出文件夹中的全部文件 <br>
+19. **批量传输**：支持一次性上传/下载百万级的文件/文件夹 <br>
 
-8.可以快速复制文件，预览视频的雪碧图，并直接删除文件。<br>
-
-9.能够管理数万文件夹和数万文件，并一次性列出文件夹中的全部文件。<br>
-
-10.支持一次性上传/下载百万级的文件/文件夹。<br>
+## 🖥️ 跨平台支持
+20. **全平台兼容**：支持 Windows 7-11、macOS、Linux 等操作系统 <br>
 
 <a href="#readme">
     <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
 </a>
 
 # 界面 [![](https://img.shields.io/badge/-%E7%95%8C%E9%9D%A2-blue)](#界面-)
-<img src="https://github.com/gaozhangmin/staticResource/blob/master/images/main_window.png" width="270"><img src="https://github.com/gaozhangmin/staticResource/blob/master/images/download_page.png" width="270"><img src="https://github.com/gaozhangmin/staticResource/blob/master/images/movie_page.png" width="270">
-<img src="https://github.com/gaozhangmin/staticResource/blob/master/images/plugin_page.png" width="270"><img src="https://github.com/gaozhangmin/staticResource/blob/master/images/settings_page.png" width="270"><img src="https://github.com/gaozhangmin/staticResource/blob/master/images/share_page.png" width="270">
+
+## 📂 文件管理界面
+<img src="images/file-manager.png" width="400"> <img src="images/folder-tree.png" width="400">
+
+*文件管理主界面 & 文件夹树视图*
+
+## 👤 多账号登录
+<img src="images/multi-account.png" width="400"> <img src="images/login-qr.png" width="400">
+
+*多网盘账号管理 & 二维码登录*
+
+## 🎬 智能媒体库
+<img src="images/media-library.png" width="400"> <img src="images/movie-grid.png" width="400">
+
+*媒体库海报墙 & 网格视图*
+
+## 🎥 媒体详情
+<img src="images/movie-list.png" width="400"> <img src="images/movie-details.png" width="400">
+
+*媒体列表视图 & 电影详情页面*
 <a href="#readme">
 <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
 </a>

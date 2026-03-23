@@ -13,8 +13,12 @@ type UserToken = {
   access_token: string;
   open_api_access_token: string;
   user_id: string;
+  tokenfrom?: string;
   refresh: boolean
 }
+
+const DEFAULT_DOWN_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) aDrive/4.12.0 Chrome/108.0.5359.215 Electron/22.3.24 Safari/537.36'
 
 export default class launch extends EventEmitter {
   private userToken: UserToken = {
@@ -23,6 +27,7 @@ export default class launch extends EventEmitter {
     user_id: '',
     refresh: false
   }
+  private pendingOAuthUrl: string | null = null
 
   constructor() {
     super()
@@ -39,7 +44,14 @@ export default class launch extends EventEmitter {
       app.on('second-instance', (event, commandLine, workingDirectory) => {
         if (commandLine && commandLine.join(' ').indexOf('exit') >= 0) {
           this.hasExitArgv(commandLine)
-        } else if (AppWindow.mainWindow && AppWindow.mainWindow.isDestroyed() == false) {
+          return
+        }
+        const oauthUrl = this.extractOAuthUrl(commandLine)
+        if (oauthUrl) {
+          this.dispatchOAuthUrl(oauthUrl)
+          return
+        }
+        if (AppWindow.mainWindow && AppWindow.mainWindow.isDestroyed() == false) {
           if (AppWindow.mainWindow.isMinimized()) {
             AppWindow.mainWindow.restore()
           }
@@ -109,12 +121,14 @@ export default class launch extends EventEmitter {
     this.handleAppActivate()
     this.handleAppWillQuit()
     this.handleAppWindowAllClosed()
+    this.handleProtocolCallback()
   }
 
   handleAppReady() {
     app
       .whenReady()
       .then(() => {
+        this.registerProtocol()
         try {
           const localVersion = getResourcesPath('localVersion')
           if (localVersion && existsSync(localVersion)) {
@@ -129,6 +143,8 @@ export default class launch extends EventEmitter {
         }
         session.defaultSession.webRequest.onBeforeSendHeaders((details, cb) => {
           const shouldGieeReferer = details.url.indexOf('gitee.com') > 0
+          const shouldBaidu = /baidu|baidupcs|bdstatic|bcebos/i.test(details.url)
+          const should115 = /(^https?:\/\/[^/]*115\.com\/)|(^https?:\/\/[^/]*anxia\.com\/)/i.test(details.url)
           const shouldBiliBili = details.url.indexOf('bilibili.com') > 0
           const shouldQQTv = details.url.indexOf('v.qq.com') > 0 || details.url.indexOf('video.qq.com') > 0
           const shouldAliPanOrigin =   details.url.indexOf('.aliyundrive.com') > 0 || details.url.indexOf('.alipan.com') > 0
@@ -141,13 +157,16 @@ export default class launch extends EventEmitter {
             requestHeaders: {
               ...details.requestHeaders,
               ...(shouldGieeReferer && {
-                Referer: 'https://gitee.com/'
+                Referer: 'https://gitee.com/',
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0'
               }),
               ...(shouldAliPanOrigin && {
-                Origin: 'https://www.aliyundrive.com'
+                Origin: 'https://www.aliyundrive.com',
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0'
               }),
               ...(shouldAliReferer && {
-                Referer: 'https://www.aliyundrive.com/'
+                Referer: 'https://www.aliyundrive.com/',
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0'
               }),
               ...(shouldBiliBili && {
                 Referer: 'https://www.bilibili.com/',
@@ -159,13 +178,25 @@ export default class launch extends EventEmitter {
                 Origin: 'https://m.v.qq.com',
                 'user-agent': 'Mozilla/5.0 (Linux; Android 13; SM-G981B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36 Edg/121.0.0.0'
               }),
+              ...(shouldBaidu && {
+                Referer: 'https://pan.baidu.com/',
+                Origin: 'https://pan.baidu.com',
+                'user-agent': 'pan.baidu.com'
+              }),
+              ...(should115 && {
+                ...(this.userToken.tokenfrom === '115' && this.userToken.access_token
+                  ? { Authorization: `Bearer ${this.userToken.access_token}` }
+                  : {}),
+                'user-agent': DEFAULT_DOWN_AGENT
+              }),
               ...(shouldToken && {
-                Authorization: this.userToken.access_token
+                Authorization: this.userToken.access_token,
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0'
               }),
               ...(shouldOpenApiToken && {
-                Authorization: this.userToken.open_api_access_token
+                Authorization: this.userToken.open_api_access_token,
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0'
               }),
-              'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) aDrive/4.12.0 Chrome/108.0.5359.215 Electron/22.3.24 Safari/537.36',
               'X-Canary': 'client=windows,app=adrive,version=v4.12.0',
               'Accept-Language': 'zh-CN,zh;q=0.9'
             }
@@ -174,6 +205,10 @@ export default class launch extends EventEmitter {
         session.defaultSession.loadExtension(getStaticPath('crx'), { allowFileAccess: true }).then(() => {
           createMainWindow()
           createTray()
+          if (this.pendingOAuthUrl) {
+            this.dispatchOAuthUrl(this.pendingOAuthUrl)
+            this.pendingOAuthUrl = null
+          }
         })
       })
       .catch((err: any) => {
@@ -226,5 +261,38 @@ export default class launch extends EventEmitter {
         app.quit() // 未测试应该使用哪一个
       }
     })
+  }
+
+  private registerProtocol() {
+    const protocol = 'xbyboxplayer-oauth'
+    if (is.windows() && process.defaultApp && process.argv.length >= 2) {
+      app.setAsDefaultProtocolClient(protocol, process.execPath, [process.argv[1]])
+    } else {
+      app.setAsDefaultProtocolClient(protocol)
+    }
+  }
+
+  private handleProtocolCallback() {
+    app.on('open-url', (event, url) => {
+      event.preventDefault()
+      if (url) this.dispatchOAuthUrl(url)
+    })
+  }
+
+  private extractOAuthUrl(commandLine?: string[]) {
+    if (!commandLine) return ''
+    const prefix = 'xbyboxplayer-oauth://'
+    return commandLine.find(arg => arg.startsWith(prefix)) || ''
+  }
+
+  private dispatchOAuthUrl(url: string) {
+    if (!url) return
+    if (AppWindow.mainWindow && AppWindow.mainWindow.isDestroyed() === false) {
+      AppWindow.mainWindow.webContents.send('cloud123-oauth-callback', url)
+      AppWindow.mainWindow.show()
+      AppWindow.mainWindow.focus()
+    } else {
+      this.pendingOAuthUrl = url
+    }
   }
 }

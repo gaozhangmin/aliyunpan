@@ -74,7 +74,8 @@ export async function GetSameFile(user_id: string, PanData: IScanDriverModel, Pr
   const entries = PanData.SameDirMap.entries()
   for (let i = 0, maxi = PanData.SameDirMap.size; i < maxi; i++) {
     const value = entries.next().value
-    const arr = value[1] as FileData[]
+    if (value && value[1]) {
+      const arr = value[1] as FileData[]
     if (arr.length > 1) {
       arr.map((a) => {
         a.parent_file_path = GetParentPath(PanData, a.parent_file_id)
@@ -82,6 +83,7 @@ export async function GetSameFile(user_id: string, PanData: IScanDriverModel, Pr
       })
       arr.sort((a, b) => b.time - a.time)
       sameDirMap.set(value[0], arr)
+    }
     }
   }
   PanData.SameDirMap = sameDirMap
@@ -196,7 +198,8 @@ export function DeleteFromSameData(PanData: IScanDriverModel, idList: string[]) 
   const entries = PanData.SameDirMap.entries()
   for (let i = 0, maxi = PanData.SameDirMap.size; i < maxi && idList.length > 0; i++) {
     const value = entries.next().value
-    const children = value[1] as FileData[]
+    if (value && value[1]) {
+      const children = value[1] as FileData[]
     const saveList: FileData[] = []
     for (let j = 0, maxj = children.length; j < maxj; j++) {
       const key = children[j].file_id
@@ -206,6 +209,7 @@ export function DeleteFromSameData(PanData: IScanDriverModel, idList: string[]) 
         saveList.push(children[j])
       }
     }
-    if (children.length != saveList.length) PanData.SameDirMap.set(value[0], saveList)
+    if (children.length != saveList.length && value && value[0]) PanData.SameDirMap.set(value[0], saveList)
+    }
   }
 }

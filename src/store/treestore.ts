@@ -12,6 +12,7 @@ export interface TreeNodeData {
   key: string
   drive_id?: string
   parent_file_id?: string
+  path?: string
   title: string
   namesearch?: string
   description?: string
@@ -24,6 +25,7 @@ export interface DirData {
   file_id: string
   drive_id: string
   parent_file_id: string
+  path?: string
   description: string
   name: string
   time: number
@@ -186,6 +188,7 @@ export default class TreeStore {
         file_id: item.file_id,
         drive_id: item.drive_id,
         parent_file_id: item.parent_file_id,
+        path: item.path,
         name: item.name,
         time: item.time,
         description: item.description,
@@ -262,6 +265,7 @@ export default class TreeStore {
         key: item.file_id,
         drive_id: item.drive_id,
         parent_file_id: item.parent_file_id,
+        path: item.path,
         title: item.name,
         description: item.description,
         children: []

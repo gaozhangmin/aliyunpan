@@ -141,10 +141,14 @@ window.Electron.ipcRenderer.on('setTheme', (_event: any, args: any) => {
   const appStore = useAppStore()
   appStore.toggleDark(args.dark)
 })
+
+window.Electron.ipcRenderer.on('cloud123-oauth-callback', (_event: any, url: string) => {
+  if (!url) return
+  window.dispatchEvent(new CustomEvent('cloud123-oauth-callback', { detail: url }))
+})
 try {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 } catch {}
-
 
 
 

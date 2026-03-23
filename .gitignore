@@ -11,3 +11,18 @@ release
 .idea
 
 localVersion
+
+# 包管理器锁文件 - 只保留 pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# 环境变量和敏感配置文件
+.env
+.env.local
+.env.*.local
+config/secrets.json
+config/keys.json
+
+# 外部项目/子模块 - 不提交到主仓库
+CloudServiceKit/
+XbyVideoHub/

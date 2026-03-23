@@ -12,6 +12,8 @@ import AliShare from '../../aliapi/share'
 import { usePanTreeStore } from '../../store'
 import message from '../../utils/message'
 import PanDAL from '../pandal'
+import { isAliyunUser, isCloud123User } from '../../aliapi/utils'
+import { isWebDavDrive } from '../../utils/webdavClient'
 
 const props = defineProps({
   dirtype: {
@@ -34,6 +36,7 @@ const props = defineProps({
 
 const videoSelectType = ref('recent')
 const panTreeStore = usePanTreeStore()
+const isWebDav = computed(() => isWebDavDrive(panTreeStore.drive_id || panTreeStore.selectDir.drive_id))
 
 const isShowBtn = computed(() => {
   return (props.dirtype === 'pic' && props.inputpicType != 'mypic')
@@ -102,7 +105,7 @@ const handleClickBottleFish = async () => {
       </a-button>
       <template #content>
         <a-dgroup title="普通新建">
-          <a-doption value='newfile' title='Ctrl+N' @click='() => modalCreatNewFile()'>
+          <a-doption v-if='!isWebDav' value='newfile' title='Ctrl+N' @click='() => modalCreatNewFile()'>
             <template #icon><i class='iconfont iconwenjian' /></template>
             <template #default>新建文件</template>
           </a-doption>
@@ -110,12 +113,12 @@ const handleClickBottleFish = async () => {
             <template #icon><i class='iconfont iconfile-folder' /></template>
             <template #default>新建文件夹</template>
           </a-doption>
-          <a-doption value='newdatefolder' @click="() => modalCreatNewDir('datefolder')">
+          <a-doption v-if='!isWebDav' value='newdatefolder' @click="() => modalCreatNewDir('datefolder')">
             <template #icon><i class='iconfont iconfolderadd' /></template>
             <template #default>日期+序号</template>
           </a-doption>
         </a-dgroup>
-        <a-dgroup title="加密新建">
+        <a-dgroup v-if='!isWebDav' title="加密新建">
           <a-doption value='newfile' @click='() => modalCreatNewFile("xbyEncrypt1")'>
             <template #icon><i class='iconfont iconwenjian' /></template>
             <template #default>新建文件（加密）</template>
@@ -129,7 +132,7 @@ const handleClickBottleFish = async () => {
             <template #default>日期+序号（加密）</template>
           </a-doption>
         </a-dgroup>
-        <a-dgroup title="私密新建">
+        <a-dgroup v-if='!isWebDav' title="私密新建">
           <a-doption value='newfile' @click='() => modalCreatNewFile("xbyEncrypt2")'>
             <template #icon><i class='iconfont iconwenjian' /></template>
             <template #default>新建文件（私密）</template>
@@ -150,7 +153,7 @@ const handleClickBottleFish = async () => {
               @click='modalCreatNewAlbum'>
       <i class='iconfont iconplus' />创建相册
     </a-button>
-    <a-dropdown v-if='!dirtype.includes("pic")' trigger='hover' class='rightmenu' position='bl'>
+    <a-dropdown v-if='!dirtype.includes("pic") && !isWebDav' trigger='hover' class='rightmenu' position='bl'>
       <a-button type='text' size='small' tabindex='-1'>
         <i class='iconfont iconupload' />上传<i class='iconfont icondown' />
       </a-button>
@@ -166,7 +169,7 @@ const handleClickBottleFish = async () => {
             <template #default>上传文件夹</template>
           </a-doption>
         </a-dgroup>
-        <a-dgroup title="加密上传">
+        <a-dgroup v-if='!isWebDav' title="加密上传">
           <a-doption value='uploadfile' title='Ctrl+J'
                      @click="() => handleUpload('file', 'xbyEncrypt1')">
             <template #icon><i class='iconfont iconwenjian' /></template>
@@ -177,7 +180,7 @@ const handleClickBottleFish = async () => {
             <template #default>上传文件夹（加密）</template>
           </a-doption>
         </a-dgroup>
-        <a-dgroup title="私密上传">
+        <a-dgroup v-if='!isWebDav' title="私密上传">
           <a-doption value='uploadfile' title='Ctrl+M'
                      @click="() => handleUpload('file', 'xbyEncrypt2')">
             <template #icon><i class='iconfont iconwenjian' /></template>
@@ -190,7 +193,7 @@ const handleClickBottleFish = async () => {
         </a-dgroup>
       </template>
     </a-dropdown>
-    <a-dropdown v-if="isShowBtn && dirtype.includes('pic')"
+    <a-dropdown v-if="isShowBtn && dirtype.includes('pic') &&  isAliyunUser(panTreeStore.user_id || '')"
                 trigger='hover' class='rightmenu' position='bl'>
       <a-button type='text' size='small' tabindex='-1'>
         <i class='iconfont iconupload' />上传照片/视频<i class='iconfont icondown' />
@@ -219,7 +222,7 @@ const handleClickBottleFish = async () => {
         </a-dgroup>
       </template>
     </a-dropdown>
-    <a-button v-if="!dirtype.includes('pic')" type='text' size='small' tabindex='-1' title='Ctrl+L'
+    <a-button v-if="!dirtype.includes('pic') && isAliyunUser(panTreeStore.user_id || '')" type='text' size='small' tabindex='-1' title='Ctrl+L'
               @click='modalDaoRuShareLink()'>
       <i class='iconfont iconlink2' />导入分享
     </a-button>

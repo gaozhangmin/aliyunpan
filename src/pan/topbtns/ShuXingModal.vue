@@ -8,8 +8,14 @@ import { modalCloseAll } from '../../utils/modal'
 import { humanDateTimeDateStr, humanSize, humanTime } from '../../utils/format'
 import { ref } from 'vue'
 import DebugLog from '../../utils/debuglog'
-import { GetDriveID } from '../../aliapi/utils'
+import { GetDriveID, isBaiduUser, isCloud123User, isDrive115User } from '../../aliapi/utils'
 import { getEncType, getRawUrl } from '../../utils/proxyhelper'
+import { apiCloud123FileDetail } from '../../cloud123/filecmd'
+import { apiDrive115FileDetail } from '../../cloud115/filecmd'
+import { mapDrive115DetailToAliModel } from '../../cloud115/dirfilelist'
+import { mapCloud123InfoToAliModel } from '../../cloud123/dirfilelist'
+import TreeStore from '../../store/treestore'
+import { apiBaiduFileMetas, mapBaiduMetaToAliFileItem } from '../../cloudbaidu/filecmd'
 
 const props = defineProps({
   visible: {
@@ -34,9 +40,11 @@ const handleOpen = async () => {
   const pantreeStore = usePanTreeStore()
   let file_id = ''
   let drive_id = ''
+  let file_desc = ''
   if (props.istree) {
     file_id = pantreeStore.selectDir.file_id
     drive_id = pantreeStore.selectDir.drive_id
+    file_desc = pantreeStore.selectDir.description || ''
   } else {
     const panfileStore = usePanFileStore()
     let fileList = panfileStore.GetSelected()
@@ -47,6 +55,7 @@ const handleOpen = async () => {
     }
     file_id = fileList[0].file_id
     drive_id = fileList[0].drive_id
+    file_desc = fileList[0].description || ''
   }
   if (props.ispic) {
     drive_id = GetDriveID(pantreeStore.user_id, 'pic')
@@ -54,12 +63,81 @@ const handleOpen = async () => {
   if (!file_id) {
     message.error('没有选中任何文件')
   } else {
-    let path_file_id = props.ispic ? 'pic_root' : file_id
-    let fileName = pantreeStore.selectDir.name
-    AliFile.ApiFileGetPathString(pantreeStore.user_id, drive_id, path_file_id, '/').then((data) => {
-      dirPath.value = '/' + data + (props.ispic ? '/' + fileName : '')
-    })
-    fileInfo.value = await AliFile.ApiFileInfo(pantreeStore.user_id, drive_id, file_id, props.ispic)
+    const isCloudUser = isCloud123User(pantreeStore.user_id)
+      || drive_id === 'cloud123'
+      || pantreeStore.selectDir.drive_id === 'cloud123'
+    const is115User = isDrive115User(pantreeStore.user_id) || drive_id === 'drive115'
+    const isBaidu = isBaiduUser(pantreeStore.user_id) || drive_id === 'baidu'
+    if (isCloudUser) {
+      const pathList = TreeStore.GetDirPath(drive_id, file_id)
+      const pathNames = pathList.map((item) => item.name).filter((name) => name)
+      dirPath.value = '/' + pathNames.join('/')
+      const detail = await apiCloud123FileDetail(pantreeStore.user_id, file_id)
+      if (detail) {
+        const mapped: any = mapCloud123InfoToAliModel(detail)
+        mapped.type = mapped.isDir ? 'folder' : 'file'
+        mapped.created_at = detail.createAt || detail.create_at || ''
+        mapped.updated_at = detail.updateAt || detail.update_at || ''
+        fileInfo.value = mapped
+      }
+    } else if (is115User) {
+      const detail = await apiDrive115FileDetail(pantreeStore.user_id, file_id)
+      if (detail) {
+        const mapped: any = mapDrive115DetailToAliModel(detail, drive_id)
+        mapped.type = mapped.isDir ? 'folder' : 'file'
+        mapped.created_at = detail.created_at || ''
+        mapped.updated_at = detail.updated_at || ''
+        mapped.content_hash = detail.sha1 || ''
+        fileInfo.value = mapped
+        if (mapped.type === 'folder') {
+          dirInfo.value = {
+            size: detail.size || 0,
+            folder_count: detail.folder_count || 0,
+            file_count: detail.file_count || 0,
+            reach_limit: undefined
+          }
+        }
+        if (detail.path && detail.path.length > 0) {
+          const pathNames = detail.path.map((item) => item.file_name).filter((name) => name)
+          dirPath.value = '/' + pathNames.join('/')
+        }
+      }
+    } else if (isBaidu) {
+      const descInfo = parseBaiduDesc(file_desc || '')
+      const fsid = descInfo.fsid
+      console.log('=== 百度网盘属性调试 ===')
+      console.log('file_desc:', file_desc)
+      console.log('descInfo:', descInfo)
+      console.log('fsid:', fsid)
+      if (fsid) {
+        const metas = await apiBaiduFileMetas(pantreeStore.user_id, [fsid], 0, 1, 1, 1, 1)
+        console.log('API metas 响应:', metas)
+        const meta = metas && metas[0]
+        if (meta) {
+          console.log('原始 meta 数据:', meta)
+          const mapped: any = mapBaiduMetaToAliFileItem(meta, drive_id, file_id)
+          console.log('映射后的数据:', mapped)
+          fileInfo.value = mapped
+          const pathValue = meta.path || descInfo.path || ''
+          if (pathValue) {
+            const pathParts = pathValue.split('/').filter(Boolean)
+            pathParts.pop()
+            dirPath.value = '/' + pathParts.join('/')
+          }
+        } else {
+          console.log('未找到 meta 数据')
+        }
+      } else {
+        console.log('未从描述中解析到 fsid')
+      }
+    } else {
+      let path_file_id = props.ispic ? 'pic_root' : file_id
+      let fileName = pantreeStore.selectDir.name
+      AliFile.ApiFileGetPathString(pantreeStore.user_id, drive_id, path_file_id, '/').then((data) => {
+        dirPath.value = '/' + data + (props.ispic ? '/' + fileName : '')
+      })
+      fileInfo.value = await AliFile.ApiFileInfo(pantreeStore.user_id, drive_id, file_id, props.ispic)
+    }
     if (fileInfo.value && ['audio', 'video'].includes(fileInfo.value.category)) {
       const encType = getEncType(fileInfo.value)
       const category = fileInfo.value.category
@@ -74,7 +152,7 @@ const handleOpen = async () => {
         fileInfo.value.thumbnail = rawUrl.url
       }
     }
-    if (fileInfo.value?.type == 'folder') {
+    if (fileInfo.value?.type == 'folder' && !isCloudUser && !is115User && !isBaidu) {
       dirInfo.value = await AliFile.ApiFileGetFolderSize(pantreeStore.user_id, drive_id, file_id)
     }
   }
@@ -166,6 +244,15 @@ const handleCopyThumbnail = () => {
   if (fileInfo.value?.thumbnail) {
     copyToClipboard(fileInfo.value?.thumbnail)
     message.success('预览链接已复制到剪切板')
+  }
+}
+
+const parseBaiduDesc = (desc: string) => {
+  const fsidMatch = desc.match(/baidu_fsid:([0-9]+)/)
+  const pathMatch = desc.match(/baidu_path:([^;]+)/)
+  return {
+    fsid: fsidMatch ? Number(fsidMatch[1]) : 0,
+    path: pathMatch ? pathMatch[1] : ''
   }
 }
 </script>

@@ -18,6 +18,13 @@ import { IPageVideo } from '../store/appstore'
 import { Input, InputNumber, Modal } from '@arco-design/web-vue'
 import { h } from 'vue'
 import path from 'path'
+import { isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
+import { apiDrive115FileDetail } from '../cloud115/filecmd'
+import { apiDrive115VideoHistory } from '../cloud115/video'
+import { apiDrive115FileList, mapDrive115DetailToAliModel, mapDrive115FileToAliModel } from '../cloud115/dirfilelist'
+import { apiCloud123FileList, mapCloud123FileToAliModel } from '../cloud123/dirfilelist'
+import { apiBaiduFileList, mapBaiduFileToAliModel } from '../cloudbaidu/dirfilelist'
+import { getWebDavConnection, getWebDavConnectionId, isWebDavDrive, listWebDavDirectory } from './webdavClient'
 
 const PlayerUtils = {
   filterSubtitleFile(name: string, subTitlesList: IAliGetFileModel[]) {
@@ -163,6 +170,20 @@ const PlayerUtils = {
   },
 
   async getPlayCursor(user_id: string, drive_id: string, file_id: string) {
+    if (isWebDavDrive(drive_id)) return undefined
+    if (isCloud123User(user_id) || drive_id === 'cloud123') return undefined
+    if (isBaiduUser(user_id) || drive_id === 'baidu') return undefined
+    if (isDrive115User(user_id) || drive_id === 'drive115') {
+      const detail = await apiDrive115FileDetail(user_id, file_id)
+      if (!detail) return undefined
+      const info = mapDrive115DetailToAliModel(detail, drive_id)
+      const play_duration = Number(detail.play_long || 0)
+      let play_cursor = await apiDrive115VideoHistory(user_id, detail.pick_code)
+      if (play_duration > 0 && play_cursor >= play_duration - 10) {
+        play_cursor = play_duration - 10
+      }
+      return { info, play_duration, play_cursor }
+    }
     // 获取文件信息
     const info = await AliFile.ApiFileInfo(user_id, drive_id, file_id)
     if (info && typeof info == 'string') {
@@ -191,9 +212,27 @@ const PlayerUtils = {
     return { info, play_duration, play_cursor }
   },
   async getDirFileList(user_id: string, drive_id: string, parent_file_id: string) {
-    const dir = await AliDirFileList.ApiDirFileList(user_id, drive_id, parent_file_id, '', 'name asc', '')
+    let items: IAliGetFileModel[] = []
+    if (isWebDavDrive(drive_id)) {
+      const connection = getWebDavConnection(getWebDavConnectionId(drive_id))
+      if (connection) {
+        items = await listWebDavDirectory(connection, parent_file_id || '/')
+      }
+    } else if (isCloud123User(user_id) || drive_id === 'cloud123') {
+      const list = await apiCloud123FileList(user_id, parent_file_id, 500, false)
+      items = list.map(item => mapCloud123FileToAliModel(item))
+    } else if (isDrive115User(user_id) || drive_id === 'drive115') {
+      const list = await apiDrive115FileList(user_id, parent_file_id, 200, 0, true)
+      items = list.map(item => mapDrive115FileToAliModel(item, drive_id))
+    } else if (isBaiduUser(user_id) || drive_id === 'baidu') {
+      const list = await apiBaiduFileList(user_id, parent_file_id || '/', 'name', 0, 1000)
+      items = list.map(item => mapBaiduFileToAliModel(item, drive_id, parent_file_id || '/'))
+    } else {
+      const dir = await AliDirFileList.ApiDirFileList(user_id, drive_id, parent_file_id, '', 'name asc', '')
+      items = dir.items
+    }
     const curDirFileList: IAliGetFileModel[] = []
-    for (let item of dir.items) {
+    for (let item of items) {
       if (item.isDir) continue
       curDirFileList.push(item)
     }

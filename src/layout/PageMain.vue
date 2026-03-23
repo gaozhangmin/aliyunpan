@@ -32,6 +32,7 @@ import { B64decode } from '../utils/format'
 import { throttle } from '../utils/debounce'
 
 const panVisible = ref(true)
+const mediaNavVisible = ref(true)
 const appStore = useAppStore()
 const winStore = useWinStore()
 const keyboardStore = useKeyboardStore()
@@ -40,6 +41,10 @@ const footStore = useFootStore()
 
 const handlePanVisible = () => {
   panVisible.value = !panVisible.value
+}
+
+const handleMediaNavVisible = () => {
+  mediaNavVisible.value = !mediaNavVisible.value
 }
 
 const handleThemeClick = (val: any) => {
@@ -181,15 +186,19 @@ onUnmounted(() => {
           <i class='iconfont iconmenuon' v-if='panVisible' />
           <i class='iconfont iconmenuoff' v-else />
         </a-button>
-        <div class='title'>阿里云盘</div>
+        <a-button v-show="appStore.appTab === 'media'" type='text' size='small' @click='handleMediaNavVisible'>
+          <i class='iconfont iconmenuon' v-if='mediaNavVisible' />
+          <i class='iconfont iconmenuoff' v-else />
+        </a-button>
+        <div class='title'>小白羊 BoxPlayer</div>
 
         <a-menu mode='horizontal' :selected-keys='[appStore.appTab]'
                 @update:selected-keys='appStore.toggleTab($event[0])'>
           <a-menu-item key='pan' title='Alt+1'>网盘</a-menu-item>
+          <a-menu-item key='media' title='Alt+5'>媒体库</a-menu-item>
           <a-menu-item key='down' title='Alt+2'>传输</a-menu-item>
           <a-menu-item key='share' title='Alt+3'>资源</a-menu-item>
           <a-menu-item key='rss' title='Alt+4'>插件</a-menu-item>
-          <a-menu-item key='media' title='Alt+5'>媒体库</a-menu-item>
         </a-menu>
 
         <div class='flexauto'></div>
@@ -231,7 +240,7 @@ onUnmounted(() => {
           <Rss />
         </a-tab-pane>
         <a-tab-pane key='media' title='5'>
-          <MediaLibraryView />
+          <MediaLibraryView :navVisible="mediaNavVisible" />
         </a-tab-pane>
         <a-tab-pane key='setting' title='6'>
           <Setting />

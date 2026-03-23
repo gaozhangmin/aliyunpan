@@ -16,15 +16,18 @@ import {
   menuVideoXBT
 } from '../topbtns/topbtn'
 import { modalRename, modalShuXing } from '../../utils/modal'
-import { useSettingStore, usePanFileStore, useAppStore } from '../../store'
+import { useSettingStore, usePanFileStore, useAppStore, usePanTreeStore } from '../../store'
 import { computed } from 'vue'
 import { MediaScanner } from '../../utils/mediaScanner'
 import message from '../../utils/message'
+import { isAliyunUser as isAliyunAccountUser, isCloud123User } from '../../aliapi/utils'
+import { isWebDavDrive } from '../../utils/webdavClient'
 
 let istree = false
 const settingStore = useSettingStore()
 const panFileStore = usePanFileStore()
 const appStore = useAppStore()
+const panTreeStore = usePanTreeStore()
 const mediaScanner = MediaScanner.getInstance()
 
 // 扫描媒体库方法
@@ -45,7 +48,7 @@ const handleScanMediaLibrary = async () => {
   // 扫描第一个选中的文件夹
   const folder = folders[0]
   try {
-    await mediaScanner.scanAliyunFolder(folder, folder.drive_id)
+    await mediaScanner.scanFolder(folder, folder.drive_id)
     message.success(`开始扫描文件夹 "${folder.name}" 的媒体库`)
 
     // 切换到媒体库标签页
@@ -94,6 +97,9 @@ const isShowBtn = computed(() => {
 const isPic = computed(() => {
   return (props.dirtype === 'pic' && props.inputpicType == 'mypic')
 })
+const isCloudUser = computed(() => isCloud123User(panTreeStore.user_id || '') || panTreeStore.drive_id === 'cloud123')
+const isAliyunAccount = computed(() => isAliyunAccountUser(panTreeStore.user_id || ''))
+const isWebDav = computed(() => isWebDavDrive(panTreeStore.drive_id || panTreeStore.selectDir.drive_id))
 
 // 检查是否选中了文件夹
 const isSelectedFolder = computed(() => {
@@ -114,7 +120,7 @@ const isSelectedFolder = computed(() => {
         <template #icon><i class='iconfont iconfenxiang' /></template>
         <template #default>分享</template>
       </a-doption>
-      <a-doption @click="() => menuCreatShare(istree, 'pan', 'backup_root')">
+      <a-doption v-if="isAliyunAccount" @click="() => menuCreatShare(istree, 'pan', 'backup_root')">
         <template #icon><i class='iconfont iconrss' /></template>
         <template #default>快传</template>
       </a-doption>
@@ -125,7 +131,7 @@ const isSelectedFolder = computed(() => {
         <template #default>扫描媒体库</template>
       </a-doption>
 
-      <a-dsubmenu v-if="dirtype !== 'pic'" id='rightpansubbiaoji' class='rightmenu' trigger='hover'>
+      <a-dsubmenu v-if="dirtype !== 'pic' && !isWebDav" id='rightpansubbiaoji' class='rightmenu' trigger='hover'>
         <template #default>
           <div @click.stop='() => {}'>
             <span class='arco-dropdown-option-icon'>
@@ -178,16 +184,16 @@ const isSelectedFolder = computed(() => {
             <template #icon><i class='iconfont iconcopy' /></template>
             <template #default>复制到...</template>
           </a-doption>
-          <a-doption v-show='isShowBtn' type='text' size='small' tabindex='-1' title='Ctrl+M'
+          <a-doption v-show='isShowBtn && isAliyunAccount && !isWebDav' type='text' size='small' tabindex='-1' title='Ctrl+M'
                      @click="() => menuFileEncTypeChange(istree)">
             <template #icon><i class='iconfont iconsafebox' /></template>
             <template #default>标记加密</template>
           </a-doption>
-          <a-doption v-show='isShowBtn && dirtype !== "mypic"  || dirtype === "search"' class='danger' @click='() => menuTrashSelectFile(istree, false, isPic)'>
+          <a-doption v-show='!isWebDav && (isShowBtn && dirtype !== "mypic"  || dirtype === "search")' class='danger' @click='() => menuTrashSelectFile(istree, false, isPic)'>
             <template #icon><i class='iconfont icondelete' /></template>
             <template #default>放回收站</template>
           </a-doption>
-          <a-dsubmenu v-if='dirtype !== "mypic"' class='rightmenu' trigger='hover'>
+          <a-dsubmenu v-if='dirtype !== "mypic" && (isAliyunAccount || isWebDav)' class='rightmenu' trigger='hover'>
             <template #default>
               <span class='arco-dropdown-option-icon'><i class='iconfont iconrest'></i></span>彻底删除
             </template>
@@ -231,12 +237,12 @@ const isSelectedFolder = computed(() => {
             <template #icon><i class='iconfont iconjietu' /></template>
             <template #default>雪碧图</template>
           </a-doption>
-          <a-doption v-show='isShowBtn' type='text' size='small' tabindex='-1' title='Ctrl+M'
+          <a-doption v-show='isShowBtn && isAliyunAccount && !isWebDav' type='text' size='small' tabindex='-1' title='Ctrl+M'
                      @click="() => menuFileEncTypeChange(istree)">
             <template #icon><i class='iconfont iconsafebox' /></template>
             <template #default>标记加密</template>
           </a-doption>
-          <a-doption v-show='isShowBtn' type='text' size='small' tabindex='-1' title='Ctrl+M'
+          <a-doption v-show='isShowBtn && isAliyunAccount && !isWebDav' type='text' size='small' tabindex='-1' title='Ctrl+M'
                      @click="() => menuFileClearHistory(istree)">
             <template #icon><i class='iconfont iconshipin' /></template>
             <template #default>清除历史</template>
@@ -253,7 +259,7 @@ const isSelectedFolder = computed(() => {
             <template #icon><i class='iconfont iconlist' /></template>
             <template #default>复制文件名</template>
           </a-doption>
-          <a-doption v-show='isselected && !isselectedmulti'
+          <a-doption v-show='isselected && !isselectedmulti && !isCloudUser'
                      @click='() => menuCopyFileTree()'>
             <template #icon><i class='iconfont iconnode-tree1' /></template>
             <template #default>复制目录树</template>

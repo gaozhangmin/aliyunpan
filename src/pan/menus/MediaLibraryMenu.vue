@@ -98,7 +98,7 @@ const handleAddToLibrary = async () => {
     }
 
     // 开始扫描
-    await mediaScanner.scanAliyunFolder(props.selectedItem, props.selectedItem.drive_id)
+    await mediaScanner.scanFolder(props.selectedItem, props.selectedItem.drive_id)
 
     message.success(`已将 "${folderName}" 添加到媒体库`)
 
@@ -122,7 +122,7 @@ const handleScanFolder = async () => {
   }
 
   try {
-    await mediaScanner.scanAliyunFolder(props.selectedItem, props.selectedItem.drive_id)
+    await mediaScanner.scanFolder(props.selectedItem, props.selectedItem.drive_id)
     message.success('扫描完成')
   } catch (error) {
     console.error('Error scanning folder:', error)

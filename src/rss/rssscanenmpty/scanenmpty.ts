@@ -12,9 +12,12 @@ export async function GetEnmptyDir(user_id: string, PanData: IScanDriverModel, P
   const entries = PanData.DirMap.keys()
   for (let i = 0, maxi = PanData.DirMap.size; i < maxi; i++) {
     const key = entries.next().value
-    if (!PanData.DirChildrenMap.has(key)) {
+    if (key && !PanData.DirChildrenMap.has(key)) {
 
-      enmpty.set(key, PanData.DirMap.get(key)!)
+      const dirData = PanData.DirMap.get(key)
+      if (dirData) {
+        enmpty.set(key, dirData)
+      }
     }
   }
 
@@ -23,7 +26,10 @@ export async function GetEnmptyDir(user_id: string, PanData: IScanDriverModel, P
   const idList: string[] = []
   const keys = enmpty.keys()
   for (let i = 0, maxi = enmpty.size; i < maxi; i++) {
-    idList.push(keys.next().value)
+    const key = keys.next().value
+    if (key) {
+      idList.push(key)
+    }
     if (idList.length >= 100) {
       proVal += proAdd
       Processing.value = Math.max(50, Math.floor(proVal))

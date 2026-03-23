@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { useAppStore } from '../store'
+import usePanTreeStore from '../pan/pantreestore'
+import { computed, watch } from 'vue'
+import { isAliyunUser } from '../aliapi/utils'
 import RssScanClean from './rssscanclean/RssScanClean.vue'
 import AppSame from './appsame/AppSame.vue'
 import RssXiMa from './rssxima/RssXiMa.vue'
@@ -12,6 +15,19 @@ import RssDriveCopy from './rssdrivecopy/RssDriveCopy.vue'
 import RssRename from './rssrename/RssRename.vue'
 
 const appStore = useAppStore()
+const panTreeStore = usePanTreeStore()
+const isAliyunAccount = computed(() => isAliyunUser(panTreeStore.user_id || ''))
+const aliyunOnlyMenus = new Set(['AppSame', 'RssScanClean', 'RssScanSame', 'RssScanPunish', 'RssScanEnmpty', 'RssDriveCopy'])
+
+watch(
+  () => [isAliyunAccount.value, appStore.GetAppTabMenu],
+  ([isAliyun]) => {
+    if (!isAliyun && aliyunOnlyMenus.has(appStore.GetAppTabMenu)) {
+      appStore.toggleTabMenu('rss', 'RssXiMa')
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -29,27 +45,27 @@ const appStore = useAppStore()
           <template #icon><i class="iconfont iconsafebox" /></template>
           文件加密解密
         </a-menu-item>
-        <a-menu-item key="AppSame">
+        <a-menu-item v-if="isAliyunAccount" key="AppSame">
           <template #icon><i class="iconfont iconcopy" /></template>
           重复文件清理
         </a-menu-item>
-        <a-menu-item key="RssScanClean">
+        <a-menu-item v-if="isAliyunAccount" key="RssScanClean">
           <template #icon><i class="iconfont iconclear" /></template>
           扫描大文件
         </a-menu-item>
-        <a-menu-item key="RssScanSame">
+        <a-menu-item v-if="isAliyunAccount" key="RssScanSame">
           <template #icon><i class="iconfont iconcopy" /></template>
           扫描重复文件
         </a-menu-item>
-        <a-menu-item key="RssScanPunish">
+        <a-menu-item v-if="isAliyunAccount" key="RssScanPunish">
           <template #icon><i class="iconfont iconweixiang" /></template>
           扫描违规文件
         </a-menu-item>
-        <a-menu-item key="RssScanEnmpty">
+        <a-menu-item v-if="isAliyunAccount" key="RssScanEnmpty">
           <template #icon><i class="iconfont iconempty" /></template>
           扫描空文件夹
         </a-menu-item>
-        <a-menu-item key="RssDriveCopy">
+        <a-menu-item v-if="isAliyunAccount" key="RssDriveCopy">
           <template #icon><i class="iconfont iconchuanshu2" /></template>
           网盘相册间复制
         </a-menu-item>
@@ -60,12 +76,12 @@ const appStore = useAppStore()
         <a-tab-pane key="RssXiMa" title="1"><RssXiMa /></a-tab-pane>
         <a-tab-pane key="RssRename" title="2"><RssRename /></a-tab-pane>
         <a-tab-pane key="RssJiaMi" title="3"><RssJiaMi /></a-tab-pane>
-        <a-tab-pane key="AppSame" title="4"><AppSame /></a-tab-pane>
-        <a-tab-pane key="RssScanClean" title="5"><RssScanClean /></a-tab-pane>
-        <a-tab-pane key="RssScanSame" title="6"><RssScanSame /></a-tab-pane>
-        <a-tab-pane key="RssScanPunish" title="7"><RssScanPunish /></a-tab-pane>
-        <a-tab-pane key="RssScanEnmpty" title="8"><RssScanEnmpty /></a-tab-pane>
-        <a-tab-pane key="RssDriveCopy" title="9"><RssDriveCopy /></a-tab-pane>
+        <a-tab-pane v-if="isAliyunAccount" key="AppSame" title="4"><AppSame /></a-tab-pane>
+        <a-tab-pane v-if="isAliyunAccount" key="RssScanClean" title="5"><RssScanClean /></a-tab-pane>
+        <a-tab-pane v-if="isAliyunAccount" key="RssScanSame" title="6"><RssScanSame /></a-tab-pane>
+        <a-tab-pane v-if="isAliyunAccount" key="RssScanPunish" title="7"><RssScanPunish /></a-tab-pane>
+        <a-tab-pane v-if="isAliyunAccount" key="RssScanEnmpty" title="8"><RssScanEnmpty /></a-tab-pane>
+        <a-tab-pane v-if="isAliyunAccount" key="RssDriveCopy" title="9"><RssDriveCopy /></a-tab-pane>
         <a-tab-pane key="RssUserCopy" title="10"><RssUserCopy /></a-tab-pane>
       </a-tabs>
     </a-layout-content>

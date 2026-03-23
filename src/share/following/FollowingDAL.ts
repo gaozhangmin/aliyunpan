@@ -39,7 +39,7 @@ export default class FollowingDAL {
     const entries = map.entries()
     for (let i = 0, maxi = map.size; i < maxi; i++) {
       const entry = entries.next().value
-      if (entry[1].length > 0) otherfollowingStore.aSaveOtherFollowingList(entry[0] + ' (' + entry[1].length + ')', 'orangered', entry[1])
+      if (entry && entry[1] && entry[1].length > 0) otherfollowingStore.aSaveOtherFollowingList(entry[0] + ' (' + entry[1].length + ')', 'orangered', entry[1])
     }
 
     otherfollowingStore.TuiJianLoading = false

@@ -5,6 +5,8 @@ import AliHttp, { IUrlRespData } from './alihttp'
 import { IAliShareBottleFishItem, IAliShareItem, IAliShareRecentItem } from './alimodels'
 import AliDirFileList from './dirfilelist'
 import { useSettingStore } from '../store'
+import { isCloud123User } from './utils'
+import { apiCloud123ShareList } from '../cloud123/share'
 
 export interface IAliShareResp {
   items: IAliShareItem[]
@@ -37,6 +39,9 @@ export interface IAliShareBottleFishResp {
 export default class AliShareList {
 
   static async ApiShareListAll(user_id: string): Promise<IAliShareResp> {
+    if (isCloud123User(user_id)) {
+      return await AliShareList.ApiCloud123ShareListAll(user_id)
+    }
     const dir: IAliShareResp = {
       items: [],
       itemsKey: new Set(),
@@ -55,6 +60,9 @@ export default class AliShareList {
   }
 
   static async ApiShareListOnePage(dir: IAliShareResp): Promise<boolean> {
+    if (isCloud123User(dir.m_user_id)) {
+      return await AliShareList.ApiCloud123ShareListOnePage(dir)
+    }
     const url = 'adrive/v3/share_link/list'
     const postData = {
       marker: dir.next_marker,
@@ -263,6 +271,19 @@ export default class AliShareList {
   }
 
   static async ApiShareListUntilShareID(user_id: string, share_id: string): Promise<boolean> {
+    if (isCloud123User(user_id)) {
+      let lastShareId = 0
+      do {
+        const resp = await apiCloud123ShareList(user_id, lastShareId, 100)
+        if (resp.error) return false
+        for (let i = 0, maxi = resp.list.length; i < maxi; i++) {
+          if (String(resp.list[i].shareId) === share_id) return true
+        }
+        if (resp.lastShareId === -1) break
+        lastShareId = resp.lastShareId
+      } while (true)
+      return false
+    }
     const url = 'adrive/v3/share_link/list'
     const postData = {
       marker: '',
@@ -277,5 +298,70 @@ export default class AliShareList {
       if (item.share_id == share_id) return true
     }
     return false
+  }
+
+  private static async ApiCloud123ShareListAll(user_id: string): Promise<IAliShareResp> {
+    const dir: IAliShareResp = {
+      items: [],
+      itemsKey: new Set(),
+      next_marker: '',
+      m_time: 0,
+      m_user_id: user_id
+    }
+    do {
+      const isGet = await AliShareList.ApiCloud123ShareListOnePage(dir)
+      if (!isGet) break
+    } while (dir.next_marker)
+    return dir
+  }
+
+  private static async ApiCloud123ShareListOnePage(dir: IAliShareResp): Promise<boolean> {
+    const lastShareId = dir.next_marker ? Number(dir.next_marker) : 0
+    const resp = await apiCloud123ShareList(dir.m_user_id, Number.isNaN(lastShareId) ? 0 : lastShareId, 100)
+    if (resp.error) {
+      message.warning('列出分享列表出错' + resp.error, 2)
+      return false
+    }
+    const timeNow = new Date().getTime()
+    for (let i = 0, maxi = resp.list.length; i < maxi; i++) {
+      const item = resp.list[i]
+      const share_id = String(item.shareId)
+      if (dir.itemsKey.has(share_id)) continue
+      const share_url = item.shareKey ? `https://www.123pan.com/s/${item.shareKey}` : ''
+      const add: IAliShareItem = {
+        created_at: '',
+        creator: '',
+        description: '',
+        display_name: '',
+        display_label: '',
+        download_count: item.downloadCount || 0,
+        drive_id: 'cloud123',
+        expiration: item.expiration || '',
+        expired: item.expired === 1,
+        file_id: '',
+        file_id_list: [],
+        icon: 'iconwenjian',
+        preview_count: item.previewCount || 0,
+        save_count: item.saveCount || 0,
+        share_id: share_id,
+        share_msg: '',
+        full_share_msg: '',
+        share_name: item.shareName || '分享链接',
+        share_policy: '',
+        share_pwd: item.sharePwd || '',
+        share_url: share_url,
+        status: item.expired === 1 ? 'expired' : '',
+        updated_at: '',
+        is_share_saved: false,
+        share_saved: ''
+      }
+      add.share_msg = humanExpiration(add.expiration, timeNow)
+      if (add.expired) add.share_msg = '过期失效'
+      if (!add.share_name) add.share_name = 'share_name'
+      dir.items.push(add)
+      dir.itemsKey.add(add.share_id)
+    }
+    dir.next_marker = resp.lastShareId === -1 ? '' : String(resp.lastShareId)
+    return true
   }
 }

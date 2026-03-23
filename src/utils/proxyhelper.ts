@@ -12,6 +12,8 @@ import { localPwd } from './aria2c'
 import os from 'os'
 import DebugLog from './debuglog'
 import message from './message'
+import UserDAL from '../user/userdal'
+import Config from '../config'
 
 // 默认maxFreeSockets=256
 const httpsAgent = new HttpsAgent({ keepAlive: true })
@@ -152,7 +154,11 @@ export async function getRawUrl(
         if (typeof previewData != 'string') {
           Object.assign(data, previewData)
           if (quality && quality != 'Origin') {
-            data.url = data.qualities.find((q: any) => q.quality === quality)?.url || data.qualities[0].url
+            data.url = data.qualities.find((q: any) => q.quality === quality)?.url || data.qualities[0]?.url
+          } else if (data.qualities.length > 0 && (drive_id === 'drive115' || drive_id === 'cloud123')) {
+            data.url = data.qualities[0].url
+          } else if (data.qualities.length > 0 && !data.url) {
+            data.url = data.qualities[0].url
           }
         }
       }
@@ -181,7 +187,7 @@ export async function getRawUrl(
   }
   if (preview_type == 'other') {
     return data
-  } else if (encType && securityPreviewAutoDecrypt) {
+  }  else if (encType && securityPreviewAutoDecrypt) {
     // 代理播放
     data.url = getProxyUrl({
       user_id, drive_id, file_id, encType, password,
@@ -264,6 +270,16 @@ export async function createProxyServer(port: number) {
       delete clientReq.headers.host
       delete clientReq.headers.referer
       delete clientReq.headers.authorization
+      if (query.drive_id === 'baidu') {
+        clientReq.headers['User-Agent'] = 'pan.baidu.com'
+      }
+      if (query.drive_id === 'drive115') {
+        const token = UserDAL.GetUserToken(String(query.user_id || ''))
+        if (token?.access_token) {
+          clientReq.headers.authorization = `Bearer ${token.access_token}`
+        }
+        clientReq.headers['User-Agent'] = Config.downAgent || clientReq.headers['user-agent']
+      }
       await new Promise((resolve, reject) => {
         // 处理请求，让下载的流量经过代理服务器
         const httpRequest = ~proxyUrl.indexOf('https') ? https : http

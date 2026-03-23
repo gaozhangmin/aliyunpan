@@ -57,7 +57,7 @@ const RefreshTree = () => {
   const entries = ScanPanData.SameDirMap.entries()
   for (let i = 0, maxi = ScanPanData.SameDirMap.size; i < maxi; i++) {
     const value = entries.next().value
-    if (value[1].length > 1) {
+    if (value && value[1] && value[1].length > 1) {
       const files = value[1] as FileData[]
       const add: FileNodeData = { hash: value[0], files: files.sort((a, b) => b.time - a.time) }
       showData.push(add)

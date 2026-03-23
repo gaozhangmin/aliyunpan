@@ -1,6 +1,12 @@
 {
   "appId": "com.alixby.app",
-  "productName": "阿里云盘小白羊",
+  "productName": "小白羊 BoxPlayer",
+  "protocols": [
+    {
+      "name": "xbyboxplayer OAuth",
+      "schemes": ["xbyboxplayer-oauth"]
+    }
+  ],
   "copyright": "copyright ©2023 gaozhangmin",
   "asar": true,
   "compression": "maximum",
@@ -16,7 +22,10 @@
     "artifactName": "alixby-${version}-mac-${arch}.${ext}",
     "darkModeSupport": true,
     "hardenedRuntime": true,
+    "gatekeeperAssess": false,
     "category": "public.app-category.utilities",
+    "entitlements": "./build/entitlements.mac.plist",
+    "entitlementsInherit": "./build/entitlements.mac.plist",
     "extraResources": [
       { "from": "./static/images/icon.icns", "to": "./images/icon.icns"},
       { "from": "./static/images/icon_30x30.png", "to": "./images/icon_30x30.png"},
@@ -25,7 +34,8 @@
     "target": [
       { "target": "dmg", "arch": [ "x64", "arm64" ] },
       { "target": "zip", "arch": [ "x64", "arm64" ] }
-    ]
+    ],
+    "notarize": false
   },
   "linux": {
     "icon": "./static/images/icon_256x256.png",

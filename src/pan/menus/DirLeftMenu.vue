@@ -2,10 +2,19 @@
 import { menuCopySelectedFile, menuCreatShare, menuDownload, menuTrashSelectFile } from '../topbtns/topbtn'
 import { modalRename, modalShuXing } from '../../utils/modal'
 import PanDAL from '../pandal'
-import { usePanTreeStore } from '../../store'
+import { usePanTreeStore, useAppStore } from '../../store'
 import TreeStore from '../../store/treestore'
+import { MediaScanner } from '../../utils/mediaScanner'
+import message from '../../utils/message'
+import { computed } from 'vue'
+import { isAliyunUser as isAliyunAccountUser, isCloud123User } from '../../aliapi/utils'
 
 const istree = true
+const pantreeStore = usePanTreeStore()
+const appStore = useAppStore()
+const mediaScanner = MediaScanner.getInstance()
+const isCloudUser = computed(() => isCloud123User(pantreeStore.user_id || '') || pantreeStore.drive_id === 'cloud123')
+const isAliyunAccount = computed(() => isAliyunAccountUser(pantreeStore.user_id || ''))
 
 const props = defineProps({
   inputselectType: {
@@ -16,12 +25,75 @@ const props = defineProps({
 
 const handleRefresh = () => PanDAL.aReLoadOneDirToShow('', 'refresh', false)
 const handleExpandAll = (isExpand: boolean) => {
-  const pantreeStore = usePanTreeStore()
   const drive_id = pantreeStore.drive_id
   const file_id = pantreeStore.selectDir.file_id
-  const diridList = TreeStore.GetDirChildDirID(drive_id, file_id)
+  const diridList = (() => {
+    const result: string[] = []
+    const visited = new Set<string>()
+    const stack = [file_id]
+    while (stack.length > 0) {
+      const current = stack.pop() as string
+      const children = TreeStore.GetDirChildDirID(drive_id, current)
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i]
+        if (visited.has(child)) continue
+        visited.add(child)
+        result.push(child)
+        stack.push(child)
+      }
+    }
+    return result
+  })()
   pantreeStore.mTreeExpandAll(diridList, isExpand)
 }
+
+// 扫描媒体库方法
+const handleScanMediaLibrary = async () => {
+  const selectDir = pantreeStore.selectDir
+  if (!selectDir || !selectDir.file_id) {
+    message.warning('请先选择要扫描的文件夹')
+    return
+  }
+
+  try {
+    // 构建符合 IAliGetFileModel 接口的文件夹对象
+    const folder = {
+      __v_skip: true,
+      drive_id: pantreeStore.drive_id,
+      file_id: selectDir.file_id,
+      parent_file_id: selectDir.parent_file_id || '',
+      name: selectDir.name,
+      namesearch: selectDir.name.toLowerCase(),
+      ext: '',
+      mime_type: '',
+      mime_extension: '',
+      category: 'folder',
+      icon: 'iconfolder',
+      file_count: 0,
+      size: 0,
+      sizeStr: '',
+      time: Date.now(),
+      timeStr: new Date().toLocaleString(),
+      starred: false,
+      isDir: true,
+      thumbnail: ''
+    } as any // 临时使用 any 类型避免完整实现所有字段
+
+    await mediaScanner.scanFolder(folder, pantreeStore.drive_id)
+    message.success(`开始扫描文件夹 "${selectDir.name}" 的媒体库`)
+
+    // 切换到媒体库标签页
+    appStore.toggleTab('media')
+  } catch (error) {
+    console.error('媒体库扫描失败:', error)
+    message.error('媒体库扫描失败，请稍后重试')
+  }
+}
+
+// 检查是否选中了有效的文件夹
+const isSelectedFolder = computed(() => {
+  return pantreeStore.selectDir && pantreeStore.selectDir.file_id && pantreeStore.selectDir.file_id !== ''
+})
 
 </script>
 
@@ -58,9 +130,15 @@ const handleExpandAll = (isExpand: boolean) => {
         <template #icon><i class='iconfont iconfenxiang' /></template>
         <template #default>分享</template>
       </a-doption>
-      <a-doption @click="() => menuCreatShare(istree, 'pan', 'backup_root')">
+      <a-doption v-if="isAliyunAccount" @click="() => menuCreatShare(istree, 'pan', 'backup_root')">
         <template #icon><i class='iconfont iconrss' /></template>
         <template #default>快传</template>
+      </a-doption>
+
+      <!-- 扫描媒体库 -->
+      <a-doption @click="handleScanMediaLibrary">
+        <template #icon><i class='iconfont iconshipin' /></template>
+        <template #default>扫描媒体库</template>
       </a-doption>
 
       <a-dsubmenu id="leftpansubmove" class="rightmenu" trigger="hover">

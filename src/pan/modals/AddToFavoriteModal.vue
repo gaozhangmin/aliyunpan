@@ -100,7 +100,7 @@ const handleConfirm = () => {
     if (FavoritesManager.updateFavoriteName(editingId.value, favoriteName.value.trim())) {
       message.success('更新收藏名称成功')
       // 更新收藏夹树
-      panTreeStore.mUpdateFavoriteTree()
+      // panTreeStore.mUpdateFavoriteTree()
       modalStore.showModal('', {})
     } else {
       message.error('更新收藏名称失败')
@@ -117,7 +117,7 @@ const handleConfirm = () => {
     if (id) {
       message.success('添加收藏成功')
       // 更新收藏夹树
-      panTreeStore.mUpdateFavoriteTree()
+      // panTreeStore.mUpdateFavoriteTree()
       modalStore.showModal('', {})
     } else {
       message.error('添加收藏失败')

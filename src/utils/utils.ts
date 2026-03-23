@@ -27,7 +27,10 @@ export function MapKeyToArray<T>(map: Map<T, any>): T[] {
   const arr: T[] = []
   const keys = map.keys()
   for (let i = 0, maxi = map.size; i < maxi; i++) {
-    arr.push(keys.next().value)
+    const value = keys.next().value
+    if (value !== undefined) {
+      arr.push(value)
+    }
   }
   return arr
 }
@@ -36,7 +39,10 @@ export function MapValueToArray<T>(map: Map<any, T>): T[] {
   const arr: T[] = []
   const keys = map.values()
   for (let i = 0, maxi = map.size; i < maxi; i++) {
-    arr.push(keys.next().value)
+    const value = keys.next().value
+    if (value !== undefined) {
+      arr.push(value)
+    }
   }
   return arr
 }

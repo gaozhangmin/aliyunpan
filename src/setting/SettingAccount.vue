@@ -131,8 +131,8 @@ const refreshStatus = () => {
 }
 
 const refreshQrCode = async () => {
-  let client_id = 'df43e22f022d4c04b6e29964f3b8b46d'
-  let client_secret = '63f06c3c5c5d4e1196e2c13e8588ae29'
+  let client_id = import.meta.env.VITE_ALIYUN_APP_ID || ''
+  let client_secret = import.meta.env.VITE_ALIYUN_APP_SECRET || ''
   const { uiEnableOpenApiType, uiOpenApiClientId, uiOpenApiClientSecret } = storeToRefs(settingStore)
   if (uiEnableOpenApiType.value === 'custom') {
     if (!uiOpenApiClientId.value || !uiOpenApiClientSecret.value) {
@@ -142,8 +142,8 @@ const refreshQrCode = async () => {
     client_id = uiOpenApiClientId.value
     client_secret = uiOpenApiClientSecret.value
   } else {
-    client_id = 'df43e22f022d4c04b6e29964f3b8b46d'
-    client_secret = '63f06c3c5c5d4e1196e2c13e8588ae29'
+    client_id = import.meta.env.VITE_ALIYUN_APP_ID || ''
+    client_secret = import.meta.env.VITE_ALIYUN_APP_SECRET || ''
   }
   qrCodeLoading.value = true
   const token = await UserDAL.GetUserTokenFromDB(useUserStore().user_id)

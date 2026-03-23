@@ -65,7 +65,7 @@ const handleImportAsar = () => {
 
 <template>
   <div class='settingcard'>
-    <div class='appver'>阿里云盘小白羊 {{ getAppVersion }}</div>
+    <div class='appver'>小白羊 BoxPlayer {{ getAppVersion }}</div>
     <div class='appver'>
       <a-button type='outline' status='success' size='small' tabindex='-1' @click='handleUpdateLog'>
         更新日志

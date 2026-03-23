@@ -19,7 +19,7 @@ class MixBase64 {
   static sourceChars = source.split('')
 
   encode(bufferOrStr: Buffer | string, encoding: BufferEncoding = 'utf-8'): string {
-    const buffer = bufferOrStr instanceof Buffer ? bufferOrStr : Buffer.from(bufferOrStr, encoding)
+    const buffer = typeof bufferOrStr === 'string' ? Buffer.from(bufferOrStr, encoding) : Buffer.from(bufferOrStr)
     let result = ''
     let arr: any = []
     let bt: any = []

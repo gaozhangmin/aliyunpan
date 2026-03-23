@@ -1,13 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import type { MediaLibraryItem, MediaLibraryFolder, MediaFilter } from '../types/media'
+import type { MediaLibraryItem, MediaLibraryFolder, MediaFilter, FavoriteId, PlaylistMap } from '../types/media'
+import { getWebDavConnections } from '../utils/webdavClient'
 
 // 本地存储的键名
 const STORAGE_KEYS = {
   MEDIA_ITEMS: 'MediaLibrary_MediaItems',
   FOLDERS: 'MediaLibrary_Folders',
   CONTINUE_WATCHING: 'MediaLibrary_ContinueWatching',
-  RECENTLY_ADDED: 'MediaLibrary_RecentlyAdded'
+  RECENTLY_ADDED: 'MediaLibrary_RecentlyAdded',
+  FAVORITES: 'MediaLibrary_Favorites',
+  PLAYLISTS: 'MediaLibrary_Playlists',
+  WATCHED: 'MediaLibrary_Watched'
 }
 
 // 从localStorage加载数据
@@ -48,15 +52,46 @@ const saveToStorage = <T>(key: string, data: T) => {
   }
 }
 
+const normalizeFolders = (folderList: MediaLibraryFolder[]): MediaLibraryFolder[] => {
+  const webDavConnections = getWebDavConnections()
+  const webDavIds = new Set(webDavConnections.map(item => item.id))
+  return folderList.map((folder) => {
+    const isWebDavFolder = (folder.driveId || '').startsWith('webdav:')
+      || folder.driveServerId === 'webdav'
+      || (!!folder.userId && webDavIds.has(folder.userId))
+      || folder.id.startsWith('webdav_')
+    if (!isWebDavFolder) return folder
+
+    const connectionId = folder.userId && webDavIds.has(folder.userId)
+      ? folder.userId
+      : (folder.driveId || '').startsWith('webdav:')
+        ? folder.driveId.slice('webdav:'.length)
+        : folder.id.match(/^webdav_webdav:([^_]+)_/)?.[1] || ''
+
+    if (!connectionId) return folder
+
+    return {
+      ...folder,
+      userId: connectionId,
+      driveId: `webdav:${connectionId}`,
+      driveServerId: 'webdav'
+    }
+  })
+}
+
 export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
   // 状态 - 从localStorage加载初始数据
   const mediaItems = ref<MediaLibraryItem[]>(loadFromStorage(STORAGE_KEYS.MEDIA_ITEMS, []))
-  const folders = ref<MediaLibraryFolder[]>(loadFromStorage(STORAGE_KEYS.FOLDERS, []))
+  const folders = ref<MediaLibraryFolder[]>(normalizeFolders(loadFromStorage(STORAGE_KEYS.FOLDERS, [])))
   const isScanning = ref(false)
   const scanProgress = ref(0)
   const scanTotal = ref(0)
   const continueWatching = ref<MediaLibraryItem[]>(loadFromStorage(STORAGE_KEYS.CONTINUE_WATCHING, []))
   const recentlyAdded = ref<MediaLibraryItem[]>(loadFromStorage(STORAGE_KEYS.RECENTLY_ADDED, []))
+  const favorites = ref<FavoriteId[]>(loadFromStorage(STORAGE_KEYS.FAVORITES, []))
+  const playlists = ref<PlaylistMap>(loadFromStorage(STORAGE_KEYS.PLAYLISTS, {}))
+  const watchedItems = ref<string[]>(loadFromStorage(STORAGE_KEYS.WATCHED, []))
+  saveToStorage(STORAGE_KEYS.FOLDERS, folders.value)
   const genres = ref<string[]>([])
   const years = ref<number[]>([])
 
@@ -77,6 +112,18 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
     saveToStorage(STORAGE_KEYS.RECENTLY_ADDED, newValue)
   }, { deep: true })
 
+  watch(favorites, (newValue) => {
+    saveToStorage(STORAGE_KEYS.FAVORITES, newValue)
+  }, { deep: true })
+
+  watch(playlists, (newValue) => {
+    saveToStorage(STORAGE_KEYS.PLAYLISTS, newValue)
+  }, { deep: true })
+
+  watch(watchedItems, (newValue) => {
+    saveToStorage(STORAGE_KEYS.WATCHED, newValue)
+  }, { deep: true })
+
   // 计算属性
   const movies = computed(() => mediaItems.value.filter(item => item.type === 'movie'))
   const tvShows = computed(() => mediaItems.value.filter(item => item.type === 'tv'))
@@ -91,29 +138,48 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
 
   const ratingCategories = computed(() => {
     const categories = [
-      { range: [1, 5], label: '1-5分', items: [] as MediaLibraryItem[] },
-      { range: [6, 6], label: '6分', items: [] as MediaLibraryItem[] },
-      { range: [7, 7], label: '7分', items: [] as MediaLibraryItem[] },
-      { range: [8, 8], label: '8分', items: [] as MediaLibraryItem[] },
-      { range: [9, 9], label: '9分', items: [] as MediaLibraryItem[] },
+      { range: [1, 5.99], label: '1-5分', items: [] as MediaLibraryItem[] },
+      { range: [6, 6.99], label: '6分', items: [] as MediaLibraryItem[] },
+      { range: [7, 7.99], label: '7分', items: [] as MediaLibraryItem[] },
+      { range: [8, 8.99], label: '8分', items: [] as MediaLibraryItem[] },
+      { range: [9, 9.99], label: '9分', items: [] as MediaLibraryItem[] },
       { range: [10, 10], label: '10分', items: [] as MediaLibraryItem[] }
     ]
-    
+
     mediaItems.value.forEach(item => {
-      if (item.rating) {
-        const category = categories.find(c => 
-          item.rating! >= c.range[0] && item.rating! <= c.range[1]
-        )
-        if (category) category.items.push(item)
+      // 更强健的评分检查和转换
+      let rating: number | undefined
+
+      if (item.rating !== undefined && item.rating !== null) {
+        // 尝试将评分转换为数字
+        rating = typeof item.rating === 'string' ? parseFloat(item.rating) : Number(item.rating)
+
+        // 确保评分是有效数字且在合理范围内
+        if (!isNaN(rating) && rating > 0 && rating <= 10) {
+          const category = categories.find(c =>
+            rating! >= c.range[0] && rating! <= c.range[1]
+          )
+          if (category) {
+            category.items.push(item)
+          }
+        }
       }
     })
-    
-    return categories.filter(c => c.items.length > 0)
+
+    return categories
+      .filter(c => c.items.length > 0)
+      .map(c => ({
+        name: c.label,
+        count: c.items.length,
+        type: 'rating' as const,
+        range: c.range,
+        items: c.items
+      }))
   })
 
   const yearGroups = computed(() => {
     const groups: { [key: string]: MediaLibraryItem[] } = {}
-    
+
     mediaItems.value.forEach(item => {
       if (item.year) {
         const year = parseInt(item.year)
@@ -123,10 +189,37 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
         groups[key].push(item)
       }
     })
-    
+
     return Object.entries(groups)
       .sort(([a], [b]) => parseInt(b) - parseInt(a))
-      .map(([year, items]) => ({ year, items }))
+      .map(([year, items]) => ({
+        name: year,
+        count: items.length,
+        type: 'year' as const,
+        items
+      }))
+  })
+
+  const genreCategories = computed(() => {
+    const genreMap = new Map<string, MediaLibraryItem[]>()
+
+    mediaItems.value.forEach(item => {
+      item.genres.forEach(genre => {
+        if (!genreMap.has(genre)) {
+          genreMap.set(genre, [])
+        }
+        genreMap.get(genre)!.push(item)
+      })
+    })
+
+    return Array.from(genreMap.entries())
+      .map(([name, items]) => ({
+        name,
+        count: items.length,
+        type: 'genre' as const,
+        items
+      }))
+      .sort((a, b) => b.count - a.count)
   })
 
   // 方法
@@ -181,28 +274,47 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
         }
       }
 
-      // 合并episodes
-      const mergedEpisodes = [...(existingTv.episodes || [])]
-      if (newTvItem.episodes && newTvItem.episodes.length > 0) {
-        const newEpisode = newTvItem.episodes[0]
-        const existingEpisodeIndex = mergedEpisodes.findIndex(e =>
-          e.seasonNumber === newEpisode.seasonNumber &&
-          e.episodeNumber === newEpisode.episodeNumber
-        )
+      // 合并集数信息（从seasons中的episodes处理）
+      const mergedSeasonsCopy = [...mergedSeasons]
 
-        if (existingEpisodeIndex >= 0) {
-          // 集已存在，合并driveFiles
-          console.log(`  📹 合并集数: S${newEpisode.seasonNumber}E${newEpisode.episodeNumber}`)
-          const existingEpisode = mergedEpisodes[existingEpisodeIndex]
-          mergedEpisodes[existingEpisodeIndex] = {
-            ...existingEpisode,
-            driveFiles: [...existingEpisode.driveFiles, ...newTvItem.driveFiles]
+      // 处理新项目中的集数信息
+      if (newTvItem.seasons && newTvItem.seasons.length > 0) {
+        newTvItem.seasons.forEach(newSeason => {
+          const existingSeasonIndex = mergedSeasonsCopy.findIndex(s => s.seasonNumber === newSeason.seasonNumber)
+
+          if (existingSeasonIndex >= 0 && newSeason.episodes && newSeason.episodes.length > 0) {
+            // 季已存在，合并episodes
+            const existingSeason = mergedSeasonsCopy[existingSeasonIndex]
+            const mergedEpisodes = [...(existingSeason.episodes || [])]
+
+            newSeason.episodes.forEach(newEpisode => {
+              const existingEpisodeIndex = mergedEpisodes.findIndex(e =>
+                e.seasonNumber === newEpisode.seasonNumber &&
+                e.episodeNumber === newEpisode.episodeNumber
+              )
+
+              if (existingEpisodeIndex >= 0) {
+                // 集已存在，合并driveFiles
+                console.log(`  📹 合并集数: S${newEpisode.seasonNumber}E${newEpisode.episodeNumber}`)
+                const existingEpisode = mergedEpisodes[existingEpisodeIndex]
+                mergedEpisodes[existingEpisodeIndex] = {
+                  ...existingEpisode,
+                  driveFiles: [...existingEpisode.driveFiles, ...newEpisode.driveFiles]
+                }
+              } else {
+                // 新集，直接添加
+                console.log(`  ➕ 添加新集: S${newEpisode.seasonNumber}E${newEpisode.episodeNumber}`)
+                mergedEpisodes.push(newEpisode)
+              }
+            })
+
+            // 更新季的episodes
+            mergedSeasonsCopy[existingSeasonIndex] = {
+              ...existingSeason,
+              episodes: mergedEpisodes.sort((a, b) => a.episodeNumber - b.episodeNumber)
+            }
           }
-        } else {
-          // 新集，直接添加
-          console.log(`  ➕ 添加新集: S${newEpisode.seasonNumber}E${newEpisode.episodeNumber}`)
-          mergedEpisodes.push(newEpisode)
-        }
+        })
       }
 
       // 合并driveFiles到主条目
@@ -214,18 +326,12 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
       // 更新现有条目
       const updatedTv: MediaLibraryItem = {
         ...existingTv,
-        seasons: mergedSeasons.sort((a, b) => a.seasonNumber - b.seasonNumber),
-        episodes: mergedEpisodes.sort((a, b) => {
-          if (a.seasonNumber === b.seasonNumber) {
-            return a.episodeNumber - b.episodeNumber
-          }
-          return a.seasonNumber - b.seasonNumber
-        }),
+        seasons: mergedSeasonsCopy.sort((a, b) => a.seasonNumber - b.seasonNumber),
         driveFiles: mergedDriveFiles,
+        credits: existingTv.credits || newTvItem.credits,
         addedAt: new Date() // 更新添加时间
       }
 
-      console.log(`  ✅ 合并后: ${updatedTv.seasons?.length || 0}季, ${updatedTv.episodes?.length || 0}集`)
       mediaItems.value[existingTvIndex] = updatedTv
       updateFilters()
       return true
@@ -377,8 +483,33 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
   }
 
   const addToContinueWatching = (item: MediaLibraryItem) => {
-    continueWatching.value = continueWatching.value.filter(i => i.id !== item.id)
-    continueWatching.value.unshift(item)
+    const isEpisodeId = item.type === 'tv' && String(item.id).split('_').length >= 3
+    if (isEpisodeId) {
+      continueWatching.value = continueWatching.value.filter(i => i.id !== item.id)
+      continueWatching.value.unshift(item)
+    } else if (item.type === 'tv' && item.lastPlayedFileId) {
+      const season = item.seasons?.find(s =>
+        s.episodes?.some(ep => ep.driveFiles?.some(file => file.id === item.lastPlayedFileId))
+      )
+      const episode = season?.episodes?.find(ep =>
+        ep.driveFiles?.some(file => file.id === item.lastPlayedFileId)
+      )
+      if (season && episode) {
+        const episodeId = `${item.id}_${season.seasonNumber}_${episode.episodeNumber}`
+        const episodeItem = {
+          ...item,
+          id: episodeId
+        }
+        continueWatching.value = continueWatching.value.filter(i => i.id !== episodeId)
+        continueWatching.value.unshift(episodeItem)
+      } else {
+        continueWatching.value = continueWatching.value.filter(i => i.id !== item.id)
+        continueWatching.value.unshift(item)
+      }
+    } else {
+      continueWatching.value = continueWatching.value.filter(i => i.id !== item.id)
+      continueWatching.value.unshift(item)
+    }
     if (continueWatching.value.length > 20) {
       continueWatching.value = continueWatching.value.slice(0, 20)
     }
@@ -392,12 +523,104 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
     }
   }
 
+  const isFavorite = (id: string) => {
+    return favorites.value.includes(id)
+  }
+
+  const toggleFavorite = (favoriteId: FavoriteId) => {
+    if (isFavorite(favoriteId)) {
+      const key = String(favoriteId)
+      favorites.value = favorites.value.filter(item => !String(item).startsWith(key))
+    } else {
+      favorites.value.unshift(favoriteId)
+    }
+  }
+
+  const removeFromFavorites = (id: string) => {
+    favorites.value = favorites.value.filter(item => item !== id)
+  }
+
+  const isWatched = (id: string) => watchedItems.value.includes(id)
+
+  const markWatched = (id: string, watched: boolean) => {
+    if (watched) {
+      if (!watchedItems.value.includes(id)) watchedItems.value.unshift(id)
+    } else {
+      watchedItems.value = watchedItems.value.filter(item => item !== id)
+    }
+  }
+
+  const isWatchedById = (id: string) => watchedItems.value.includes(id)
+
+  const removeWatchedByPrefix = (prefix: string) => {
+    watchedItems.value = watchedItems.value.filter(item => !String(item).startsWith(prefix))
+  }
+
+  const removeFromContinueWatching = (id: string) => {
+    continueWatching.value = continueWatching.value.filter(item => item.id !== id)
+  }
+
+  const removeFromPlaylists = (id: string) => {
+    const updated: PlaylistMap = {}
+    Object.entries(playlists.value || {}).forEach(([name, ids]) => {
+      updated[name] = ids.filter(itemId => itemId !== id)
+    })
+    playlists.value = updated
+  }
+
+  const addPlaylist = (name: string) => {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    if (!playlists.value[trimmed]) {
+      playlists.value = { ...playlists.value, [trimmed]: [] }
+    }
+  }
+
+  const removePlaylist = (name: string) => {
+    if (!playlists.value[name]) return
+    const { [name]: _removed, ...rest } = playlists.value
+    playlists.value = rest
+  }
+
+  const renamePlaylist = (oldName: string, newName: string) => {
+    const trimmed = newName.trim()
+    if (!trimmed || !playlists.value[oldName] || oldName === trimmed) return
+    if (playlists.value[trimmed]) return
+    const items = playlists.value[oldName]
+    const { [oldName]: _removed, ...rest } = playlists.value
+    playlists.value = { ...rest, [trimmed]: items }
+  }
+
+  const isInPlaylist = (name: string, itemId: string) => {
+    const list = playlists.value[name]
+    if (!list) return false
+    return list.includes(itemId)
+  }
+
+  const togglePlaylistItem = (name: string, itemId: string) => {
+    const list = playlists.value[name] || []
+    if (list.includes(itemId)) {
+      playlists.value = {
+        ...playlists.value,
+        [name]: list.filter(id => id !== itemId)
+      }
+    } else {
+      playlists.value = {
+        ...playlists.value,
+        [name]: [...list, itemId]
+      }
+    }
+  }
+
   // 清除所有数据（用于调试或重置）
   const clearAllData = () => {
     mediaItems.value = []
     folders.value = []
     continueWatching.value = []
     recentlyAdded.value = []
+    favorites.value = []
+    playlists.value = {}
+    watchedItems.value = []
     genres.value = []
     years.value = []
 
@@ -406,6 +629,9 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
     localStorage.removeItem(STORAGE_KEYS.FOLDERS)
     localStorage.removeItem(STORAGE_KEYS.CONTINUE_WATCHING)
     localStorage.removeItem(STORAGE_KEYS.RECENTLY_ADDED)
+    localStorage.removeItem(STORAGE_KEYS.FAVORITES)
+    localStorage.removeItem(STORAGE_KEYS.PLAYLISTS)
+    localStorage.removeItem(STORAGE_KEYS.WATCHED)
   }
 
   // 初始化时更新筛选器
@@ -420,6 +646,9 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
     scanTotal,
     continueWatching,
     recentlyAdded,
+    favorites,
+    playlists,
+    watchedItems,
     genres,
     years,
 
@@ -430,6 +659,7 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
     topRated,
     ratingCategories,
     yearGroups,
+    genreCategories,
 
     // 方法
     addMediaItem,
@@ -445,6 +675,20 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
     setScanProgress,
     addToContinueWatching,
     addToRecentlyAdded,
+    toggleFavorite,
+    removeFromFavorites,
+    isWatched,
+    isWatchedById,
+    markWatched,
+    isFavorite,
+    removeFromContinueWatching,
+    removeFromPlaylists,
+    removeWatchedByPrefix,
+    addPlaylist,
+    removePlaylist,
+    renamePlaylist,
+    isInPlaylist,
+    togglePlaylistItem,
     updateFilters,
     clearAllData
   }

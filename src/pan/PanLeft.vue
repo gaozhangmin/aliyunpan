@@ -6,13 +6,14 @@ import usePanTreeStore, { PanTreeState } from './pantreestore'
 import MySwitchTab from '../layout/MySwitchTab.vue'
 import { KeyboardState, useAppStore, useKeyboardStore, usePanFileStore, useSettingStore, useWinStore } from '../store'
 import PanDAL from './pandal'
+import UserDAL from '../user/userdal'
 import { onHideRightMenuScroll, onShowRightMenu, TestCtrl } from '../utils/keyboardhelper'
 import DirLeftMenu from './menus/DirLeftMenu.vue'
 import { TreeNodeData } from '../store/treestore'
 import { dropMoveSelectedFile } from './topbtns/topbtn'
 import message from '../utils/message'
 import { modalUpload } from '../utils/modal'
-import { GetDriveType } from '../aliapi/utils'
+import { GetDriveType, isAliyunUser, isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
 
 const treeref = ref()
 const inputselectType = ref('backup')
@@ -22,6 +23,8 @@ const quickHeight = computed(() => winStore.height - 42 - 56 - 24 - 4 - 280 - 28
 const appStore = useAppStore()
 const pantreeStore = usePanTreeStore()
 const settingStore = useSettingStore()
+const isCloudUser = computed(() => isCloud123User(pantreeStore.user_id || ''))
+const isAliyunAccount = computed(() => isAliyunUser(pantreeStore.user_id || UserDAL.GetUserToken(pantreeStore.user_id || '')))
 
 const keyboardStore = useKeyboardStore()
 keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
@@ -76,7 +79,9 @@ watchEffect(() => {
 
 const handleTreeRightClick = (e: { event: MouseEvent; node: any }) => {
   const { parent = undefined, key } = e.node
-  if (key.length < 40 || key.startsWith('search')) return
+  if (key.startsWith('search')) return
+  const isSingleRootDrive = isCloud123User(pantreeStore.user_id || '') || isDrive115User(pantreeStore.user_id || '') || isBaiduUser(pantreeStore.user_id || '')
+  if (!isSingleRootDrive && key.length < 40) return
   pantreeStore.mTreeSelected(e)
   onShowRightMenu('leftpanmenu', e.event.clientX, e.event.clientY)
 }
@@ -153,21 +158,43 @@ const handleQuickSelect = (index: number) => {
   }
 }
 const filterTreeData = computed(() => {
-  return pantreeStore.treeData.filter((item) => {
-    if (useSettingStore().securityHideBackupDrive && item.key === 'backup_root') {
-      return false
-    }
-    if (useSettingStore().securityHideResourceDrive && item.key === 'resource_root') {
-      return false
-    }
-    if (useSettingStore().securityHidePicDrive && item.key === 'pic_root') {
-      return false
-    }
-    if (!usePanTreeStore().resource_drive_id && item.key === 'resource_root') {
-      return false
-    }
-    return true
-  })
+  const isCloudUser = isCloud123User(pantreeStore.user_id || '')
+  const isWebDavNode = (item: any) => (item?.drive_id || '').startsWith('webdav:')
+  const baseList = isCloudUser
+    ? pantreeStore.treeData.filter((item) => {
+      if (isWebDavNode(item)) return false
+      if (item.key === 'backup_root') return false
+      if (item.key === 'resource_root') return false
+      if (item.key === 'pic_root') return false
+      return true
+    })
+    : pantreeStore.treeData.filter((item) => {
+      if (isWebDavNode(item)) return false
+      if (!isAliyunAccount.value && (item.key === 'backup_root' || item.key === 'resource_root')) {
+        return false
+      }
+      if (isBaiduUser(pantreeStore.user_id || '') && item.key === 'trash') {
+        return false
+      }
+      if (!isAliyunAccount.value && (item.key === 'pic_root' || item.key === 'video' || item.key === 'favorite' || item.key === 'recover')) {
+        return false
+      }
+      if (useSettingStore().securityHideBackupDrive && item.key === 'backup_root') {
+        return false
+      }
+      if (useSettingStore().securityHideResourceDrive && item.key === 'resource_root') {
+        return false
+      }
+      if (useSettingStore().securityHidePicDrive && item.key === 'pic_root') {
+        return false
+      }
+      if (!usePanTreeStore().resource_drive_id && item.key === 'resource_root') {
+        return false
+      }
+      return true
+    })
+
+  return baseList
 })
 </script>
 
@@ -213,7 +240,7 @@ const filterTreeData = computed(() => {
               <i class='iconfont iconfile-folder' />
             </template>
             <template #title='{ dataRef }'>
-              <span v-if="dataRef.key.length == 40 || dataRef.key.includes('root')"
+              <span v-if="String(dataRef.key).length == 40 || String(dataRef.key).includes('root')"
                     class='dirtitle treedragnode'
                     @drop='onRowItemDrop($event, dataRef)'
                     @dragover='onRowItemDragOver'

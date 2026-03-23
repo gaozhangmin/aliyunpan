@@ -1,5 +1,8 @@
 <script setup lang='ts'>
 import { computed } from 'vue'
+import { usePanTreeStore } from '../../store'
+import { isAliyunUser as isAliyunAccountUser, isCloud123User } from '../../aliapi/utils'
+import { isWebDavDrive } from '../../utils/webdavClient'
 
 import {
   menuAddAlbumSelectFile,
@@ -56,6 +59,10 @@ const props = defineProps({
 })
 
 const istree = false
+const panTreeStore = usePanTreeStore()
+const isCloudUser = computed(() => isCloud123User(panTreeStore.user_id || '') || panTreeStore.drive_id === 'cloud123')
+const isAliyunAccount = computed(() => isAliyunAccountUser(panTreeStore.user_id || ''))
+const isWebDav = computed(() => isWebDavDrive(panTreeStore.drive_id || panTreeStore.selectDir.drive_id))
 const isShowBtn = computed(() => {
   return (props.dirtype === 'pic' && props.inputpicType != 'mypic')
     || props.dirtype === 'mypic' || ['search', 'color', 'pan'].includes(props.dirtype)
@@ -76,15 +83,15 @@ const isPic = computed(() => {
               @click="() => menuCreatShare(istree, 'pan', 'resource_root')">
       <i class='iconfont iconfenxiang' />分享
     </a-button>
-    <a-button v-if='!isPic && dirtype != "video" && dirtype !== "search"' type='text' size='small' tabindex='-1' title='Ctrl+T'
+    <a-button v-if='!isPic && dirtype != "video" && dirtype !== "search" && isAliyunAccount' type='text' size='small' tabindex='-1' title='Ctrl+T'
               @click="() => menuCreatShare(istree, 'pan', 'backup_root')">
       <i class='iconfont iconrss' />快传
     </a-button>
-    <a-button v-if='!isPic && !isallfavored' type='text' size='small' tabindex='-1' title='Ctrl+G'
+    <a-button v-if='!isPic && !isallfavored && isAliyunAccount' type='text' size='small' tabindex='-1' title='Ctrl+G'
               @click='() => menuFavSelectFile(istree, true)'>
       <i class='iconfont iconcrown' />收藏
     </a-button>
-    <a-button v-if='!isPic && isallfavored' type='text' size='small' tabindex='-1' title='Ctrl+G'
+    <a-button v-if='!isPic && isallfavored && isAliyunAccount' type='text' size='small' tabindex='-1' title='Ctrl+G'
               @click='() => menuFavSelectFile(istree, false)'>
       <i class='iconfont iconcrown2' />取消收藏
     </a-button>
@@ -102,12 +109,12 @@ const isPic = computed(() => {
         <i class='iconfont icondelete' />删除<i class='iconfont icondown' />
       </a-button>
       <template #content>
-        <a-doption v-show='isShowBtn || dirtype === "search"' title='Ctrl+Delete' class='danger'
+        <a-doption v-show='(isShowBtn || dirtype === "search") && !isWebDav' title='Ctrl+Delete' class='danger'
                    @click='() => menuTrashSelectFile(istree, false, isPic)'>
           <template #icon><i class='iconfont icondelete' /></template>
           <template #default>放回收站</template>
         </a-doption>
-        <a-dsubmenu class='rightmenu' trigger='hover'>
+        <a-dsubmenu v-if='isAliyunAccount || isWebDav' class='rightmenu' trigger='hover'>
           <template #default>
             <span class='arco-dropdown-option-icon'><i class='iconfont iconrest'></i></span>彻底删除
           </template>
@@ -149,17 +156,17 @@ const isPic = computed(() => {
           <template #icon><i class='iconfont iconjietu' /></template>
           <template #default>雪碧图</template>
         </a-doption>
-        <a-doption v-show='isShowBtn' type='text' size='small' tabindex='-1' title='Ctrl+M'
+        <a-doption v-show='isShowBtn && isAliyunAccount' type='text' size='small' tabindex='-1' title='Ctrl+M'
                    @click="() => menuFileEncTypeChange(istree)">
           <template #icon><i class='iconfont iconsafebox' /></template>
           <template #default>标记加密</template>
         </a-doption>
-        <a-doption v-show='isShowBtn && isallcolored' type='text' size='small' tabindex='-1' title='Ctrl+M'
+        <a-doption v-show='isShowBtn && isallcolored && isAliyunAccount' type='text' size='small' tabindex='-1' title='Ctrl+M'
                    @click="() => menuFileClearHistory(istree)">
           <template #icon><i class='iconfont iconshipin' /></template>
           <template #default>清除历史</template>
         </a-doption>
-        <a-doption v-show='isShowBtn && isallcolored' type='text' size='small' tabindex='-1' title='Ctrl+M'
+        <a-doption v-show='isShowBtn && isallcolored && !isWebDav' type='text' size='small' tabindex='-1' title='Ctrl+M'
                    @click="() => menuFileColorChange(istree, '')">
           <template #icon><i class='iconfont iconfangkuang' /></template>
           <template #default>清除标记</template>
@@ -176,7 +183,7 @@ const isPic = computed(() => {
           <template #icon><i class='iconfont iconlist' /></template>
           <template #default>复制文件名</template>
         </a-doption>
-        <a-doption v-show='!dirtype.includes("pic") && isselected && !isselectedmulti'
+        <a-doption v-show='!dirtype.includes("pic") && isselected && !isselectedmulti && isAliyunAccount'
                    @click='() => menuCopyFileTree()'>
           <template #icon><i class='iconfont iconnode-tree1' /></template>
           <template #default>复制目录树</template>

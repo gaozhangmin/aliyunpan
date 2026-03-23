@@ -17,9 +17,10 @@ export default class AliUploadMem {
       buff = Buffer.from(context, 'utf-8')
       if (encType) {
         let flowEnc = getFlowEnc(user_id, buff.length, encType)
-        buff = flowEnc && flowEnc.encryptBuff(buff) || buff
+        const encryptedBuff = flowEnc?.encryptBuff(buff)
+        buff = encryptedBuff ? Buffer.from(encryptedBuff) : buff
       }
-      const dd = await AliUploadHashPool.GetBuffHashProof(token!.access_token, buff)
+      const dd = await AliUploadHashPool.GetBuffHashProof(token!.access_token, buff as Buffer)
       hash = dd.sha1
       proof = dd.proof_code
     }

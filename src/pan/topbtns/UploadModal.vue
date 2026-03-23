@@ -1,5 +1,6 @@
 <script setup lang='ts'>
 import { usePanTreeStore, useSettingStore } from '../../store'
+import usePanFileStore from '../panfilestore'
 import message from '../../utils/message'
 import { modalCloseAll } from '../../utils/modal'
 import { nextTick, PropType, ref } from 'vue'
@@ -39,7 +40,8 @@ const cb = (val: any) => {
 }
 
 const handleOpen = () => {
-  file_id.value = props.ispic ? 'pic_root' : props.file_id
+  const panfileStore = usePanFileStore()
+  file_id.value = props.ispic ? 'pic_root' : (panfileStore.DirID || props.file_id)
   const pantreeStore = usePanTreeStore()
   if (!file_id.value) {
     file_id.value = pantreeStore.selectDir.file_id
@@ -70,7 +72,7 @@ const handleOK = () => {
   const settingStore = useSettingStore()
   UploadingDAL.aUploadLocalFiles(
     pantreeStore.user_id, pantreeStore.drive_id,
-    props.file_id, props.filelist,
+    file_id.value, props.filelist,
     settingStore.downUploadWhatExist,
     true, props.encType
   )

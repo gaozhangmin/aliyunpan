@@ -20,26 +20,29 @@ import {
 } from '../../utils/modal'
 import { ArrayKeyList } from '../../utils/utils'
 import PanDAL from '../pandal'
-import usePanFileStore from '../panfilestore'
 import usePanTreeStore from '../pantreestore'
+import usePanFileStore from '../panfilestore'
 import { useDowningStore, useSettingStore } from '../../store'
 import { Sleep } from '../../utils/format'
 import TreeStore from '../../store/treestore'
 import { copyToClipboard } from '../../utils/electronhelper'
 import DownDAL from '../../down/DownDAL'
 import { isEmpty } from 'lodash'
-import { GetDriveID } from '../../aliapi/utils'
+import { GetDriveID, isAliyunUser, isCloud123User } from '../../aliapi/utils'
 import AliAlbum from '../../aliapi/album'
 import { getEncType } from '../../utils/proxyhelper'
 import { Modal, Option, Select } from '@arco-design/web-vue'
 import { h } from 'vue'
+import { getWebDavConnection, getWebDavConnectionId, isWebDavDrive, uploadWebDavLocalPaths } from '../../utils/webdavClient'
 
 const topbtnLock = new Set()
 
 
 export function handleUpload(uploadType: string, encType: string = '') {
   const pantreeStore = usePanTreeStore()
-  if (!pantreeStore.user_id || !pantreeStore.drive_id || !pantreeStore.selectDir.file_id) {
+  const panfileStore = usePanFileStore()
+  const currentDirId = panfileStore.DirID || pantreeStore.selectDir.file_id
+  if (!pantreeStore.user_id || !pantreeStore.drive_id || !currentDirId) {
     message.error('上传操作失败 父文件夹错误')
     return
   }
@@ -51,6 +54,22 @@ export function handleUpload(uploadType: string, encType: string = '') {
       return
     }
   }
+  const handleWebDavUpload = async (files: string[] | undefined) => {
+    if (!files || files.length === 0) return
+    const connectionId = getWebDavConnectionId(pantreeStore.drive_id)
+    const connection = getWebDavConnection(connectionId)
+    if (!connection) {
+      message.error('WebDAV 连接不存在')
+      return
+    }
+    try {
+      await uploadWebDavLocalPaths(connection, currentDirId, files)
+      message.success('上传完成')
+      await PanDAL.aReLoadOneDirToRefreshTree(pantreeStore.user_id, pantreeStore.drive_id, currentDirId)
+    } catch (error: any) {
+      message.error(error?.message || '上传失败')
+    }
+  }
   if (uploadType == 'file') {
     window.WebShowOpenDialogSync({
       title: '选择多个文件上传到网盘',
@@ -58,7 +77,8 @@ export function handleUpload(uploadType: string, encType: string = '') {
       properties: ['openFile', 'multiSelections', 'showHiddenFiles', 'noResolveAliases', 'treatPackageAsDirectory', 'dontAddToRecent']
     }, (files: string[] | undefined) => {
       if (files && files.length > 0) {
-        modalUpload(pantreeStore.selectDir.file_id, files, false, encType)
+        if (isWebDavDrive(pantreeStore.drive_id)) void handleWebDavUpload(files)
+        else modalUpload(currentDirId, files, false, encType)
       }
     })
   } else if (uploadType == 'folder') {
@@ -68,7 +88,8 @@ export function handleUpload(uploadType: string, encType: string = '') {
       properties: ['openDirectory', 'multiSelections', 'showHiddenFiles', 'noResolveAliases', 'treatPackageAsDirectory', 'dontAddToRecent']
     }, (files: string[] | undefined) => {
       if (files && files.length > 0) {
-        modalUpload(pantreeStore.selectDir.file_id, files, false, encType)
+        if (isWebDavDrive(pantreeStore.drive_id)) void handleWebDavUpload(files)
+        else modalUpload(currentDirId, files, false, encType)
       }
     })
   } else if (uploadType == 'pic_file') {
@@ -370,11 +391,25 @@ export function menuCopySelectedFile(istree: boolean, copyby: string) {
     }
     let successList: string[]
     if (copyby == 'copy') {
-      successList = await AliFileCmd.ApiCopyBatch(user_id, drive_id, file_idList, selectFile.drive_id, selectFile.file_id)
+      successList = await AliFileCmd.ApiCopyBatch(
+        user_id,
+        drive_id,
+        file_idList,
+        selectFile.drive_id,
+        selectFile.path || selectFile.file_id,
+        selectFile.description || ''
+      )
       await PanDAL.aReLoadOneDirToRefreshTree(selectedData.user_id, selectFile.drive_id, selectFile.file_id)
       TreeStore.ClearDirSize(selectedData.drive_id, [selectFile.file_id])
     } else {
-      successList = await AliFileCmd.ApiMoveBatch(user_id, drive_id, file_idList, selectFile.drive_id, selectFile.file_id)
+      successList = await AliFileCmd.ApiMoveBatch(
+        user_id,
+        drive_id,
+        file_idList,
+        selectFile.drive_id,
+        selectFile.path || selectFile.file_id,
+        selectFile.description || ''
+      )
       if (istree) {
         await PanDAL.aReLoadOneDirToShow(selectedData.drive_id, selectedData.parentDirID, false)
       } else {
@@ -634,6 +669,10 @@ export async function topTrashDeleteAll() {
     message.error('清空回收站操作失败 父文件夹错误')
     return
   }
+  if (isCloud123User(selectedData.user_id || '') || selectedData.drive_id === 'cloud123') {
+    message.error("暂不支持清空回收站，请移步至官方客户端操作")
+    return
+  }
 
   if (topbtnLock.has('topTrashDeleteAll')) return
   topbtnLock.add('topTrashDeleteAll')
@@ -753,6 +792,16 @@ export async function topSearchAll(word: string, inputsearchType: string[]) {
   const pantreeStore = usePanTreeStore()
   if (!pantreeStore.user_id || !inputsearchType || !pantreeStore.selectDir.file_id) {
     message.error('搜索失败 父文件夹错误')
+    return
+  }
+  if (!isAliyunUser(pantreeStore.user_id)) {
+    const keyword = word.trim()
+    if (!keyword) {
+      message.error('搜索失败 搜索关键字不能为空')
+      return
+    }
+    const searchid = 'search' + keyword
+    await PanDAL.aReLoadOneDirToShow('', searchid, false)
     return
   }
   if (inputsearchType.length > 0) {

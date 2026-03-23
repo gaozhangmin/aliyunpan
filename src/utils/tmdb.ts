@@ -219,6 +219,12 @@ export class TmdbService {
     if (match3) {
       return { season: 1, episode: parseInt(match3[1]) }
     }
+
+    // 匹配 第1集 格式 (默认第1季)
+    const match4 = fileName.match(/第(\d+)集/)
+    if (match4) {
+      return { season: 1, episode: parseInt(match4[1]) }
+    }
     
     return null
   }
@@ -248,6 +254,8 @@ export class TmdbService {
           year: tvResult.tv.first_air_date?.substring(0, 4),
           rating: tvResult.tv.vote_average,
           genres: tvResult.tv.genres?.map(g => g.name) || [],
+          credits: tvResult.tv.credits || tvResult.current_season?.credits,
+          productionCountries: tvResult.tv.production_countries?.map(c => c.name) || [],
           tmdbId: tvResult.tv.id,
           imdbId: tvResult.tv.imdbId,
           tvdbId: tvResult.tv.tvdbId,
@@ -259,19 +267,8 @@ export class TmdbService {
             overview: tvResult.current_season.overview,
             posterPath: tvResult.current_season.poster_path,
             episodeCount: tvResult.current_season.episode_count || tvResult.current_season.episodes?.length || 0,
-            airDate: tvResult.current_season.air_date
-          }] : undefined,
-          // 包含当前集的信息
-          episodes: matchedEpisode ? [{
-            id: matchedEpisode.id,
-            episodeNumber: matchedEpisode.episode_number,
-            name: matchedEpisode.name,
-            overview: matchedEpisode.overview,
-            stillPath: matchedEpisode.still_path,
-            airDate: matchedEpisode.air_date,
-            runtime: matchedEpisode.runtime,
-            seasonNumber: matchedEpisode.season_number,
-            driveFiles: [] // 这个会在后续处理中填充实际的文件信息
+            airDate: tvResult.current_season.air_date,
+            credits: tvResult.current_season.credits
           }] : undefined
         }
 
@@ -290,6 +287,8 @@ export class TmdbService {
           year: movieResult.release_date?.substring(0, 4),
           rating: movieResult.vote_average,
           genres: movieResult.genres?.map(g => g.name) || [],
+          credits: movieResult.credits,
+          productionCountries: movieResult.production_countries?.map(c => c.name) || [],
           tmdbId: movieResult.id,
           imdbId: movieResult.imdb_id,
           driveFiles: [] // 这个会在后续处理中填充实际的文件信息

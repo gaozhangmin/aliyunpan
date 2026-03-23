@@ -3,7 +3,8 @@ import { IAliGetDirModel } from '../aliapi/alimodels'
 import { h } from 'vue'
 import PanDAL from './pandal'
 import TreeStore, { TreeNodeData } from '../store/treestore'
-import { GetDriveID } from '../aliapi/utils'
+import { GetDriveID, isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
+import message from '../utils/message'
 
 export interface PanTreeState {
   user_id: string
@@ -129,6 +130,20 @@ const usePanTreeStore = defineStore('pantree', {
     mTreeSelected(e: any, kuaijie: boolean = false) {
       let { key, drive_id = undefined } = e.node
       let is_refresh_drive_id = !['favorite', 'trash', 'recover'].includes(key) || !/color.*/g.test(key)
+      const isCloudUser = isCloud123User(this.user_id || '')
+      const isDrive115 = isDrive115User(this.user_id || '')
+      const isBaidu = isBaiduUser(this.user_id || '')
+      if (isCloudUser) {
+        const unsupported = ['video', 'recover', 'pic_root', 'backup_root', 'resource_root', 'favorite']
+        if (unsupported.includes(key)) {
+          message.info('123云盘不支持此功能')
+          return
+        }
+      }
+      if ((isDrive115 || isBaidu) && key === 'resource_root') {
+        message.info((isDrive115 ? '115网盘' : '百度网盘') + '不支持此功能')
+        return
+      }
       if (!kuaijie) {
         const getParentNode = (node: any): any => {
           return node.parent ? getParentNode(node.parent) : node
@@ -191,11 +206,14 @@ const usePanTreeStore = defineStore('pantree', {
     mSaveTreeAllNode(drive_id: string, root: TreeNodeData, rootMap: Map<string, TreeNodeData>) {
       if (this.drive_id !== drive_id) return
       const list: TreeNodeData[] = []
+      let hasRoot = false
       for (let i = 0, maxi = this.treeData.length; i < maxi; i++) {
         if (this.treeData[i].key == root.key) {
           list.push(root)
+          hasRoot = true
         } else list.push(this.treeData[i])
       }
+      if (!hasRoot) list.push(root)
       this.treeData = list
       treeDataMap = rootMap
     },

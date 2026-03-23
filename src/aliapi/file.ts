@@ -1,3 +1,4 @@
+import path from 'path'
 import { useSettingStore } from '../store'
 import DebugLog from '../utils/debuglog'
 import { GetExpiresTime, HanToPin } from '../utils/utils'
@@ -5,13 +6,100 @@ import AliHttp from './alihttp'
 import { IAliFileItem, IAliGetDirModel, IAliGetFileModel, IAliGetForderSizeModel } from './alimodels'
 import AliDirFileList from './dirfilelist'
 import { ICompilationList, IDownloadUrl, IOfficePreViewUrl, IVideoPreviewUrl, IVideoXBTUrl } from './models'
-import { DecodeEncName, GetDriveType } from './utils'
+import { DecodeEncName, GetDriveType, isAliyunUser, isBaiduUser, isCloud123User, isDrive115User } from './utils'
 import { getRawUrl } from '../utils/proxyhelper'
+import { apiCloud123DownloadInfo, apiCloud123FileDetail } from '../cloud123/filecmd'
+import { mapCloud123InfoToAliModel } from '../cloud123/dirfilelist'
+import { apiCloud123TranscodeList } from '../cloud123/video'
+import { apiDrive115FileDetail } from '../cloud115/filecmd'
+import { apiDrive115DownUrl } from '../cloud115/download'
+import { mapDrive115DetailToAliModel } from '../cloud115/dirfilelist'
+import { apiDrive115VideoHistoryUpdate, apiDrive115VideoPlay, getDrive115PickCode } from '../cloud115/video'
+import { apiBaiduFileList } from '../cloudbaidu/dirfilelist'
+import { apiBaiduFileMetas, mapBaiduMetaToAliFileItem } from '../cloudbaidu/filecmd'
+import TreeStore from '../store/treestore'
+import UserDAL from '../user/userdal'
+import { getWebDavConnection, getWebDavConnectionId, getWebDavDownloadUrl, isWebDavDrive } from '../utils/webdavClient'
+
+const parseBaiduPath = (file_path: string) => {
+  let p = file_path || '/'
+  if (!p.startsWith('/')) p = '/' + p
+  const idx = p.lastIndexOf('/')
+  const parent = idx <= 0 ? '/' : p.substring(0, idx)
+  const name = p.substring(idx + 1)
+  return { parent, name }
+}
+
+const getBaiduMetaByPath = async (user_id: string, file_id: string) => {
+  if (!file_id) return null
+  const fsid = Number(file_id)
+  if (!Number.isFinite(fsid)) return null
+  const metas = await apiBaiduFileMetas(user_id, [fsid], 1)
+  if (!metas || metas.length === 0) return null
+  return { meta: metas[0], fs_id: fsid, size: Number(metas[0].size || 0) }
+}
 
 export default class AliFile {
 
   static async ApiFileInfo(user_id: string, drive_id: string, file_id: string, ispic: boolean = false): Promise<any | undefined> {
+    if (!drive_id || !file_id) return undefined
+    if (isWebDavDrive(drive_id)) {
+      const connection = getWebDavConnection(getWebDavConnectionId(drive_id))
+      const normalizedPath = file_id === 'root' ? '/' : file_id
+      if (normalizedPath === '/') {
+        return {
+          drive_id,
+          file_id: '/',
+          parent_file_id: '',
+          name: connection?.name || 'WebDAV',
+          type: 'folder',
+          isDir: true
+        }
+      }
+      return {
+        drive_id,
+        file_id: normalizedPath,
+        parent_file_id: path.posix.dirname(normalizedPath) || '/',
+        name: path.posix.basename(normalizedPath) || connection?.name || 'WebDAV',
+        type: 'folder',
+        isDir: true
+      }
+    }
     if (!user_id || !drive_id || !file_id) return undefined
+    if (isCloud123User(user_id) || drive_id === 'cloud123') {
+      const detail = await apiCloud123FileDetail(user_id, file_id)
+      if (!detail) return undefined
+      const mapped = mapCloud123InfoToAliModel(detail) as any
+      mapped.type = mapped.isDir ? 'folder' : 'file'
+      return mapped
+    }
+    if (isDrive115User(user_id) || drive_id === 'drive115') {
+      const detail = await apiDrive115FileDetail(user_id, file_id)
+      if (!detail) return undefined
+      const mapped = mapDrive115DetailToAliModel(detail, drive_id) as any
+      mapped.type = mapped.isDir ? 'folder' : 'file'
+      mapped.pick_code = detail.pick_code
+      return mapped
+    }
+    if (isBaiduUser(user_id) || drive_id === 'baidu') {
+      if (file_id === 'baidu_root' || file_id === '/') {
+        return {
+          drive_id,
+          file_id,
+          parent_file_id: '',
+          name: '网盘文件',
+          type: 'folder',
+          isDir: true
+        }
+      }
+      const metaInfo = await getBaiduMetaByPath(user_id, file_id)
+      if (metaInfo?.meta) {
+        const mapped = mapBaiduMetaToAliFileItem(metaInfo.meta, drive_id, file_id) as any
+        mapped.type = mapped.isDir ? 'folder' : 'file'
+        return mapped
+      }
+      return undefined
+    }
     let url = ''
     let postData = {}
     if (!ispic) {
@@ -84,7 +172,62 @@ export default class AliFile {
   }
 
   static async ApiFileDownloadUrl(user_id: string, drive_id: string, file_id: string, expire_sec: number): Promise<IDownloadUrl | string> {
+    if (!drive_id || !file_id) return '参数错误'
+    if (isWebDavDrive(drive_id)) {
+      const connectionId = getWebDavConnectionId(drive_id)
+      const connection = getWebDavConnection(connectionId)
+      if (!connection) return 'WebDAV 连接不存在，请重新连接'
+      const url = await getWebDavDownloadUrl(connection, file_id)
+      console.log(`WebDAV download url ${url}`)
+      return {
+        drive_id,
+        file_id,
+        expire_time: 0,
+        url,
+        size: 0
+      }
+    }
     if (!user_id || !drive_id || !file_id) return '参数错误'
+    if (isBaiduUser(user_id) || drive_id === 'baidu') {
+      const metaInfo = await getBaiduMetaByPath(user_id, file_id)
+      if (!metaInfo?.meta?.dlink) return '获取下载地址失败'
+      let dlink = metaInfo.meta.dlink
+      const token = UserDAL.GetUserToken(user_id)
+      if (token?.access_token && !dlink.includes('access_token=')) {
+        dlink += (dlink.includes('?') ? '&' : '?') + `access_token=${token.access_token}`
+      }
+      return {
+        drive_id,
+        file_id,
+        expire_time: GetExpiresTime(dlink),
+        url: dlink,
+        size: Number(metaInfo.meta.size || metaInfo.size || 0)
+      }
+    }
+    if (isCloud123User(user_id) || drive_id === 'cloud123') {
+      const data = await apiCloud123DownloadInfo(user_id, file_id)
+      if (typeof data === 'string') return data
+      return {
+        drive_id: drive_id,
+        file_id: file_id,
+        expire_time: 0,
+        url: data.url,
+        size: 0
+      }
+    }
+    if (isDrive115User(user_id) || drive_id === 'drive115') {
+      const detail = await apiDrive115FileDetail(user_id, file_id)
+      if (!detail) return '获取文件详情失败'
+      const down = await apiDrive115DownUrl(user_id, detail.pick_code)
+      if (typeof down === 'string') return down
+      return {
+        drive_id: drive_id,
+        file_id: file_id,
+        expire_time: GetExpiresTime(down.url),
+        url: down.url,
+        size: down.size || detail.size || 0
+      }
+    }
     const data: IDownloadUrl = {
       drive_id: drive_id,
       file_id: file_id,
@@ -129,7 +272,118 @@ export default class AliFile {
   }
 
   static async ApiVideoPreviewUrl(user_id: string, drive_id: string, file_id: string): Promise<IVideoPreviewUrl | string> {
+    if (!drive_id || !file_id) return '参数错误'
+    if (isWebDavDrive(drive_id)) {
+      return '暂无转码信息'
+    }
     if (!user_id || !drive_id || !file_id) return '参数错误'
+    if (isBaiduUser(user_id) || drive_id === 'baidu') {
+      return '暂无转码信息'
+    }
+    if (isCloud123User(user_id) || drive_id === 'cloud123') {
+      const transcode = await apiCloud123TranscodeList(user_id, file_id)
+      if (typeof transcode === 'string') return transcode
+      if (!transcode.list.length) {
+        if (transcode.status === 1) return '视频正在转码中，稍后重试'
+        if (transcode.status === 3) return '视频转码失败'
+        return '暂无转码信息'
+      }
+      const data: IVideoPreviewUrl = {
+        drive_id: drive_id,
+        file_id: file_id,
+        size: 0,
+        expire_time: 0,
+        width: 0,
+        height: 0,
+        duration: 0,
+        qualities: [],
+        subtitles: []
+      }
+      data.qualities = transcode.list
+        .filter(item => item && item.url)
+        .map(item => {
+          const label = item.resolution || (item.height ? `${item.height}p` : '清晰度')
+          return {
+            html: label,
+            quality: label,
+            height: Number(item.height || 0),
+            width: 0,
+            label,
+            value: label,
+            url: item.url
+          }
+        })
+      data.qualities = data.qualities.sort((a, b) => (b.height || 0) - (a.height || 0))
+      if (data.qualities.length > 0) {
+        const first = data.qualities[0]
+        data.height = first.height || 0
+        data.expire_time = GetExpiresTime(first.url)
+      }
+      const duration = transcode.list.find(item => item.duration)?.duration
+      data.duration = Math.floor(Number(duration || 0))
+      return data
+    }
+    if (isDrive115User(user_id) || drive_id === 'drive115') {
+      const meta = await getDrive115PickCode(user_id, file_id)
+      if (!meta?.pick_code) return '获取文件详情失败'
+      const playInfo = await apiDrive115VideoPlay(user_id, meta.pick_code)
+      if (typeof playInfo === 'string') return playInfo
+      const data: IVideoPreviewUrl = {
+        drive_id: drive_id,
+        file_id: file_id,
+        size: 0,
+        expire_time: 0,
+        width: 0,
+        height: 0,
+        duration: 0,
+        qualities: [],
+        subtitles: []
+      }
+      const defLabel = (def: string) => {
+        switch (def) {
+          case '1': return '标清'
+          case '2': return '高清'
+          case '3': return '超清'
+          case '4': return '1080P'
+          case '5': return '4K'
+          case '100': return '原画'
+          default: return def ? `清晰度${def}` : '清晰度'
+        }
+      }
+      const list = playInfo.video_url || []
+      data.qualities = list
+        .filter(item => item && item.url)
+        .map(item => {
+          const def = String(item.definition ?? item.definition_n ?? '')
+          const label = item.title || defLabel(def)
+          return {
+            html: label,
+            quality: def,
+            height: Number(item.height || 0),
+            width: Number(item.width || 0),
+            label,
+            value: label,
+            url: item.url
+          }
+        })
+      data.qualities = data.qualities.sort((a, b) => (b.width || 0) - (a.width || 0))
+      const userDef = playInfo.user_def ? String(playInfo.user_def) : ''
+      if (userDef) {
+        const idx = data.qualities.findIndex(q => q.quality === userDef)
+        if (idx > 0) {
+          const [picked] = data.qualities.splice(idx, 1)
+          data.qualities.unshift(picked)
+        }
+      }
+      if (data.qualities.length > 0) {
+        const first = data.qualities[0]
+        data.width = first.width || 0
+        data.height = first.height || 0
+        data.expire_time = GetExpiresTime(first.url)
+      }
+      data.duration = Math.floor(Number(playInfo.play_long || meta.play_long || 0))
+      return data
+    }
     let url = ''
     let need_open_api = true
     if (need_open_api) {
@@ -384,6 +638,11 @@ export default class AliFile {
 
   static async ApiFileGetPathString(user_id: string, drive_id: string, file_id: string, dirsplit: string): Promise<string> {
     if (!user_id || !drive_id || !file_id) return ''
+    if (isCloud123User(user_id) || drive_id === 'cloud123') {
+      const pathList = TreeStore.GetDirPath(drive_id, file_id)
+      const pathNames = pathList.map((item) => item.name).filter((name) => name)
+      return pathNames.join(dirsplit)
+    }
     if (file_id.includes('root')) {
       if (file_id.startsWith('backup')) {
         return '备份盘'
@@ -416,6 +675,9 @@ export default class AliFile {
 
   static async ApiFileGetFolderSize(user_id: string, drive_id: string, file_id: string): Promise<IAliGetForderSizeModel | undefined> {
     if (!user_id || !drive_id || !file_id) return undefined
+    if (isCloud123User(user_id) || drive_id === 'cloud123') {
+      return { size: 0, folder_count: 0, file_count: 0, reach_limit: undefined }
+    }
     const url = 'adrive/v1/file/get_folder_size_info'
 
     const postData = {
@@ -523,6 +785,18 @@ export default class AliFile {
   static async ApiUpdateVideoTime(user_id: string, drive_id: string, file_id: string, play_cursor: number): Promise<IAliFileItem | undefined> {
     if (!useSettingStore().uiAutoPlaycursorVideo) return
     if (!user_id || !drive_id || !file_id) return undefined
+    if (isWebDavDrive(drive_id)) return undefined
+    if (isCloud123User(user_id) || drive_id === 'cloud123') return undefined
+    if (isBaiduUser(user_id) || drive_id === 'baidu') return undefined
+    if (isDrive115User(user_id) || drive_id === 'drive115') {
+      const meta = await getDrive115PickCode(user_id, file_id)
+      if (!meta?.pick_code) return undefined
+      const playLong = Number(meta.play_long || 0)
+      const watch_end = playLong > 0 && play_cursor >= playLong - 10 ? 1 : 0
+      await apiDrive115VideoHistoryUpdate(user_id, meta.pick_code, play_cursor, watch_end)
+      return undefined
+    }
+    if (!isAliyunUser(user_id)) return undefined
     let url = ''
     let need_open_api = true
     if (need_open_api) {

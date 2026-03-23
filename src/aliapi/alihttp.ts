@@ -7,6 +7,7 @@ import AliUser from './user'
 import message from '../utils/message'
 import DebugLog from '../utils/debuglog'
 import { v4 } from 'uuid'
+import { isBaiduUser, isCloud123User, isDrive115User } from './utils'
 
 export interface IUrlRespData {
   code: number
@@ -99,6 +100,13 @@ export default class AliHttp {
           // 自动刷新Token
           if (data.code == 'AccessTokenInvalid' || data.code == 'AccessTokenExpired') {
             if (token) {
+              if (isDrive115User(token) || isBaiduUser(token) || isCloud123User(token)) {
+                return {
+                  code: error.response.status || 403,
+                  header: JSON.stringify(error.response.headers || {}),
+                  body: error.response.data || 'NetError 当前网盘接口请求错误'
+                } as IUrlRespData
+              }
               const isOpenApi = config.url.includes('adrive/v1.0') || config.url.includes('adrive/v1.1')
               if (!isOpenApi) {
                 return await AliUser.ApiTokenRefreshAccount(token, true, true).then((isLogin: boolean) => {
@@ -125,6 +133,13 @@ export default class AliHttp {
             || data.code == 'UserDeviceOffline'
             || data.code == 'DeviceSessionSignatureInvalid') {
             if (token) {
+              if (isDrive115User(token) || isBaiduUser(token) || isCloud123User(token)) {
+                return {
+                  code: error.response.status || 403,
+                  header: JSON.stringify(error.response.headers || {}),
+                  body: error.response.data || 'NetError 当前网盘接口请求错误'
+                } as IUrlRespData
+              }
               return await AliUser.ApiSessionRefreshAccount(token, true, true).then((flag: boolean) => {
                 if (flag) {
                   return { code: 401, header: '', body: '' } as IUrlRespData

@@ -12,6 +12,35 @@ import message from './message'
 import { modalArchive, modalArchivePassword, modalSelectPanDir, modalSelectVideoQuality } from './modal'
 import PlayerUtils from './playerhelper'
 import { getEncType, getRawUrl } from './proxyhelper'
+import { isAliyunUser, isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
+
+async function resolveTokenForFile(file: IAliGetFileModel): Promise<ITokenInfo | undefined> {
+  const explicitUserId = (file as any).user_id as string | undefined
+  if (explicitUserId) {
+    const token = await UserDAL.GetUserTokenFromDB(explicitUserId)
+    if (token?.access_token) return token
+  }
+  const currentUserId = useUserStore().user_id
+  const currentToken = await UserDAL.GetUserTokenFromDB(currentUserId)
+  const driveId = file.drive_id || ''
+  const matchesCurrent = currentToken && (
+    (driveId === 'cloud123' && isCloud123User(currentToken))
+    || (driveId === 'drive115' && isDrive115User(currentToken))
+    || (driveId === 'baidu' && isBaiduUser(currentToken))
+    || (!['cloud123', 'drive115', 'baidu'].includes(driveId) && isAliyunUser(currentToken))
+  )
+  if (matchesCurrent && currentToken?.access_token) return currentToken
+
+  const userList = await UserDAL.GetUserListFromDB()
+  const matched = userList.find((token) => (
+    (driveId === 'cloud123' && isCloud123User(token))
+    || (driveId === 'drive115' && isDrive115User(token))
+    || (driveId === 'baidu' && isBaiduUser(token))
+    || (!['cloud123', 'drive115', 'baidu'].includes(driveId) && isAliyunUser(token))
+  ))
+  if (!matched?.user_id) return currentToken || undefined
+  return await UserDAL.GetUserTokenFromDB(matched.user_id) || undefined
+}
 
 export async function menuOpenFile(file: IAliGetFileModel, password: string = ''): Promise<void> {
   if (clickWait('menuOpenFile', 500)) return
@@ -54,8 +83,7 @@ export async function menuOpenFile(file: IAliGetFileModel, password: string = ''
     return
   }
   if (file.category.startsWith('video')) {
-    const user_id = useUserStore().user_id
-    const token = await UserDAL.GetUserTokenFromDB(user_id)
+    const token = await resolveTokenForFile(file)
     if (!token || !token.access_token) {
       message.error('在线预览失败 账号失效，操作取消')
       return

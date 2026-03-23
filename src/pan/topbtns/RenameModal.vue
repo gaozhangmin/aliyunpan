@@ -9,7 +9,8 @@ import AliFileCmd from '../../aliapi/filecmd'
 import AliAlbum from '../../aliapi/album'
 import PanDAL from '../pandal'
 import { getEncType } from '../../utils/proxyhelper'
-import { EncodeEncName } from '../../aliapi/utils'
+import { EncodeEncName, isCloud123User } from '../../aliapi/utils'
+import { apiCloud123Rename } from '../../cloud123/filecmd'
 
 const props = defineProps({
   visible: {
@@ -176,10 +177,17 @@ const handleRename = (newName: string, encType: string = '', inputpassword: stri
     if (encType) {
       encName = EncodeEncName(pantreeStore.user_id, newName, form.isDir, encType, inputpassword)
     }
-    AliFileCmd.ApiRenameBatch(pantreeStore.user_id, pantreeStore.drive_id, [form.file_id], [encName])
-      .then((data) => {
+    const renamePromise = isCloud123User(pantreeStore.user_id || '')
+      ? apiCloud123Rename(pantreeStore.user_id, form.file_id, encName).then((res) => {
+        if (!res.success) return []
+        return [{ file_id: form.file_id, parent_file_id: '', name: encType ? newName : encName, isDir: form.isDir }]
+      })
+      : AliFileCmd.ApiRenameBatch(pantreeStore.user_id, pantreeStore.drive_id, [form.file_id], [encName])
+
+    renamePromise
+      .then((data: any) => {
         if (data.length == 1) {
-          if (encType) data[0].name = newName
+          if (encType && data[0]) data[0].name = newName
           usePanTreeStore().mRenameFiles(data)
           if (!props.istree) usePanFileStore().mRenameFiles(data)
           PanDAL.RefreshPanTreeAllNode(pantreeStore.drive_id)

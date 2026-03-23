@@ -110,6 +110,10 @@ export function modalDownload(istree: boolean) {
   useModalStore().showModal('download', { istree })
 }
 
+export function modalCloud123OfflineDownload() {
+  useModalStore().showModal('cloud123offline', {})
+}
+
 export function modalUpdateLog() {
   useModalStore().showModal('showupdatelog', {})
 }

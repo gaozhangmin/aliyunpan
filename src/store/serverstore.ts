@@ -25,7 +25,7 @@ const useServerStore = defineStore('serverstore', {
   state: (): ServerState => ({
     shareSiteList: [],
     shareSiteGroupList: [],
-    helpUrl: 'aHR0cHM6Ly9naXRodWIuY29tL29kb211L2FsaXl1bnBhbg=='
+    helpUrl: 'aHR0cHM6Ly9naXRodWIuY29tL2dhb3poYW5nbWluL2FsaXl1bnBhbg=='
   }),
   actions: {
 
@@ -38,7 +38,7 @@ const useServerStore = defineStore('serverstore', {
     },
 
     mSaveHelpUrl(url: string) {
-      this.helpUrl = url || 'aHR0cHM6Ly9naXRodWIuY29tL29kb211L2FsaXl1bnBhbg=='
+      this.helpUrl = url || 'aHR0cHM6Ly9naXRodWIuY29tL2dhb3poYW5nbWluL2FsaXl1bnBhbg=='
     }
   }
 })

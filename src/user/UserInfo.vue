@@ -1,12 +1,16 @@
 <script setup lang='ts'>
-import { computed } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useUserStore } from '../store'
 import UserDAL from '../user/userdal'
 import message from '../utils/message'
 import { modalUserRewardSpace, modalUserSpace } from '../utils/modal'
 import AliUser from '../aliapi/user'
+import { humanSize } from '../utils/format'
+import type { ITokenInfo } from './userstore'
+import { isAliyunUser, isBaiduUser } from '../aliapi/utils'
 
 const userStore = useUserStore()
+const isAliyunAccount = computed(() => isAliyunUser(userStore.user_id || userStore.GetUserToken))
 
 const handleUserChange = (val: any, user_id: string) => {
   if (val) UserDAL.UserChange(user_id)
@@ -38,22 +42,81 @@ const handleLogin = () => {
   if (window.WebClearCookies) {
     window.WebClearCookies({ origin: 'https://auth.aliyundrive.com', storages: ['cookies', 'localstorage'] })
   }
+  localStorage.setItem('login_provider', 'aliyun')
+  useUserStore().userShowLogin = true
+}
+
+const activeProvider = ref<'aliyun' | 'cloud123' | '115' | 'baidu'>('aliyun')
+const userListState = ref<ITokenInfo[]>([])
+
+const refreshUserList = async () => {
+  userListState.value = userStore.user_id ? await UserDAL.GetUserListFromDB() : []
+}
+
+const handleCloud123Login = () => {
+  localStorage.setItem('login_provider', 'cloud123')
+  useUserStore().userShowLogin = true
+}
+
+const handle115Login = () => {
+  localStorage.setItem('login_provider', '115')
+  useUserStore().userShowLogin = true
+}
+
+const handleBaiduLogin = () => {
+  localStorage.setItem('login_provider', 'baidu')
   useUserStore().userShowLogin = true
 }
 
 const userList = computed(() => {
-  if (userStore.user_id) return UserDAL.GetUserList()
-  else return []
+  if (!userStore.user_id) return []
+  return userListState.value
 })
 
 const getUserName = computed(() => {
   let userName = userStore.GetUserToken.nick_name || userStore.GetUserToken.user_name
-  if (userName.length > 3) {
-    return userName.substring(0, 3) + '...'
+  const limit = isAliyunAccount.value ? 3 : 10
+  if (userName.length > limit) {
+    return userName.substring(0, limit) + '...'
   } else {
     return userName
   }
 })
+
+const baiduQuotaText = computed(() => {
+  const token = userStore.GetUserToken
+  if (!isBaiduUser(userStore.user_id || token)) return ''
+  const free = typeof token.free_size === 'number' ? humanSize(token.free_size) : ''
+  const expire = token.space_expire ? '是' : '否'
+  return `可用 ${free} · 7天内到期 ${expire}`
+})
+
+const getProviderLabel = (tokenfrom: string) => {
+  switch (tokenfrom) {
+    case 'aliyun':
+      return '阿里云盘'
+    case 'cloud123':
+      return '123网盘'
+    case '115':
+      return '115网盘'
+    case 'baidu':
+      return '百度网盘'
+    default:
+      return '未知网盘'
+  }
+}
+
+onMounted(() => {
+  refreshUserList().catch(() => {})
+})
+
+watch(
+  () => userStore.user_id,
+  () => {
+    refreshUserList().catch(() => {})
+  },
+  { immediate: true }
+)
 
 </script>
 
@@ -65,9 +128,9 @@ const getUserName = computed(() => {
 
     <template #content>
       <div v-if='userStore.userLogined' style='width: 300px'>
-        <a-row justify='center' align='stretch'>
-          <a-col flex='150px'>
-            <div class='username'>
+        <a-row class='userinfo-row' justify='space-between' align='center'>
+          <a-col class='userinfo-left' flex='1'>
+            <div class='username' :class="{ 'username-wide': !isAliyunAccount }">
               Hi {{ getUserName }}
               <span v-if='userStore.GetUserToken.vipIcon'>
                 <img width='65'
@@ -83,7 +146,7 @@ const getUserName = computed(() => {
                       title='刷新账号信息'
                       @click='handleRefreshUserInfo()'>刷新
             </a-button>
-            <a-button type='text' size='small' tabindex='-1'
+            <a-button v-if='isAliyunAccount' type='text' size='small' tabindex='-1'
                       style='min-width: 20px; padding: 0 8px'
                       title='每日签到'
                       @click='handleSign()'>签到
@@ -96,16 +159,19 @@ const getUserName = computed(() => {
           </a-col>
         </a-row>
 
-        <a-row justify='center' align='stretch'>
-          <a-col flex='150px'>
+        <a-row class='userinfo-row' justify='space-between' align='center'>
+          <a-col class='userinfo-left' flex='1'>
             <span class='userspace'>{{ userStore.GetUserToken.spaceinfo }}</span>
+            <span v-if="isBaiduUser(userStore.user_id || userStore.GetUserToken) && baiduQuotaText" class='userspace userspace-sub'>
+              {{ baiduQuotaText }}
+            </span>
           </a-col>
           <a-col flex='auto'></a-col>
           <a-col flex='none'>
-            <a-button type='text' size='small' tabindex='-1' style='min-width: 20px; padding: 0 8px' status='warning'
+            <a-button v-if='isAliyunAccount' type='text' size='small' tabindex='-1' style='min-width: 20px; padding: 0 8px' status='warning'
                       @click='handleUserSpace()'>容量详情
             </a-button>
-            <a-button type='text' size='small' tabindex='-1' style='min-width: 20px; padding: 0 8px' status='success'
+            <a-button v-if='isAliyunAccount' type='text' size='small' tabindex='-1' style='min-width: 20px; padding: 0 8px' status='success'
                       @click='handleUserRewardSpace()'>福利兑换
             </a-button>
           </a-col>
@@ -124,6 +190,7 @@ const getUserName = computed(() => {
               <span :title='item.user_name'
                     style='max-width:300px;display:inline-block;'>{{ item.nick_name ? item.nick_name : item.user_name
                 }}</span>
+              <span class='user-provider' :title='getProviderLabel(item.tokenfrom)'>{{ getProviderLabel(item.tokenfrom) }}</span>
               <a-switch size='small' :model-value='userStore.user_id == item.user_id' title='切换到这个账号'
                         tabindex='-1' @change='handleUserChange($event, item.user_id) '>
                 <template #checked> 当前</template>
@@ -140,6 +207,12 @@ const getUserName = computed(() => {
         </a-row>
       </div>
       <div v-else style='width: 250px'>
+        <a-tabs size='small' v-model:active-key='activeProvider'>
+          <a-tab-pane key='aliyun' title='阿里云盘' />
+          <a-tab-pane key='cloud123' title='123网盘' />
+          <a-tab-pane key='115' title='115网盘' />
+          <a-tab-pane key='baidu' title='百度网盘' />
+        </a-tabs>
         <a-row align='stretch'>
           <a-col flex='60px'>
             <a-avatar :size='56'
@@ -155,8 +228,46 @@ const getUserName = computed(() => {
         </a-row>
         <a-divider />
         <a-row justify='center'>
-          <a-button type='outline' size='small' tabindex='-1' style='margin: 0 0 8px 0' title='Alt+L'
-                    @click='handleLogin()'> 登录一个新账号
+          <a-button
+            v-if="activeProvider === 'aliyun'"
+            type='outline'
+            size='small'
+            tabindex='-1'
+            style='margin: 0 0 8px 0'
+            title='Alt+L'
+            @click='handleLogin()'
+          >
+            登录一个新账号
+          </a-button>
+          <a-button
+            v-else-if="activeProvider === 'cloud123'"
+            type='outline'
+            size='small'
+            tabindex='-1'
+            style='margin: 0 0 8px 0'
+            @click='handleCloud123Login()'
+          >
+            登录 123 网盘
+          </a-button>
+          <a-button
+            v-else-if="activeProvider === '115'"
+            type='outline'
+            size='small'
+            tabindex='-1'
+            style='margin: 0 0 8px 0'
+            @click='handle115Login()'
+          >
+            登录 115 网盘
+          </a-button>
+          <a-button
+            v-else-if="activeProvider === 'baidu'"
+            type='outline'
+            size='small'
+            tabindex='-1'
+            style='margin: 0 0 8px 0'
+            @click='handleBaiduLogin()'
+          >
+            登录 百度网盘
           </a-button>
         </a-row>
       </div>
@@ -174,6 +285,28 @@ const getUserName = computed(() => {
   text-overflow: ellipsis;
 }
 
+.username-wide {
+  width: 220px;
+}
+
+.userinfo-row {
+  width: 100%;
+}
+
+.user-provider {
+  margin-left: auto;
+  margin-right: 10px;
+  color: var(--color-text-3);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.userinfo-left {
+  display: flex;
+  align-items: center;
+  min-width: 150px;
+}
+
 .userspace {
   margin: 0;
   display: inline-block;
@@ -184,6 +317,13 @@ const getUserName = computed(() => {
   white-space: nowrap;
   word-break: keep-all;
   text-overflow: clip;
+}
+
+.userspace-sub {
+  display: block;
+  line-height: 20px;
+  font-size: 12px;
+  color: #a6b1b9;
 }
 
 .userlist {

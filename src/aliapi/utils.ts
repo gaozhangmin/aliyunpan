@@ -16,8 +16,18 @@ import mime from 'mime-types'
 import { getEncPassword, getEncType } from '../utils/proxyhelper'
 
 export function GetDriveID(user_id: string, drive: string): string {
+  if ((drive || '').startsWith('webdav:')) return drive
   const token = UserDAL.GetUserToken(user_id)
   if (token) {
+    if (isCloud123User(user_id)) {
+      return token.default_drive_id || token.resource_drive_id || 'cloud123'
+    }
+    if (isDrive115User(user_id)) {
+      return token.default_drive_id || 'drive115'
+    }
+    if (isBaiduUser(user_id)) {
+      return token.default_drive_id || 'baidu'
+    }
     if (drive.includes('backup')) {
       return token.backup_drive_id
     } else if (drive.includes('resource')) {
@@ -32,8 +42,20 @@ export function GetDriveID(user_id: string, drive: string): string {
 }
 
 export function GetDriveType(user_id: string, drive_id: string): any {
+  if ((drive_id || '').startsWith('webdav:')) {
+    return { title: 'WebDAV', name: 'webdav', key: '/' }
+  }
   const token = UserDAL.GetUserToken(user_id)
   if (token) {
+    if (isCloud123User(user_id)) {
+      return { title: '网盘文件', name: 'cloud', key: 'cloud_root' }
+    }
+    if (isDrive115User(user_id)) {
+      return { title: '网盘文件', name: 'drive115', key: 'drive115_root' }
+    }
+    if (isBaiduUser(user_id)) {
+      return { title: '网盘文件', name: 'baidu', key: 'baidu_root' }
+    }
     switch (drive_id) {
       case token.backup_drive_id:
         return { title: '备份盘', name: 'backup', key: 'backup_root' }
@@ -48,6 +70,43 @@ export function GetDriveType(user_id: string, drive_id: string): any {
     }
   }
   return { title: '备份盘', name: 'backup', key: 'backup_root' }
+}
+
+function resolveUserTokenInfo(user: string | { user_id?: string; tokenfrom?: string }) {
+  if (typeof user === 'string') {
+    return {
+      user_id: user,
+      tokenfrom: UserDAL.GetUserToken(user)?.tokenfrom || ''
+    }
+  }
+  return {
+    user_id: user?.user_id || '',
+    tokenfrom: user?.tokenfrom || ''
+  }
+}
+
+export function isCloud123User(user: string | { user_id?: string; tokenfrom?: string }): boolean {
+  const { user_id, tokenfrom } = resolveUserTokenInfo(user)
+  if (tokenfrom === 'cloud123') return true
+  return user_id.startsWith('cloud123_')
+}
+
+export function isDrive115User(user: string | { user_id?: string; tokenfrom?: string }): boolean {
+  const { user_id, tokenfrom } = resolveUserTokenInfo(user)
+  if (tokenfrom === '115') return true
+  return user_id.startsWith('115_')
+}
+
+export function isAliyunUser(user: string | { user_id?: string; tokenfrom?: string }): boolean {
+  const { user_id, tokenfrom } = resolveUserTokenInfo(user)
+  if (tokenfrom === 'aliyun') return true
+  return user_id.startsWith('aliyun_')
+}
+
+export function isBaiduUser(user: string | { user_id?: string; tokenfrom?: string }): boolean {
+  const { user_id, tokenfrom } = resolveUserTokenInfo(user)
+  if (tokenfrom === 'baidu') return true
+  return user_id.startsWith('baidu_')
 }
 
 export function GetSignature(nonce: number, user_id: string, deviceId: string) {

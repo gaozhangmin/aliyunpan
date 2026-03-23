@@ -30,10 +30,12 @@ import PasswordModal from '../pan/topbtns/PasswordModal.vue'
 import UpdateModal from '../pan/topbtns/ShowUpdateModal.vue'
 import ShowUpdateModal from '../pan/topbtns/ShowUpdateModal.vue'
 import SelectVideoQualityModal from '../pan/topbtns/SelectVideoQualityModal.vue'
+import Cloud123OfflineDownloadModal from '../down/Cloud123OfflineDownloadModal.vue'
 
 export default defineComponent({
   components: {
     SelectVideoQualityModal,
+    Cloud123OfflineDownloadModal,
     ShowUpdateModal,
     UpdateModal,
     PasswordModal,
@@ -157,6 +159,8 @@ export default defineComponent({
                            :file-info="modalStore.modalData.fileInfo || {}"
                            :quality-data="modalStore.modalData.qualityData || {}"
                            :callback="modalStore.modalData.callback" />
+
+  <Cloud123OfflineDownloadModal :visible="modalStore.modalName == 'cloud123offline'" />
 
   <PostModal :visible="modalStore.modalName == 'showpostmodal'"
              :msg='modalStore.modalData.msg || ""'

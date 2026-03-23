@@ -1,14 +1,20 @@
 import { IAliGetDirModel } from '../aliapi/alimodels'
 import AliFile from '../aliapi/file'
-import AliDirFileList from '../aliapi/dirfilelist'
+import AliDirFileList, { NewIAliFileResp } from '../aliapi/dirfilelist'
 import { ITokenInfo, useFootStore, usePanFileStore } from '../store'
 import TreeStore, { IDriverModel, TreeNodeData } from '../store/treestore'
 import DB from '../utils/db'
 import DebugLog from '../utils/debuglog'
 import message from '../utils/message'
 import usePanTreeStore from './pantreestore'
-import { GetDriveID, GetDriveType } from '../aliapi/utils'
+import { GetDriveID, GetDriveType, isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
 import AliAlbum from '../aliapi/album'
+import { apiCloud123FileList, mapCloud123FileToAliModel } from '../cloud123/dirfilelist'
+import { apiDrive115Search, mapDrive115SearchToAliModel, mapDrive115TrashToAliModel } from '../cloud115/dirfilelist'
+import { apiDrive115TrashList } from '../cloud115/trash'
+import { apiDrive115FileList, mapDrive115FileToAliModel } from '../cloud115/dirfilelist'
+import { apiBaiduFileList, apiBaiduSearch, mapBaiduFileToAliModel } from '../cloudbaidu/dirfilelist'
+import { getWebDavConnection, getWebDavConnectionId, isWebDavDrive, listWebDavDirectory } from '../utils/webdavClient'
 
 export interface PanSelectedData {
   isError: boolean
@@ -25,8 +31,100 @@ export interface PanSelectedData {
 }
 
 const RefreshLock = new Set<string>()
+const Drive115TrashPaging = new Map<string, { offset: number; total: number; limit: number; loading: boolean }>()
+
+const resolveBaiduDirPath = (drive_id: string, dirID: string): string => {
+  if (!dirID || dirID === 'baidu_root') return '/'
+  if (dirID.startsWith('/')) return dirID
+  const dir = TreeStore.GetDir(drive_id, dirID)
+  if (dir?.path) return dir.path
+  const selectDir: any = usePanTreeStore().selectDir
+  if (selectDir?.file_id === dirID && selectDir?.path) return selectDir.path
+  const desc = dir?.description || selectDir?.description || ''
+  const match = /baidu_path:([^;]+)/.exec(desc)
+  if (match && match[1]) return match[1]
+  return '/'
+}
 
 export default class PanDAL {
+  static async aReLoadCloudDrive(token: ITokenInfo): Promise<void> {
+    const { user_id } = token
+    const drive_id = token.default_drive_id || token.resource_drive_id || 'cloud123'
+    const pantreeStore = usePanTreeStore()
+    pantreeStore.mSaveUser(user_id, drive_id, '', '', '')
+    pantreeStore.drive_id = drive_id
+    if (!user_id) return
+    useFootStore().mSaveLoading('加载 123 网盘文件夹...')
+    const list = await apiCloud123FileList(user_id, 0, 100)
+    const driveType = GetDriveType(user_id, drive_id)
+    const dirs = list
+      .filter((item) => item.type === 1)
+      .map((item) => ({
+        file_id: String(item.fileId),
+        drive_id: drive_id,
+        parent_file_id: driveType.key,
+        name: item.filename,
+        description: '',
+        time: new Date(item.updateAt || item.createAt || '').getTime() || 0,
+        size: 0
+      }))
+    await TreeStore.ConvertToOneDriver(user_id, drive_id, dirs, false, true)
+    PanDAL.RefreshPanTreeAllNode(drive_id)
+    useFootStore().mSaveLoading('')
+  }
+
+  static async aReLoadDrive115(token: ITokenInfo): Promise<void> {
+    const { user_id } = token
+    const drive_id = token.default_drive_id || 'drive115'
+    const pantreeStore = usePanTreeStore()
+    pantreeStore.mSaveUser(user_id, drive_id, '', '', '')
+    pantreeStore.drive_id = drive_id
+    if (!user_id) return
+    useFootStore().mSaveLoading('加载 115 网盘文件夹...')
+    const list = await apiDrive115FileList(user_id, 0, 200, 0, true)
+    const driveType = GetDriveType(user_id, drive_id)
+    const dirs = list
+      .filter((item) => String(item.fc) === '0')
+      .map((item) => ({
+        file_id: String(item.fid),
+        drive_id: drive_id,
+        parent_file_id: driveType.key,
+        name: item.fn,
+        description: '',
+        time: 0,
+        size: 0
+      }))
+    await TreeStore.ConvertToOneDriver(user_id, drive_id, dirs, false, true)
+    PanDAL.RefreshPanTreeAllNode(drive_id)
+    useFootStore().mSaveLoading('')
+  }
+
+  static async aReLoadBaiduDrive(token: ITokenInfo): Promise<void> {
+    const { user_id } = token
+    const drive_id = token.default_drive_id || 'baidu'
+    const pantreeStore = usePanTreeStore()
+    pantreeStore.mSaveUser(user_id, drive_id, '', '', '')
+    pantreeStore.drive_id = drive_id
+    if (!user_id) return
+    useFootStore().mSaveLoading('加载 百度网盘文件夹...')
+    const list = await apiBaiduFileList(user_id, '/', 'name', 0, 1000)
+    const driveType = GetDriveType(user_id, drive_id)
+    const dirs = list
+      .filter((item) => item.isdir === 1)
+      .map((item) => ({
+        file_id: String(item.fs_id),
+        drive_id: drive_id,
+        parent_file_id: driveType.key,
+        path: item.path,
+        name: item.server_filename,
+        description: item.fs_id ? `:${item.fs_id};baidu_path:${item.path}` : '',
+        time: (item.server_mtime || item.server_ctime || 0) * 1000,
+        size: 0
+      }))
+    await TreeStore.ConvertToOneDriver(user_id, drive_id, dirs, false, true)
+    PanDAL.RefreshPanTreeAllNode(drive_id)
+    useFootStore().mSaveLoading('')
+  }
 
   static async aReLoadBackupDrive(token: ITokenInfo): Promise<void> {
     const { user_id, default_drive_id, resource_drive_id, backup_drive_id, pic_drive_id } = token
@@ -165,7 +263,11 @@ export default class PanDAL {
     }
     let dir = TreeStore.GetDir(drive_id, file_id)
     let dirPath = TreeStore.GetDirPath(drive_id, file_id)
+    const isCloudUser = isCloud123User(user_id)
     if (!dir || (dirPath.length == 0 && !file_id.includes('root'))) {
+      if (isCloudUser) {
+        // 123 网盘不支持路径查询，依赖已加载的目录结构
+      } else {
       let findPath = []
       if (!album_id) {
         findPath = await AliFile.ApiFileGetPath(panTreeStore.user_id, drive_id, file_id)
@@ -175,6 +277,7 @@ export default class PanDAL {
       if (findPath.length > 0) {
         dirPath = findPath
         dir = { ...dirPath[dirPath.length - 1] }
+      }
       }
     }
     if (!dir || (dirPath.length == 0 && !file_id.includes('root'))) {
@@ -220,6 +323,206 @@ export default class PanDAL {
         return
       }
 
+      if (isWebDavDrive(drive_id)) {
+        const connectionId = getWebDavConnectionId(drive_id)
+        const connection = getWebDavConnection(connectionId)
+        if (!connection) {
+          if (hasFiles) usePanFileStore().mSaveDirFileLoadingFinish(drive_id, dirID, [])
+          message.warning('WebDAV 连接不存在，请重新连接')
+          resolve(false)
+          return
+        }
+        const requestPath = dirID === '/' ? '/' : dirID
+        listWebDavDirectory(connection, requestPath)
+          .then(async (allItems) => {
+            const items = hasFiles ? allItems : allItems.filter((item) => item.isDir)
+            const dir = NewIAliFileResp(user_id, drive_id, dirID, dirName || (dirID === '/' ? connection.name : dirID.split('/').pop() || connection.name))
+            dir.items = items
+            dir.itemsKey = new Set(items.map((item) => item.file_id))
+            dir.next_marker = ''
+            dir.itemsTotal = items.length
+            const panfileStore = usePanFileStore()
+            panfileStore.mSaveDirFileLoadingPart(0, dir, dir.itemsTotal || 0)
+            if (!TreeStore.GetDriver(drive_id)) {
+              await TreeStore.ConvertToOneDriver(user_id, drive_id, [], false, true)
+            }
+            await TreeStore.SaveOneDirFileList(dir, hasFiles)
+            if (hasFiles) {
+              panfileStore.mSaveDirFileLoadingFinish(drive_id, dirID, dir.items, dir.itemsTotal || 0)
+            }
+            PanDAL.RefreshPanTreeAllNode(drive_id)
+            resolve(true)
+          })
+          .catch((err: any) => {
+            if (hasFiles) usePanFileStore().mSaveDirFileLoadingFinish(drive_id, dirID, [])
+            message.warning('列出 WebDAV 文件夹失败 ' + (err?.message || ''))
+            resolve(false)
+          })
+        return
+      }
+
+      if (isCloud123User(user_id)) {
+        const isTrash = dirID === 'trash'
+        const isSearch = dirID.startsWith('search')
+        const parentFileId = dirID === 'cloud_root' ? 0 : (isTrash ? 0 : dirID)
+        let searchData = ''
+        let searchMode = 0
+        if (isSearch) {
+          searchData = dirID.substring('search'.length).trim()
+          searchMode = 0
+        }
+        apiCloud123FileList(user_id, parentFileId, 100, isTrash, searchData, searchMode)
+          .then((list) => {
+            const allItems = list.map((item) => {
+              const mapped = mapCloud123FileToAliModel(item)
+              mapped.drive_id = drive_id
+              return mapped
+            })
+            const items = hasFiles ? allItems : allItems.filter((item) => item.isDir)
+            const dir = NewIAliFileResp(user_id, drive_id, dirID, dirName)
+            dir.items = items
+            dir.itemsKey = new Set(items.map((item) => item.file_id))
+            dir.next_marker = ''
+            dir.itemsTotal = items.length
+            const panfileStore = usePanFileStore()
+            panfileStore.mSaveDirFileLoadingPart(0, dir, dir.itemsTotal || 0)
+            TreeStore.SaveOneDirFileList(dir, hasFiles).then(() => {
+              if (hasFiles) {
+                panfileStore.mSaveDirFileLoadingFinish(drive_id, dirID, dir.items, dir.itemsTotal || 0)
+              }
+              PanDAL.RefreshPanTreeAllNode(drive_id)
+              resolve(true)
+            })
+          })
+          .catch(() => {
+            if (hasFiles) usePanFileStore().mSaveDirFileLoadingFinish(drive_id, dirID, [])
+            resolve(false)
+          })
+        return
+      }
+
+      if (isDrive115User(user_id)) {
+        const isTrash = dirID === 'trash'
+        const isSearch = dirID.startsWith('search')
+        if (isTrash) {
+          const limit = 200
+          apiDrive115TrashList(user_id, limit, 0)
+            .then(({ items, total }) => {
+              const allItems = items.map((item) => mapDrive115TrashToAliModel(item, drive_id))
+              const dir = NewIAliFileResp(user_id, drive_id, dirID, dirName)
+              dir.items = allItems
+              dir.itemsKey = new Set(allItems.map((item) => item.file_id))
+              dir.next_marker = ''
+              dir.itemsTotal = total || allItems.length
+              const panfileStore = usePanFileStore()
+              panfileStore.mSaveDirFileLoadingPart(0, dir, dir.itemsTotal || 0)
+              const pageKey = `${user_id}:${drive_id}:trash`
+              Drive115TrashPaging.set(pageKey, { offset: allItems.length, total: dir.itemsTotal || 0, limit, loading: false })
+              TreeStore.SaveOneDirFileList(dir, hasFiles).then(() => {
+                if (hasFiles) {
+                  panfileStore.mSaveDirFileLoadingFinish(drive_id, dirID, dir.items, dir.itemsTotal || 0)
+                }
+                PanDAL.RefreshPanTreeAllNode(drive_id)
+                resolve(true)
+              })
+            })
+            .catch(() => {
+              if (hasFiles) usePanFileStore().mSaveDirFileLoadingFinish(drive_id, dirID, [])
+              resolve(false)
+            })
+          return
+        }
+        if (isSearch) {
+          const searchValue = dirID.substring('search'.length).trim()
+          if (!searchValue) {
+            if (hasFiles) usePanFileStore().mSaveDirFileLoadingFinish(drive_id, dirID, [])
+            resolve(true)
+            return
+          }
+          apiDrive115Search(user_id, searchValue, 200, 0)
+            .then(({ items, total }) => {
+              const allItems = items.map((item) => mapDrive115SearchToAliModel(item, drive_id))
+              const dir = NewIAliFileResp(user_id, drive_id, dirID, dirName)
+              dir.items = allItems
+              dir.itemsKey = new Set(allItems.map((item) => item.file_id))
+              dir.next_marker = ''
+              dir.itemsTotal = total || allItems.length
+              const panfileStore = usePanFileStore()
+              panfileStore.mSaveDirFileLoadingPart(0, dir, dir.itemsTotal || 0)
+              TreeStore.SaveOneDirFileList(dir, hasFiles).then(() => {
+                if (hasFiles) {
+                  panfileStore.mSaveDirFileLoadingFinish(drive_id, dirID, dir.items, dir.itemsTotal || 0)
+                }
+                PanDAL.RefreshPanTreeAllNode(drive_id)
+                resolve(true)
+              })
+            })
+            .catch(() => {
+              if (hasFiles) usePanFileStore().mSaveDirFileLoadingFinish(drive_id, dirID, [])
+              resolve(false)
+            })
+          return
+        }
+        const parentId = dirID === 'drive115_root' ? 0 : dirID
+        apiDrive115FileList(user_id, parentId, 200, 0, true)
+          .then((list) => {
+            const allItems = list.map((item) => mapDrive115FileToAliModel(item, drive_id))
+            const items = hasFiles ? allItems : allItems.filter((item) => item.isDir)
+            const dir = NewIAliFileResp(user_id, drive_id, dirID, dirName)
+            dir.items = items
+            dir.itemsKey = new Set(items.map((item) => item.file_id))
+            dir.next_marker = ''
+            dir.itemsTotal = items.length
+            const panfileStore = usePanFileStore()
+            panfileStore.mSaveDirFileLoadingPart(0, dir, dir.itemsTotal || 0)
+            TreeStore.SaveOneDirFileList(dir, hasFiles).then(() => {
+              if (hasFiles) {
+                panfileStore.mSaveDirFileLoadingFinish(drive_id, dirID, dir.items, dir.itemsTotal || 0)
+              }
+              PanDAL.RefreshPanTreeAllNode(drive_id)
+              resolve(true)
+            })
+          })
+          .catch(() => {
+            if (hasFiles) usePanFileStore().mSaveDirFileLoadingFinish(drive_id, dirID, [])
+            resolve(false)
+          })
+        return
+      }
+
+      if (isBaiduUser(user_id)) {
+        const isSearch = dirID.startsWith('search')
+        const dirPath = resolveBaiduDirPath(drive_id, dirID)
+        const parentPath = isSearch ? '/' : dirPath
+        const request = isSearch
+          ? apiBaiduSearch(user_id, dirID.substring('search'.length).trim(), '/', true)
+          : apiBaiduFileList(user_id, dirPath, 'name', 0, 1000)
+        request
+          .then((list) => {
+            const allItems = list.map((item) => mapBaiduFileToAliModel(item, drive_id, parentPath))
+            const items = hasFiles ? allItems : allItems.filter((item) => item.isDir)
+            const dir = NewIAliFileResp(user_id, drive_id, dirID, dirName)
+            dir.items = items
+            dir.itemsKey = new Set(items.map((item) => item.file_id))
+            dir.next_marker = ''
+            dir.itemsTotal = items.length
+            const panfileStore = usePanFileStore()
+            panfileStore.mSaveDirFileLoadingPart(0, dir, dir.itemsTotal || 0)
+            TreeStore.SaveOneDirFileList(dir, hasFiles).then(() => {
+              if (hasFiles) {
+                panfileStore.mSaveDirFileLoadingFinish(drive_id, dirID, dir.items, dir.itemsTotal || 0)
+              }
+              PanDAL.RefreshPanTreeAllNode(drive_id)
+              resolve(true)
+            })
+          })
+          .catch(() => {
+            if (hasFiles) usePanFileStore().mSaveDirFileLoadingFinish(drive_id, dirID, [])
+            resolve(false)
+          })
+        return
+      }
+
       const order = TreeStore.GetDirOrder(drive_id, dirID).replace('ext ', 'updated_at ')
       AliDirFileList.ApiDirFileList(user_id, drive_id, dirID, dirName, order, hasFiles ? '' : 'folder', albumID)
         .then((dir) => {
@@ -262,31 +565,23 @@ export default class PanDAL {
         return
       }
       RefreshLock.add(dirID)
-      const order = TreeStore.GetDirOrder(drive_id, dirID).replace('ext ', 'updated_at ')
-
-      AliDirFileList.ApiDirFileList(user_id, drive_id, dirID, '', order, 'folder', albumID)
-        .then((dir) => {
-          if (!dir.next_marker) {
-            dir.dirID = dirID
-            TreeStore.SaveOneDirFileList(dir, false).then(() => {
-              PanDAL.RefreshPanTreeAllNode(drive_id)
-              const pantreeStore = usePanTreeStore()
-              if (pantreeStore.selectDir.drive_id == drive_id && (pantreeStore.selectDir.file_id == dirID)) {
-                PanDAL.aReLoadOneDirToShow(drive_id, dirID, false, albumID).then(() => {
-                  RefreshLock.delete(dirID)
-                  resolve(true)
-                })
-              } else {
-                RefreshLock.delete(dirID)
-                resolve(true)
-              }
-            })
-          } else if (dir.next_marker == 'cancel') {
+      PanDAL.GetDirFileList(user_id, drive_id, dirID, '', albumID, false)
+        .then((success) => {
+          if (!success) {
             RefreshLock.delete(dirID)
             resolve(false)
+            return
+          }
+          PanDAL.RefreshPanTreeAllNode(drive_id)
+          const pantreeStore = usePanTreeStore()
+          if (pantreeStore.selectDir.drive_id == drive_id && pantreeStore.selectDir.file_id == dirID) {
+            PanDAL.aReLoadOneDirToShow(drive_id, dirID, false, albumID).then(() => {
+              RefreshLock.delete(dirID)
+              resolve(true)
+            })
           } else {
             RefreshLock.delete(dirID)
-            resolve(false)
+            resolve(true)
           }
         })
         .catch((err: any) => {

@@ -13,6 +13,7 @@ import AliTrash from '../aliapi/trash'
 import path from 'path'
 import fs from 'fs'
 import { getRawUrl } from './proxyhelper'
+import { isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
 
 export const localPwd = 'S4znWTaZYQi3cpRNb'
 
@@ -370,7 +371,8 @@ export async function AriaAddUrl(file: IStateDownFile): Promise<string> {
           }
         }
       }
-      let downloadUrl = file.Down.DownUrl
+      let downloadUrl = typeof file.Down.DownUrl === 'string' ? file.Down.DownUrl : ''
+      downloadUrl = downloadUrl.trim()
       if (downloadUrl && downloadUrl.includes('x-oss-expires=')) {
         const expires = downloadUrl.split('x-oss-expires=')[1].split('&')[0]
         const lastTime = parseInt(expires) - Date.now() / 1000
@@ -378,38 +380,82 @@ export async function AriaAddUrl(file: IStateDownFile): Promise<string> {
         if (lastTime < 60 || lastTime < needTime + 60) {
           downloadUrl = ''
         }
-      } else {
-        downloadUrl = ''
       }
       if (!downloadUrl) {
         const durl = await getRawUrl(info.user_id, info.drive_id, info.file_id, info.encType)
         if (typeof durl == 'string') {
+          console.warn('[aria2] getRawUrl failed', info.drive_id, info.file_id, durl)
           return `生成下载链接失败, ${durl}`
-        } else if (!durl.url) {
+        } else if (!durl.url && !durl.qualities?.length) {
+          console.warn('[aria2] getRawUrl empty url', info.drive_id, info.file_id, durl)
           DebugLog.mSaveLog('danger', `${info.file_id} 生成下载链接失败, ${JSON.stringify(durl)}`, null)
           return `生成下载链接失败,${JSON.stringify(durl)}`
         }
-        downloadUrl = durl.url
+        downloadUrl = durl.url || durl.qualities?.[0]?.url || ''
         file.Down.DownUrl = downloadUrl
       }
+      if (!downloadUrl) {
+        console.warn('[aria2] no downloadUrl before addUri', info.drive_id, info.file_id)
+        return '生成下载链接失败, 下载地址为空'
+      }
+      const safeUrl = downloadUrl.replace(/\\u0026/g, '&')
+      if (safeUrl !== downloadUrl) {
+        console.warn('[aria2] normalize url', info.drive_id, info.file_id)
+        downloadUrl = safeUrl
+      }
+      if (!/^https?:\/\//i.test(downloadUrl)) {
+        console.warn('[aria2] invalid downloadUrl', info.drive_id, info.file_id, downloadUrl)
+        return '生成下载链接失败, 下载地址无效'
+      }
+      console.log('[aria2] addUri', info.drive_id, info.file_id, {
+        url: downloadUrl
+      })
       if (file.Down.IsStop) return '已暂停'
       const split = useSettingStore().downThreadMax
       const referer = Config.referer
       const userAgent = Config.downAgent
+      const token = UserDAL.GetUserToken(info.user_id)
+      const headers: string[] = []
+      if (token?.access_token && (isCloud123User(token) || isDrive115User(token) || isBaiduUser(token))) {
+        headers.push(`Authorization: Bearer ${token.access_token}`)
+      }
+      if (isBaiduUser(token || '')) {
+        headers.push(`User-Agent: pan.baidu.com`)
+      } else {
+        if (userAgent) {
+          headers.push(`User-Agent: ${userAgent}`)
+        }
+      }
       const multicall = [
         ['aria2.forceRemove', info.GID],
         ['aria2.removeDownloadResult', info.GID],
         ['aria2.addUri', [downloadUrl], {
           gid: info.GID, dir: dirPath, out: outFileName,
-          split, referer, 'user-agent': userAgent
+          split, 'user-agent': userAgent, header: headers
         }]
       ]
       const result: any = await GetAria()?.multicall(multicall)
-      if (result == undefined || result.length < 3
-        || (result[2].code != undefined && result[2].code) != 0) {
-        return '创建aria任务失败，稍后自动重试' + result[2].message
+      console.log('[aria2] addUri result', info.drive_id, info.file_id, JSON.stringify(result))
+      const addResult = result && result.length >= 3 ? result[2] : undefined
+      if (addResult && addResult.code === 0) {
+        return 'success'
       }
-      if (result[2].length == 1) return 'success'
+      // GID 不存在时忽略清理错误，尝试单独 addUri
+      const addOptions: any = {
+        gid: info.GID, dir: dirPath, out: outFileName,
+        split, referer, 'user-agent': userAgent, header: headers
+      }
+      let singleResult: any = await GetAria()?.call('aria2.addUri', [downloadUrl], addOptions).catch(() => undefined)
+      if (!singleResult || singleResult.code) {
+        delete addOptions.gid
+        singleResult = await GetAria()?.call('aria2.addUri', [downloadUrl], addOptions).catch(() => undefined)
+        if (singleResult && typeof singleResult === 'string') {
+          info.GID = singleResult
+          return 'success'
+        }
+        return '创建aria任务失败，稍后自动重试' + ((singleResult && singleResult.message) || (addResult && addResult.message) || '')
+      }
+      if (typeof singleResult === 'string') return 'success'
     }
   } catch (e: any) {
     SetAriaOnline(false)

@@ -7,9 +7,11 @@ import {
   useDowningStore,
   useKeyboardStore,
   useMouseStore,
+  useUserStore,
   useUploadingStore,
   useWinStore
 } from '../store'
+import { isCloud123User } from '../aliapi/utils'
 import {
   onHideRightMenuScroll,
   onShowRightMenu,
@@ -23,6 +25,7 @@ import {
 import { Tooltip as AntdTooltip } from 'ant-design-vue'
 import { TestButton } from '../utils/mosehelper'
 import { xorWith } from 'lodash'
+import { modalCloud123OfflineDownload } from '../utils/modal'
 
 const viewlist = ref()
 const inputsearch = ref()
@@ -30,6 +33,8 @@ const inputsearch = ref()
 const appStore = useAppStore()
 const winStore = useWinStore()
 const downingStore = useDowningStore()
+const userStore = useUserStore()
+const isCloudUser = computed(() => isCloud123User(userStore.user_id || ''))
 
 const isDowning = computed(() => downingStore.ListDataDowningCount > 0)
 watch(isDowning, (value, oldValue) => {
@@ -205,6 +210,11 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
   if (!downingStore.ListSelected.has(key)) downingStore.mMouseSelect(key, false, false)
   onShowRightMenu('downingrightmenu', e.event.clientX, e.event.clientY)
 }
+
+const handleCloud123Offline = () => {
+  if (!isCloudUser.value) return
+  modalCloud123OfflineDownload()
+}
 </script>
 
 <template>
@@ -247,6 +257,9 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
       </a-button>
       <a-button type='text' size='small' tabindex='-1' @click='handleDeleteAll'><i class='iconfont icondelete' />删除全部
       </a-button>
+      <a-button v-if='isCloudUser' type='text' size='small' tabindex='-1' @click='handleCloud123Offline'>
+        <i class='iconfont iconcloud-download' />离线下载
+      </a-button>
     </div>
     <div class='toppanbtn' v-show='!downingStore.IsListSelected'>
       <a-button type='text' size='small' tabindex='-1' @click='handleStartAll'><i class='iconfont iconstart' />开始全部
@@ -254,6 +267,9 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
       <a-button type='text' size='small' tabindex='-1' @click='handleStopAll'><i class='iconfont iconpause' />暂停全部
       </a-button>
       <a-button type='text' size='small' tabindex='-1' @click='handleDeleteAll'><i class='iconfont icondelete' />删除全部
+      </a-button>
+      <a-button v-if='isCloudUser' type='text' size='small' tabindex='-1' @click='handleCloud123Offline'>
+        <i class='iconfont iconcloud-download' />离线下载
       </a-button>
     </div>
     <div style='flex-grow: 1'></div>

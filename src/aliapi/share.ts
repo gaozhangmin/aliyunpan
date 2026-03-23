@@ -3,11 +3,12 @@ import { humanDateTime, humanDateTimeDateStr, humanExpiration, humanSize } from 
 import message from '../utils/message'
 import AliHttp, { IUrlRespData } from './alihttp'
 import ServerHttp from './server'
-import { ApiBatch, ApiBatchMaker, ApiBatchSuccess } from './utils'
-import { useSettingStore } from '../store'
+import { ApiBatch, ApiBatchMaker, ApiBatchSuccess, isCloud123User } from './utils'
+import { useSettingStore, useMyShareStore } from '../store'
 import { IAliFileItem, IAliShareAnonymous, IAliShareBottleFish, IAliShareFileItem, IAliShareItem } from './alimodels'
 import getFileIcon from './fileicon'
 import { IAliBatchResult } from './models'
+import { apiCloud123ShareCreate, apiCloud123ShareUpdate } from '../cloud123/share'
 
 export interface IAliShareFileResp {
   items: IAliShareFileItem[]
@@ -246,6 +247,41 @@ export default class AliShare {
 
   static async ApiCreatShare(user_id: string, drive_id: string, expiration: string, share_pwd: string, share_name: string, file_id_list: string[]): Promise<string | IAliShareItem> {
     if (!user_id || !drive_id || file_id_list.length == 0) return '创建分享链接失败数据错误'
+    if (isCloud123User(user_id) || drive_id === 'cloud123') {
+      const shareExpire = AliShare.toCloud123ShareExpire(expiration)
+      const result = await apiCloud123ShareCreate(user_id, share_name, shareExpire, file_id_list, share_pwd)
+      if (result.error) return result.error
+      const shareUrl = result.shareKey ? `https://www.123pan.com/s/${result.shareKey}` : ''
+      const fallbackExpiration = shareExpire > 0 ? new Date(Date.now() + shareExpire * 24 * 60 * 60 * 1000).toISOString() : ''
+      const item: IAliShareItem = {
+        created_at: '',
+        creator: '',
+        description: '',
+        display_name: '',
+        display_label: '',
+        download_count: 0,
+        drive_id: drive_id || 'cloud123',
+        expiration: expiration || fallbackExpiration,
+        expired: false,
+        file_id: '',
+        file_id_list: file_id_list,
+        icon: 'iconwenjian',
+        preview_count: 0,
+        save_count: 0,
+        share_id: result.shareId,
+        share_msg: '',
+        full_share_msg: '',
+        share_name: share_name || '分享链接',
+        share_policy: '',
+        share_pwd: share_pwd || '',
+        share_url: shareUrl,
+        status: '',
+        updated_at: '',
+        is_share_saved: false,
+        share_saved: ''
+      }
+      return item
+    }
     const url = 'adrive/v2/share_link/create'
     const postData = { drive_id, expiration, share_pwd, share_name, file_id_list }
     const resp = await AliHttp.Post(url, postData, user_id, '')
@@ -294,6 +330,10 @@ export default class AliShare {
 
 
   static async ApiCancelShareBatch(user_id: string, share_idList: string[]): Promise<string[]> {
+    if (isCloud123User(user_id)) {
+      message.info('当前网盘类型不支持')
+      return []
+    }
     const batchList = ApiBatchMaker('/share_link/cancel', share_idList, (share_id: string) => {
       return { share_id: share_id }
     })
@@ -303,6 +343,28 @@ export default class AliShare {
 
   static async ApiUpdateShareBatch(user_id: string, share_idList: string[], expirationList: string[], share_pwdList: string[], share_nameList: string[] | undefined): Promise<UpdateShareModel[]> {
     if (!share_idList || share_idList.length == 0) return []
+    if (isCloud123User(user_id)) {
+      const update = await apiCloud123ShareUpdate(user_id, share_idList)
+      if (!update.success) {
+        message.error('修改分享链接失败 ' + (update.error || ''))
+        return []
+      }
+      const shareNameMap = new Map<string, string>()
+      const existing = useMyShareStore().ListDataRaw
+      for (let i = 0, maxi = existing.length; i < maxi; i++) {
+        shareNameMap.set(existing[i].share_id, existing[i].share_name)
+      }
+      const successList: UpdateShareModel[] = []
+      for (let i = 0, maxi = share_idList.length; i < maxi; i++) {
+        successList.push({
+          share_id: share_idList[i],
+          share_pwd: share_pwdList[i] || '',
+          expiration: expirationList[i] || '',
+          share_name: share_nameList ? share_nameList[i] : (shareNameMap.get(share_idList[i]) || '')
+        })
+      }
+      return successList
+    }
     const batchList: string[] = []
     if (share_nameList) {
       for (let i = 0, maxi = share_idList.length; i < maxi; i++) {
@@ -346,6 +408,18 @@ export default class AliShare {
       share_name: t.share_name!
     } as UpdateShareModel))
     return successList
+  }
+
+  private static toCloud123ShareExpire(expiration: string): number {
+    if (!expiration) return 0
+    const target = new Date(expiration).getTime()
+    if (Number.isNaN(target)) return 0
+    const diff = Math.max(0, target - Date.now())
+    const days = Math.ceil(diff / (24 * 60 * 60 * 1000))
+    if (days <= 1) return 1
+    if (days <= 7) return 7
+    if (days <= 30) return 30
+    return 30
   }
 
 

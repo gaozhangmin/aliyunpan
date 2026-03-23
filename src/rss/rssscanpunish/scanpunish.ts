@@ -202,7 +202,8 @@ export function DeleteFromScanDataPunish(PanData: IScanDriverModel, idList: stri
   const entries = PanData.DirChildrenMap.entries()
   for (let i = 0, maxi = PanData.DirChildrenMap.size; i < maxi && idList.length > 0; i++) {
     const value = entries.next().value
-    const children = value[1] as IAliGetDirModel[]
+    if (value && value[1]) {
+      const children = value[1] as IAliGetDirModel[]
     const saveList: IAliGetDirModel[] = []
     for (let j = 0, maxj = children.length; j < maxj; j++) {
       const key = children[j].file_id
@@ -213,7 +214,8 @@ export function DeleteFromScanDataPunish(PanData: IScanDriverModel, idList: stri
         saveList.push(children[j])
       }
     }
-    if (children.length != saveList.length) PanData.DirChildrenMap.set(value[0], saveList)
+    if (children.length != saveList.length && value && value[0]) PanData.DirChildrenMap.set(value[0], saveList)
+    }
   }
 }
 

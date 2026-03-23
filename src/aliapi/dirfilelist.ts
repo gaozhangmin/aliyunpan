@@ -130,6 +130,203 @@ export default class AliDirFileList {
     return add
   }
 
+  private static async _ApiDirFileListOnePageOpenApi(orderby: string, order: string, dir: IAliFileResp, type: string, pageIndex: number, search= true): Promise<boolean> {
+    let url = 'adrive/v1.0/openFile/list'
+    let postData
+    if (useSettingStore().uiFileListMode === 'movie' && search) {
+      postData = {
+        drive_id: dir.m_drive_id,
+        parent_file_id: (dir.dirID === 'resource_root' || dir.dirID === 'backup_root') ? 'root' : dir.dirID,
+        marker: dir.next_marker,
+        category: "video",
+        limit: 200,
+        order_by: orderby,
+        order_direction: order.toUpperCase()
+      }
+    } else {
+      postData = {
+        drive_id: dir.m_drive_id,
+        parent_file_id: (dir.dirID === 'resource_root' || dir.dirID === 'backup_root') ? 'root' : dir.dirID,
+        marker: dir.next_marker,
+        limit: 200,
+        order_by: orderby,
+        order_direction: order.toUpperCase()
+      }
+    }
+    if (type) {
+      postData = Object.assign(postData, { type })
+      pageIndex = -1
+    }
+    const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
+    return AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex, type)
+  }
+
+  static async _ApiSearchFileListOnePage(orderby: string, order: string, dir: IAliFileResp, pageIndex: number): Promise<boolean> {
+    let url = 'adrive/v1.0/openFile/search'
+    let query = ''
+    if (dir.dirID.startsWith('color')) {
+      const color = dir.dirID.substring('color'.length).split(' ')[0].replace('#', 'c')
+      query = 'description="' + color + '"'
+    } else if (dir.dirID.startsWith('search')) {
+      const search = dir.dirID.substring('search'.length).split(' ')
+
+      let word = ''
+      for (let i = 0; i < search.length; i++) {
+        const itemstr = search[i]
+        if (itemstr.split(':').length !== 2) {
+          word += itemstr + ' '
+          continue
+        }
+
+        const kv = search[i].split(':')
+        const k = kv[0]
+        const v = kv[1]
+        if (k == 'type') {
+          const arr = v.split(',')
+          let type = ''
+          for (let j = 0; j < arr.length; j++) {
+            if (arr[j] == 'folder') type += 'type="' + arr[j] + '" or '
+            else if (arr[j]) type += 'category="' + arr[j] + '" or '
+          }
+          type = type.substring(0, type.length - 4).trim()
+          if (type && type.indexOf(' or ') > 0) query += '(' + type + ') and '
+          else if (type) query += type + ' and '
+        }
+          // else if (k == 'size') {
+          //   const size = parseInt(v)
+          //   if (size > 0) query += 'size = ' + v + ' and '
+          // }
+          // else if (k == 'max') {
+          //   const max = parseInt(v)
+          //   if (max > 0) query += 'size <= ' + v + ' and '
+          // } else if (k == 'min') {
+          //   const min = parseInt(v)
+          //   if (min > 0) query += 'size >= ' + v + ' and '
+        // }
+        else if (k == 'begin') {
+          const dt = new Date(v).toISOString()
+          query += 'created_at >= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
+        } else if (k == 'end') {
+          const dt = new Date(v).toISOString()
+          query += 'created_at <= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
+        } else if (k == 'ext') {
+          const arr = v.split(',')
+          let extin = ''
+          for (let j = 0; j < arr.length; j++) {
+            extin += '"' + arr[j] + '",'
+          }
+          if (extin.length > 0) extin = extin.substring(0, extin.length - 1)
+          if (extin) query += 'file_extension in [' + extin + '] and '
+        } else if (k == 'fav') query += 'starred = ' + v + ' and '
+      }
+      word = word.trim()
+      if (word) query += 'name match "' + word.replaceAll('"', '\\"') + '" and '
+      if (query.length > 0) query = query.substring(0, query.length - 5)
+      if (query.startsWith('(') && query.endsWith(')')) query = query.substring(1, query.length - 1)
+    }
+    const postData = {
+      drive_id: dir.m_drive_id,
+      marker: dir.next_marker,
+      limit: 100 ,
+      fields: '*',
+      query: query,
+      order_by: orderby + ' ' + order
+    }
+    const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
+    return AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
+  }
+
+  static async _ApiSearchFileListCount(dir: IAliFileResp): Promise<number> {
+    const url = 'adrive/v1.0/openFile/search'
+
+    let query = ''
+    if (dir.dirID.startsWith('color')) {
+      const color = dir.dirID.substring('color'.length).split(' ')[0].replace('#', 'c')
+      query = 'description="' + color + '"'
+    } else if (dir.dirID.startsWith('search')) {
+      const search = dir.dirID.substring('search'.length).split(' ')
+
+      let word = ''
+      for (let i = 0; i < search.length; i++) {
+        const itemstr = search[i]
+        if (itemstr.split(':').length !== 2) {
+          word += itemstr + ' '
+          continue
+        }
+
+        const kv = search[i].split(':')
+        const k = kv[0]
+        const v = kv[1]
+        if (k == 'type') {
+          const arr = v.split(',')
+          let type = ''
+          for (let j = 0; j < arr.length; j++) {
+            if (arr[j] == 'folder') type += 'type="' + arr[j] + '" or '
+            else if (arr[j]) type += 'category="' + arr[j] + '" or '
+          }
+          type = type.substring(0, type.length - 4).trim()
+          if (type && type.indexOf(' or ') > 0) query += '(' + type + ') and '
+          else if (type) query += type + ' and '
+        }
+          // else if (k == 'size') {
+          //   const size = parseInt(v)
+          //   if (size > 0) query += 'size = ' + v + ' and '
+          // } else if (k == 'max') {
+          //   const max = parseInt(v)
+          //   if (max > 0) query += 'size <= ' + v + ' and '
+          // } else if (k == 'min') {
+          //   const min = parseInt(v)
+          //   if (min > 0) query += 'size >= ' + v + ' and '
+        // }
+        else if (k == 'begin') {
+          const dt = new Date(v).toISOString()
+          query += 'created_at >= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
+        } else if (k == 'end') {
+          const dt = new Date(v).toISOString()
+          query += 'created_at <= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
+        } else if (k == 'ext') {
+          const arr = v.split(',')
+          let extin = ''
+          for (let j = 0; j < arr.length; j++) {
+            extin += '"' + arr[j] + '",'
+          }
+          if (extin.length > 0) extin = extin.substring(0, extin.length - 1)
+          if (extin) query += 'file_extension in [' + extin + '] and '
+        } else if (k == 'fav') query += 'starred = ' + v + ' and '
+      }
+      word = word.trim()
+      if (word) query += 'name match "' + word.replaceAll('"', '\\"') + '" and '
+      if (query.length > 0) query = query.substring(0, query.length - 5)
+      if (query.startsWith('(') && query.endsWith(')')) query = query.substring(1, query.length - 1)
+    }
+    const postData = {
+      drive_id: dir.m_drive_id,
+      marker: dir.next_marker,
+      limit: 1 ,
+      fields: '*',
+      query: query,
+      return_total_count: true
+    }
+    const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
+    try {
+      if (AliHttp.IsSuccess(resp.code)) {
+        return (resp.body.total_count as number) || 0
+      } else {
+        DebugLog.mSaveWarning('_ApiSearchFileListCount err=' + dir.dirID + ' ' + (resp.code || ''))
+      }
+    } catch (err: any) {
+      DebugLog.mSaveDanger('_ApiSearchFileListCount ' + dir.dirID, err)
+    }
+    return 0
+  }
+
+  // static async _ApiVideoListRecent(orderby: string, order: string, dir: IAliFileResp, pageIndex: number): Promise<boolean> {
+  //   const url = 'adrive/v1.0/openFile/video/recentList'
+  //   const postData = {}
+  //   const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
+  //   return AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
+  // }
+
 
   static async ApiDirFileList(user_id: string, drive_id: string, dirID: string, dirName: string, order: string, type: string = '', albumID?: string, refresh: boolean = true): Promise<IAliFileResp> {
     const dir: IAliFileResp = {
@@ -370,177 +567,177 @@ export default class AliDirFileList {
     return AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
   }
 
-  static async _ApiSearchFileListOnePage(orderby: string, order: string, dir: IAliFileResp, pageIndex: number): Promise<boolean> {
-    let url = 'adrive/v3/file/search'
-    if (useSettingStore().uiShowPanMedia == false) url += '?jsonmask=next_marker%2Citems(' + AliDirFileList.ItemJsonmask + ')'
-    else url += '?jsonmask=next_marker%2Citems(' + AliDirFileList.ItemJsonmask + '%2Cuser_meta%2Cvideo_media_metadata(duration%2Cwidth%2Cheight%2Ctime)%2Cvideo_preview_metadata%2Fduration%2Cimage_media_metadata)'
+  // static async _ApiSearchFileListOnePage(orderby: string, order: string, dir: IAliFileResp, pageIndex: number): Promise<boolean> {
+  //   let url = 'adrive/v3/file/search'
+  //   if (useSettingStore().uiShowPanMedia == false) url += '?jsonmask=next_marker%2Citems(' + AliDirFileList.ItemJsonmask + ')'
+  //   else url += '?jsonmask=next_marker%2Citems(' + AliDirFileList.ItemJsonmask + '%2Cuser_meta%2Cvideo_media_metadata(duration%2Cwidth%2Cheight%2Ctime)%2Cvideo_preview_metadata%2Fduration%2Cimage_media_metadata)'
+  //
+  //   let query = ''
+  //   let drive_id_list = []
+  //   if (dir.dirID.startsWith('color')) {
+  //     const color = dir.dirID.substring('color'.length).split(' ')[0].replace('#', 'c')
+  //     query = 'description="' + color + '"'
+  //   } else if (dir.dirID.startsWith('search')) {
+  //     const search = dir.dirID.substring('search'.length).split(' ')
+  //     let word = ''
+  //     for (let i = 0; i < search.length; i++) {
+  //       const itemstr = search[i]
+  //       if (itemstr.split(':').length !== 2) {
+  //         word += itemstr + ' '
+  //         continue
+  //       }
+  //       const kv = search[i].split(':')
+  //       const k = kv[0]
+  //       const v = kv[1]
+  //       if (k == 'range') {
+  //         const arr = v.split(',')
+  //         for (let j = 0; j < arr.length; j++) {
+  //           drive_id_list.push(GetDriveID(dir.m_user_id, arr[j]))
+  //         }
+  //       } else if (k == 'type') {
+  //         const arr = v.split(',')
+  //         let type = ''
+  //         for (let j = 0; j < arr.length; j++) {
+  //           if (arr[j] == 'folder') type += 'type="' + arr[j] + '" or '
+  //           else if (arr[j]) type += 'category="' + arr[j] + '" or '
+  //         }
+  //         type = type.substring(0, type.length - 4).trim()
+  //         if (type && type.indexOf(' or ') > 0) query += '(' + type + ') and '
+  //         else if (type) query += type + ' and '
+  //       } else if (k == 'size') {
+  //         const size = parseInt(v)
+  //         if (size > 0) query += 'size = ' + v + ' and '
+  //       } else if (k == 'description') {
+  //         query += 'description = ' + v + ' and '
+  //       } else if (k == 'max') {
+  //         const max = parseInt(v)
+  //         if (max > 0) query += 'size <= ' + v + ' and '
+  //       } else if (k == 'min') {
+  //         const min = parseInt(v)
+  //         if (min > 0) query += 'size >= ' + v + ' and '
+  //       } else if (k == 'begin') {
+  //         const dt = new Date(v).toISOString()
+  //         query += 'updated_at >= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
+  //       } else if (k == 'end') {
+  //         const dt = new Date(v).toISOString()
+  //         query += 'updated_at <= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
+  //       } else if (k == 'ext') {
+  //         const arr = v.split(',')
+  //         let extin = ''
+  //         for (let j = 0; j < arr.length; j++) {
+  //           extin += '"' + arr[j] + '",'
+  //         }
+  //         if (extin.length > 0) extin = extin.substring(0, extin.length - 1)
+  //         if (extin) query += 'file_extension in [' + extin + '] and '
+  //       } else if (k == 'fav') query += 'starred = ' + v + ' and '
+  //     }
+  //     word = word.trim()
+  //     if (word) query += 'name match "' + word.replaceAll('"', '\\"') + '" and '
+  //     if (query.length > 0) query = query.substring(0, query.length - 5)
+  //     if (query.startsWith('(') && query.endsWith(')')) query = query.substring(1, query.length - 1)
+  //   }
+  //   const postData: any = {
+  //     marker: dir.next_marker,
+  //     limit: 100,
+  //     fields: '*',
+  //     query: query,
+  //     order_by: orderby + ' ' + order
+  //   }
+  //   if (drive_id_list.length > 0) postData.drive_id_list = drive_id_list
+  //   else postData.drive_id = dir.m_drive_id
+  //   const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
+  //   return AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
+  // }
 
-    let query = ''
-    let drive_id_list = []
-    if (dir.dirID.startsWith('color')) {
-      const color = dir.dirID.substring('color'.length).split(' ')[0].replace('#', 'c')
-      query = 'description="' + color + '"'
-    } else if (dir.dirID.startsWith('search')) {
-      const search = dir.dirID.substring('search'.length).split(' ')
-      let word = ''
-      for (let i = 0; i < search.length; i++) {
-        const itemstr = search[i]
-        if (itemstr.split(':').length !== 2) {
-          word += itemstr + ' '
-          continue
-        }
-        const kv = search[i].split(':')
-        const k = kv[0]
-        const v = kv[1]
-        if (k == 'range') {
-          const arr = v.split(',')
-          for (let j = 0; j < arr.length; j++) {
-            drive_id_list.push(GetDriveID(dir.m_user_id, arr[j]))
-          }
-        } else if (k == 'type') {
-          const arr = v.split(',')
-          let type = ''
-          for (let j = 0; j < arr.length; j++) {
-            if (arr[j] == 'folder') type += 'type="' + arr[j] + '" or '
-            else if (arr[j]) type += 'category="' + arr[j] + '" or '
-          }
-          type = type.substring(0, type.length - 4).trim()
-          if (type && type.indexOf(' or ') > 0) query += '(' + type + ') and '
-          else if (type) query += type + ' and '
-        } else if (k == 'size') {
-          const size = parseInt(v)
-          if (size > 0) query += 'size = ' + v + ' and '
-        } else if (k == 'description') {
-          query += 'description = ' + v + ' and '
-        } else if (k == 'max') {
-          const max = parseInt(v)
-          if (max > 0) query += 'size <= ' + v + ' and '
-        } else if (k == 'min') {
-          const min = parseInt(v)
-          if (min > 0) query += 'size >= ' + v + ' and '
-        } else if (k == 'begin') {
-          const dt = new Date(v).toISOString()
-          query += 'updated_at >= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
-        } else if (k == 'end') {
-          const dt = new Date(v).toISOString()
-          query += 'updated_at <= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
-        } else if (k == 'ext') {
-          const arr = v.split(',')
-          let extin = ''
-          for (let j = 0; j < arr.length; j++) {
-            extin += '"' + arr[j] + '",'
-          }
-          if (extin.length > 0) extin = extin.substring(0, extin.length - 1)
-          if (extin) query += 'file_extension in [' + extin + '] and '
-        } else if (k == 'fav') query += 'starred = ' + v + ' and '
-      }
-      word = word.trim()
-      if (word) query += 'name match "' + word.replaceAll('"', '\\"') + '" and '
-      if (query.length > 0) query = query.substring(0, query.length - 5)
-      if (query.startsWith('(') && query.endsWith(')')) query = query.substring(1, query.length - 1)
-    }
-    const postData: any = {
-      marker: dir.next_marker,
-      limit: 100,
-      fields: '*',
-      query: query,
-      order_by: orderby + ' ' + order
-    }
-    if (drive_id_list.length > 0) postData.drive_id_list = drive_id_list
-    else postData.drive_id = dir.m_drive_id
-    const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
-    return AliDirFileList._FileListOnePage(orderby, order, dir, resp, pageIndex)
-  }
-
-  static async _ApiSearchFileListCount(dir: IAliFileResp): Promise<number> {
-    const url = 'adrive/v3/file/search'
-    let query = ''
-    let drive_id_list = []
-    if (dir.dirID.startsWith('color')) {
-      const color = dir.dirID.substring('color'.length).split(' ')[0].replace('#', 'c')
-      query = 'description="' + color + '"'
-    } else if (dir.dirID.startsWith('search')) {
-      const search = dir.dirID.substring('search'.length).split(' ')
-
-      let word = ''
-      for (let i = 0; i < search.length; i++) {
-        const itemstr = search[i]
-        if (itemstr.split(':').length !== 2) {
-          word += itemstr + ' '
-          continue
-        }
-
-        const kv = search[i].split(':')
-        const k = kv[0]
-        const v = kv[1]
-        if (k == 'range') {
-          const arr = v.split(',')
-          for (let j = 0; j < arr.length; j++) {
-            drive_id_list.push(GetDriveID(dir.m_user_id, arr[j]))
-          }
-        } else if (k == 'type') {
-          const arr = v.split(',')
-          let type = ''
-          for (let j = 0; j < arr.length; j++) {
-            if (arr[j] == 'folder') type += 'type="' + arr[j] + '" or '
-            else if (arr[j]) type += 'category="' + arr[j] + '" or '
-          }
-          type = type.substring(0, type.length - 4).trim()
-          if (type && type.indexOf(' or ') > 0) query += '(' + type + ') and '
-          else if (type) query += type + ' and '
-        } else if (k == 'size') {
-          const size = parseInt(v)
-          if (size > 0) query += 'size = ' + v + ' and '
-        } else if (k == 'description') {
-          query += 'description = ' + v + ' and '
-        } else if (k == 'max') {
-          const max = parseInt(v)
-          if (max > 0) query += 'size <= ' + v + ' and '
-        } else if (k == 'min') {
-          const min = parseInt(v)
-          if (min > 0) query += 'size >= ' + v + ' and '
-        } else if (k == 'begin') {
-          const dt = new Date(v).toISOString()
-          query += 'updated_at >= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
-        } else if (k == 'end') {
-          const dt = new Date(v).toISOString()
-          query += 'updated_at <= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
-        } else if (k == 'ext') {
-          const arr = v.split(',')
-          let extin = ''
-          for (let j = 0; j < arr.length; j++) {
-            extin += '"' + arr[j] + '",'
-          }
-          if (extin.length > 0) extin = extin.substring(0, extin.length - 1)
-          if (extin) query += 'file_extension in [' + extin + '] and '
-        } else if (k == 'fav') query += 'starred = ' + v + ' and '
-      }
-      word = word.trim()
-      if (word) query += 'name match "' + word.replaceAll('"', '\\"') + '" and '
-      if (query.length > 0) query = query.substring(0, query.length - 5)
-      if (query.startsWith('(') && query.endsWith(')')) query = query.substring(1, query.length - 1)
-    }
-    const postData: any = {
-      marker: dir.next_marker,
-      limit: 1,
-      fields: '*',
-      query: query,
-      return_total_count: true
-    }
-    if (drive_id_list.length > 0) postData.drive_id_list = drive_id_list
-    else postData.drive_id = dir.m_drive_id
-    const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
-    try {
-      if (AliHttp.IsSuccess(resp.code)) {
-        return (resp.body.total_count as number) || 0
-      } else if (!AliHttp.HttpCodeBreak(resp.code)) {
-        DebugLog.mSaveWarning('_ApiSearchFileListCount err=' + dir.dirID + ' ' + (resp.code || ''), resp.body)
-      }
-    } catch (err: any) {
-      DebugLog.mSaveDanger('_ApiSearchFileListCount ' + dir.dirID, err)
-    }
-    return 0
-  }
+  // static async _ApiSearchFileListCount(dir: IAliFileResp): Promise<number> {
+  //   const url = 'adrive/v3/file/search'
+  //   let query = ''
+  //   let drive_id_list = []
+  //   if (dir.dirID.startsWith('color')) {
+  //     const color = dir.dirID.substring('color'.length).split(' ')[0].replace('#', 'c')
+  //     query = 'description="' + color + '"'
+  //   } else if (dir.dirID.startsWith('search')) {
+  //     const search = dir.dirID.substring('search'.length).split(' ')
+  //
+  //     let word = ''
+  //     for (let i = 0; i < search.length; i++) {
+  //       const itemstr = search[i]
+  //       if (itemstr.split(':').length !== 2) {
+  //         word += itemstr + ' '
+  //         continue
+  //       }
+  //
+  //       const kv = search[i].split(':')
+  //       const k = kv[0]
+  //       const v = kv[1]
+  //       if (k == 'range') {
+  //         const arr = v.split(',')
+  //         for (let j = 0; j < arr.length; j++) {
+  //           drive_id_list.push(GetDriveID(dir.m_user_id, arr[j]))
+  //         }
+  //       } else if (k == 'type') {
+  //         const arr = v.split(',')
+  //         let type = ''
+  //         for (let j = 0; j < arr.length; j++) {
+  //           if (arr[j] == 'folder') type += 'type="' + arr[j] + '" or '
+  //           else if (arr[j]) type += 'category="' + arr[j] + '" or '
+  //         }
+  //         type = type.substring(0, type.length - 4).trim()
+  //         if (type && type.indexOf(' or ') > 0) query += '(' + type + ') and '
+  //         else if (type) query += type + ' and '
+  //       } else if (k == 'size') {
+  //         const size = parseInt(v)
+  //         if (size > 0) query += 'size = ' + v + ' and '
+  //       } else if (k == 'description') {
+  //         query += 'description = ' + v + ' and '
+  //       } else if (k == 'max') {
+  //         const max = parseInt(v)
+  //         if (max > 0) query += 'size <= ' + v + ' and '
+  //       } else if (k == 'min') {
+  //         const min = parseInt(v)
+  //         if (min > 0) query += 'size >= ' + v + ' and '
+  //       } else if (k == 'begin') {
+  //         const dt = new Date(v).toISOString()
+  //         query += 'updated_at >= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
+  //       } else if (k == 'end') {
+  //         const dt = new Date(v).toISOString()
+  //         query += 'updated_at <= "' + dt.substring(0, dt.lastIndexOf('.')) + '" and '
+  //       } else if (k == 'ext') {
+  //         const arr = v.split(',')
+  //         let extin = ''
+  //         for (let j = 0; j < arr.length; j++) {
+  //           extin += '"' + arr[j] + '",'
+  //         }
+  //         if (extin.length > 0) extin = extin.substring(0, extin.length - 1)
+  //         if (extin) query += 'file_extension in [' + extin + '] and '
+  //       } else if (k == 'fav') query += 'starred = ' + v + ' and '
+  //     }
+  //     word = word.trim()
+  //     if (word) query += 'name match "' + word.replaceAll('"', '\\"') + '" and '
+  //     if (query.length > 0) query = query.substring(0, query.length - 5)
+  //     if (query.startsWith('(') && query.endsWith(')')) query = query.substring(1, query.length - 1)
+  //   }
+  //   const postData: any = {
+  //     marker: dir.next_marker,
+  //     limit: 1,
+  //     fields: '*',
+  //     query: query,
+  //     return_total_count: true
+  //   }
+  //   if (drive_id_list.length > 0) postData.drive_id_list = drive_id_list
+  //   else postData.drive_id = dir.m_drive_id
+  //   const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
+  //   try {
+  //     if (AliHttp.IsSuccess(resp.code)) {
+  //       return (resp.body.total_count as number) || 0
+  //     } else if (!AliHttp.HttpCodeBreak(resp.code)) {
+  //       DebugLog.mSaveWarning('_ApiSearchFileListCount err=' + dir.dirID + ' ' + (resp.code || ''), resp.body)
+  //     }
+  //   } catch (err: any) {
+  //     DebugLog.mSaveDanger('_ApiSearchFileListCount ' + dir.dirID, err)
+  //   }
+  //   return 0
+  // }
 
   static async _ApiAlbumListOnePage(orderby: string, order: string, dir: IAliFileResp, pageIndex: number): Promise<boolean> {
     const url = 'adrive/v1/album/list'
