@@ -18,38 +18,40 @@ pnpm config set registry https://registry.npmmirror.com
 
 #### 3.环境配置
 
-##### 3.1 创建环境变量文件
+##### 3.1 配置网盘 API 密钥
 
-复制示例配置文件并根据需要修改：
+编辑 `src/config.ts` 文件，配置各网盘平台的 APP_ID 和 APP_SECRET：
 
-```cmd
-cp .env.example .env
+```typescript
+export default class Config {
+  // 阿里云盘配置
+  static ALIYUN_APP_ID = 'your_aliyun_app_id'
+  static ALIYUN_APP_SECRET = 'your_aliyun_app_secret'
+
+  // 百度网盘配置
+  static BAIDU_APP_ID = 'your_baidu_app_id'
+  static BAIDU_APP_SECRET = 'your_baidu_app_secret'
+  static BAIDU_PCS_APP_ID = 'your_baidu_pcs_app_id'
+
+  // 123网盘配置
+  static PAN123_APP_ID = 'your_123pan_app_id'
+  static PAN123_APP_SECRET = 'your_123pan_app_secret'
+
+  // 115网盘配置
+  static PAN115_APP_ID = 'your_115pan_app_id'
+  static PAN115_APP_SECRET = 'your_115pan_app_secret'
+
+  // macOS 代码签名配置（如需签名打包）
+  static APPLE_ID = 'your-apple-id@example.com'
+  static APPLE_PASSWORD = 'your-app-specific-password'
+  static APPLE_TEAM_ID = 'your-team-id'
+
+  // TMDB 配置（可选）
+  static TMDB_API_KEY = 'your_tmdb_api_key'
+}
 ```
 
-##### 3.2 配置网盘 API 密钥
-
-编辑 `.env` 文件，配置各网盘平台的 APP_ID 和 APP_SECRET：
-
-```bash
-# 阿里云盘配置
-VITE_ALIYUN_APP_ID=your_aliyun_app_id
-VITE_ALIYUN_APP_SECRET=your_aliyun_app_secret
-
-# 百度网盘配置
-VITE_BAIDU_APP_ID=your_baidu_app_id
-VITE_BAIDU_APP_SECRET=your_baidu_app_secret
-VITE_BAIDU_PCS_APP_ID=your_baidu_pcs_app_id
-
-# 123网盘配置
-VITE_PAN123_APP_ID=your_123pan_app_id
-VITE_PAN123_APP_SECRET=your_123pan_app_secret
-
-# 115网盘配置
-VITE_PAN115_APP_ID=your_115pan_app_id
-VITE_PAN115_APP_SECRET=your_115pan_app_secret
-```
-
-##### 3.3 获取网盘 API 密钥
+##### 3.2 获取网盘 API 密钥
 
 **阿里云盘**：
 1. 访问 [阿里云盘开放平台](https://www.aliyundrive.com/drive/file/backup)
@@ -71,9 +73,9 @@ VITE_PAN115_APP_SECRET=your_115pan_app_secret
 2. 获取相应的 APP_ID 和 APP_SECRET
 
 > **注意**：
-> - 请妥善保管你的 API 密钥，不要提交到公开仓库
-> - `.env` 文件已在 `.gitignore` 中，不会被 Git 追踪
-> - 如需自定义配置，可参考 `.env.example` 文件
+> - 请妥善保管你的 API 密钥，提交前会自动清理敏感信息
+> - 项目配置了 pre-commit hook，会自动清除 `src/config.ts` 中的敏感配置
+> - 提交后使用 `npm run config:restore` 恢复本地配置
 
 #### 4.开发调试运行
 
@@ -89,32 +91,39 @@ pnpm run dev
 pnpm run build:electron
 ```
 
-#### 6.macOS 签名配置（可选）
+#### 6.配置管理命令
 
-如需在 macOS 上进行代码签名，需要在 `.env` 文件中配置：
-
-```bash
-# Apple 开发者信息
-APPLE_ID=your-apple-id@example.com
-APPLE_PASSWORD=your-app-specific-password
-APPLE_TEAM_ID=your-team-id
-
-# 可选：指定特定证书
-# CSC_NAME="Developer ID Application: Your Name (TEAM_ID)"
-```
-
-然后使用签名版本打包：
+项目提供了便捷的配置管理命令：
 
 ```cmd
-pnpm run build:mac:signed
+# 手动清理配置中的敏感信息（模拟提交前清理）
+npm run config:clean
+
+# 恢复真实配置（提交后使用）
+npm run config:restore
 ```
 
-#### 7.项目结构说明
+#### 7.macOS 签名打包（可选）
+
+如需在 macOS 上进行代码签名，需要在 `src/config.ts` 中配置 Apple 相关信息，然后使用：
+
+```cmd
+npm run build:mac:signed
+```
+
+或者构建所有平台（包含签名版本）：
+
+```cmd
+npm run build:all
+```
+
+#### 8.项目结构说明
 
 ```
 ├── electron/           # Electron 主进程和预加载脚本
 ├── src/
 │   ├── components/     # Vue 组件
+│   ├── config.ts       # 配置文件（包含 API 密钥等）
 │   ├── store/         # Pinia 状态管理
 │   ├── utils/         # 工具函数
 │   ├── aliapi/        # 阿里云盘 API
@@ -122,23 +131,27 @@ pnpm run build:mac:signed
 │   ├── cloud123/      # 123云盘 API
 │   ├── cloud115/      # 115网盘 API
 │   └── views/         # 页面视图
-├── .env.example       # 环境变量示例文件
+├── scripts/           # 构建和配置脚本
+├── .env.example       # 环境变量示例文件（已弃用）
 ├── vite.config.ts     # Vite 配置
 └── package.json       # 项目依赖配置
 ```
 
-#### 8.常见问题
+#### 9.常见问题
 
 **Q: 启动时提示网盘 API 配置错误？**
-A: 请检查 `.env` 文件是否正确配置了相应网盘的 APP_ID 和 APP_SECRET
+A: 请检查 `src/config.ts` 文件是否正确配置了相应网盘的 APP_ID 和 APP_SECRET
+
+**Q: 提交代码后本地配置被清空了？**
+A: 这是正常的安全机制，使用 `npm run config:restore` 命令恢复本地配置
 
 **Q: 如何添加新的网盘支持？**
 A: 参考现有网盘 API 实现，在对应目录下添加新的 API 模块
 
 **Q: 打包后的应用无法正常使用网盘功能？**
-A: 确保环境变量在构建时被正确注入，检查 `vite.config.ts` 中的环境变量配置
+A: 确保 `src/config.ts` 中的配置在构建前是完整的，不要使用被清理后的版本进行构建
 
-#### 9.贡献代码
+#### 10.贡献代码
 
 欢迎提交 Issue 和 Pull Request！
 

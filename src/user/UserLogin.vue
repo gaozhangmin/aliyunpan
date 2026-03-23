@@ -12,7 +12,6 @@ import { Input, Modal, Space } from '@arco-design/web-vue'
 import { buildCloud123AuthUrl, exchangeCloud123CodeForToken } from '../utils/cloud123'
 import { buildBaiduAuthUrl, exchangeBaiduCodeForToken } from '../utils/baidu'
 import { buildQrImageUrl, DRIVE115_APP_ID, exchangeDeviceCode, generatePkce, normalize115Token, pollDeviceStatus, requestDeviceCode } from '../utils/drive115'
-import appConfig from '../utils/appconfig'
 
 const useUser = useUserStore()
 const settingStore = useSettingStore()
@@ -20,9 +19,8 @@ const loginCur = ref(1)
 const loginToken = ref<ITokenInfo>()
 const loginStatus = ref<'wait' | 'error' | 'finish' | 'process'>('process')
 const loginLoading = ref(true)
-const { appId: defaultAppId, appSecret: defaultAppSecret } = appConfig.getAliyunConfig()
-const client_id = ref(defaultAppId || '')
-const client_secret = ref(defaultAppSecret || '')
+const client_id = ref('df43e22f022d4c04b6e29964f3b8b46d')
+const client_secret = ref('63f06c3c5c5d4e1196e2c13e8588ae29')
 
 const intervalId = ref()
 const qrCodeUrl = ref('')
@@ -34,7 +32,7 @@ const cloud123Code = ref('')
 const cloud123Loading = ref(false)
 const baiduCode = ref('')
 const baiduLoading = ref(false)
-const drive115ClientId = ref(localStorage.getItem('drive115_client_id') || DRIVE115_APP_ID || '')
+const drive115ClientId = ref(DRIVE115_APP_ID || '')
 const drive115Verifier = ref('')
 const drive115Uid = ref('')
 const drive115Time = ref('')
@@ -190,9 +188,8 @@ const handleOpen = () => {
 
 const handleClose = () => {
   loginLoading.value = true
-  const { appId: defaultAppId, appSecret: defaultAppSecret } = appConfig.getAliyunConfig()
-  client_id.value = defaultAppId
-  client_secret.value = defaultAppSecret
+  client_id.value = Config.ALIYUN_APP_ID
+  client_secret.value = Config.ALIYUN_APP_SECRET
   clearInterval(intervalId.value)
   clearOpenTimers()
   if (drive115Timer) {
@@ -480,9 +477,8 @@ const loginStepFirst = async (msg: string) => {
         client_id.value = settingStore.uiOpenApiClientId.trim()
         client_secret.value = settingStore.uiOpenApiClientSecret.trim()
       } else {
-        const { appId, appSecret } = appConfig.getAliyunConfig()
-        client_id.value = appId
-        client_secret.value = appSecret
+        client_id.value = Config.ALIYUN_APP_ID
+        client_secret.value = Config.ALIYUN_APP_SECRET
       }
       refreshStepTips('process', 2)
       loginStepSecond(token)
@@ -576,9 +572,8 @@ const handlerChangeType = () => {
       }
     })
   } else {
-    const { appId, appSecret } = appConfig.getAliyunConfig()
-    client_id.value = appId
-    client_secret.value = appSecret
+    client_id.value = Config.ALIYUN_APP_ID
+    client_secret.value = Config.ALIYUN_APP_SECRET
     handleRefreshQrCodeUrl()
   }
 }

@@ -23,6 +23,9 @@ yarn.lock
 config/secrets.json
 config/keys.json
 
+# 包含机密信息的恢复脚本
+scripts/
+
 # 外部项目/子模块 - 不提交到主仓库
 CloudServiceKit/
 XbyVideoHub/

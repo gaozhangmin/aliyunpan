@@ -68,6 +68,7 @@ app.use(ArcoVue, {})
 app.use(store)
 app.mount('#app')
 
+
 window.WinMsgToMain = function (event: any) {
   if (window.MainPort) window.MainPort.postMessage(event)
 }

@@ -16,7 +16,12 @@
     "build:electron": "npm run build && electron-builder",
     "build:test": "npm run build && electron-builder --dir",
     "build:mac": "npm run build && electron-builder --mac",
-    "build:mac:signed": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac"
+    "build:mac:signed": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac",
+    "build:linux": "npm run build && electron-builder --linux",
+    "build:windows": "npm run build && electron-builder --win",
+    "build:all": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac --linux --win",
+    "config:clean": "node scripts/clean-config.js",
+    "config:restore": "node scripts/restore-config.js"
   },
   "engines": {
     "node": ">=18.0.0"

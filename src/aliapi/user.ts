@@ -173,8 +173,8 @@ export default class AliUser {
     }
     let { uiEnableOpenApiType, uiOpenApiClientId, uiOpenApiClientSecret } = useSettingStore()
     let url = 'https://openapi.alipan.com/oauth/access_token'
-    let client_id = import.meta.env.VITE_ALIYUN_APP_ID || ''
-    let client_secret = import.meta.env.VITE_ALIYUN_APP_SECRET || ''
+    let client_id = 'df43e22f022d4c04b6e29964f3b8b46d'
+    let client_secret = '63f06c3c5c5d4e1196e2c13e8588ae29'
     if (uiEnableOpenApiType === 'custom') {
       client_id = uiOpenApiClientId
       client_secret = uiOpenApiClientSecret
