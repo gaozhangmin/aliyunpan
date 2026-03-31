@@ -306,7 +306,7 @@ import type { MediaLibraryFolder } from '../types/media'
 import { Modal } from '@arco-design/web-vue'
 import { MediaScanner } from '../utils/mediaScanner'
 import message from '../utils/message'
-import { createWebDavConnection, getWebDavConnections, saveWebDavConnection, testWebDavConnection } from '../utils/webdavClient'
+import { createWebDavConnection, getWebDavConnectionId, getWebDavConnections, removeWebDavConnection, saveWebDavConnection, testWebDavConnection } from '../utils/webdavClient'
 
 const mediaStore = useMediaLibraryStore()
 const mediaScanner = MediaScanner.getInstance()
@@ -467,6 +467,18 @@ const handleDeleteFolder = () => {
     okButtonProps: { status: 'danger' },
     cancelText: '取消',
     onOk: () => {
+      if (isWebDavFolderSource(folder)) {
+        const connectionId = folder.userId || getWebDavConnectionId(folder.driveId)
+        if (connectionId) {
+          removeWebDavConnection(connectionId)
+          const relatedFolders = mediaStore.folders.filter(item =>
+            isWebDavFolderSource(item)
+            && ((item.userId && item.userId === connectionId) || item.driveId === `webdav:${connectionId}`)
+          )
+          relatedFolders.forEach(item => mediaStore.removeFolder(item.id))
+        }
+      }
+
       // 从媒体库删除文件夹和相关媒体
       mediaStore.removeFolder(folder.id)
       console.log(`已删除文件夹: ${folder.name}`)

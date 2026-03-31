@@ -170,16 +170,19 @@ export async function getRawUrl(
     }
   }
   // 违规文件无法获取地址
-  if ((!weifa && !data.url) || uiVideoPlayer == 'web') {
+  const needOriginQuality = !encType && preview_type === 'video' && !data.qualities.some((q: any) => q.quality === 'Origin')
+  if ((!weifa && !data.url) || uiVideoPlayer == 'web' || needOriginQuality) {
     let downUrl = await AliFile.ApiFileDownloadUrl(user_id, drive_id, file_id, 14400)
     if (typeof downUrl != 'string') {
       if (getUrlFileName(downUrl.url).includes('wma')) {
         return '不支持预览的加密音频格式'
       }
-      if (!encType && preview_type) {
+      if (!encType && preview_type && !data.qualities.some((q: any) => q.quality === 'Origin')) {
         data.qualities.unshift({ quality: 'Origin', html: '原画', label: '原画', value: '', url: downUrl.url })
       }
-      data.url = downUrl.url
+      if (!data.url || quality === 'Origin' || uiVideoQuality === 'Origin') {
+        data.url = downUrl.url
+      }
       data.size = downUrl.size
     } else {
       return data

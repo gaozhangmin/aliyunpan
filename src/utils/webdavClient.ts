@@ -141,6 +141,11 @@ export const saveWebDavConnection = (config: WebDavConnectionConfig) => {
   saveWebDavConnections(list)
 }
 
+export const removeWebDavConnection = (id: string) => {
+  const list = getWebDavConnections().filter(item => item.id !== id)
+  saveWebDavConnections(list)
+}
+
 export const getWebDavConnection = (id: string) => {
   return getWebDavConnections().find(item => item.id === id)
 }
