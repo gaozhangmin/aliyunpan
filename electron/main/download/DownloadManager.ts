@@ -89,6 +89,9 @@ export class DownloadManager extends EventEmitter {
         chunks
       }
 
+      // Ensure save directory exists before creating files
+      fs.mkdirSync(savePath, { recursive: true })
+
       // Pre-allocate the .td file so workers can write at any byte offset
       if (fileSize > 0) {
         const fd = fs.openSync(filePath, 'w')
