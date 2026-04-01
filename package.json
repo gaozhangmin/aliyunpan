@@ -21,7 +21,8 @@
     "build:windows": "npm run build && electron-builder --win",
     "build:all": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac --linux --win",
     "config:clean": "node scripts/clean-config.js",
-    "config:restore": "node scripts/restore-config.js"
+    "config:restore": "node scripts/restore-config.js",
+    "test": "vitest run electron/main/download/__tests__"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -92,6 +93,7 @@
     "vite": "5.2.8",
     "vite-plugin-electron": "0.15.6",
     "vite-plugin-electron-renderer": "0.14.5",
+    "vitest": "^4.1.2",
     "vue": "3.4.21",
     "vue-tsc": "^2.0.10",
     "webdav": "5.9.0",
