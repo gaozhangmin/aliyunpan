@@ -16,11 +16,7 @@ parentPort!.on('message', (cmd: ChunkWorkerCommand) => {
   if (cmd.type === 'throttle') pendingThrottleMs = Math.max(pendingThrottleMs, cmd.delayMs)
 })
 
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-async function run(): Promise<void> {
+function run(): Promise<void> {
   const resumeFrom = cfg.start + cfg.written
 
   // Chunk already complete (resume scenario where this chunk was fully written before)
@@ -49,21 +45,14 @@ async function run(): Promise<void> {
         return
       }
 
-      res.on('data', async (chunk: Buffer) => {
+      res.on('data', (chunk: Buffer) => {
         if (shouldStop) {
           req.destroy()
           return
         }
 
-        // Apply speed throttle requested by main thread
-        if (pendingThrottleMs > 0) {
-          const delay = pendingThrottleMs
-          pendingThrottleMs = 0
-          res.pause()
-          await sleep(delay)
-          if (shouldStop) { req.destroy(); return }
-          res.resume()
-        }
+        // Pause stream immediately so we control when the next chunk arrives
+        res.pause()
 
         fs.writeSync(fd, chunk, 0, chunk.length, writeOffset)
         writeOffset += chunk.length
@@ -74,6 +63,15 @@ async function run(): Promise<void> {
           chunkIndex: cfg.chunkIndex,
           written: localWritten
         } satisfies ChunkWorkerMessage)
+
+        // Apply speed throttle requested by main thread, then resume
+        const delay = pendingThrottleMs
+        pendingThrottleMs = 0
+        if (delay > 0) {
+          setTimeout(() => { if (!shouldStop) res.resume() }, delay)
+        } else {
+          res.resume()
+        }
       })
 
       res.on('end', () => {
