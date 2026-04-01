@@ -22,7 +22,7 @@ function run(): Promise<void> {
   // Chunk already complete (resume scenario where this chunk was fully written before)
   if (resumeFrom > cfg.end) {
     parentPort!.postMessage({ type: 'done', chunkIndex: cfg.chunkIndex } satisfies ChunkWorkerMessage)
-    return
+    return Promise.resolve()
   }
 
   const headers: Record<string, string> = {
@@ -37,11 +37,19 @@ function run(): Promise<void> {
   let localWritten = cfg.written
 
   return new Promise<void>((resolve, reject) => {
+    // Guard against double-settlement (end+close both fire on normal completion)
+    let settled = false
+    function settle(fn: () => void) {
+      if (settled) return
+      settled = true
+      try { fs.closeSync(fd) } catch {}
+      fn()
+    }
+
     const req = protocol.get(cfg.url, { headers }, (res) => {
       // 206 = Partial Content (Range OK), 200 = server ignored Range header (fallback)
       if (res.statusCode !== 206 && res.statusCode !== 200) {
-        try { fs.closeSync(fd) } catch {}
-        reject(new Error(`HTTP ${res.statusCode}`))
+        settle(() => reject(new Error(`HTTP ${res.statusCode}`)))
         return
       }
 
@@ -75,21 +83,36 @@ function run(): Promise<void> {
       })
 
       res.on('end', () => {
-        try { fs.closeSync(fd) } catch {}
-        parentPort!.postMessage({ type: 'done', chunkIndex: cfg.chunkIndex } satisfies ChunkWorkerMessage)
-        resolve()
+        settle(() => {
+          parentPort!.postMessage({ type: 'done', chunkIndex: cfg.chunkIndex } satisfies ChunkWorkerMessage)
+          resolve()
+        })
+      })
+
+      // 'close' fires when the TCP connection closes. For a clean HTTP completion,
+      // 'end' fires first (settling the promise), then 'close' is a no-op.
+      // If the connection drops before HTTP end (e.g. CDN URL expiry, network error),
+      // only 'close' fires — we must detect and report this case, otherwise the worker
+      // hangs silently and the download stalls indefinitely.
+      res.on('close', () => {
+        settle(() => {
+          if (shouldStop) {
+            // Intentional stop — worker exits cleanly without reporting an error
+            resolve()
+          } else {
+            reject(new Error(`Connection closed before response completed (received ${writeOffset - resumeFrom} of ${cfg.end - resumeFrom + 1} bytes)`))
+          }
+        })
       })
 
       res.on('error', err => {
-        try { fs.closeSync(fd) } catch {}
-        reject(err)
+        settle(() => reject(err))
       })
     })
 
     req.setTimeout(30_000, () => req.destroy(new Error('Request timeout')))
     req.on('error', err => {
-      try { fs.closeSync(fd) } catch {}
-      reject(err)
+      settle(() => reject(err))
     })
   })
 }

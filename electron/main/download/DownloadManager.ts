@@ -48,7 +48,19 @@ export class DownloadManager extends EventEmitter {
   }): Promise<void> {
     const { gid, url, headers, savePath, fileName, fileSize, split } = params
 
-    if (this.tasks.has(gid)) return  // already queued
+    // If task exists in paused or error state, resume it with the (possibly refreshed) URL
+    if (this.tasks.has(gid)) {
+      const existing = this.tasks.get(gid)!
+      if (existing.state === 'paused' || existing.state === 'error') {
+        existing.headers = headers
+        existing.errorMessage = ''
+        this.doneChunks.set(gid, new Set())
+        this.chunkWorkers.set(gid, new Map())
+        this.speedSnapshot.set(gid, { completed: existing.completedLength, time: Date.now() })
+        this.spawnWorkers(existing, url)
+      }
+      return
+    }
 
     const filePath  = path.join(savePath, fileName + '.td')
     const metaPath  = path.join(savePath, fileName + '.td.json')
