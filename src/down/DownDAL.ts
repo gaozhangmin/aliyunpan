@@ -246,6 +246,23 @@ export default class DownDAL {
     const settingStore = useSettingStore()
 
     const isOnline = await AriaConnect()
+
+    // One-time startup scan for pending .td.json files
+    if (!DownDAL.startupResumeDone) {
+      DownDAL.startupResumeDone = true
+      if (settingStore.AriaIsLocal) {
+        const downSavePath = settingStore.downSavePath
+        try {
+          const pending = await window.Electron.ipcRenderer.invoke('download:scanPending', [downSavePath]) as Array<{ gid: string; file_id: string; drive_id: string; user_id: string; encType: string; metaPath: string }>
+          for (const p of pending) {
+            console.log('[download] pending resume:', p.gid, p.file_id)
+          }
+        } catch {
+          // ignore scan errors on startup
+        }
+      }
+    }
+
     if (isOnline && downingStore.ListDataRaw.length) {
       await AriaGetDowningList()
       const ariaRemote = IsAria2cRemote()
@@ -406,8 +423,10 @@ export default class DownDAL {
           let filePath = path.join(downInfo.DownSavePath, downInfo.name)
           let tmpFilePath1 = filePath + '.td.aria2'
           let tmpFilePath2 = filePath + '.td'
+          let tmpFilePath3 = filePath + '.td.json'
           await fsPromises.rm(tmpFilePath1, { recursive: true })
           await fsPromises.rm(tmpFilePath2, { recursive: true })
+          await fsPromises.rm(tmpFilePath3, { recursive: true })
         }
       } catch (e) {
       }
@@ -483,6 +502,8 @@ export default class DownDAL {
     useDowningStore().mAddDownload({ downlist: [downitem] })
     return { success: true, message: '' }
   }
+
+  private static startupResumeDone = false
 
   private static cloud123OfflineTick = 0
 
