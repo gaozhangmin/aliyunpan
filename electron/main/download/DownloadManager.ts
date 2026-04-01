@@ -156,7 +156,7 @@ export class DownloadManager extends EventEmitter {
       totalLength:     String(t.meta.totalSize),
       completedLength: String(t.completedLength),
       downloadSpeed:   String(t.speed),
-      errorCode:       t.state === 'error' ? '1' : '0',
+      errorCode:       t.state === 'error' ? '22' : '0',
       errorMessage:    t.errorMessage
     }))
   }

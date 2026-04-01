@@ -48,10 +48,15 @@ export default defineConfig(({ command }) => {
               minify: isBuild,
               outDir: 'dist/electron/main',
               rollupOptions: {
-                // Some third-party Node.js libraries may not be built correctly by Vite, especially `C/C++` addons,
-                // we can use `external` to exclude them to ensure they work correctly.
-                // Others need to put them in `dependencies` to ensure they are collected into `app.asar` after the app is built.
-                // Of course, this is not absolute, just this way is relatively simple. :)
+                // ChunkWorker must be a separate file — worker_threads requires a physical path
+                input: {
+                  index: path.resolve(__dirname, 'electron/main/index.ts'),
+                  ChunkWorker: path.resolve(__dirname, 'electron/main/download/ChunkWorker.ts')
+                },
+                output: {
+                  entryFileNames: '[name].js',
+                  chunkFileNames: '[name].js'
+                },
                 // @ts-ignore
                 external: Object.keys('dependencies' in pkg ? pkg.dependencies : {})
               }

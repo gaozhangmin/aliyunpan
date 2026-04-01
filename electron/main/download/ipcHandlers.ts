@@ -29,6 +29,11 @@ function parseSpeedLimit(limit: string): number {
 export function registerDownloadHandlers(): void {
   const mgr = createDownloadManager()
 
+  // Prevent Node.js from throwing on unhandled 'error' events from the manager.
+  // Worker errors are already recorded in task.state / task.errorMessage and
+  // surfaced via the 'download:list' channel; no additional action needed here.
+  mgr.on('error', (_gid: string, _message: string) => { /* handled via task state */ })
+
   // Add a file download (replaces aria2.addUri)
   ipcMain.handle('download:add', async (_event, params: {
     gid: string; user_id: string; drive_id: string; file_id: string; encType: string
