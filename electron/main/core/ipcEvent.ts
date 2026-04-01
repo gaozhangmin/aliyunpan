@@ -7,6 +7,7 @@ import { exec, spawn, SpawnOptions } from 'child_process'
 import { ShowError } from './dialog'
 import { getStaticPath, getUserDataPath } from '../utils/mainfile'
 import { portIsOccupied } from '../utils'
+import { registerDownloadHandlers } from '../download/ipcHandlers'
 
 let psbId: any
 export default class ipcEvent {
@@ -30,12 +31,12 @@ export default class ipcEvent {
     this.handleWebClearCache()
     this.handleWebReload()
     this.handleWebRelaunch()
-    this.handleWebRelaunchAria()
     this.handleWebSetProgressBar()
     this.handleWebShutDown()
     this.handleWebSetProxy()
     this.handleWebOpenWindow()
     this.handleWebOpenUrl()
+    registerDownloadHandlers()
   }
 
   private static handleWebToElectron() {
@@ -309,43 +310,6 @@ export default class ipcEvent {
         app.exit()
       } catch {
       }
-    })
-  }
-
-  private static handleWebRelaunchAria() {
-    ipcMain.handle('WebRelaunchAria', async (event, data) => {
-      try {
-        const enginePath: string = getStaticPath('engine')
-        const confPath: string = path.join(enginePath, 'aria2.conf')
-        const ariaPath: string = is.windows() ? 'aria2c.exe' : 'aria2c'
-        const basePath: string = path.join(enginePath, is.dev() ? path.join(process.platform, process.arch) : '')
-        const ariaFilePath: string = path.join(basePath, ariaPath)
-        if (!existsSync(ariaFilePath)) {
-          ShowError('找不到Aria程序文件', ariaFilePath)
-          return 0
-        }
-        const argsToStr = (args: any) => is.windows() ? `"${args}"` : `'${args}'`
-        const listenPort = await portIsOccupied(16800)
-        const options: SpawnOptions = {
-          shell: true,
-          stdio: is.dev() ? 'pipe' : 'ignore',
-          windowsHide: false,
-          windowsVerbatimArguments: true
-        }
-        const fileAllocation = is.macOS() ? 'none' : (is.windows() ? 'falloc' : 'trunc')
-        const args = [
-          `--stop-with-process=${argsToStr(process.pid)}`,
-          `--conf-path=${argsToStr(confPath)}`,
-          `--file-allocation=${argsToStr(fileAllocation)}`,
-          `--rpc-listen-port=${argsToStr(listenPort)}`,
-          '-D'
-        ]
-        spawn(`${argsToStr(ariaFilePath)}`, args, options)
-        return listenPort
-      } catch (e: any) {
-        console.log(e)
-      }
-      return 0
     })
   }
 
