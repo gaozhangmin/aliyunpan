@@ -93,7 +93,7 @@
     "vite": "5.2.8",
     "vite-plugin-electron": "0.15.6",
     "vite-plugin-electron-renderer": "0.14.5",
-    "vitest": "^4.1.2",
+    "vitest": "^2.1.9",
     "vue": "3.4.21",
     "vue-tsc": "^2.0.10",
     "webdav": "5.9.0",
