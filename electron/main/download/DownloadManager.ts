@@ -24,6 +24,8 @@ export class DownloadManager extends EventEmitter {
   private limiter = new SpeedLimiter(0)
   private progressTimer: ReturnType<typeof setInterval> | null = null
   private speedSnapshot = new Map<string, { completed: number; time: number }>()
+  // gid → totalSize, kept until frontend confirms completion via download:remove
+  private completedTasks = new Map<string, number>()
 
   constructor() {
     super()
@@ -146,6 +148,7 @@ export class DownloadManager extends EventEmitter {
 
   remove(gids: string[]): void {
     for (const gid of gids) {
+      this.completedTasks.delete(gid)  // clear any completed-but-unacknowledged entry
       const task = this.tasks.get(gid)
       for (const w of (this.chunkWorkers.get(gid) ?? new Map()).values()) {
         w.postMessage({ type: 'stop' })
@@ -162,7 +165,7 @@ export class DownloadManager extends EventEmitter {
   }
 
   list(): DownloadProgress[] {
-    return Array.from(this.tasks.values()).map(t => ({
+    const active = Array.from(this.tasks.values()).map(t => ({
       gid:             t.gid,
       status:          t.state === 'downloading' ? 'active' : t.state,
       totalLength:     String(t.meta.totalSize),
@@ -171,6 +174,18 @@ export class DownloadManager extends EventEmitter {
       errorCode:       t.state === 'error' ? '22' : '0',
       errorMessage:    t.errorMessage
     }))
+    // Include recently-completed tasks so the frontend can see status='complete'
+    // and mark them done. They stay here until download:remove is called.
+    const done = Array.from(this.completedTasks.entries()).map(([gid, totalSize]) => ({
+      gid,
+      status:          'complete',
+      totalLength:     String(totalSize),
+      completedLength: String(totalSize),
+      downloadSpeed:   '0',
+      errorCode:       '0',
+      errorMessage:    ''
+    }))
+    return [...active, ...done]
   }
 
   destroy(): void {
@@ -186,6 +201,11 @@ export class DownloadManager extends EventEmitter {
     const pending = task.meta.chunks
       .map((c, i) => ({ ...c, i }))
       .filter(c => c.written < c.end - c.start + 1)
+
+    console.log(`[DLMgr] spawnWorkers gid=${task.gid.slice(0,8)}  totalChunks=${task.meta.chunks.length}  pendingChunks=${pending.length}`)
+    task.meta.chunks.forEach((c, i) => {
+      console.log(`[DLMgr]   chunk[${i}]  start=${c.start}  end=${c.end}  written=${c.written}  size=${c.end - c.start + 1}`)
+    })
 
     if (pending.length === 0) {
       this.finishTask(task)
@@ -211,7 +231,10 @@ export class DownloadManager extends EventEmitter {
 
       w.on('message', (msg: ChunkWorkerMessage) => this.onWorkerMessage(task, msg))
       w.on('error',   (err: Error)              => this.onWorkerError(task, err))
-      w.on('exit',    ()                         => workers.delete(chunk.i))
+      w.on('exit',    (code: number)             => {
+        console.log(`[DLMgr] worker exit  gid=${task.gid.slice(0,8)}  chunk=${chunk.i}  code=${code}  taskState=${task.state}`)
+        workers.delete(chunk.i)
+      })
     }
   }
 
@@ -233,16 +256,22 @@ export class DownloadManager extends EventEmitter {
 
     if (msg.type === 'done') {
       this.doneChunks.get(task.gid)?.add(msg.chunkIndex)
+      const doneSet = this.doneChunks.get(task.gid)
       const allDone = task.meta.chunks.every(
         (c, i) =>
-          this.doneChunks.get(task.gid)?.has(i) ||
+          doneSet?.has(i) ||
           c.written >= c.end - c.start + 1
       )
+      console.log(`[DLMgr] worker DONE  gid=${task.gid.slice(0,8)}  chunk=${msg.chunkIndex}  doneSet=[${[...(doneSet??[])].join(',')}]  allDone=${allDone}`)
+      task.meta.chunks.forEach((c, i) => {
+        console.log(`[DLMgr]   chunk[${i}] written=${c.written}/${c.end - c.start + 1}  complete=${c.written >= c.end - c.start + 1}`)
+      })
       if (allDone) this.finishTask(task)
       return
     }
 
     if (msg.type === 'error') {
+      console.log(`[DLMgr] worker ERROR  gid=${task.gid.slice(0,8)}  chunk=${msg.chunkIndex}  msg=${msg.message}`)
       task.state = 'error'
       task.errorMessage = msg.message
       StateStore.write(task.metaPath, task.meta)
@@ -251,6 +280,7 @@ export class DownloadManager extends EventEmitter {
   }
 
   private onWorkerError(task: DownloadTask, err: Error): void {
+    console.log(`[DLMgr] onWorkerError  gid=${task.gid.slice(0,8)}  err=${err.message}`)
     task.state = 'error'
     task.errorMessage = err.message
     StateStore.write(task.metaPath, task.meta)
@@ -268,10 +298,12 @@ export class DownloadManager extends EventEmitter {
       this.emit('error', task.gid, task.errorMessage)
       return
     }
+    this.completedTasks.set(task.gid, task.meta.totalSize)
     this.tasks.delete(task.gid)
     this.chunkWorkers.delete(task.gid)
     this.doneChunks.delete(task.gid)
     this.speedSnapshot.delete(task.gid)
+    console.log(`[DLMgr] finishTask complete  gid=${task.gid.slice(0,8)}  totalSize=${task.meta.totalSize}`)
     this.emit('completed', task.gid)
   }
 
