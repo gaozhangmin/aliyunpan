@@ -80,6 +80,7 @@ export interface SettingState {
   downThreadMax: number
   downGlobalSpeed: number
   downGlobalSpeedM: string
+  downUseAria2c: boolean
 
   // 上传文件
   uploadFileMax: number
@@ -214,6 +215,7 @@ const setting: SettingState = {
   downThreadMax: 4,
   downGlobalSpeed: 0,
   downGlobalSpeedM: 'MB',
+  downUseAria2c: true,
 
   // 上传文件
   uploadFileMax: 5,
@@ -340,6 +342,7 @@ function _loadSetting(val: any) {
   setting.downThreadMax = defaultValue(val.downThreadMax, [4, 1, 2, 4, 8, 16, 24, 32])
   setting.downGlobalSpeed = defaultNumberSub(val.downGlobalSpeed, 0, 0, 999)
   setting.downGlobalSpeedM = defaultValue(val.downGlobalSpeedM, ['MB', 'KB'])
+  setting.downUseAria2c = defaultBool(val.downUseAria2c, true)
 
   // 上传文件
   setting.uploadFileMax = defaultValue(val.uploadFileMax, [5, 1, 3, 5, 10, 20, 30, 50])

@@ -34,6 +34,27 @@ const handleSelectDownSavePath = () => {
 
 <template>
   <div class='settingcard'>
+    <div class='settinghead'>:下载引擎</div>
+    <div class='settingrow'>
+      <MySwitch :value='settingStore.downUseAria2c'
+                @update:value='cb({ downUseAria2c: $event })'>
+        使用 aria2c 下载模块
+      </MySwitch>
+      <a-popover position='bottom'>
+        <i class='iconfont iconbulb' />
+        <template #content>
+          <div>
+            默认：<span class='opred'>开启（使用 aria2c）</span>
+            <hr />
+            开启：使用内置 aria2c 模块下载（稳定）<br /><br />
+            关闭：使用新版原生下载器（实验性）
+          </div>
+        </template>
+      </a-popover>
+    </div>
+  </div>
+
+  <div class='settingcard'>
     <div class='settinghead'>:下载文件保存的位置</div>
     <div class='settingrow'>
       <a-input-search tabindex='-1' style='max-width: 420px' :readonly='true' button-text='更改' search-button

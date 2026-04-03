@@ -68,7 +68,9 @@ export const buildBaiduAuthUrl = () => {
     client_id: BAIDU_APP_ID,
     redirect_uri: BAIDU_REDIRECT_URL,
     scope: BAIDU_SCOPE,
-    state: `boxplayer_${Date.now()}`
+    state: `boxplayer_${Date.now()}`,
+    qrcode: '1',
+    force_login: '1'
   })
   return `${BAIDU_AUTH_URL}?${params.toString()}`
 }

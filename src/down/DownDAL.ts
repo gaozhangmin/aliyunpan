@@ -164,7 +164,7 @@ export default class DownDAL {
 
     let cPid = ''
     let cPath = ''
-    const ariaRemote = settingStore.ariaState == 'remote'
+    const ariaRemote = settingStore.downUseAria2c && settingStore.ariaState == 'remote'
     const sep = settingStore.ariaSavePath.indexOf('/') >= 0 ? '/' : '\\'
     for (let f = 0; f < fileList.length; f++) {
       const file = fileList[f]
@@ -306,7 +306,7 @@ export default class DownDAL {
     const downingStore = useDowningStore()
     const settingStore = useSettingStore()
     const DowningList: IStateDownFile[] = downingStore.ListDataRaw
-    const ariaRemote = !settingStore.AriaIsLocal
+    const ariaRemote = settingStore.downUseAria2c && !settingStore.AriaIsLocal
 
     const dellist: string[] = []
     const saveList: IStateDownFile[] = []

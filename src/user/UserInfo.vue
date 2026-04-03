@@ -8,8 +8,11 @@ import AliUser from '../aliapi/user'
 import { humanSize } from '../utils/format'
 import type { ITokenInfo } from './userstore'
 import { isAliyunUser, isBaiduUser } from '../aliapi/utils'
+import { useMediaLibraryStore } from '../store/medialibrary'
+import { Modal } from '@arco-design/web-vue'
 
 const userStore = useUserStore()
+const mediaLibraryStore = useMediaLibraryStore()
 const isAliyunAccount = computed(() => isAliyunUser(userStore.user_id || userStore.GetUserToken))
 
 const handleUserChange = (val: any, user_id: string) => {
@@ -36,6 +39,26 @@ const handleUserRewardSpace = () => {
 
 const handleLogOff = () => {
   UserDAL.UserLogOff(userStore.user_id)
+}
+
+const handleDeleteLocalAccount = (token: ITokenInfo) => {
+  Modal.confirm({
+    title: '彻底删除本地帐号',
+    content: `确定要彻底删除本地保存的帐号“${token.nick_name || token.user_name}”吗？同时会删除该帐号在媒体库中扫描过的文件源和相关媒体数据。`,
+    okText: '删除',
+    okButtonProps: { status: 'danger' },
+    cancelText: '取消',
+    onOk: async () => {
+      mediaLibraryStore.removeMediaSourceByUserId(token.user_id)
+      if (userStore.user_id === token.user_id) {
+        await UserDAL.UserLogOff(token.user_id)
+      } else {
+        await UserDAL.UserClearFromDB(token.user_id)
+      }
+      await refreshUserList()
+      message.success('已删除本地帐号')
+    }
+  })
 }
 
 const handleLogin = () => {
@@ -191,6 +214,16 @@ watch(
                     style='max-width:300px;display:inline-block;'>{{ item.nick_name ? item.nick_name : item.user_name
                 }}</span>
               <span class='user-provider' :title='getProviderLabel(item.tokenfrom)'>{{ getProviderLabel(item.tokenfrom) }}</span>
+              <a-button
+                type='text'
+                size='small'
+                status='danger'
+                tabindex='-1'
+                title='彻底删除本地保存的该帐号'
+                @click='handleDeleteLocalAccount(item)'
+              >
+                删除
+              </a-button>
               <a-switch size='small' :model-value='userStore.user_id == item.user_id' title='切换到这个账号'
                         tabindex='-1' @change='handleUserChange($event, item.user_id) '>
                 <template #checked> 当前</template>

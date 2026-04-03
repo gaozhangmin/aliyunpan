@@ -393,6 +393,34 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
     updateFilters()
   }
 
+  const removeMediaSourceByUserId = (userId: string) => {
+    if (!userId) return
+
+    const removedFolderIds = new Set(
+      folders.value
+        .filter(folder => folder.userId === userId)
+        .map(folder => folder.id)
+    )
+
+    const shouldKeep = (item: MediaLibraryItem) => {
+      if (item.folderId && removedFolderIds.has(item.folderId)) return false
+      return !(item.driveFiles || []).some(file => file.userId === userId)
+    }
+
+    folders.value = folders.value.filter(folder => folder.userId !== userId)
+    mediaItems.value = mediaItems.value.filter(shouldKeep)
+    continueWatching.value = continueWatching.value.filter(shouldKeep)
+    recentlyAdded.value = recentlyAdded.value.filter(shouldKeep)
+
+    favorites.value = favorites.value.filter(id => mediaItems.value.some(item => item.id === id))
+    Object.keys(playlists.value).forEach((name) => {
+      playlists.value[name] = (playlists.value[name] || []).filter(id => mediaItems.value.some(item => item.id === id))
+    })
+    watchedItems.value = watchedItems.value.filter(id => mediaItems.value.some(item => item.id === id))
+
+    updateFilters()
+  }
+
   const updateFilters = () => {
     // 更新genres
     const allGenres = new Set<string>()
@@ -668,6 +696,7 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
     removeMediaItemsByFolder,
     addFolder,
     removeFolder,
+    removeMediaSourceByUserId,
     getMediaItemsByFolder,
     getMediaItemsByFolderPath,
     filterItems,
