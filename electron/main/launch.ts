@@ -1,5 +1,6 @@
 import { AppWindow, createMainWindow, createTray } from './core/window'
-import { app, ipcMain, session } from 'electron'
+import { app, ipcMain, protocol, session } from 'electron'
+import { registerMediaImageCacheProtocol } from './mediaImageCache'
 import is from 'electron-is'
 import fixPath from 'fix-path'
 import { release } from 'os'
@@ -91,10 +92,22 @@ export default class launch extends EventEmitter {
     app.commandLine.appendSwitch('enable-features', 'PlatformHEVCDecoderSupport')
     app.commandLine.appendSwitch('force_high_performance_gpu')
 
-    app.name = 'aliyunxby'
+    app.name = 'BoxPlayer'
     if (is.windows()) {
       app.setAppUserModelId('com.github.gaozhangmin')
     }
+    // mscache: 协议必须在 app.ready 之前注册 scheme 特权
+    protocol.registerSchemesAsPrivileged([
+      {
+        scheme: 'mscache',
+        privileges: {
+          standard: true,
+          secure: true,
+          supportFetchAPI: true,
+          bypassCSP: true
+        }
+      }
+    ])
     this.hasExitArgv(process.argv)
   }
 
@@ -128,6 +141,7 @@ export default class launch extends EventEmitter {
     app
       .whenReady()
       .then(() => {
+        registerMediaImageCacheProtocol()
         this.registerProtocol()
         try {
           const localVersion = getResourcesPath('localVersion')
@@ -151,6 +165,7 @@ export default class launch extends EventEmitter {
           const shouldAliReferer = !shouldQQTv && !shouldBiliBili && !shouldGieeReferer && (!details.referrer || details.referrer.trim() === '' || /(\/localhost:)|(^file:\/\/)|(\/127.0.0.1:)/.exec(details.referrer) !== null)
           const shouldToken = shouldAliPanOrigin && details.url.includes('download')
           const shouldOpenApiToken = details.url.includes('adrive/v1.0') || details.url.includes('adrive/v1.1')
+          const forbidUrl = details.url.includes('younoyes') || details.url.includes('onatoshi')
 
           cb({
             cancel: false,
@@ -182,6 +197,9 @@ export default class launch extends EventEmitter {
                 Referer: 'https://pan.baidu.com/',
                 Origin: 'https://pan.baidu.com',
                 'user-agent': 'pan.baidu.com'
+              }),
+              ...(forbidUrl && {
+                'user-agent': 'SenPlayer'
               }),
               ...(should115 && {
                 ...(this.userToken.tokenfrom === '115' && this.userToken.access_token
