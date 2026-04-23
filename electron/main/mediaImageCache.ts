@@ -142,7 +142,8 @@ async function handleRequest(
   let parsed: URL
   try {
     parsed = new URL(requestUrl)
-  } catch {
+  } catch (e) {
+    console.error('[mscache] URL parse failed:', requestUrl, e)
     return { data: Buffer.alloc(0), mimeType: 'image/jpeg' }
   }
 
@@ -150,13 +151,15 @@ async function handleRequest(
   const encodedPart = parsed.pathname.replace(/^\//, '')
 
   if (!serverId || !encodedPart) {
+    console.error('[mscache] Missing serverId or encodedPart. serverId:', serverId, 'encodedPart:', encodedPart)
     return { data: Buffer.alloc(0), mimeType: 'image/jpeg' }
   }
 
   let originalUrl: string
   try {
     originalUrl = decodeOriginalUrl(encodedPart)
-  } catch {
+  } catch (e) {
+    console.error('[mscache] decodeOriginalUrl failed. encodedPart:', encodedPart, e)
     return { data: Buffer.alloc(0), mimeType: 'image/jpeg' }
   }
 
@@ -181,6 +184,7 @@ async function handleRequest(
   // 缓存未命中，拉取网络
   const config = serverConfigMap.get(serverId)
   if (!config) {
+    console.error('[mscache] No config for serverId:', serverId, '  Available keys:', [...serverConfigMap.keys()])
     return { data: Buffer.alloc(0), mimeType: 'image/jpeg' }
   }
 
@@ -189,7 +193,8 @@ async function handleRequest(
   try {
     const headers = buildAuthHeaders(config)
     ;({ buffer, contentType } = await fetchImage(originalUrl, headers))
-  } catch {
+  } catch (e) {
+    console.error('[mscache] fetchImage failed. url:', originalUrl, e)
     return { data: Buffer.alloc(0), mimeType: 'image/jpeg' }
   }
 
