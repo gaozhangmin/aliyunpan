@@ -252,11 +252,116 @@ const handleClickJiaMi = async () => {
 
 <style>
 .rightbg {
-  background: var(--rightbg2);
-  padding: 0 20px !important;
+  background:
+    radial-gradient(circle at top left, rgba(78, 114, 255, 0.12), transparent 28%),
+    radial-gradient(circle at top right, rgba(0, 201, 167, 0.1), transparent 24%),
+    linear-gradient(180deg, #f7fbff 0%, #f2f6fb 34%, #eef3f8 100%);
+  padding: 20px 24px 40px !important;
+}
+
+.rightbg .settingcard {
+  margin-bottom: 22px;
+  padding: 24px 26px;
+  border-radius: 24px;
+  border: 1px solid rgba(126, 145, 170, 0.16);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 18px 45px rgba(44, 62, 92, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.rightbg .settinghead {
+  margin-bottom: 14px;
+  font-size: 19px;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: 0.01em;
+}
+
+.rightbg .settingrow {
+  line-height: 1.8;
+  color: #475569;
+}
+
+.rightbg .settingspace,
+.rightbg .hrspace {
+  height: 18px;
+}
+
+.rightbg .arco-radio-group {
+  gap: 10px;
+}
+
+.rightbg .arco-radio-button,
+.rightbg .arco-radio {
+  border-radius: 14px;
+}
+
+.rightbg .arco-input-wrapper,
+.rightbg .arco-input-group-wrapper,
+.rightbg .arco-textarea-wrapper {
+  border-radius: 18px;
+  background: rgba(248, 250, 252, 0.88);
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.rightbg .arco-input-wrapper:focus-within,
+.rightbg .arco-input-group-wrapper:focus-within,
+.rightbg .arco-textarea-wrapper:focus-within {
+  border-color: rgba(63, 119, 223, 0.34);
+  box-shadow:
+    0 0 0 4px rgba(63, 119, 223, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.rightbg .arco-btn {
+  border-radius: 16px;
+  font-weight: 700;
+}
+
+.rightbg .arco-btn-primary.arco-btn-status-danger {
+  background: linear-gradient(135deg, #ff6a5c 0%, #ef4444 100%);
+  box-shadow: 0 12px 30px rgba(239, 68, 68, 0.22);
+}
+
+.rightbg .arco-btn-primary.arco-btn-status-success {
+  background: linear-gradient(135deg, #0fbf8c 0%, #10b981 100%);
+  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.22);
+}
+
+.rightbg .arco-textarea {
+  min-height: 120px;
 }
 
 .helptxt {
-  color: var(--color-text-3);
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+[arco-theme='dark'] .rightbg {
+  background:
+    radial-gradient(circle at top left, rgba(81, 124, 255, 0.2), transparent 28%),
+    radial-gradient(circle at top right, rgba(0, 201, 167, 0.16), transparent 24%),
+    linear-gradient(180deg, #101722 0%, #111927 36%, #0c1420 100%);
+}
+
+[arco-theme='dark'] .rightbg .settingcard {
+  background: rgba(18, 26, 39, 0.72);
+  border-color: rgba(148, 163, 184, 0.12);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.26);
+}
+
+[arco-theme='dark'] .rightbg .settinghead {
+  color: rgba(241, 245, 249, 0.96);
+}
+
+[arco-theme='dark'] .rightbg .settingrow {
+  color: rgba(203, 213, 225, 0.86);
+}
+
+[arco-theme='dark'] .helptxt {
+  color: rgba(148, 163, 184, 0.86);
 }
 </style>

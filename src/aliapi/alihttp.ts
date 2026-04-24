@@ -446,7 +446,7 @@ export default class AliHttp {
           headers['x-signature'] = token.signature
           headers['x-request-id'] = v4().toString()
         }
-        headers['Authorization'] = token_type + ' ' + access_token
+        headers['Authorization'] = 'Bearer' + ' ' + access_token
       }
       if (share_token) {
         headers['x-share-token'] = share_token

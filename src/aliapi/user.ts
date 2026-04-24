@@ -119,9 +119,6 @@ export default class AliUser {
       }
       if (showMessage) {
         message.error('刷新账号[' + token.user_name + '] token 失败,需要重新登录')
-        UserDAL.UserLogOff(token.user_id)
-      } else {
-        UserDAL.UserClearFromDB(token.user_id)
       }
     }
     return false
@@ -411,7 +408,7 @@ export default class AliUser {
       token.avatar = data.avatar_url || token.avatar
       if (data.vip_type === 2) token.vipname = 'SVIP'
       if (data.vip_type === 1) token.vipname = 'VIP'
-      if (data.uk) token.user_id = `baidu_${data.uk}`
+      if (!token.user_id && data.uk) token.user_id = `baidu_${data.uk}`
       const quotaParams = new URLSearchParams({
         access_token: token.access_token,
         checkfree: '1',

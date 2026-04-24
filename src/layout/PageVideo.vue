@@ -26,9 +26,18 @@ import { apiCloud123FileList, mapCloud123FileToAliModel } from '../cloud123/dirf
 import { apiDrive115FileList, mapDrive115FileToAliModel } from '../cloud115/dirfilelist'
 import { apiBaiduFileList, mapBaiduFileToAliModel } from '../cloudbaidu/dirfilelist'
 import { getWebDavConnection, getWebDavConnectionId, isWebDavDrive, listWebDavDirectory } from '../utils/webdavClient'
+import useMediaServerRegistryStore from '../store/mediaServerRegistry'
+import {
+  getMediaServerItemDetail,
+  getMediaServerPlaybackInfo,
+  reportMediaServerPlaybackProgress,
+  reportMediaServerPlaybackStart,
+  reportMediaServerPlaybackStop
+} from '../media-server/contentGateway'
 
 const appStore = useAppStore()
 const mediaStore = useMediaLibraryStore()
+const mediaServerRegistry = useMediaServerRegistryStore()
 const pageVideo = appStore.pageVideo!
 const isTop = ref(false)
 let autoPlayNumber = 0
@@ -36,6 +45,27 @@ let lastPlayNumber = -1
 let playbackRate = 1
 let longPressSpeed = 1
 let ArtPlayerRef: Artplayer
+let mediaServerReportStarted = false
+let mediaServerStopReported = false
+let mediaServerLastProgressSecond = -1
+let pendingMediaServerSeekTime: number | null = null
+const mediaServerControlNames = new Set<string>()
+
+const updateWindowTitle = (name?: string) => {
+  document.title = name || pageVideo.file_name || '视频在线预览'
+}
+
+const applyPendingMediaServerSeek = async (art: Artplayer) => {
+  if (pendingMediaServerSeekTime == null) return
+  const nextTime = pendingMediaServerSeekTime
+  pendingMediaServerSeekTime = null
+  if (nextTime <= 0) return
+  try {
+    art.currentTime = nextTime
+  } catch (error) {
+    console.warn('媒体服务器切换后恢复播放进度失败:', error)
+  }
+}
 
 const keyboardStore = useKeyboardStore()
 keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
@@ -89,6 +119,127 @@ const options: Option = {
   }
 }
 
+const refreshMediaServerPlayback = async (
+  art: Artplayer,
+  sourceId = '',
+  videoStreamIndex = -1,
+  audioStreamIndex = -1,
+  subtitleStreamIndex = -1
+) => {
+  mediaServerRegistry.ensureLoaded()
+  const serverId = pageVideo.media_server_id || ''
+  const itemId = pageVideo.media_server_item_id || pageVideo.file_id || ''
+  if (!serverId || !itemId) {
+    art.notice.show = '媒体服务器播放信息不完整'
+    return
+  }
+  const server = mediaServerRegistry.servers.find((item) => item.id === serverId)
+  if (!server) {
+    art.notice.show = '媒体服务器不存在或已被删除'
+    return
+  }
+  const playback = await getMediaServerPlaybackInfo(
+    server,
+    itemId,
+    sourceId || pageVideo.media_server_source_id || '',
+    videoStreamIndex,
+    audioStreamIndex,
+    subtitleStreamIndex
+  )
+  const resumeTime = art.currentTime || pageVideo.play_cursor || playback.playCursorSeconds || 0
+  pendingMediaServerSeekTime = resumeTime
+  pageVideo.play_cursor = resumeTime
+  pageVideo.media_url = playback.url
+  pageVideo.media_headers = playback.headers
+  pageVideo.media_server_source_id = sourceId || pageVideo.media_server_source_id || ''
+  pageVideo.media_server_play_session_id = playback.playSessionId || pageVideo.media_server_play_session_id || ''
+  if (videoStreamIndex >= 0) {
+    pageVideo.media_server_video_label = (pageVideo.media_server_video_options || []).find((item) => item.streamIndex === videoStreamIndex)?.label || pageVideo.media_server_video_label || ''
+  }
+  if (audioStreamIndex >= 0) {
+    pageVideo.media_server_audio_label = (pageVideo.media_server_audio_options || []).find((item) => item.streamIndex === audioStreamIndex)?.label || pageVideo.media_server_audio_label || ''
+  }
+  if (subtitleStreamIndex >= 0) {
+    pageVideo.media_server_subtitle_label = (pageVideo.media_server_subtitle_options || []).find((item) => item.streamIndex === subtitleStreamIndex)?.label || pageVideo.media_server_subtitle_label || ''
+  }
+  const nextProxyUrl = getProxyUrl({
+    user_id: pageVideo.user_id,
+    drive_id: pageVideo.drive_id,
+    file_id: pageVideo.file_id,
+    proxy_url: playback.url,
+    proxy_headers: playback.headers ? JSON.stringify(playback.headers) : ''
+  })
+  art.url = nextProxyUrl
+  mediaServerReportStarted = false
+  mediaServerStopReported = false
+  await sendMediaServerStartReport(resumeTime)
+  await sendMediaServerProgressReport(resumeTime)
+}
+
+const getCurrentMediaServer = () => {
+  mediaServerRegistry.ensureLoaded()
+  const serverId = pageVideo.media_server_id || ''
+  if (!serverId) return undefined
+  return mediaServerRegistry.servers.find((item) => item.id === serverId)
+}
+
+const sendMediaServerStartReport = async (positionSeconds = 0) => {
+  if (pageVideo.drive_id !== 'media_server' || mediaServerReportStarted) return
+  const server = getCurrentMediaServer()
+  if (!server) return
+  try {
+    await reportMediaServerPlaybackStart(
+      server,
+      pageVideo.media_server_item_id || pageVideo.file_id,
+      pageVideo.media_server_source_id,
+      pageVideo.media_server_play_session_id,
+      positionSeconds,
+      ArtPlayerRef?.duration || 0
+    )
+    mediaServerReportStarted = true
+    mediaServerStopReported = false
+  } catch (error) {
+    console.error('媒体服务器开始播放上报失败:', error)
+  }
+}
+
+const sendMediaServerProgressReport = async (positionSeconds = 0) => {
+  if (pageVideo.drive_id !== 'media_server' || !mediaServerReportStarted) return
+  const server = getCurrentMediaServer()
+  if (!server) return
+  try {
+    await reportMediaServerPlaybackProgress(
+      server,
+      pageVideo.media_server_item_id || pageVideo.file_id,
+      pageVideo.media_server_source_id,
+      pageVideo.media_server_play_session_id,
+      positionSeconds,
+      ArtPlayerRef?.duration || 0
+    )
+  } catch (error) {
+    console.error('媒体服务器播放进度上报失败:', error)
+  }
+}
+
+const sendMediaServerStopReport = async (positionSeconds = 0) => {
+  if (pageVideo.drive_id !== 'media_server' || mediaServerStopReported) return
+  const server = getCurrentMediaServer()
+  if (!server) return
+  try {
+    await reportMediaServerPlaybackStop(
+      server,
+      pageVideo.media_server_item_id || pageVideo.file_id,
+      pageVideo.media_server_source_id,
+      pageVideo.media_server_play_session_id,
+      positionSeconds,
+      ArtPlayerRef?.duration || 0
+    )
+    mediaServerStopReported = true
+  } catch (error) {
+    console.error('媒体服务器停止播放上报失败:', error)
+  }
+}
+
 const playByHls = (video: HTMLMediaElement, url: string, art: Artplayer) => {
   if (HlsJs.isSupported()) {
     // @ts-ignore
@@ -138,6 +289,391 @@ type selectorItem = {
   ext?: string;
   description?: string;
   play_cursor?: number;
+  user_id?: string;
+  drive_id?: string;
+  parent_file_id?: string;
+  password?: string;
+  encType?: string;
+}
+
+type mediaServerStreamOption = {
+  streamIndex: number;
+  label: string;
+}
+
+const findMediaServerStreamIndex = (options: mediaServerStreamOption[] = [], label?: string) => {
+  if (!label) return -1
+  return options.find((item) => item.label === label)?.streamIndex ?? -1
+}
+
+const upsertMediaServerControl = (art: Artplayer, option: Record<string, any>) => {
+  const name = String(option.name || '')
+  if (!name) return
+  if (mediaServerControlNames.has(name)) {
+    art.controls.update(option as any)
+    return
+  }
+  art.controls.add(option as any)
+  mediaServerControlNames.add(name)
+}
+
+const removeMediaServerControl = (art: Artplayer, name: string) => {
+  if (!mediaServerControlNames.has(name)) return
+  art.controls.remove?.(name)
+  mediaServerControlNames.delete(name)
+}
+
+const loadMediaServerSourceState = async (
+  sourceId?: string,
+  preferred?: {
+    videoStreamIndex?: number
+    audioStreamIndex?: number
+    subtitleStreamIndex?: number
+  }
+) => {
+  const server = getCurrentMediaServer()
+  const itemId = pageVideo.media_server_item_id || pageVideo.file_id || ''
+  if (!server || !itemId) return undefined
+
+  const detail = await getMediaServerItemDetail(server, itemId)
+  const sourceOptions = detail.sourceOptions || []
+  const selectedSource = sourceOptions.find((item) => item.id === sourceId)
+    || sourceOptions.find((item) => item.id === pageVideo.media_server_source_id)
+    || sourceOptions[0]
+  const mediaCards = selectedSource?.mediaInfoCards?.length
+    ? selectedSource.mediaInfoCards
+    : detail.mediaInfoCards
+
+  const videoOptions = mediaCards
+    .filter((card) => card.kind === 'video' && typeof card.streamIndex === 'number')
+    .map((card) => ({ streamIndex: card.streamIndex as number, label: card.title }))
+  const audioOptions = mediaCards
+    .filter((card) => card.kind === 'audio' && typeof card.streamIndex === 'number')
+    .map((card) => ({ streamIndex: card.streamIndex as number, label: card.title }))
+  const subtitleOptions = mediaCards
+    .filter((card) => card.kind === 'subtitle' && typeof card.streamIndex === 'number')
+    .map((card) => ({ streamIndex: card.streamIndex as number, label: card.title }))
+
+  const defaultVideoIndex = mediaCards.find((card) => card.kind === 'video' && card.selected && typeof card.streamIndex === 'number')?.streamIndex
+    ?? mediaCards.find((card) => card.kind === 'video' && typeof card.streamIndex === 'number')?.streamIndex
+    ?? -1
+  const defaultAudioIndex = mediaCards.find((card) => card.kind === 'audio' && card.selected && typeof card.streamIndex === 'number')?.streamIndex
+    ?? mediaCards.find((card) => card.kind === 'audio' && typeof card.streamIndex === 'number')?.streamIndex
+    ?? -1
+  const defaultSubtitleIndex = mediaCards.find((card) => card.kind === 'subtitle' && card.selected && typeof card.streamIndex === 'number')?.streamIndex
+    ?? mediaCards.find((card) => card.kind === 'subtitle' && typeof card.streamIndex === 'number')?.streamIndex
+    ?? -1
+
+  const videoStreamIndex = typeof preferred?.videoStreamIndex === 'number' && preferred.videoStreamIndex >= 0 && videoOptions.some((item) => item.streamIndex === preferred.videoStreamIndex)
+    ? preferred.videoStreamIndex
+    : defaultVideoIndex
+  const audioStreamIndex = typeof preferred?.audioStreamIndex === 'number' && preferred.audioStreamIndex >= 0 && audioOptions.some((item) => item.streamIndex === preferred.audioStreamIndex)
+    ? preferred.audioStreamIndex
+    : defaultAudioIndex
+  const subtitleStreamIndex = typeof preferred?.subtitleStreamIndex === 'number' && preferred.subtitleStreamIndex >= 0 && subtitleOptions.some((item) => item.streamIndex === preferred.subtitleStreamIndex)
+    ? preferred.subtitleStreamIndex
+    : defaultSubtitleIndex
+
+  pageVideo.media_server_source_id = selectedSource?.id || ''
+  pageVideo.media_server_source_label = selectedSource?.title || ''
+  pageVideo.media_server_source_options = sourceOptions.map((item) => ({
+    id: item.id,
+    label: item.title,
+    subLabel: item.fileSubLabel
+  }))
+  pageVideo.media_server_video_options = videoOptions
+  pageVideo.media_server_audio_options = audioOptions
+  pageVideo.media_server_subtitle_options = subtitleOptions
+  pageVideo.media_server_video_label = videoOptions.find((item) => item.streamIndex === videoStreamIndex)?.label || ''
+  pageVideo.media_server_audio_label = audioOptions.find((item) => item.streamIndex === audioStreamIndex)?.label || ''
+  pageVideo.media_server_subtitle_label = subtitleOptions.find((item) => item.streamIndex === subtitleStreamIndex)?.label || ''
+
+  return {
+    sourceId: selectedSource?.id || '',
+    sourceLabel: selectedSource?.title || '',
+    videoStreamIndex,
+    audioStreamIndex,
+    subtitleStreamIndex
+  }
+}
+
+const renderMediaServerControls = (art: Artplayer) => {
+  const sourceOptions = pageVideo.media_server_source_options || []
+  const sourceLabel = pageVideo.media_server_source_label || ''
+  const videoOptions = pageVideo.media_server_video_options || []
+  const videoLabel = pageVideo.media_server_video_label || ''
+  const audioLabel = pageVideo.media_server_audio_label || ''
+  const subtitleLabel = pageVideo.media_server_subtitle_label || ''
+
+  if (sourceOptions.length > 1) {
+    upsertMediaServerControl(art, {
+      name: 'mediaServerSource',
+      index: 17,
+      position: 'right',
+      style: { padding: '0 10px', marginRight: '8px', opacity: '0.92' },
+      html: sourceLabel || sourceOptions[0]?.label || '版本',
+      selector: sourceOptions.map((item) => ({
+        html: item.subLabel ? `${item.label} · ${item.subLabel}` : item.label,
+        sourceId: item.id,
+        default: item.id === pageVideo.media_server_source_id
+      })),
+      onSelect: async (selector: any) => {
+        const item = selector as { html: string, sourceId: string }
+        const state = await loadMediaServerSourceState(item.sourceId)
+        await refreshMediaServerPlayback(
+          art,
+          state?.sourceId || item.sourceId,
+          state?.videoStreamIndex ?? -1,
+          state?.audioStreamIndex ?? -1,
+          state?.subtitleStreamIndex ?? -1
+        )
+        renderMediaServerControls(art)
+        return state?.sourceLabel || item.html
+      }
+    })
+  } else {
+    removeMediaServerControl(art, 'mediaServerSource')
+  }
+
+  if (videoOptions.length > 1) {
+    upsertMediaServerControl(art, {
+      name: 'mediaServerVideo',
+      index: 18,
+      position: 'right',
+      style: { padding: '0 10px', marginRight: '8px', opacity: '0.92' },
+      html: videoLabel || videoOptions[0]?.label || '视频流',
+      selector: videoOptions.map((item) => ({
+        html: item.label,
+        streamIndex: item.streamIndex,
+        default: item.label === videoLabel
+      })),
+      onSelect: async (selector: any) => {
+        const item = selector as { html: string, streamIndex: number }
+        pageVideo.media_server_video_label = item.html
+        await refreshMediaServerPlayback(
+          art,
+          pageVideo.media_server_source_id || '',
+          item.streamIndex,
+          findMediaServerStreamIndex(pageVideo.media_server_audio_options, pageVideo.media_server_audio_label),
+          findMediaServerStreamIndex(pageVideo.media_server_subtitle_options, pageVideo.media_server_subtitle_label)
+        )
+        return item.html
+      }
+    })
+  } else {
+    removeMediaServerControl(art, 'mediaServerVideo')
+    removeMediaServerControl(art, 'quality')
+  }
+
+  if (audioLabel) {
+    upsertMediaServerControl(art, {
+      name: 'mediaServerAudio',
+      index: 19,
+      position: 'right',
+      style: { padding: '0 10px', marginRight: '8px', opacity: '0.92' },
+      html: `音轨 ${audioLabel}`,
+      selector: (pageVideo.media_server_audio_options || []).map((item) => ({
+        html: item.label,
+        streamIndex: item.streamIndex,
+        default: item.label === audioLabel
+      })),
+      onSelect: async (selector: any) => {
+        const item = selector as { html: string, streamIndex: number }
+        pageVideo.media_server_audio_label = item.html
+        await refreshMediaServerPlayback(
+          art,
+          pageVideo.media_server_source_id || '',
+          findMediaServerStreamIndex(pageVideo.media_server_video_options, pageVideo.media_server_video_label),
+          item.streamIndex,
+          findMediaServerStreamIndex(pageVideo.media_server_subtitle_options, pageVideo.media_server_subtitle_label)
+        )
+        return `音轨 ${item.html}`
+      }
+    })
+  } else {
+    removeMediaServerControl(art, 'mediaServerAudio')
+  }
+
+  if (subtitleLabel) {
+    upsertMediaServerControl(art, {
+      name: 'mediaServerSubtitle',
+      index: 20,
+      position: 'right',
+      style: { padding: '0 10px', marginRight: '8px', opacity: '0.92' },
+      html: `字幕 ${subtitleLabel}`,
+      selector: (pageVideo.media_server_subtitle_options || []).map((item) => ({
+        html: item.label,
+        streamIndex: item.streamIndex,
+        default: item.label === subtitleLabel
+      })),
+      onSelect: async (selector: any) => {
+        const item = selector as { html: string, streamIndex: number }
+        pageVideo.media_server_subtitle_label = item.html
+        await refreshMediaServerPlayback(
+          art,
+          pageVideo.media_server_source_id || '',
+          findMediaServerStreamIndex(pageVideo.media_server_video_options, pageVideo.media_server_video_label),
+          findMediaServerStreamIndex(pageVideo.media_server_audio_options, pageVideo.media_server_audio_label),
+          item.streamIndex
+        )
+        return `字幕 ${item.html}`
+      }
+    })
+  } else {
+    removeMediaServerControl(art, 'mediaServerSubtitle')
+  }
+}
+
+const refreshMediaServerPlayList = async (art: Artplayer, itemId?: string) => {
+  const entries = pageVideo.media_server_episode_playlist || []
+  if (entries.length <= 1) {
+    playList = []
+    return
+  }
+
+  const currentItemId = itemId || pageVideo.media_server_item_id || pageVideo.file_id
+  playList = entries.map((item) => ({
+    url: '',
+    html: item.title,
+    name: item.title,
+    file_id: item.id,
+    default: item.id === currentItemId
+  }))
+
+  autoPlayNumber = Math.max(0, playList.findIndex((item) => item.file_id === currentItemId))
+  lastPlayNumber = autoPlayNumber - 1
+  const currentTitle = playList[autoPlayNumber]?.html || pageVideo.html || pageVideo.file_name || '当前剧集'
+
+  art.setting.update({
+    name: 'mediaServerPlayList',
+    width: 300,
+    html: pageVideo.media_server_playlist_label || '播放列表',
+    icon: art.icons.play,
+    tooltip: handlerPlayTitle(currentTitle),
+    selector: playList,
+    onSelect: async (selector: any) => {
+      const item = selector as selectorItem
+      const nextTitle = await switchMediaServerPlaylistItem(art, item)
+      return nextTitle || handlerPlayTitle(item.html)
+    }
+  })
+
+  art.controls.update({
+    name: 'playList',
+    index: 10,
+    position: 'right',
+    style: { padding: '0 10px', marginRight: '10px' },
+    html: handlerPlayTitle(currentTitle),
+    selector: playList,
+    mounted: (element: HTMLElement) => {
+      const panel = element as HTMLDivElement
+      const $current = Artplayer.utils.queryAll('.art-selector-item', panel)
+        .find((item) => Number((item as HTMLElement).dataset.index) === autoPlayNumber)
+      if ($current) Artplayer.utils.addClass($current as HTMLElement, 'art-list-icon')
+    },
+    onSelect: async (selector: any, element: HTMLElement) => {
+      const item = selector as selectorItem
+      const nextTitle = await switchMediaServerPlaylistItem(art, item)
+      Artplayer.utils.inverseClass(element, 'art-list-icon')
+      return nextTitle || handlerPlayTitle(item.html)
+    }
+  })
+}
+
+const switchMediaServerPlaylistItem = async (art: Artplayer, item: selectorItem) => {
+  const nextItemId = item.file_id || ''
+  if (!nextItemId || nextItemId === (pageVideo.media_server_item_id || pageVideo.file_id)) {
+    return handlerPlayTitle(item.html)
+  }
+
+  const server = getCurrentMediaServer()
+  if (!server) {
+    art.notice.show = '媒体服务器不存在或已被删除'
+    return handlerPlayTitle(pageVideo.html || pageVideo.file_name || item.html)
+  }
+
+  try {
+    await sendMediaServerProgressReport(art.currentTime || 0)
+    await sendMediaServerStopReport(art.currentTime || 0)
+
+    const detail = await getMediaServerItemDetail(server, nextItemId)
+    const sourceOption = detail.sourceOptions[0]
+    const mediaCards = sourceOption?.mediaInfoCards?.length ? sourceOption.mediaInfoCards : detail.mediaInfoCards
+    const selectedVideoCard = mediaCards.find((card) => card.kind === 'video' && card.selected)
+      || mediaCards.find((card) => card.kind === 'video')
+    const selectedAudioCard = mediaCards.find((card) => card.kind === 'audio' && card.selected)
+      || mediaCards.find((card) => card.kind === 'audio')
+    const selectedSubtitleCard = mediaCards.find((card) => card.kind === 'subtitle' && card.selected)
+      || mediaCards.find((card) => card.kind === 'subtitle')
+    const videoOptions = mediaCards
+      .filter((card) => card.kind === 'video' && typeof card.streamIndex === 'number')
+      .map((card) => ({
+        streamIndex: card.streamIndex as number,
+        label: card.title
+      }))
+    const audioOptions = mediaCards
+      .filter((card) => card.kind === 'audio' && typeof card.streamIndex === 'number')
+      .map((card) => ({
+        streamIndex: card.streamIndex as number,
+        label: card.title
+      }))
+    const subtitleOptions = mediaCards
+      .filter((card) => card.kind === 'subtitle' && typeof card.streamIndex === 'number')
+      .map((card) => ({
+        streamIndex: card.streamIndex as number,
+        label: card.title
+      }))
+    const playback = await getMediaServerPlaybackInfo(
+      server,
+      detail.id,
+      sourceOption?.id || '',
+      typeof selectedVideoCard?.streamIndex === 'number' ? selectedVideoCard.streamIndex : -1,
+      typeof selectedAudioCard?.streamIndex === 'number' ? selectedAudioCard.streamIndex : -1,
+      typeof selectedSubtitleCard?.streamIndex === 'number' ? selectedSubtitleCard.streamIndex : -1
+    )
+
+    pageVideo.file_id = detail.id
+    pageVideo.file_name = detail.title
+    pageVideo.html = detail.title
+    updateWindowTitle(detail.title)
+    pageVideo.parent_file_name = detail.parentTitle || pageVideo.parent_file_name
+    pageVideo.play_cursor = playback.playCursorSeconds || 0
+    pageVideo.media_url = playback.url
+    pageVideo.media_headers = playback.headers
+    pageVideo.media_server_item_id = detail.id
+    pageVideo.media_server_source_id = sourceOption?.id || ''
+    pageVideo.media_server_source_label = sourceOption?.title || ''
+    pageVideo.media_server_play_session_id = playback.playSessionId || ''
+    pageVideo.media_server_source_options = detail.sourceOptions.map((item) => ({
+      id: item.id,
+      label: item.title,
+      subLabel: item.fileSubLabel
+    }))
+    pageVideo.media_server_video_label = selectedVideoCard?.title || ''
+    pageVideo.media_server_video_options = videoOptions
+    pageVideo.media_server_audio_label = selectedAudioCard?.title || ''
+    pageVideo.media_server_subtitle_label = selectedSubtitleCard?.title || ''
+    pageVideo.media_server_audio_options = audioOptions
+    pageVideo.media_server_subtitle_options = subtitleOptions
+
+    mediaServerReportStarted = false
+    mediaServerStopReported = false
+    mediaServerLastProgressSecond = -1
+
+    pendingMediaServerSeekTime = pageVideo.play_cursor || playback.playCursorSeconds || 0
+    await getVideoInfo(art)
+    await refreshMediaServerPlayList(art, detail.id)
+    await art.play().catch(() => undefined)
+    await getVideoCursor(art, pageVideo.play_cursor)
+    await applyPendingMediaServerSeek(art)
+    art.playbackRate = playbackRate
+    await sendMediaServerStartReport(art.currentTime || pageVideo.play_cursor || 0)
+    return handlerPlayTitle(detail.title)
+  } catch (error: any) {
+    console.error('播放器内切换剧集失败:', error)
+    art.notice.show = error?.message || '切换剧集失败'
+    return handlerPlayTitle(pageVideo.html || pageVideo.file_name || item.html)
+  }
 }
 
 onMounted(async () => {
@@ -145,7 +681,7 @@ onMounted(async () => {
   const name = pageVideo.file_name || '视频在线预览'
   document.body.setAttribute('arco-theme', 'dark')
   setTimeout(() => {
-    document.title = name
+    updateWindowTitle(name)
     document.getElementById('artPlayer')?.focus()
   }, 1000)
   // 创建播放窗口
@@ -246,15 +782,27 @@ const initEvent = (art: Artplayer) => {
   art.on('ready', async () => {
     await art.play().catch()
     await getVideoCursor(art, pageVideo.play_cursor)
+    await applyPendingMediaServerSeek(art)
     art.playbackRate = playbackRate
+    if (pageVideo.drive_id === 'media_server') {
+      await sendMediaServerStartReport(art.currentTime || pageVideo.play_cursor || 0)
+    }
   })
   art.on('restart', async () => {
     await art.play().catch()
     await getVideoCursor(art, pageVideo.play_cursor)
+    await applyPendingMediaServerSeek(art)
     art.playbackRate = playbackRate
+    if (pageVideo.drive_id === 'media_server') {
+      mediaServerLastProgressSecond = -1
+      await sendMediaServerStartReport(art.currentTime || pageVideo.play_cursor || 0)
+    }
   })
   // 视频播放完毕
   art.on('video:ended', async () => {
+    if (pageVideo.drive_id === 'media_server') {
+      await sendMediaServerStopReport(art.currentTime || 0)
+    }
     if (playList.length > 1 && art.video.readyState > art.video.HAVE_CURRENT_DATA) {
       if (autoPlayNumber + 1 >= playList.length) {
         art.notice.show = '视频播放完毕'
@@ -270,6 +818,9 @@ const initEvent = (art: Artplayer) => {
     if (art.video.currentTime > 0
       && !art.video.ended
       && art.video.readyState > art.video.HAVE_CURRENT_DATA) {
+      if (pageVideo.drive_id === 'media_server') {
+        await sendMediaServerProgressReport(art.currentTime || 0)
+      }
       await updateVideoTime()
     }
   })
@@ -295,6 +846,13 @@ const initEvent = (art: Artplayer) => {
     if (art.video.currentTime > 0
       && !art.video.paused && !art.video.ended
       && art.video.readyState > art.video.HAVE_CURRENT_DATA) {
+      if (pageVideo.drive_id === 'media_server') {
+        const currentSecond = Math.floor(art.currentTime)
+        if (currentSecond > 0 && currentSecond % 10 === 0 && currentSecond !== mediaServerLastProgressSecond) {
+          mediaServerLastProgressSecond = currentSecond
+          await sendMediaServerProgressReport(currentSecond)
+        }
+      }
       const endDuration = art.storage.get('autoSkipEnd') as number
       const currentTime = art.currentTime
       if (currentTime > 0 && endDuration > 0) {
@@ -316,6 +874,11 @@ const jumpToNextVideo = async (art: Artplayer) => {
     return
   }
   const item = playList[++autoPlayNumber]
+  if (pageVideo.drive_id === 'media_server') {
+    const nextTitle = await switchMediaServerPlaylistItem(art, item)
+    art.notice.show = `切换到 ${nextTitle || item.html}`
+    return
+  }
   // 刷新视频
   await updateVideoTime()
   await refreshSetting(art, item)
@@ -382,6 +945,15 @@ const refreshSetting = async (art: Artplayer, item: any) => {
   pageVideo.play_cursor = item.play_cursor
   pageVideo.file_name = item.html
   pageVideo.file_id = item.file_id || ''
+  if (item.user_id) pageVideo.user_id = item.user_id
+  if (item.drive_id) pageVideo.drive_id = item.drive_id
+  if (item.parent_file_id) pageVideo.parent_file_id = item.parent_file_id
+  if (typeof item.password === 'string') pageVideo.password = item.password
+  if (typeof item.encType === 'string' && item.encType) {
+    pageVideo.encType = getEncType({ description: item.encType })
+  } else if (item.description) {
+    pageVideo.encType = getEncType({ description: item.description })
+  }
   autoPlayNumber = playList.findIndex(list => list.file_id == pageVideo.file_id)
   // 更新标记
   const settingStore = useSettingStore()
@@ -540,6 +1112,32 @@ const getVideoInfo = async (art: Artplayer) => {
       return
     }
   }
+  if (pageVideo.drive_id === 'media_server') {
+    if (!(pageVideo.media_server_source_options || []).length) {
+      try {
+        await loadMediaServerSourceState(pageVideo.media_server_source_id || '')
+      } catch (error) {
+        console.error('加载媒体服务器版本信息失败:', error)
+      }
+    }
+    const mediaUrl = pageVideo.media_url || ''
+    if (!mediaUrl) {
+      art.url = ''
+      art.notice.show = '获取媒体服务器播放地址失败'
+      art.emit('video:error', '获取媒体服务器播放地址失败')
+      return
+    }
+    const proxyUrl = getProxyUrl({
+      user_id: pageVideo.user_id,
+      drive_id: pageVideo.drive_id,
+      file_id: pageVideo.file_id,
+      proxy_url: mediaUrl,
+      proxy_headers: pageVideo.media_headers ? JSON.stringify(pageVideo.media_headers) : ''
+    })
+    art.url = proxyUrl
+    renderMediaServerControls(art)
+    return
+  }
   // 获取视频链接
   const data: string | IRawUrl = await getRawUrl(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id, pageVideo.encType, pageVideo.password, false, 'video')
   if (typeof data != 'string' && data.qualities.length > 0) {
@@ -610,7 +1208,37 @@ const getVideoInfo = async (art: Artplayer) => {
 
 let playList: selectorItem[] = []
 const refreshPlayList = async (art: Artplayer, file_id?: string) => {
-  if (pageVideo.drive_id === 'local') return
+  if (pageVideo.custom_playlist && pageVideo.custom_playlist.length > 1) {
+    if (!file_id) {
+      playList = pageVideo.custom_playlist.map((item) => ({
+        url: '',
+        html: item.html || path.parse(item.file_name).name,
+        name: item.file_name,
+        file_id: item.file_id,
+        ext: item.ext,
+        description: item.description,
+        play_cursor: item.play_cursor,
+        user_id: item.user_id,
+        drive_id: item.drive_id,
+        parent_file_id: item.parent_file_id,
+        password: item.password,
+        encType: item.encType,
+        default: item.file_id === pageVideo.file_id
+      }))
+    } else {
+      for (let list of playList) {
+        if (list.file_id === file_id) {
+          list.default = true
+          break
+        }
+      }
+    }
+  } else {
+    if (pageVideo.drive_id === 'local') return
+  if (pageVideo.drive_id === 'media_server') {
+    await refreshMediaServerPlayList(art, file_id)
+    return
+  }
   if (!file_id) {
     let fileList: any = await getDirFileList(pageVideo.parent_file_id, false, 'video') || []
     if (fileList && fileList.length > 1) {
@@ -640,6 +1268,7 @@ const refreshPlayList = async (art: Artplayer, file_id?: string) => {
       }
     }
   }
+  }
   if (playList.length > 1) {
     autoPlayNumber = playList.findIndex(list => list.file_id == pageVideo.file_id)
     lastPlayNumber = autoPlayNumber - 1
@@ -650,6 +1279,7 @@ const refreshPlayList = async (art: Artplayer, file_id?: string) => {
       position: 'right',
       style: { padding: '0 10px', marginRight: '10px' },
       html: handlerPlayTitle(curPlayTitle),
+      tooltip: pageVideo.custom_playlist_label || '',
       selector: playList,
       mounted: (element: HTMLElement) => {
         const panel = element as HTMLDivElement
@@ -924,6 +1554,7 @@ const getSubTitleList = async (art: Artplayer) => {
 }
 
 const updateVideoTime = async () => {
+  if (pageVideo.drive_id === 'media_server') return
   await AliFile.ApiUpdateVideoTime(
     pageVideo.user_id,
     pageVideo.drive_id,
@@ -966,6 +1597,9 @@ const updateContinueWatching = () => {
 }
 
 const handleHideClick = async () => {
+  if (pageVideo.drive_id === 'media_server') {
+    await sendMediaServerStopReport(ArtPlayerRef?.currentTime || 0)
+  }
   await ArtPlayerRef.emit('video:pause')
   await updateVideoTime()
   window.close()
@@ -984,6 +1618,9 @@ const handleTop = (_e: any) => {
 }
 
 onBeforeUnmount(() => {
+  if (pageVideo.drive_id === 'media_server') {
+    void sendMediaServerStopReport(ArtPlayerRef?.currentTime || 0)
+  }
   if (onlineSubData.dataUrl) {
     URL.revokeObjectURL(onlineSubData.dataUrl)
   }

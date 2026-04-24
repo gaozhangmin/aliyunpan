@@ -170,6 +170,7 @@ const PlayerUtils = {
   },
 
   async getPlayCursor(user_id: string, drive_id: string, file_id: string) {
+    if (drive_id === 'media_server') return undefined
     if (isWebDavDrive(drive_id)) return undefined
     if (isCloud123User(user_id) || drive_id === 'cloud123') return undefined
     if (isBaiduUser(user_id) || drive_id === 'baidu') return undefined

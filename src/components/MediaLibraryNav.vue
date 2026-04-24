@@ -25,6 +25,15 @@
     <!-- 媒体库主菜单 -->
     <div class="nav-section">
       <div class="nav-items">
+        <div
+          class="nav-item"
+          :class="{ active: activeCategory === 'home' }"
+          @click="handleCategoryClick('home')"
+        >
+          <i class="iconfont iconhome"></i>
+          <span>首页</span>
+        </div>
+
         <!-- 搜索 -->
         <div
           class="nav-item"
@@ -95,6 +104,9 @@
         >
           <i class="iconfont iconluxiang"></i>
           <span>纪录片</span>
+          <span v-if="documentaryCount > 0" class="count">
+            {{ documentaryCount }}
+          </span>
         </div>
 
         <!-- 动画 -->
@@ -105,6 +117,9 @@
         >
           <i class="iconfont iconbiaozhang"></i>
           <span>动画</span>
+          <span v-if="animationCount > 0" class="count">
+            {{ animationCount }}
+          </span>
         </div>
 
         <!-- 未匹配 -->
@@ -272,29 +287,40 @@
       </template>
     </a-dropdown>
 
-    <a-modal
+    <AddWebDavModal
       v-model:visible="showWebDavModal"
-      title="连接到 WebDAV"
-      :ok-loading="webDavLoading"
-      @ok="handleConnectWebDav"
+      v-model="webDavForm"
+      :loading="webDavLoading"
+      @submit="handleConnectWebDav"
+    />
+
+    <a-modal
+      v-model:visible="showLibraryManagerModal"
+      title="媒体管理"
+      :footer="false"
+      width="520px"
     >
-      <a-form :model="webDavForm" layout="vertical">
-        <a-form-item field="name" label="名称">
-          <a-input v-model="webDavForm.name" placeholder="例如：NAS 影视库" allow-clear />
-        </a-form-item>
-        <a-form-item field="url" label="服务器地址">
-          <a-input v-model="webDavForm.url" placeholder="例如：http://127.0.0.1:5244/dav" allow-clear />
-        </a-form-item>
-        <a-form-item field="username" label="用户名">
-          <a-input v-model="webDavForm.username" allow-clear />
-        </a-form-item>
-        <a-form-item field="password" label="密码">
-          <a-input-password v-model="webDavForm.password" allow-clear />
-        </a-form-item>
-        <a-form-item field="rootPath" label="挂载路径">
-          <a-input v-model="webDavForm.rootPath" placeholder="默认：/" allow-clear />
-        </a-form-item>
-      </a-form>
+      <div class="library-manager-panel">
+        <button type="button" class="library-manager-card" @click="handleLibraryManagerImport">
+          <div class="library-manager-card-icon">
+            <i class="iconfont iconfolder" />
+          </div>
+          <div class="library-manager-card-main">
+            <strong>导入本地文件夹</strong>
+            <span>把本地媒体文件夹扫描并加入媒体库</span>
+          </div>
+        </button>
+
+        <button type="button" class="library-manager-card" @click="handleLibraryManagerWebDav">
+          <div class="library-manager-card-icon">
+            <i class="iconfont iconlink" />
+          </div>
+          <div class="library-manager-card-main">
+            <strong>连接到 WebDAV</strong>
+            <span>添加 WebDAV 媒体源并同步到本地媒体库</span>
+          </div>
+        </button>
+      </div>
     </a-modal>
   </div>
 </template>
@@ -306,18 +332,20 @@ import type { MediaLibraryFolder } from '../types/media'
 import { Modal } from '@arco-design/web-vue'
 import { MediaScanner } from '../utils/mediaScanner'
 import message from '../utils/message'
+import AddWebDavModal from './media-server/AddWebDavModal.vue'
 import { createWebDavConnection, getWebDavConnectionId, getWebDavConnections, removeWebDavConnection, saveWebDavConnection, testWebDavConnection } from '../utils/webdavClient'
 
 const mediaStore = useMediaLibraryStore()
 const mediaScanner = MediaScanner.getInstance()
 
 // 状态
-const activeCategory = ref('recently-added')
+const activeCategory = ref('home')
 const selectedFolder = ref<MediaLibraryFolder | null>(null)
 const selectedGenre = ref('')
 const selectedYear = ref('')
 const selectedRating = ref('')
 const showAddFolderModal = ref(false)
+const showLibraryManagerModal = ref(false)
 const showWebDavModal = ref(false)
 const webDavLoading = ref(false)
 const addFolderForm = ref({
@@ -379,6 +407,22 @@ const scanPercent = computed(() => {
   return Math.min(100, Math.max(0, raw))
 })
 
+const documentaryCount = computed(() => mediaStore.mediaItems.filter((item) => {
+  const genres = Array.isArray(item.genres) ? item.genres : []
+  return genres.some((genre) => {
+    const normalized = String(genre || '').trim().toLowerCase()
+    return normalized === '99' || normalized.includes('纪录片')
+  })
+}).length)
+
+const animationCount = computed(() => mediaStore.mediaItems.filter((item) => {
+  const genres = Array.isArray(item.genres) ? item.genres : []
+  return genres.some((genre) => {
+    const normalized = String(genre || '').trim().toLowerCase()
+    return normalized === '16' || normalized.includes('动画') || normalized.includes('动漫')
+  })
+}).length)
+
 // 方法
 const handleCategoryClick = (category: string) => {
   // 判断是否为分类聚合类型
@@ -400,8 +444,6 @@ const handleCategoryClick = (category: string) => {
     selectedYear.value = ''
     selectedRating.value = ''
     emit('categorySelected', category)
-    if (category === 'documentary') emit('genreSelected', '99')
-    if (category === 'animation') emit('genreSelected', '16')
   }
 }
 
@@ -486,8 +528,8 @@ const handleDeleteFolder = () => {
       // 如果当前选中的是被删除的文件夹，清除选择
       if (selectedFolder.value?.id === folder.id) {
         selectedFolder.value = null
-        activeCategory.value = 'recently-added'
-        emit('categorySelected', 'recently-added')
+        activeCategory.value = 'home'
+        emit('categorySelected', 'home')
       }
 
       handleMenuClose()
@@ -589,6 +631,36 @@ const showAddFolderDialog = () => {
   showAddFolderModal.value = true
 }
 
+const openLibraryManager = () => {
+  showLibraryManagerModal.value = true
+}
+
+const handleLibraryManagerImport = () => {
+  showLibraryManagerModal.value = false
+  handleImportLocalFolder()
+}
+
+const handleLibraryManagerWebDav = () => {
+  showLibraryManagerModal.value = false
+  showWebDavModal.value = true
+}
+
+const syncActiveCategory = (category: string) => {
+  activeCategory.value = category
+  selectedFolder.value = null
+  selectedGenre.value = ''
+  selectedYear.value = ''
+  selectedRating.value = ''
+}
+
+const syncSelectedFolder = (folder: MediaLibraryFolder) => {
+  selectedFolder.value = folder
+  activeCategory.value = ''
+  selectedGenre.value = ''
+  selectedYear.value = ''
+  selectedRating.value = ''
+}
+
 // 事件
 const emit = defineEmits([
   'folderSelected',
@@ -602,7 +674,10 @@ const emit = defineEmits([
 
 // 暴露给父组件的方法
 defineExpose({
-  showAddFolderDialog
+  showAddFolderDialog,
+  openLibraryManager,
+  syncActiveCategory,
+  syncSelectedFolder
 })
 
 // 添加全局点击监听器来关闭右键菜单
@@ -945,6 +1020,67 @@ onUnmounted(() => {
   transform: scale(1.1);
 }
 
+.library-manager-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.library-manager-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.88);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(20px) saturate(135%);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.library-manager-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(96, 165, 250, 0.24);
+  box-shadow: 0 22px 42px rgba(96, 165, 250, 0.14);
+}
+
+.library-manager-card-icon {
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(219, 234, 254, 0.74), rgba(191, 219, 254, 0.46));
+  color: #2563eb;
+}
+
+.library-manager-card-icon .iconfont {
+  font-size: 24px;
+}
+
+.library-manager-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.library-manager-card-main strong {
+  font-size: 16px;
+  color: #111827;
+}
+
+.library-manager-card-main span {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 /* 深色模式适配 */
 [arco-theme='dark'] .media-library-nav {
   background-color: var(--color-bg-2);
@@ -981,6 +1117,25 @@ onUnmounted(() => {
 [arco-theme='dark'] .nav-actions .arco-btn {
   background: var(--color-bg-2);
   border-color: var(--color-neutral-4);
+}
+
+[arco-theme='dark'] .library-manager-card {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(28, 33, 44, 0.88), rgba(18, 22, 30, 0.8));
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.24);
+}
+
+[arco-theme='dark'] .library-manager-card-icon {
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.26), rgba(30, 64, 175, 0.18));
+  color: #bfdbfe;
+}
+
+[arco-theme='dark'] .library-manager-card-main strong {
+  color: rgba(244, 247, 252, 0.96);
+}
+
+[arco-theme='dark'] .library-manager-card-main span {
+  color: rgba(203, 213, 225, 0.78);
 }
 
 /* 响应式设计 */

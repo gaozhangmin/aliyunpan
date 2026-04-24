@@ -45,6 +45,7 @@ interface FileInfo {
   file_id?: string
   file_size?: number
   encType?: string
+  proxy_headers?: string
 
   [key: string]: string | number | undefined
 }
@@ -214,7 +215,7 @@ export async function createProxyServer(port: number) {
   const url = require('url')
   const proxyServer: Server = http.createServer(async (clientReq: IncomingMessage, clientRes: ServerResponse) => {
     const { pathname, query } = url.parse(clientReq.url, true)
-    const { user_id, drive_id, file_id, file_size, encType, password, weifa, quality, proxy_url } = query
+    const { user_id, drive_id, file_id, file_size, encType, password, weifa, quality, proxy_url, proxy_headers } = query
     console.info('proxy query: ', query)
     if (pathname === '/proxy') {
       let proxyInfo: any = await Db.getValueObject('ProxyInfo')
@@ -273,6 +274,17 @@ export async function createProxyServer(port: number) {
       delete clientReq.headers.host
       delete clientReq.headers.referer
       delete clientReq.headers.authorization
+      if (proxy_headers) {
+        try {
+          const extraHeaders = JSON.parse(String(proxy_headers)) as Record<string, string>
+          for (const [key, value] of Object.entries(extraHeaders || {})) {
+            if (!value) continue
+            clientReq.headers[key.toLowerCase()] = value
+          }
+        } catch (error) {
+          console.warn('proxy_headers parse error', error)
+        }
+      }
       if (query.drive_id === 'baidu') {
         clientReq.headers['User-Agent'] = 'pan.baidu.com'
       }

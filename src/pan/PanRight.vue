@@ -346,7 +346,10 @@ const onGridResize = throttle(() => {
 }, 100)
 
 onMounted(() => {
-  resizeObserver.observe(document.getElementById('panfilelist')!)
+  const panFileList = document.getElementById('panfilelist')
+  if (panFileList instanceof Element) {
+    resizeObserver.observe(panFileList)
+  }
   let searchDrive = ['backup', 'resource', 'pic']
   if (useSettingStore().securityHideBackupDrive) {
     searchDrive = searchDrive.filter((t) => t != 'backup')

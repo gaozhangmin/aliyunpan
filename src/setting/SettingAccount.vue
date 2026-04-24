@@ -194,14 +194,14 @@ const closeQrCode = () => {
 
 <template>
   <div class='settingcard'>
-    <div class='settinghead'>:阿里云盘账号</div>
+    <div class='settinghead'>阿里云盘账号</div>
     <div class='settingrow'>
       <a-button type='outline' size='small' tabindex='-1' @click='copyCookies()'>
         复制当前账号Cookies
       </a-button>
     </div>
     <div class='settingspace'></div>
-    <div class='settinghead'>:账号导入导出</div>
+    <div class='settinghead'>账号导入导出</div>
     <a-popover position="bottom">
       <i class="iconfont iconbulb" />
       <template #content>
@@ -223,7 +223,7 @@ const closeQrCode = () => {
       </a-button>
     </div>
     <div class='settingspace'></div>
-    <div class='settinghead'>:阿里云盘开放平台</div>
+    <div class='settinghead'>阿里云盘开放平台</div>
     <a-popover position='bottom'>
       <i class='iconfont iconbulb' />
       <template #content>
@@ -248,7 +248,7 @@ const closeQrCode = () => {
       </a-radio-group>
       <template v-if="settingStore.uiEnableOpenApiType === 'custom'">
         <div class='settingspace'></div>
-        <div class='settinghead'>:客户端ID(ClientId)</div>
+        <div class='settinghead'>客户端ID(ClientId)</div>
         <div class='settingrow'>
           <a-input
             v-model.trim='settingStore.uiOpenApiClientId'
@@ -257,7 +257,7 @@ const closeQrCode = () => {
             @update:model-value='cb({ uiOpenApiClientId: $event })' />
         </div>
         <div class='settingspace'></div>
-        <div class='settinghead'>:客户端密钥(ClientSecret)</div>
+        <div class='settinghead'>客户端密钥(ClientSecret)</div>
         <div class='settingrow'>
           <a-input
             v-model.trim='settingStore.uiOpenApiClientSecret'
@@ -267,7 +267,7 @@ const closeQrCode = () => {
         </div>
       </template>
       <div class='settingspace'></div>
-      <div class='settinghead'>:二维码(手机扫码)</div>
+      <div class='settinghead'>二维码(手机扫码)</div>
       <div class='settingrow' style='display:flex;'>
         <a-button type='outline' size='small' tabindex='-1' :loading='qrCodeLoading' @click='refreshQrCode()'>
           <template #icon>

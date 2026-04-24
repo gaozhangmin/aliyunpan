@@ -4,7 +4,7 @@ import AliFile from '../aliapi/file'
 import AliFileCmd from '../aliapi/filecmd'
 import ServerHttp from '../aliapi/server'
 import { ITokenInfo, useFootStore, usePanFileStore, useSettingStore, useUserStore } from '../store'
-import { IPageCode, IPageImage, IPageOffice, IPageVideo } from '../store/appstore'
+import { IPageCode, IPageImage, IPageOffice, IPageVideo, IPageVideoPlaylistEntry } from '../store/appstore'
 import UserDAL from '../user/userdal'
 import { clickWait } from './debounce'
 import DebugLog from './debuglog'
@@ -42,7 +42,14 @@ async function resolveTokenForFile(file: IAliGetFileModel): Promise<ITokenInfo |
   return await UserDAL.GetUserTokenFromDB(matched.user_id) || undefined
 }
 
-export async function menuOpenFile(file: IAliGetFileModel, password: string = ''): Promise<void> {
+export async function menuOpenFile(
+  file: IAliGetFileModel,
+  password: string = '',
+  options?: {
+    customPlaylistLabel?: string
+    customPlaylist?: IPageVideoPlaylistEntry[]
+  }
+): Promise<void> {
   if (clickWait('menuOpenFile', 500)) return
   const file_id = file.file_id
   let parent_file_id = file.parent_file_id
@@ -101,7 +108,7 @@ export async function menuOpenFile(file: IAliGetFileModel, password: string = ''
           'select',
           parent_file_id,
           async (_user_id: string, _drive_id: string, selectFile: any) => {
-            await Video(token, file, selectFile, password)
+            await Video(token, file, selectFile, password, options)
           },
           '',
           /srt|vtt|ass/
@@ -109,7 +116,7 @@ export async function menuOpenFile(file: IAliGetFileModel, password: string = ''
         return
       }
     }
-    await Video(token, file, subTitleFile, password)
+    await Video(token, file, subTitleFile, password, options)
     return
   }
   if (file.category.startsWith('audio')) {
@@ -176,7 +183,16 @@ async function Archive(drive_id: string, file_id: string, file_name: string, par
   }
 }
 
-async function Video(token: ITokenInfo, file: IAliGetFileModel, subTitleFile: any, password: string = ''): Promise<void> {
+async function Video(
+  token: ITokenInfo,
+  file: IAliGetFileModel,
+  subTitleFile: any,
+  password: string = '',
+  options?: {
+    customPlaylistLabel?: string
+    customPlaylist?: IPageVideoPlaylistEntry[]
+  }
+): Promise<void> {
   if (file.icon == 'iconweifa') {
     message.error('在线预览失败 无法预览违规文件')
     return
@@ -218,7 +234,9 @@ async function Video(token: ITokenInfo, file: IAliGetFileModel, subTitleFile: an
       expire_time: 0,
       password: password,
       encType: getEncType(playCursorInfo?.info || ''),
-      play_cursor: play_cursor
+      play_cursor: play_cursor,
+      custom_playlist_label: options?.customPlaylistLabel || '',
+      custom_playlist: options?.customPlaylist || []
     }
     window.WebOpenWindow({ page: 'PageVideo', data: pageVideo, theme: 'dark' })
     return

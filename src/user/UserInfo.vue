@@ -73,7 +73,7 @@ const activeProvider = ref<'aliyun' | 'cloud123' | '115' | 'baidu'>('aliyun')
 const userListState = ref<ITokenInfo[]>([])
 
 const refreshUserList = async () => {
-  userListState.value = userStore.user_id ? await UserDAL.GetUserListFromDB() : []
+  userListState.value = await UserDAL.GetUserListFromDB()
 }
 
 const handleCloud123Login = () => {
@@ -92,7 +92,6 @@ const handleBaiduLogin = () => {
 }
 
 const userList = computed(() => {
-  if (!userStore.user_id) return []
   return userListState.value
 })
 

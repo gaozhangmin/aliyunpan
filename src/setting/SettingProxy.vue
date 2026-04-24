@@ -62,7 +62,11 @@ const handleProxyConn = async () => {
 
 <template>
   <div class="settingcard">
-    <div class="settinghead">:代理类型</div>
+    <div class="settings-proxy-intro">
+      <div class="settings-proxy-kicker">Network</div>
+      <div class="settings-proxy-copy">为更新、接口请求和文件传输配置统一代理。建议先测试连通性，再启用全局代理。</div>
+    </div>
+    <div class="settinghead">代理类型</div>
     <div class="settingrow">
       <a-select tabindex="-1" :style="{ width: '168px' }" :model-value="settingStore.proxyType" :popup-container="'#SettingDiv'" @update:model-value="cb({ proxyType: $event })">
         <a-option value="none">None</a-option>
@@ -86,13 +90,13 @@ const handleProxyConn = async () => {
 
     <a-row class="grid-demo">
       <a-col flex="252px">
-        <div class="settinghead">:代理地址(Host IP 或 域名)</div>
+        <div class="settinghead">代理地址(Host IP 或 域名)</div>
         <div class="settingrow">
           <a-input tabindex="-1" :style="{ width: '168px' }" placeholder="代理主机的IP或域名" :model-value="settingStore.proxyHost" @update:model-value="cb({ proxyHost: $event })" />
         </div>
       </a-col>
       <a-col flex="180px">
-        <div class="settinghead">:代理端口(Port)</div>
+        <div class="settinghead">代理端口(Port)</div>
         <div class="settingrow">
           <a-input-number tabindex="-1" :style="{ width: '168px' }" hide-button placeholder="常见 8888,1080" :model-value="settingStore.proxyPort" @update:model-value="cb({ proxyPort: $event })" />
         </div>
@@ -102,13 +106,13 @@ const handleProxyConn = async () => {
     <div class="settingspace"></div>
     <a-row class="grid-demo">
       <a-col flex="252px">
-        <div class="settinghead">:用户名</div>
+        <div class="settinghead">用户名</div>
         <div class="settingrow">
           <a-input tabindex="-1" :style="{ width: '168px' }" placeholder="没有不填" :model-value="settingStore.proxyUserName" @update:model-value="cb({ proxyUserName: $event })" />
         </div>
       </a-col>
       <a-col flex="180px">
-        <div class="settinghead">:密码</div>
+        <div class="settinghead">密码</div>
         <div class="settingrow">
           <a-input tabindex="-1" :style="{ width: '168px' }" placeholder="没有不填" :model-value="settingStore.proxyPassword" @update:model-value="cb({ proxyPassword: $event })" />
         </div>
@@ -122,7 +126,7 @@ const handleProxyConn = async () => {
       <span style="margin-left: 8px; font-size: 12px; color: var(--color-text-3)">请先测试成功后再启用代理</span>
     </div>
     <div class="settingspace"></div>
-    <div class="settinghead">:是否启用代理</div>
+    <div class="settinghead">是否启用代理</div>
     <div class="settingrow">
       <MySwitch :value="settingStore.proxyUseProxy" @update:value="cb({ proxyUseProxy: $event })">使用代理访问网络</MySwitch>
       <a-popover position="right">
@@ -146,4 +150,36 @@ const handleProxyConn = async () => {
   </div>
 </template>
 
-<style></style>
+<style scoped>
+.settings-proxy-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.settings-proxy-kicker {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(88, 130, 255, 0.12);
+  color: var(--color-primary-6);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings-proxy-copy {
+  max-width: 580px;
+  color: var(--color-text-2);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+:global(html.dark) .settings-proxy-kicker {
+  background: rgba(120, 160, 255, 0.2);
+  color: #dbe6ff;
+}
+</style>

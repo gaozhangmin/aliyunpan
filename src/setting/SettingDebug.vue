@@ -49,41 +49,32 @@ const handleResetPort = async () => {
   }
 }
 
-interface ServerCacheStat {
-  id: string
-  fileCount: number
-  bytes: number
-}
-interface CacheStats {
-  totalBytes: number
-  servers: ServerCacheStat[]
-}
-
-const cacheStats = ref<CacheStats>({ totalBytes: 0, servers: [] })
+const cacheTotalBytes = ref(0)
 const cacheLoading = ref(false)
-const clearingServerId = ref<string | null>(null)
+const cacheClearing = ref(false)
 
 const loadCacheStats = async () => {
   if (!(window as any).MsImageCacheStats) return
   cacheLoading.value = true
   try {
-    cacheStats.value = await (window as any).MsImageCacheStats()
+    const stats = await (window as any).MsImageCacheStats()
+    cacheTotalBytes.value = stats.totalBytes ?? 0
   } finally {
     cacheLoading.value = false
   }
 }
 
-const handleClearCache = async (serverId?: string) => {
+const handleClearCache = async () => {
   if (!(window as any).MsImageCacheClear) return
-  clearingServerId.value = serverId ?? '__all__'
+  cacheClearing.value = true
   try {
-    await (window as any).MsImageCacheClear(serverId)
+    await (window as any).MsImageCacheClear()
     await loadCacheStats()
-    message.success(serverId ? '已清理该服务器图片缓存' : '已清理全部图片缓存')
+    message.success('已清理全部图片缓存')
   } catch {
     message.error('清理失败，请重试')
   } finally {
-    clearingServerId.value = null
+    cacheClearing.value = false
   }
 }
 
@@ -284,47 +275,25 @@ onMounted(loadCacheStats)
   <div class="settingcard">
     <div class="settinghead">
       媒体图片缓存
-      <span v-if="cacheStats.totalBytes > 0" class="opblue" style="margin-left: 12px; padding: 0 12px">
-        共 {{ formatBytes(cacheStats.totalBytes) }}
+      <span v-if="cacheTotalBytes > 0" class="opblue" style="margin-left: 12px; padding: 0 12px">
+        {{ formatBytes(cacheTotalBytes) }}
       </span>
       <a-spin v-if="cacheLoading" size="small" style="margin-left: 8px" />
     </div>
-
-    <div v-if="cacheStats.servers.length === 0 && !cacheLoading" class="settingrow" style="color: var(--color-text-3)">
-      暂无缓存数据
-    </div>
-
-    <div v-for="server in cacheStats.servers" :key="server.id" class="settingrow" style="display: flex; align-items: center; gap: 12px">
-      <span style="flex: 1; word-break: break-all; font-size: 12px; color: var(--color-text-2)">{{ server.id }}</span>
-      <span style="white-space: nowrap">{{ server.fileCount }} 张 · {{ formatBytes(server.bytes) }}</span>
-      <a-popconfirm :content="`确认清理该服务器的图片缓存？`" @ok="handleClearCache(server.id)">
-        <a-button
-          type="outline"
-          size="mini"
-          status="danger"
-          tabindex="-1"
-          :loading="clearingServerId === server.id"
-        >
-          清理
-        </a-button>
-      </a-popconfirm>
-    </div>
-
-    <div class="settingspace" />
     <div class="settingrow">
       <a-button type="outline" size="small" tabindex="-1" :loading="cacheLoading" @click="loadCacheStats">
         刷新统计
       </a-button>
-      <a-popconfirm content="确认清理全部媒体图片缓存？" @ok="handleClearCache()">
+      <a-popconfirm content="确认清理全部媒体图片缓存？" @ok="handleClearCache">
         <a-button
           type="outline"
           size="small"
           status="danger"
           tabindex="-1"
           style="margin-left: 12px"
-          :loading="clearingServerId === '__all__'"
+          :loading="cacheClearing"
         >
-          清理全部图片缓存
+          清理图片缓存
         </a-button>
       </a-popconfirm>
     </div>

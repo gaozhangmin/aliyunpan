@@ -1,7 +1,7 @@
 <template>
   <div class="media-library">
     <!-- 顶部导航 - 详情页面时隐藏 -->
-    <div v-if="!showingDetail" class="library-header">
+    <div v-if="!showingDetail && !isHomeView" class="library-header">
       <div class="library-tabs">
         <a-tabs v-model:activeKey="activeTab" type="text" class="hidetabs">
           <a-tab-pane key="continue" tab="继续观看" />
@@ -14,6 +14,18 @@
 
       <!-- 筛选器和视图切换 - 只在显示媒体内容时显示，文件夹文件列表时隐藏 -->
       <div v-if="!props.selectedFolder || folderFileList.length === 0" class="library-controls">
+        <div class="library-controls-left">
+          <button
+            v-if="showHeaderBackButton"
+            type="button"
+            class="library-arrow-back library-header-back-button"
+            :title="resultBarTitle"
+            @click="handleResultBack"
+          >
+            <i class="iconfont iconarrow-left-2-icon"></i>
+            <span class="library-arrow-back-title">{{ resultBarTitle }}</span>
+          </button>
+        </div>
         <div class="library-filters-right">
 <!--          <a-select v-model:value="selectedGenre" placeholder="按类型筛选" style="width: 120px;">-->
 <!--            <a-option value="">全部类型</a-option>-->
@@ -39,12 +51,12 @@
 <!--          </a-select>-->
 
           <!-- 视图切换按钮 -->
-          <div class="view-toggle">
+          <div v-if="showBrowseModeToggle" class="view-toggle">
             <div class="view-toggle-group">
               <a-button :type="viewMode === 'grid' ? 'primary' : 'outline'" @click="viewMode = 'grid'">网格</a-button>
               <a-button :type="viewMode === 'list' ? 'primary' : 'outline'" @click="viewMode = 'list'">列表</a-button>
             </div>
-            <div class="view-toggle-group">
+            <div v-if="showPosterTypeToggle" class="view-toggle-group">
               <a-button :type="posterType === 'portrait' ? 'primary' : 'outline'" @click="posterType = 'portrait'">竖版海报</a-button>
               <a-button :type="posterType === 'landscape' ? 'primary' : 'outline'" @click="posterType = 'landscape'">横版海报</a-button>
             </div>
@@ -56,16 +68,18 @@
     <!-- 内容区域 -->
     <div class="library-content">
       <div v-if="showResultBackBar && !showingDetail" class="library-result-bar">
+        <button
+          type="button"
+          class="library-arrow-back library-top-back-button"
+          :title="resultBarTitle"
+          @click="handleResultBack"
+        >
+          <i class="iconfont iconarrow-left-2-icon"></i>
+          <span class="library-arrow-back-title">{{ resultBarTitle }}</span>
+        </button>
         <div class="library-result-bar-main">
-          <div class="library-result-bar-title">{{ resultBarTitle }}</div>
           <div class="library-result-bar-subtitle">共 {{ filteredItems.length }} 项结果</div>
         </div>
-        <a-button type="outline" @click="handleResultBack">
-          <template #icon>
-            <i class="iconfont iconback" />
-          </template>
-          返回
-        </a-button>
       </div>
 
       <!-- 搜索界面 -->
@@ -94,7 +108,153 @@
       <!-- 显示媒体库内容 -->
       <template v-else-if="showSearchResults">
       <div
-        v-if="isSearchView"
+        v-if="isHomeView"
+        class="library-home-page"
+      >
+        <div class="library-home-toolbar">
+          <div class="library-home-toolbar-spacer" />
+          <div class="library-home-toolbar-right">
+            <a-button type="outline" @click="openLocalHomeManager">
+              <template #icon><i class="iconfont iconlist" /></template>
+              媒体管理
+            </a-button>
+            <div class="home-poster-toggle">
+              <a-button
+                :type="localHomePosterMode === 'landscape' ? 'primary' : 'outline'"
+                @click="setLocalHomePosterMode('landscape')"
+              >
+                横版
+              </a-button>
+              <a-button
+                :type="localHomePosterMode === 'portrait' ? 'primary' : 'outline'"
+                @click="setLocalHomePosterMode('portrait')"
+              >
+                竖版
+              </a-button>
+            </div>
+          </div>
+        </div>
+
+        <template v-for="section in visibleLocalHomeSections" :key="section.key">
+          <MediaServerResumeRow
+            v-if="section.kind === 'continue' && (localContinueCards.length > 0)"
+            :items="localContinueCards"
+            @play="handleLocalHomeResumePlay"
+            @action="handleLocalHomeCardAction"
+          />
+
+          <MediaServerPosterRow
+            v-else-if="section.kind === 'media' && (section.items?.length || 0) > 0"
+            :title="section.title"
+            :items="section.items || []"
+            :poster-type="section.posterType"
+            :show-poster-labels="localHomePreferences.showPosterLabels"
+            :enable-context-menu="true"
+            :show-top-overlay="true"
+            :see-all-label="`查看全部 (${getLocalHomeSectionTotalCount(section)})`"
+            subtitle-mode="year-only"
+            @select="handleLocalHomeNodeSelect"
+            @play="handleLocalHomeNodePlay"
+            @action="handleLocalHomeCardAction"
+            @see-all="handleLocalHomeSeeAll(section)"
+          />
+
+          <section
+            v-else-if="section.kind === 'shortcut' && (section.entries?.length || 0) > 0"
+            class="library-home-section"
+          >
+            <div class="home-section-header">
+              <h4>{{ section.title }}</h4>
+              <a-button
+                v-if="section.key === 'genres' || section.key === 'ratings' || section.key === 'years' || section.key === 'playlists'"
+                type="text"
+                class="see-all-button"
+                @click="handleLocalShortcutSeeAll(section.key)"
+              >
+                查看全部 ({{ getLocalHomeSectionTotalCount(section) }})
+              </a-button>
+              <span v-else>{{ (section.entries || []).length }} 项</span>
+            </div>
+            <div
+              class="library-home-row"
+              :class="section.variant === 'banner' ? 'library-home-row-banner' : 'library-home-row-category'"
+            >
+              <button
+                v-for="entry in (section.entries || [])"
+                :key="entry.key"
+                type="button"
+                class="library-home-shortcut-card"
+                :class="section.variant === 'banner' ? 'library-home-banner-card' : 'library-home-mini-card'"
+                :style="entry.style"
+                @click="handleLocalShortcutSelect(entry)"
+              >
+                <template v-if="section.variant === 'banner'">
+                  <div class="library-home-banner-image" :style="entry.style"></div>
+                  <div class="category-list-overlay" :style="entry.overlayStyle"></div>
+                  <div class="category-list-content">
+                    <h3 class="category-list-title">{{ entry.title }}</h3>
+                  </div>
+                  <div v-if="entry.count !== undefined" class="category-list-count">{{ entry.count }}</div>
+                </template>
+                <template v-else>
+                  <div class="library-home-mini-icon">
+                    <i class="iconfont" :class="entry.icon" />
+                  </div>
+                  <div class="library-home-mini-main">
+                    <h5>{{ entry.title }}</h5>
+                    <p>{{ entry.description }}</p>
+                  </div>
+                  <div v-if="entry.count !== undefined" class="library-home-mini-count">{{ entry.count }}</div>
+                </template>
+              </button>
+            </div>
+          </section>
+        </template>
+
+        <a-modal
+          v-model:visible="localHomeManagerVisible"
+          title="媒体管理"
+          :footer="false"
+          width="560px"
+          class="detail-media-modal"
+        >
+          <div class="home-library-manager-panel">
+            <p class="home-library-manager-hint">拖动调整首页分区顺序，也可以隐藏你不想显示的栏目。</p>
+            <div v-if="localHomeManagerDraft.length > 0" class="home-library-manager-list">
+              <div
+                v-for="item in localHomeManagerDraft"
+                :key="item.key"
+                class="home-library-manager-item"
+                :class="{ dragging: draggingLocalHomeSectionId === item.key }"
+                :data-section-key="item.key"
+                draggable="true"
+                @dragstart="handleLocalHomeDragStart($event, item.key)"
+                @dragover.prevent
+                @drop.prevent="handleLocalHomeDrop(item.key)"
+                @dragend="handleLocalHomeDragEnd"
+              >
+                <div
+                  class="home-library-manager-drag-icon"
+                  @mousedown.prevent="handleLocalHomePointerDragStart(item.key)"
+                >
+                  <i class="iconfont iconmenu-unfold" />
+                </div>
+                <a-checkbox :model-value="item.visible" @change="toggleLocalHomeDraftVisible(item.key, $event)">
+                  {{ item.title }}
+                </a-checkbox>
+              </div>
+            </div>
+            <div v-else class="home-library-manager-empty">还没有可管理的首页分区</div>
+            <div class="home-library-manager-footer">
+              <a-button type="outline" @click="cancelLocalHomeManager">取消</a-button>
+              <a-button type="primary" @click="saveLocalHomeManager">保存</a-button>
+            </div>
+          </div>
+        </a-modal>
+      </div>
+
+      <div
+        v-else-if="isSearchView"
         class="search-results-hub"
       >
         <div class="search-media-server-panel integrated">
@@ -297,17 +457,21 @@
       <div v-else-if="props.selectedFolder && folderFileList.length >= 0" class="folder-file-list">
         <div class="folder-header">
           <div class="folder-header-content">
+            <div class="folder-actions">
+              <button
+                v-if="folderNavigationStack.length > 0"
+                type="button"
+                class="library-arrow-back library-top-back-button"
+                :title="currentFolderInfo?.name || props.selectedFolder.name"
+                @click="handleGoBack"
+              >
+                <i class="iconfont iconarrow-left-2-icon"></i>
+                <span class="library-arrow-back-title">{{ currentFolderInfo?.name || props.selectedFolder.name }}</span>
+              </button>
+            </div>
             <div class="folder-info">
               <h3>{{ currentFolderInfo?.name || props.selectedFolder.name }}</h3>
               <p>共 {{ folderFileList.length }} 个文件</p>
-            </div>
-            <div class="folder-actions">
-              <a-button v-if="folderNavigationStack.length > 0" type="primary" @click="handleGoBack">
-                <template #icon>
-                  <i class="iconfont iconback" />
-                </template>
-                返回上级
-              </a-button>
             </div>
           </div>
         </div>
@@ -320,17 +484,21 @@
       <div v-else-if="props.selectedFolder && folderFileList.length === 0" class="folder-file-list">
         <div class="folder-header">
           <div class="folder-header-content">
+            <div class="folder-actions">
+              <button
+                v-if="folderNavigationStack.length > 0"
+                type="button"
+                class="library-arrow-back library-top-back-button"
+                :title="currentFolderInfo?.name || props.selectedFolder.name"
+                @click="handleGoBack"
+              >
+                <i class="iconfont iconarrow-left-2-icon"></i>
+                <span class="library-arrow-back-title">{{ currentFolderInfo?.name || props.selectedFolder.name }}</span>
+              </button>
+            </div>
             <div class="folder-info">
               <h3>{{ currentFolderInfo?.name || props.selectedFolder.name }}</h3>
               <p>文件夹为空</p>
-            </div>
-            <div class="folder-actions">
-              <a-button v-if="folderNavigationStack.length > 0" type="primary" @click="handleGoBack">
-                <template #icon>
-                  <i class="iconfont iconback" />
-                </template>
-                返回上级
-              </a-button>
             </div>
           </div>
         </div>
@@ -474,6 +642,13 @@
               <div class="type-badge">
                 {{ getItemTypeLabel(item) }}
               </div>
+
+              <div
+                v-if="getPosterContextBadge(item)"
+                class="poster-context-badge"
+              >
+                {{ getPosterContextBadge(item) }}
+              </div>
             </div>
 
             <div class="media-info">
@@ -522,6 +697,13 @@
               </div>
               <div class="type-badge">
                 {{ getItemTypeLabel(item) }}
+              </div>
+
+              <div
+                v-if="getPosterContextBadge(item)"
+                class="poster-context-badge"
+              >
+                {{ getPosterContextBadge(item) }}
               </div>
             </div>
 
@@ -635,6 +817,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import type { CSSProperties } from 'vue'
 import { useMediaLibraryStore } from '../store/medialibrary'
 import { useAppStore } from '../store'
 import useMediaServerRegistryStore from '../store/mediaServerRegistry'
@@ -643,9 +826,12 @@ import MediaPanRight from './MediaPanRight.vue'
 import { useMediaPanFileStore, useMediaPanTreeStore } from './stores'
 import CategoryCard from './CategoryCard.vue'
 import MediaDetail from './MediaDetail.vue'
+import MediaServerPosterRow from './media-server/home/MediaServerPosterRow.vue'
+import MediaServerResumeRow from './media-server/home/MediaServerResumeRow.vue'
 import type { MediaLibraryItem, MediaFilter } from '../types/media'
 import type { DriveFileItem } from '../types/media'
 import type { MediaServerLibraryNode } from '../types/mediaServerContent'
+import type { MediaServerCardItem } from '../types/mediaServerContent'
 import type { IAliGetFileModel } from '../aliapi/alimodels'
 import type { IPageVideoPlaylistEntry } from '../store/appstore'
 import { getMediaServerSearch, getMediaServerSuggestions } from '../media-server/contentGateway'
@@ -657,9 +843,31 @@ import { apiBaiduFileList, mapBaiduFileToAliModel } from '../cloudbaidu/dirfilel
 import { getWebDavConnection, getWebDavConnectionId, isWebDavDrive, listWebDavDirectory } from '../utils/webdavClient'
 import { menuOpenFile } from '../utils/openfile'
 import message from '../utils/message'
+import useLocalMediaHomePreferencesStore from '../store/localMediaHomePreferences'
+import type { LocalMediaHomePosterType, LocalMediaHomeSectionKey } from '../store/localMediaHomePreferences'
 
 type MediaListItem = MediaLibraryItem & {
   continueEpisodeLabel?: string
+}
+
+type LocalHomeMediaSection = {
+  key: LocalMediaHomeSectionKey
+  kind: 'continue' | 'media' | 'shortcut'
+  title: string
+  category?: string
+  posterType?: 'portrait' | 'landscape'
+  items?: MediaServerLibraryNode[]
+  variant?: 'banner' | 'mini'
+  entries?: Array<{
+    key: string
+    title: string
+    description: string
+    icon: string
+    count?: number
+    style?: CSSProperties
+    overlayStyle?: CSSProperties
+    action: () => void
+  }>
 }
 
 const props = defineProps<{
@@ -669,6 +877,7 @@ const props = defineProps<{
   selectedYear?: string
   selectedRating?: string
   searchQuery?: string
+  fromHomeNavigation?: boolean
 }>()
 
 const mediaStore = useMediaLibraryStore()
@@ -677,6 +886,7 @@ const mediaServerRegistry = useMediaServerRegistryStore()
 const mediaServerNavigation = useMediaServerNavigationStore()
 const mediaPanFileStore = useMediaPanFileStore()
 const mediaPanTreeStore = useMediaPanTreeStore()
+const localHomePreferences = useLocalMediaHomePreferencesStore()
 
 // 状态
 const activeTab = ref('recently-added')
@@ -703,6 +913,9 @@ const mediaServerSearchGroups = ref<Array<{
   items: MediaServerLibraryNode[]
 }>>([])
 let mediaServerSearchTimer: ReturnType<typeof setTimeout> | undefined
+const localHomeManagerVisible = ref(false)
+const draggingLocalHomeSectionId = ref<LocalMediaHomeSectionKey | ''>('')
+const localHomeManagerDraft = ref<Array<{ key: LocalMediaHomeSectionKey; title: string; visible: boolean }>>([])
 
 // 文件夹文件列表
 const folderFileList = ref<any[]>([])
@@ -722,6 +935,9 @@ watch(
       showingDetail.value = false
       currentMediaItem.value = undefined
     }
+    selectedGenre.value = props.selectedGenre || ''
+    selectedYear.value = props.selectedYear || ''
+    selectedRating.value = props.selectedRating || ''
     selectedCast.value = ''
     selectedCountry.value = ''
     if (props.activeCategory !== 'playlist') {
@@ -800,6 +1016,12 @@ const filteredItems = computed(() => {
     case 'unmatched':
       items = [...mediaStore.unmatchedItems]
       break
+    case 'documentary':
+      items = [...documentaryItems.value]
+      break
+    case 'animation':
+      items = [...animationItems.value]
+      break
     case 'unwatched':
       items = mediaStore.mediaItems.filter(item => {
         if (mediaStore.watchedItems.includes(item.id)) return false
@@ -833,8 +1055,13 @@ const filteredItems = computed(() => {
 
   const year = props.selectedYear || selectedYear.value
   if (year) {
-    const yearNum = parseInt(year)
-    filter.yearRange = [yearNum, yearNum]
+    if (/^\d{4}s$/i.test(year)) {
+      const start = parseInt(year, 10)
+      filter.yearRange = [start, start + 9]
+    } else {
+      const yearNum = parseInt(year, 10)
+      filter.yearRange = [yearNum, yearNum]
+    }
   }
 
   const rating = props.selectedRating || selectedRating.value
@@ -850,11 +1077,6 @@ const filteredItems = computed(() => {
     filter.type = 'tv'
   } else if (category === 'unmatched') {
     filter.type = 'unmatched'
-  } else if (category === 'documentary') {
-    filter.type = 'movie'
-    filter.genre = '99'
-  } else if (category === 'animation') {
-    filter.genre = '16'
   }
 
   let result = items
@@ -893,6 +1115,11 @@ const showSearchResults = computed(() => {
   return true
 })
 
+const isHomeView = computed(() => {
+  const category = props.activeCategory || activeTab.value
+  return category === 'home' && !props.selectedFolder
+})
+
 const showMediaServerSearchPanel = computed(() => {
   return isSearchView.value
 })
@@ -913,8 +1140,33 @@ const showPlaylistBackBar = computed(() => {
   const category = props.activeCategory || activeTab.value
   return category === 'playlist' && !!selectedPlaylist.value
 })
+const showHomeBackBar = computed(() => {
+  if (!props.fromHomeNavigation) return false
+  if (isSearchView.value || props.selectedFolder || isHomeView.value) return false
+  return true
+})
+const showHeaderBackButton = computed(() => showHomeBackBar.value)
 const showResultBackBar = computed(() => showDrillDownBackBar.value || showPlaylistBackBar.value)
+const homeNavigationTitleMap: Record<string, string> = {
+  'continue-watching': '继续观看',
+  'recently-added': '最近添加',
+  movies: '电影',
+  'tv-shows': '电视剧',
+  documentary: '纪录片',
+  animation: '动画',
+  unmatched: '未匹配',
+  unwatched: '未观看',
+  favorites: '收藏',
+  playlist: '播放列表',
+  genres: '类型',
+  ratings: '评分',
+  years: '年份'
+}
 const resultBarTitle = computed(() => {
+  if (showHomeBackBar.value) {
+    const category = props.activeCategory || activeTab.value
+    return homeNavigationTitleMap[category] || '媒体库'
+  }
   if (showPlaylistBackBar.value) return `播放列表 · ${selectedPlaylist.value}`
   return drillDownResultTitle.value
 })
@@ -944,6 +1196,17 @@ const showCategoryView = computed(() => {
   return ['genres', 'ratings', 'years'].includes(category) && !props.selectedFolder
 })
 
+const showBrowseModeToggle = computed(() => {
+  if (isSearchView.value) return false
+  if (isHomeView.value) return false
+  return !showingDetail.value
+})
+
+const showPosterTypeToggle = computed(() => {
+  if (!showBrowseModeToggle.value) return false
+  return !showCategoryView.value
+})
+
 const showPlaylistView = computed(() => {
   const category = props.activeCategory || activeTab.value
   return category === 'playlist' && !props.selectedFolder && !selectedPlaylist.value
@@ -954,15 +1217,301 @@ const isContinueWatchingView = computed(() => {
   return category === 'continue-watching'
 })
 
+const documentaryItems = computed(() => mediaStore.mediaItems.filter((item) => {
+  return item.genres.some((genre) => {
+    const normalized = String(genre).toLowerCase()
+    return normalized === '99' || normalized.includes('纪录')
+  })
+}))
+
+const animationItems = computed(() => mediaStore.mediaItems.filter((item) => {
+  return item.genres.some((genre) => {
+    const normalized = String(genre).toLowerCase()
+    return normalized === '16' || normalized.includes('动画') || normalized.includes('动漫')
+  })
+}))
+
+const unwatchedItems = computed(() => mediaStore.mediaItems.filter(item => {
+  if (mediaStore.watchedItems.includes(item.id)) return false
+  return !mediaStore.watchedItems.some(watchedId => String(watchedId).startsWith(`${item.id}_`))
+}))
+
+const favoriteItems = computed(() => mediaStore.favorites
+  .map(favoriteIdToMediaItem)
+  .filter((item): item is MediaLibraryItem => Boolean(item)))
+
+const localItemToNode = (
+  item: MediaLibraryItem | MediaListItem,
+  options: {
+    posterType?: 'portrait' | 'landscape'
+    title?: string
+    overview?: string
+    kind?: MediaServerLibraryNode['kind']
+    progress?: number
+  } = {}
+): MediaServerLibraryNode => {
+  const kind = options.kind || (item.type === 'movie' ? 'movie' : item.type === 'tv' ? 'series' : 'folder')
+  return {
+    id: item.id,
+    serverId: 'local-media-library',
+    provider: 'jellyfin',
+    kind,
+    rawType: kind,
+    title: options.title || item.name,
+    overview: options.overview ?? item.overview ?? '',
+    poster: item.posterUrl,
+    backdrop: item.backdropUrl,
+    images: {
+      primary: item.posterUrl,
+      backdrop: item.backdropUrl
+    },
+    year: item.year ? Number(item.year) : undefined,
+    rating: typeof item.rating === 'number' ? item.rating : undefined,
+    progress: options.progress,
+    parentTitle: item.type === 'tv' && getEpisodeTitleSuffix(item) ? getEpisodeTitleSuffix(item) : undefined,
+    isPlayed: mediaStore.isWatchedById?.(item.id) || false,
+    isFavorite: mediaStore.isFavorite?.(item.id) || false
+  }
+}
+
+const localContinueCards = computed<MediaServerCardItem[]>(() => continueWatchingItems.value.slice(0, 12).map((item) => ({
+  ...localItemToNode(item, {
+    kind: item.type === 'tv' ? 'episode' : 'movie',
+    title: item.name,
+    overview: String((item as MediaListItem).continueEpisodeLabel || ''),
+    progress: typeof item.watchProgress === 'number' ? Math.round((item.watchProgress || 0) * 100) : undefined
+  })
+})))
+
+const getFolderSourceLabel = (folder: any) => {
+  if (folder.driveServerId === 'webdav' || (folder.driveId || '').startsWith('webdav:')) return 'WebDAV 文件源'
+  if (folder.driveId === 'local' || folder.driveServerId === 'local') return '本地文件夹'
+  if (folder.driveId === 'cloud123' || folder.driveServerId === 'cloud123') return '123 云盘'
+  if (folder.driveId === 'drive115' || folder.driveServerId === 'drive115') return '115 网盘'
+  if (folder.driveId === 'baidu' || folder.driveServerId === 'baidu') return '百度网盘'
+  return '阿里云盘'
+}
+
+const getFolderCoverImage = (folder: any) => {
+  const related = mediaStore.mediaItems.find((item) => item.folderId === folder.id || (folder.path && item.folderPath === folder.path))
+  return related?.posterUrl || related?.backdropUrl || ''
+}
+
+const localShortcutSections = computed(() => {
+  const genres = mediaStore.genreCategories.slice(0, 18).map((item) => ({
+    key: `genre-${item.name}`,
+    title: item.name,
+    description: `${item.count} 项`,
+    icon: 'iconwbiaoqian',
+    count: item.count,
+    style: getBannerCardImageStyle(getRandomCoverImage(item)),
+    overlayStyle: getBannerCardOverlayStyle(item.name, item.type || 'genre'),
+    action: () => handleCategoryClick({ name: item.name, type: 'genre', count: item.count })
+  }))
+
+  const ratings = mediaStore.ratingCategories.slice(0, 18).map((item) => ({
+    key: `rating-${item.name}`,
+    title: item.name.replace('分', ''),
+    description: `${item.count} 项`,
+    icon: 'iconcrown2',
+    count: item.count,
+    style: getBannerCardImageStyle(getRandomCoverImage(item)),
+    overlayStyle: getBannerCardOverlayStyle(item.name, 'rating'),
+    action: () => handleCategoryClick({ name: item.name, type: 'rating', count: item.count })
+  }))
+
+  const years = mediaStore.yearGroups.slice(0, 18).map((item) => ({
+    key: `year-${item.name}`,
+    title: item.name,
+    description: `${item.count} 项`,
+    icon: 'iconcalendar',
+    count: item.count,
+    style: getBannerCardImageStyle(getRandomCoverImage(item)),
+    overlayStyle: getBannerCardOverlayStyle(item.name, 'year'),
+    action: () => handleCategoryClick({ name: item.name, type: 'year', count: item.count })
+  }))
+
+  const playlists = playlistItems.value.slice(0, 18).map((item) => ({
+    key: `playlist-${item.name}`,
+    title: item.name,
+    description: `${item.count} 项`,
+    icon: 'iconlist',
+    count: item.count,
+    style: getBannerCardImageStyle(item.coverImage),
+    overlayStyle: getBannerCardOverlayStyle(item.name, 'playlist'),
+    action: () => {
+      selectedPlaylist.value = item.name
+      emit('navigateCategory', 'playlist')
+    }
+  }))
+
+  const folderEntries = mediaStore.folders.map((folder) => ({
+    key: `folder-${folder.id}`,
+    title: folder.name,
+    description: getFolderSourceLabel(folder),
+    icon: 'iconfolder',
+    action: () => emit('navigateFolder', folder)
+  }))
+
+  return {
+    genres,
+    ratings,
+    years,
+    playlists,
+    folders: folderEntries
+  }
+})
+
+const localHomeSections = computed<LocalHomeMediaSection[]>(() => {
+  const sections: LocalHomeMediaSection[] = [
+    {
+      key: 'continue',
+      kind: 'continue',
+      title: '继续观看'
+    },
+    {
+      key: 'recent',
+      kind: 'media',
+      title: '最近添加',
+      category: 'recently-added',
+      posterType: localHomePreferences.recentlyAddedPosterType,
+      items: mediaStore.recentlyAdded.slice(0, 18).map((item) => localItemToNode(item)),
+    },
+    {
+      key: 'movies',
+      kind: 'media',
+      title: '电影',
+      category: 'movies',
+      posterType: localHomePreferences.libraryPosterType,
+      items: mediaStore.movies.slice(0, 18).map((item) => localItemToNode(item)),
+    },
+    {
+      key: 'tv',
+      kind: 'media',
+      title: '电视剧',
+      category: 'tv-shows',
+      posterType: localHomePreferences.libraryPosterType,
+      items: mediaStore.tvShows.slice(0, 18).map((item) => localItemToNode(item, { kind: 'series' })),
+    },
+    {
+      key: 'documentary',
+      kind: 'media',
+      title: '纪录片',
+      category: 'documentary',
+      posterType: localHomePreferences.libraryPosterType,
+      items: documentaryItems.value.slice(0, 18).map((item) => localItemToNode(item)),
+    },
+    {
+      key: 'animation',
+      kind: 'media',
+      title: '动画',
+      category: 'animation',
+      posterType: localHomePreferences.libraryPosterType,
+      items: animationItems.value.slice(0, 18).map((item) => localItemToNode(item)),
+    },
+    {
+      key: 'unmatched',
+      kind: 'media',
+      title: '未匹配',
+      category: 'unmatched',
+      posterType: localHomePreferences.libraryPosterType,
+      items: mediaStore.unmatchedItems.slice(0, 18).map((item) => localItemToNode(item, { kind: 'folder' })),
+    },
+    {
+      key: 'unwatched',
+      kind: 'media',
+      title: '未观看',
+      category: 'unwatched',
+      posterType: localHomePreferences.libraryPosterType,
+      items: unwatchedItems.value.slice(0, 18).map((item) => localItemToNode(item)),
+    },
+    {
+      key: 'favorites',
+      kind: 'media',
+      title: '收藏',
+      category: 'favorites',
+      posterType: localHomePreferences.libraryPosterType,
+      items: favoriteItems.value.slice(0, 18).map((item) => localItemToNode(item)),
+    },
+    {
+      key: 'playlists',
+      kind: 'shortcut',
+      title: '播放列表',
+      variant: 'banner',
+      entries: localShortcutSections.value.playlists
+    },
+    {
+      key: 'genres',
+      kind: 'shortcut',
+      title: '类型',
+      variant: 'banner',
+      entries: localShortcutSections.value.genres
+    },
+    {
+      key: 'ratings',
+      kind: 'shortcut',
+      title: '评分',
+      variant: 'banner',
+      entries: localShortcutSections.value.ratings
+    },
+    {
+      key: 'years',
+      kind: 'shortcut',
+      title: '年份',
+      variant: 'banner',
+      entries: localShortcutSections.value.years
+    },
+    {
+      key: 'folders',
+      kind: 'shortcut',
+      title: '文件源',
+      variant: 'mini',
+      entries: localShortcutSections.value.folders
+    }
+  ]
+
+  return sections.filter((section) => {
+    if (section.key === 'folders') return false
+    if (section.key === 'recent' && !localHomePreferences.showRecentlyAdded) return false
+    if (section.kind === 'continue') return localContinueCards.value.length > 0
+    if (section.kind === 'media') return (section.items?.length || 0) > 0
+    return (section.entries?.length || 0) > 0
+  })
+})
+
+const orderedLocalHomeSections = computed(() => {
+  const order = localHomePreferences.homeSectionOrder || []
+  if (!order.length) return localHomeSections.value
+  const byKey = new Map(localHomeSections.value.map((section) => [section.key, section]))
+  const ordered = order.map((key) => byKey.get(key)).filter((section): section is LocalHomeMediaSection => !!section)
+  const rest = localHomeSections.value.filter((section) => !order.includes(section.key))
+  return [...ordered, ...rest]
+})
+
+const visibleLocalHomeSections = computed(() => {
+  const hidden = new Set(localHomePreferences.hiddenHomeSectionIds || [])
+  return orderedLocalHomeSections.value.filter((section) => !hidden.has(section.key))
+})
+
+const getLocalHomeSectionTotalCount = (section: LocalHomeMediaSection) => {
+  if (section.kind === 'continue') return localContinueCards.value.length
+  if (section.kind === 'media') return section.items?.length || 0
+  return (section.entries || []).reduce((total, entry) => total + (entry.count || 0), 0)
+}
+
 const currentCategorySourceItems = computed<MediaLibraryItem[]>(() => {
-  switch (activeTab.value) {
+  const category = props.activeCategory || activeTab.value
+  switch (category) {
     case 'continue':
+    case 'continue-watching':
       return [...continueWatchingItems.value]
     case 'recent':
+    case 'recently-added':
       return [...mediaStore.recentlyAdded]
     case 'movies':
       return [...mediaStore.movies]
     case 'tv':
+    case 'tv-shows':
       return [...mediaStore.tvShows]
     case 'unmatched':
       return [...mediaStore.unmatchedItems]
@@ -1143,6 +1692,16 @@ const getItemTypeLabel = (item: MediaLibraryItem) => {
   return '未匹配'
 }
 
+const getPosterContextBadge = (item: MediaLibraryItem) => {
+  if (props.selectedYear && item.year) {
+    return String(item.year)
+  }
+  if (props.selectedRating && typeof item.rating === 'number') {
+    return item.rating.toFixed(1)
+  }
+  return ''
+}
+
 const getItemMetaItems = (item: MediaLibraryItem) => {
   const parts = [
     item.year ? `${item.year}` : '',
@@ -1320,6 +1879,11 @@ const handleDetailTagClick = (tagType: string, tagValue: string) => {
   // 返回列表并应用筛选
   showingDetail.value = false
   currentMediaItem.value = undefined
+  selectedGenre.value = ''
+  selectedYear.value = ''
+  selectedRating.value = ''
+  selectedCast.value = ''
+  selectedCountry.value = ''
 
   // 根据标签类型设置筛选条件
   switch (tagType) {
@@ -1367,6 +1931,21 @@ const getSeededGradient = (seedSource: string, fallbackType: string) => {
   const [from, to] = categoryListPalette[hash % categoryListPalette.length]
   return `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
 }
+
+const getBannerCardImageStyle = (coverImage?: string) => {
+  if (!coverImage) return {}
+  return {
+    backgroundImage: `url(${coverImage})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center center',
+    backgroundRepeat: 'no-repeat'
+  } as CSSProperties
+}
+
+const getBannerCardOverlayStyle = (seedSource: string, fallbackType: string) => ({
+  backgroundImage: getSeededGradient(seedSource, fallbackType),
+  opacity: '0.68'
+} as CSSProperties)
 
 // 获取随机封面图
 const getRandomCoverImage = (categoryItem: any) => {
@@ -1423,18 +2002,15 @@ const handleCategoryClick = (data: { name: string; type: string; count: number }
       selectedGenre.value = data.name
       break
     case 'rating':
-      // 从名称中提取评分范围（如"8分" -> "8-8"）
-      if (data.name.includes('-')) {
-        selectedRating.value = data.name.replace('分', '').replace('-', '-')
+      if (data.name === '1-5分') {
+        selectedRating.value = '1-5.99'
       } else {
-        const rating = data.name.replace('分', '')
-        selectedRating.value = `${rating}-${rating}`
+        const rating = Number.parseInt(data.name.replace('分', ''), 10)
+        selectedRating.value = Number.isFinite(rating) ? `${rating}-${rating + 0.99}` : ''
       }
       break
     case 'year':
-      // 年份组处理（如"2020s" -> 设置年份范围）
-      const decade = data.name.replace('s', '')
-      selectedYear.value = decade
+      selectedYear.value = data.name
       break
     case 'playlist':
       selectedPlaylist.value = data.name
@@ -1811,6 +2387,7 @@ const refreshLibrary = () => {
 onMounted(() => {
   // 初始化媒体库
   mediaServerRegistry.ensureLoaded()
+  localHomePreferences.ensureLoaded()
 })
 
 // 定义事件
@@ -1825,8 +2402,185 @@ const emit = defineEmits<{
     }
   }]
   categoryDrillBack: [data: { categoryType: string }]
+  navigateCategory: [category: string]
+  homeNavigationBack: []
+  navigateFolder: [folder: any]
+  manageLibrary: []
   mediaServerNavigate: [route: any]
 }>()
+
+const localHomePosterMode = computed<LocalMediaHomePosterType>(() => {
+  if (localHomePreferences.libraryPosterType === 'landscape') return 'landscape'
+  if (localHomePreferences.recentlyAddedPosterType === 'landscape') return 'landscape'
+  return 'portrait'
+})
+
+const setLocalHomePosterMode = (value: LocalMediaHomePosterType) => {
+  localHomePreferences.setPartial({
+    recentlyAddedPosterType: value,
+    libraryPosterType: value
+  })
+}
+
+const findLocalMediaItemById = (id: string) => {
+  return favoriteIdToMediaItem(id) || continueWatchingItems.value.find((item) => item.id === id) || null
+}
+
+const handleLocalHomeResumePlay = (item: MediaServerCardItem) => {
+  const target = findLocalMediaItemById(item.id)
+  if (target) openMedia(target)
+}
+
+const handleLocalHomeNodeSelect = (item: MediaServerLibraryNode) => {
+  if (item.id.startsWith('playlist:')) {
+    emit('navigateCategory', 'playlist')
+    return
+  }
+  const target = findLocalMediaItemById(item.id)
+  if (target) openMedia(target)
+}
+
+const handleLocalHomeNodePlay = (item: MediaServerLibraryNode) => {
+  handleLocalHomeNodeSelect(item)
+}
+
+const handleLocalHomeCardAction = async (item: MediaServerCardItem | MediaServerLibraryNode, action: 'watched' | 'favorite') => {
+  if (item.id.startsWith('playlist:')) return
+  const target = findLocalMediaItemById(item.id)
+  if (!target) return
+  if (action === 'favorite') {
+    mediaStore.toggleFavorite(target.id)
+    message.success(mediaStore.isFavorite(target.id) ? '已加入收藏' : '已取消收藏')
+    return
+  }
+  const nextWatched = !mediaStore.isWatchedById(target.id)
+  mediaStore.markWatched(target.id, nextWatched)
+  message.success(nextWatched ? '已标记为已观看' : '已标记为未观看')
+}
+
+const handleLocalHomeSeeAll = (section: LocalHomeMediaSection) => {
+  if (section.category) emit('navigateCategory', section.category)
+}
+
+const handleLocalShortcutSelect = (entry: { action: () => void }) => {
+  entry.action()
+}
+
+const handleLocalShortcutSeeAll = (sectionKey: LocalMediaHomeSectionKey) => {
+  switch (sectionKey) {
+    case 'genres':
+      emit('navigateCategory', 'genres')
+      break
+    case 'ratings':
+      emit('navigateCategory', 'ratings')
+      break
+    case 'years':
+      emit('navigateCategory', 'years')
+      break
+    case 'playlists':
+      emit('navigateCategory', 'playlist')
+      break
+  }
+}
+
+const localHomeSectionTitleMap: Record<LocalMediaHomeSectionKey, string> = {
+  continue: '继续观看',
+  recent: '最近添加',
+  movies: '电影',
+  tv: '电视剧',
+  documentary: '纪录片',
+  animation: '动画',
+  unmatched: '未匹配',
+  unwatched: '未观看',
+  favorites: '收藏',
+  playlists: '播放列表',
+  genres: '分类',
+  ratings: '评分',
+  years: '年份',
+  folders: '文件源'
+}
+
+const openLocalHomeManager = () => {
+  const hiddenSections = new Set(localHomePreferences.hiddenHomeSectionIds || [])
+  localHomeManagerDraft.value = orderedLocalHomeSections.value.map((section) => ({
+    key: section.key,
+    title: localHomeSectionTitleMap[section.key],
+    visible: !hiddenSections.has(section.key)
+  }))
+  draggingLocalHomeSectionId.value = ''
+  localHomeManagerVisible.value = true
+}
+
+const cancelLocalHomeManager = () => {
+  localHomeManagerVisible.value = false
+  draggingLocalHomeSectionId.value = ''
+}
+
+const toggleLocalHomeDraftVisible = (sectionKey: LocalMediaHomeSectionKey, value: any) => {
+  const checked = typeof value === 'boolean' ? value : !!value
+  localHomeManagerDraft.value = localHomeManagerDraft.value.map((item) =>
+    item.key === sectionKey ? { ...item, visible: checked } : item
+  )
+}
+
+const moveLocalHomeDraftItem = (sourceKey: LocalMediaHomeSectionKey, targetKey: LocalMediaHomeSectionKey) => {
+  const draft = [...localHomeManagerDraft.value]
+  const sourceIndex = draft.findIndex((item) => item.key === sourceKey)
+  const targetIndex = draft.findIndex((item) => item.key === targetKey)
+  if (sourceIndex < 0 || targetIndex < 0) return
+  const [moved] = draft.splice(sourceIndex, 1)
+  draft.splice(targetIndex, 0, moved)
+  localHomeManagerDraft.value = draft
+}
+
+const handleLocalHomeDragStart = (event: DragEvent, sectionKey: LocalMediaHomeSectionKey) => {
+  draggingLocalHomeSectionId.value = sectionKey
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.dropEffect = 'move'
+    event.dataTransfer.setData('text/plain', sectionKey)
+  }
+}
+
+const handleLocalHomeDrop = (targetKey: LocalMediaHomeSectionKey) => {
+  const sourceKey = draggingLocalHomeSectionId.value
+  if (!sourceKey || sourceKey === targetKey) return
+  moveLocalHomeDraftItem(sourceKey, targetKey)
+}
+
+const handleLocalHomeDragEnd = () => {
+  draggingLocalHomeSectionId.value = ''
+}
+
+const handleLocalHomePointerDragStart = (sectionKey: LocalMediaHomeSectionKey) => {
+  draggingLocalHomeSectionId.value = sectionKey
+  const handlePointerMove = (event: MouseEvent) => {
+    const target = document.elementFromPoint(event.clientX, event.clientY)
+    const row = target?.closest?.('.home-library-manager-item') as HTMLElement | null
+    const targetKey = row?.dataset.sectionKey as LocalMediaHomeSectionKey | undefined
+    if (targetKey && targetKey !== draggingLocalHomeSectionId.value) {
+      moveLocalHomeDraftItem(draggingLocalHomeSectionId.value as LocalMediaHomeSectionKey, targetKey)
+    }
+  }
+  const handlePointerUp = () => {
+    draggingLocalHomeSectionId.value = ''
+    window.removeEventListener('mousemove', handlePointerMove)
+    window.removeEventListener('mouseup', handlePointerUp)
+  }
+  window.addEventListener('mousemove', handlePointerMove)
+  window.addEventListener('mouseup', handlePointerUp, { once: true })
+}
+
+const saveLocalHomeManager = () => {
+  const draft = localHomeManagerDraft.value
+  const hiddenKeys = draft.filter((item) => !item.visible).map((item) => item.key)
+  localHomePreferences.setPartial({
+    homeSectionOrder: draft.map((item) => item.key),
+    hiddenHomeSectionIds: hiddenKeys
+  })
+  localHomeManagerVisible.value = false
+  draggingLocalHomeSectionId.value = ''
+}
 
 const handleDrillDownBack = () => {
   if (props.selectedGenre) {
@@ -1847,6 +2601,10 @@ const handlePlaylistBack = () => {
 }
 
 const handleResultBack = () => {
+  if (showHomeBackBar.value) {
+    emit('homeNavigationBack')
+    return
+  }
   if (showPlaylistBackBar.value) {
     handlePlaylistBack()
     return
@@ -1987,14 +2745,15 @@ defineExpose({
 
 .library-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
   padding: 16px;
   border-bottom: 1px solid var(--color-neutral-3);
 }
 
 .library-tabs {
-  flex: 1;
+  width: 100%;
 }
 
 .library-content {
@@ -2022,14 +2781,22 @@ defineExpose({
 
 .library-controls {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
+  gap: 16px;
+}
+
+.library-controls-left {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .library-filters-right {
   display: flex;
   gap: 8px;
   align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 auto;
 }
 
 .view-toggle {
@@ -2094,14 +2861,62 @@ defineExpose({
 
 .library-result-bar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: flex-start;
   gap: 16px;
   padding: 16px 20px 10px;
 }
 
+.library-arrow-back {
+  height: 46px;
+  max-width: min(420px, calc(100vw - 80px));
+  padding: 0 18px;
+  gap: 10px;
+  width: auto;
+  height: 46px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.36);
+  box-shadow: 0 10px 30px rgba(130, 137, 152, 0.18);
+  backdrop-filter: blur(26px) saturate(165%);
+  -webkit-backdrop-filter: blur(26px) saturate(165%);
+  color: #253045;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.library-arrow-back .iconfont {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.library-arrow-back-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.library-arrow-back:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 36px rgba(130, 137, 152, 0.22);
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.library-header-back-button,
+.library-top-back-button {
+  flex: 0 0 auto;
+}
+
 .library-result-bar-main {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .library-result-bar-title {
@@ -2519,6 +3334,23 @@ defineExpose({
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 }
 
+.poster-context-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  color: rgba(17, 24, 39, 0.9);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+}
+
 .media-info {
   margin-top: 10px;
   padding: 0 2px;
@@ -2621,8 +3453,9 @@ defineExpose({
 
 .folder-header-content {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 14px;
+  flex-direction: column;
 }
 
 .folder-info h3 {
@@ -2641,6 +3474,7 @@ defineExpose({
 .folder-actions {
   display: flex;
   gap: 8px;
+  justify-content: flex-start;
 }
 
 .pan-right-container {
@@ -2837,6 +3671,18 @@ defineExpose({
   color: rgba(244, 247, 252, 0.96);
 }
 
+[arco-theme='dark'] .library-arrow-back {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(24, 29, 40, 0.72);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  color: rgba(244, 247, 252, 0.94);
+}
+
+[arco-theme='dark'] .library-arrow-back:hover {
+  background: rgba(31, 39, 54, 0.84);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.3);
+}
+
 [arco-theme='dark'] .search-panel-input :deep(.arco-input-wrapper) {
   background: rgba(24, 28, 36, 0.74);
   border-color: rgba(255, 255, 255, 0.1);
@@ -2957,6 +3803,13 @@ defineExpose({
   color: rgba(244, 247, 252, 0.96);
 }
 
+[arco-theme='dark'] .poster-context-badge {
+  background: rgba(15, 23, 42, 0.66);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(244, 247, 252, 0.96);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+}
+
 [arco-theme='dark'] .media-meta-type {
   background: rgba(96, 165, 250, 0.18);
   color: #dbeafe;
@@ -2974,6 +3827,692 @@ defineExpose({
 
 [arco-theme='dark'] .search-media-server-result:hover {
   transform: translateY(-2px);
+}
+
+.library-home-page {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 4px 2px 2px;
+}
+
+.library-home-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.library-home-toolbar-spacer {
+  flex: 1;
+}
+
+.library-home-toolbar-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.home-poster-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-settings-menu {
+  min-width: 320px;
+  padding: 16px;
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 247, 0.96), rgba(246, 240, 233, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  box-shadow:
+    0 22px 48px rgba(63, 46, 37, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(24px) saturate(145%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.home-settings-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.home-settings-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: rgba(15, 23, 42, 0.94);
+}
+
+.home-settings-subtitle {
+  color: rgba(71, 85, 105, 0.9);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.home-settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.44);
+}
+
+.home-settings-group-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: rgba(71, 85, 105, 0.92);
+}
+
+.home-settings-check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+  padding: 0 2px;
+  color: rgba(15, 23, 42, 0.92);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.home-settings-check :deep(.arco-checkbox) {
+  flex: 0 0 auto;
+}
+
+.home-settings-check :deep(.arco-checkbox-label) {
+  display: none;
+}
+
+.home-settings-label {
+  flex: 0 0 108px;
+  color: rgba(15, 23, 42, 0.92);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.home-settings-select {
+  flex: 1;
+}
+
+.home-settings-select :deep(.arco-select-view) {
+  min-height: 42px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.home-settings-select :deep(.arco-select-view-value) {
+  color: rgba(15, 23, 42, 0.92);
+  font-weight: 700;
+}
+
+.home-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: rgba(24, 24, 24, 0.82);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.home-settings-dropdown {
+  padding: 8px;
+  border-radius: 28px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.home-settings-dropdown .arco-dropdown-list-wrapper,
+.home-settings-dropdown .arco-dropdown-list {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.library-home-intro h3 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  color: #111827;
+}
+
+.library-home-intro p {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.7;
+}
+
+.library-home-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.library-home-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.library-home-section-header h4 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #111827;
+}
+
+.library-home-section-header span {
+  display: block;
+  margin-top: 4px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.home-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+}
+
+.home-section-header h4 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #111827;
+}
+
+.home-section-header span {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.see-all-button {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(250, 245, 240, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  color: rgba(24, 24, 24, 0.88);
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 12px 30px rgba(63, 46, 37, 0.1);
+  backdrop-filter: blur(18px) saturate(135%);
+  cursor: pointer;
+}
+
+.see-all-button:hover {
+  background: rgba(255, 255, 255, 0.68);
+  border-color: rgba(255, 255, 255, 0.86);
+  color: rgba(24, 24, 24, 0.96);
+  box-shadow: 0 16px 34px rgba(63, 46, 37, 0.12);
+}
+
+.library-home-row {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 2px 8px 10px;
+  scroll-padding-inline: 8px;
+}
+
+.library-home-resume-card,
+.library-home-poster-tile,
+.library-home-mini-card {
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.library-home-resume-card {
+  width: 320px;
+}
+
+.library-home-row-landscape .library-home-poster-tile {
+  width: 320px;
+}
+
+.library-home-row-portrait .library-home-poster-tile {
+  width: 150px;
+}
+
+.library-home-resume-poster,
+.library-home-poster-image {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #dbeafe, #f8fafc);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+}
+
+.library-home-resume-poster {
+  width: 320px;
+  height: 180px;
+}
+
+.library-home-poster-tile.poster-tile-landscape .library-home-poster-image {
+  width: 320px;
+  height: 180px;
+}
+
+.library-home-poster-tile.poster-tile-portrait .library-home-poster-image {
+  width: 150px;
+  height: 225px;
+}
+
+.library-home-resume-poster img,
+.library-home-poster-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.library-home-resume-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.18) 0%, rgba(15, 23, 42, 0.06) 45%, rgba(15, 23, 42, 0.42) 100%);
+}
+
+.library-home-play-indicator {
+  width: 62px;
+  height: 62px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #111827;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
+}
+
+.library-home-play-indicator .iconfont {
+  font-size: 30px;
+  margin-left: 4px;
+}
+
+.library-home-poster-meta {
+  padding: 10px 4px 0;
+}
+
+.library-home-poster-meta h5 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.library-home-poster-meta p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.library-home-row-category {
+  padding-top: 6px;
+}
+
+.library-home-row-banner {
+  padding-top: 2px;
+}
+
+.library-home-banner-card {
+  width: 320px;
+  height: 170px;
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+}
+
+.library-home-banner-image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  transform: scale(1.02);
+  filter: saturate(1.02) contrast(1.02);
+}
+
+.library-home-banner-card .category-list-overlay {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.28) 0%, rgba(15, 23, 42, 0.42) 100%);
+  mix-blend-mode: multiply;
+}
+
+.library-home-banner-card .category-list-content {
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 56px;
+  text-align: center;
+}
+
+.library-home-banner-card .category-list-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
+  width: 100%;
+}
+
+.library-home-banner-card .category-list-count {
+  top: auto;
+  right: 16px;
+  bottom: 16px;
+  padding: 6px 12px;
+  font-size: 15px;
+}
+
+.library-home-mini-card {
+  min-width: 260px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(22px) saturate(140%);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.library-home-mini-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(96, 165, 250, 0.24);
+  box-shadow: 0 22px 42px rgba(96, 165, 250, 0.14);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(239, 246, 255, 0.86));
+}
+
+.library-home-mini-icon {
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(219, 234, 254, 0.74), rgba(191, 219, 254, 0.46));
+  color: #2563eb;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.52);
+}
+
+.library-home-mini-icon .iconfont {
+  font-size: 24px;
+}
+
+.library-home-mini-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.library-home-mini-main h5 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.library-home-mini-main p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.library-home-mini-count {
+  flex: 0 0 auto;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+  color: #111827;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.detail-media-modal :deep(.arco-modal-content) {
+  border-radius: 28px;
+  background: rgba(247, 241, 234, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(24px);
+  box-shadow: 0 28px 60px rgba(56, 44, 30, 0.18);
+}
+
+.home-library-manager-panel {
+  padding: 8px 4px 2px;
+}
+
+.home-library-manager-hint {
+  margin: 0 0 14px 8px;
+  color: rgba(24, 24, 24, 0.86);
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.home-library-manager-list {
+  padding: 8px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.32);
+  min-height: 280px;
+}
+
+.home-library-manager-item {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  cursor: default;
+  transition: opacity 0.16s ease, transform 0.16s ease, background 0.16s ease;
+}
+
+.home-library-manager-item:last-child {
+  border-bottom: 0;
+}
+
+.home-library-manager-item.dragging {
+  opacity: 0.56;
+  transform: scale(0.99);
+}
+
+.home-library-manager-item:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.home-library-manager-item :deep(.arco-checkbox) {
+  flex: 1;
+  min-width: 0;
+}
+
+.home-library-manager-item :deep(.arco-checkbox-label) {
+  color: rgba(24, 24, 24, 0.88);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.home-library-manager-drag-icon {
+  flex: 0 0 auto;
+  color: rgba(24, 24, 24, 0.42);
+  font-size: 18px;
+  cursor: grab;
+  padding: 6px;
+  border-radius: 8px;
+  -webkit-user-drag: element;
+  user-select: none;
+}
+
+.home-library-manager-drag-icon:hover {
+  background: rgba(255, 255, 255, 0.48);
+  color: rgba(24, 24, 24, 0.72);
+}
+
+.home-library-manager-drag-icon:active {
+  cursor: grabbing;
+}
+
+.home-library-manager-empty {
+  padding: 56px 12px;
+  text-align: center;
+  color: rgba(24, 24, 24, 0.48);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.home-library-manager-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  width: 100%;
+  margin-top: 18px;
+}
+
+[arco-theme='dark'] .library-home-intro h3,
+[arco-theme='dark'] .library-home-section-header h4,
+[arco-theme='dark'] .home-section-header h4,
+[arco-theme='dark'] .library-home-poster-meta h5,
+[arco-theme='dark'] .library-home-mini-main h5,
+[arco-theme='dark'] .library-home-mini-count {
+  color: rgba(244, 247, 252, 0.96);
+}
+
+[arco-theme='dark'] .library-home-intro p,
+[arco-theme='dark'] .library-home-section-header span,
+[arco-theme='dark'] .home-section-header span,
+[arco-theme='dark'] .library-home-poster-meta p,
+[arco-theme='dark'] .library-home-mini-main p {
+  color: rgba(203, 213, 225, 0.78);
+}
+
+[arco-theme='dark'] .see-all-button {
+  background: rgba(15, 23, 42, 0.52);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(233, 239, 247, 0.92);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+}
+
+[arco-theme='dark'] .home-settings-menu {
+  background:
+    linear-gradient(180deg, rgba(24, 29, 40, 0.96), rgba(17, 21, 30, 0.92));
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 24px 52px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[arco-theme='dark'] .home-settings-title,
+[arco-theme='dark'] .home-settings-subtitle,
+[arco-theme='dark'] .home-settings-group-title,
+[arco-theme='dark'] .home-settings-check,
+[arco-theme='dark'] .home-settings-label,
+[arco-theme='dark'] .home-settings-row,
+[arco-theme='dark'] .home-library-manager-hint,
+[arco-theme='dark'] .home-library-manager-item :deep(.arco-checkbox-label) {
+  color: rgba(244, 247, 252, 0.96);
+}
+
+[arco-theme='dark'] .home-settings-group {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+[arco-theme='dark'] .home-settings-subtitle {
+  color: rgba(148, 163, 184, 0.88);
+}
+
+[arco-theme='dark'] .home-settings-select :deep(.arco-select-view) {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+[arco-theme='dark'] .home-settings-select :deep(.arco-select-view-value),
+[arco-theme='dark'] .home-settings-select :deep(.arco-select-view-icon) {
+  color: rgba(244, 247, 252, 0.96);
+}
+
+[arco-theme='dark'] .library-home-mini-card {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(28, 33, 44, 0.88), rgba(18, 22, 30, 0.8));
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.24);
+}
+
+[arco-theme='dark'] .library-home-banner-card {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.24);
+}
+
+[arco-theme='dark'] .library-home-mini-card:hover {
+  border-color: rgba(96, 165, 250, 0.26);
+  background: linear-gradient(180deg, rgba(35, 45, 68, 0.92), rgba(20, 27, 42, 0.86));
+  box-shadow: 0 24px 44px rgba(0, 0, 0, 0.28);
+}
+
+[arco-theme='dark'] .library-home-mini-icon {
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.26), rgba(30, 64, 175, 0.18));
+  color: #bfdbfe;
+}
+
+[arco-theme='dark'] .library-home-mini-count {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[arco-theme='dark'] .detail-media-modal :deep(.arco-modal-content) {
+  background: rgba(18, 22, 30, 0.9);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[arco-theme='dark'] .home-library-manager-list {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[arco-theme='dark'] .home-library-manager-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+[arco-theme='dark'] .home-library-manager-drag-icon {
+  color: rgba(203, 213, 225, 0.56);
+}
+
+[arco-theme='dark'] .home-library-manager-empty {
+  color: rgba(203, 213, 225, 0.56);
 }
 
 /* 分类聚合视图样式 */
@@ -3176,6 +4715,21 @@ defineExpose({
   .category-grid {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+
+  .library-home-resume-card,
+  .library-home-row-landscape .library-home-poster-tile {
+    width: 280px;
+  }
+
+  .library-home-resume-poster,
+  .library-home-poster-tile.poster-tile-landscape .library-home-poster-image {
+    width: 280px;
+    height: 158px;
+  }
+
+  .library-home-mini-card {
+    min-width: 220px;
   }
 
   .category-list-card {

@@ -40,5 +40,9 @@ declare global {
     WebSetProxy: any
     speedLimte: number
     WebSetProgressBar: any
+    TvBoxInvoke: (channel: string, data: unknown) => Promise<unknown>
+    MsImageCacheSyncConfig: any
+    MsImageCacheStats: () => Promise<{ totalBytes: number; servers: unknown[] }>
+    MsImageCacheClear: (serverId?: string) => Promise<{ cleared: number }>
   }
 }

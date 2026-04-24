@@ -29,3 +29,8 @@ scripts/
 # 外部项目/子模块 - 不提交到主仓库
 CloudServiceKit/
 XbyVideoHub/
+Box/
+boxplayer_macos/
+docs/
+jellyfin-sdk/
+plans/

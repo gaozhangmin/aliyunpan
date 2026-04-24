@@ -158,7 +158,7 @@ const handleJumpPath = () => {
 
 <template>
   <div class='settingcard'>
-    <div class='settinghead'>:WebDav设置</div>
+    <div class='settinghead'>WebDav设置</div>
     <div class='settingrow'>
       <MySwitch v-model:value='settingStore.webDavEnable' :beforeChange='handleWebDav'>
         开启WebDav服务
@@ -171,7 +171,7 @@ const handleJumpPath = () => {
       </MySwitch>
     </div>
     <div class='settingspace'></div>
-    <div class='settinghead'>:主机(Host)</div>
+    <div class='settinghead'>主机(Host)</div>
     <div class='settingrow'>
       <a-input-search tabindex="-1"
                       :disabled="settingStore.webDavEnable"
@@ -187,7 +187,7 @@ const handleJumpPath = () => {
       </a-input-search>
     </div>
     <div class='settingspace'></div>
-    <div class='settinghead'>:端口(Port)</div>
+    <div class='settinghead'>端口(Port)</div>
     <div class='settingrow'>
       <a-input-number
         :disabled="settingStore.webDavEnable"
@@ -197,7 +197,7 @@ const handleJumpPath = () => {
         @update:model-value='cb({ webDavPort: $event })' />
     </div>
     <div class='settingspace'></div>
-    <div class='settinghead'>:目录缓存时间(秒)</div>
+    <div class='settinghead'>目录缓存时间(秒)</div>
     <div class='settingrow'>
       <a-input-number
         tabindex='-1' :style="{ width: '320px' }"
@@ -206,7 +206,7 @@ const handleJumpPath = () => {
         @update:model-value='cb({ webDavListCache: $event })' />
     </div>
     <div class='settingspace'></div>
-    <div class='settinghead'>:资源访问策略</div>
+    <div class='settinghead'>资源访问策略</div>
     <div class='settingrow'>
       <a-select tabindex="-1" :style="{ width: '320px' }"
                 :model-value="settingStore.webDavStrategy"
@@ -217,7 +217,7 @@ const handleJumpPath = () => {
       </a-select>
     </div>
     <div class='settingspace'></div>
-    <div class='settinghead'>:用户列表（修改和查看）</div>
+    <div class='settinghead'>用户列表（修改和查看）</div>
     <div class='settingrow'>
       <a-select @popup-visible-change='handleGetUsers'
                 @change='handleChangeUser'
@@ -289,7 +289,7 @@ const handleJumpPath = () => {
     <template v-if="settingStore.webDavStrategy === 'proxy'">
       <div class='settingspace'></div>
       <div class="settinghead">
-        :缓存大小
+        缓存大小
         <span class="opblue" style="margin-left: 12px; padding: 0 12px">( {{ settingStore.debugCacheSize }} )</span>
       </div>
       <div class="settingrow">

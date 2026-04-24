@@ -1,17 +1,14 @@
 <p align="center">
-  <img src="https://github.com/gaozhangmin/staticResource/blob/master/images/icon.png" alt="NebulaGraph Data Intelligence Suite(ngdi)">
+  <img src="https://github.com/gaozhangmin/staticResource/blob/master/images/icon.png" alt="小白羊网盘">
 </p>
 <p align="center">
     <br> English | <a href="README-CN.md">中文</a>
 </p>
 <p align="center">
-    <em>小白羊网盘 - 多网盘统一管理 + 智能媒体库 + 高速下载.</em>
+    <em>小白羊网盘 - 多网盘统一管理 + 智能媒体库 + 媒体服务器 + 高速下载.</em>
 </p>
 
 <p align="center">
-<!--   <a href="https://github.com/gaozhangmin/staticResource/blob/master/images/wechat_public_account.png" target="_blank">
-    <img src="https://img.shields.io/badge/-微信关注“小白羊网盘”公众号-orange.svg" alt="#" align="right">
-  </a> -->
   <a href="LICENSE" target="_blank">
     <img alt="MIT License" src="https://img.shields.io/github/license/gaozhangmin/aliyunpan?style=flat-square&logoColor=white" />
   </a>
@@ -39,7 +36,7 @@
   </a>
 
   <a href="https://github.com/gaozhangmin/aliyunpan/releases/latest" target="_blank">
-    <img alt="Star" src="https://img.shields.io/github/downloads/gaozhangmin/aliyunpan/total?style=social" />
+    <img alt="Downloads" src="https://img.shields.io/github/downloads/gaozhangmin/aliyunpan/total?style=social" />
   </a>
 
 </p>
@@ -50,39 +47,48 @@
 
 # 功能 [![](https://img.shields.io/badge/-%E5%8A%9F%E8%83%BD-blue)](#功能-)
 
+## 🖥️ 媒体服务器
+1. **多服务器支持**：支持连接 Emby、Jellyfin、Plex 等主流媒体服务器 <br>
+2. **自定义服务器图标**：可为每个媒体服务器设置自定义图标，轻松区分多个服务器实例 <br>
+3. **首页聚合**：继续观看、最近添加、电影、剧集、动漫等内容一览无余 <br>
+4. **全库浏览**：支持按媒体类型（电影、电视剧、动漫、纪录片等）分类浏览，海报墙与列表视图自由切换 <br>
+5. **媒体服务器搜索**：支持在媒体服务器内搜索，以及跨服务器聚合搜索 <br>
+6. **剧集详情**：显示剧集封面、评分、简介、分集列表，支持继续播放进度记录 <br>
+
 ## 🌟 多网盘支持
-1. **多平台网盘接入**：支持阿里云盘、百度网盘、123网盘、115网盘等主流网盘服务 <br>
-2. **WebDAV 连接**：支持通过 WebDAV 协议连接夸克网盘、天翼云等更多网盘服务 <br>
-3. **多账号管理**：支持同时登录和管理多个网盘账号 <br>
+7. **多平台网盘接入**：支持阿里云盘、百度网盘、123网盘、115网盘等主流网盘服务 <br>
+8. **WebDAV 连接**：支持通过 WebDAV 协议连接夸克网盘、天翼云等更多网盘服务 <br>
+9. **本地文件夹导入**：支持导入本地文件夹并识别刮削 TMDB 元数据 <br>
+10. **多账号管理**：支持同时登录和管理多个网盘账号 <br>
 
 ## 🎬 智能媒体库
-4. **TMDB 元数据刮削**：自动扫描网盘和本地文件，从 TMDB 获取电影、电视剧等媒体元数据 <br>
-5. **媒体库整理**：智能分类整理媒体文件，构建完整的个人媒体库 <br>
-6. **本地文件夹导入**：支持导入本地文件夹并识别刮削 TMDB 元数据 <br>
+11. **TMDB 元数据刮削**：自动扫描网盘和本地文件，从 TMDB 获取电影、电视剧等媒体元数据 <br>
+12. **媒体库整理**：智能分类整理媒体文件，构建完整的个人媒体库 <br>
+13. **聚合搜索**：跨网盘与本地库的统一搜索，快速定位媒体内容 <br>
 
 ## 🎥 强大播放功能
-7. **在线高清播放**：支持网盘中各种格式的高清原画视频播放 <br>
-8. **外挂字幕音轨**：支持外挂字幕、多音轨切换和播放速度调整 <br>
-9. **播放列表管理**：支持创建和管理播放列表 <br>
-10. **第三方播放器**：支持 MPV、IINA 等专业播放器 <br>
-
-## 🔗 媒体服务器连接
-11. **媒体服务器支持**：支持连接 Emby、Jellyfin、Plex 等媒体服务器（部分功能待开发）<br>
+14. **在线高清播放**：支持网盘中各种格式的高清原画视频播放 <br>
+15. **多音轨切换**：播放器内置多音轨支持，自由选择语言音轨 <br>
+16. **外挂字幕**：支持加载外挂字幕文件，多字幕轨道切换 <br>
+17. **视频流与清晰度切换**：支持多视频流切换，可根据网络状况选择不同清晰度 <br>
+18. **播放速度调整**：支持自定义播放速度 <br>
+19. **播放列表管理**：支持创建和管理播放列表 <br>
+20. **第三方播放器**：支持 MPV、IINA 等专业播放器 <br>
 
 ## ⚡ 高速下载
-12. **Aria2c 下载**：集成高速 Aria2c 下载引擎，支持多线程下载 <br>
-13. **远程下载**：可通过远程 Aria2 功能将文件直接下载到远程 VPS/NAS <br>
+21. **Aria2c 下载**：集成高速 Aria2c 下载引擎，支持多线程下载 <br>
+22. **远程下载**：可通过远程 Aria2 功能将文件直接下载到远程 VPS/NAS <br>
 
 ## 📁 文件管理
-14. **文件夹树视图**：提供特有的文件夹树，方便快速操作 <br>
-15. **智能排序**：显示文件夹体积，支持文件夹和文件的混合排序（文件名/体积/时间）<br>
-16. **批量操作**：支持批量重命名大量文件和多层嵌套的文件夹 <br>
-17. **快速预览**：可以快速复制文件，预览视频的雪碧图，并直接删除文件 <br>
-18. **海量文件处理**：能够管理数万文件夹和数万文件，一次性列出文件夹中的全部文件 <br>
-19. **批量传输**：支持一次性上传/下载百万级的文件/文件夹 <br>
+23. **文件夹树视图**：提供特有的文件夹树，方便快速操作 <br>
+24. **智能排序**：显示文件夹体积，支持文件夹和文件的混合排序（文件名/体积/时间）<br>
+25. **批量操作**：支持批量重命名大量文件和多层嵌套的文件夹 <br>
+26. **快速预览**：可以快速复制文件，预览视频的雪碧图，并直接删除文件 <br>
+27. **海量文件处理**：能够管理数万文件夹和数万文件，一次性列出文件夹中的全部文件 <br>
+28. **批量传输**：支持一次性上传/下载百万级的文件/文件夹 <br>
 
 ## 🖥️ 跨平台支持
-20. **全平台兼容**：支持 Windows 7-11、macOS、Linux 等操作系统 <br>
+29. **全平台兼容**：支持 Windows 7-11、macOS、Linux 等操作系统 <br>
 
 <a href="#readme">
     <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
@@ -90,8 +96,33 @@
 
 # 界面 [![](https://img.shields.io/badge/-%E7%95%8C%E9%9D%A2-blue)](#界面-)
 
+## 🖥️ 媒体服务器管理
+<img src="screenshot/截屏2026-04-24 23.03.06.png" width="400"> <img src="screenshot/截屏2026-04-24 23.04.22.png" width="400">
+
+*媒体服务器列表 & 服务器卡片视图（支持自定义图标）*
+
+## 🏠 媒体服务器主页
+<img src="screenshot/截屏2026-04-24 23.06.07.png" width="400"> <img src="screenshot/截屏2026-04-24 23.18.46.png" width="400">
+
+*继续观看 & 分类媒体库（图库视图）*
+
+## 🎬 剧集与媒体详情
+<img src="screenshot/截屏2026-04-24 23.06.22.png" width="400"> <img src="screenshot/截屏2026-04-24 23.28.52.png" width="400">
+
+*剧集详情页 & 剧集列表*
+
+## 📺 动漫与分类浏览
+<img src="screenshot/截屏2026-04-24 23.19.14.png" width="400"> <img src="screenshot/截屏2026-04-24 23.19.41.png" width="400">
+
+*动漫库 & 媒体服务器搜索*
+
+## 🔍 媒体库与聚合搜索
+<img src="screenshot/截屏2026-04-24 23.19.53.png" width="400"> <img src="screenshot/截屏2026-04-24 23.20.36.png" width="400">
+
+*聚合搜索 & 本地媒体库列表视图*
+
 ## 📂 文件管理界面
-<img src="images/file-manager.png" width="400"> <img src="images/folder-tree.png" width="400">
+<img src="screenshot/截屏2026-04-24 23.20.18.png" width="400"> <img src="images/folder-tree.png" width="400">
 
 *文件管理主界面 & 文件夹树视图*
 
@@ -100,15 +131,6 @@
 
 *多网盘账号管理 & 二维码登录*
 
-## 🎬 智能媒体库
-<img src="images/media-library.png" width="400"> <img src="images/movie-grid.png" width="400">
-
-*媒体库海报墙 & 网格视图*
-
-## 🎥 媒体详情
-<img src="images/movie-list.png" width="400"> <img src="images/movie-details.png" width="400">
-
-*媒体列表视图 & 电影详情页面*
 <a href="#readme">
 <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
 </a>
@@ -150,7 +172,7 @@
 
 ### 故障排除
 
--   "小白羊网盘" can’t be opened because the developer cannot be verified.
+-   "小白羊网盘" can't be opened because the developer cannot be verified.
 
     <p align="center">
       <img width="300" src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/a850d1ed-f177-47a3-a61e-b82d46c6c47d" />
@@ -178,22 +200,6 @@
 <a href="#readme">
     <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
 </a>
-
-[//]: # (# 请作者喝一杯咖啡 [![]&#40;https://img.shields.io/badge/-%E8%AF%B7%E5%96%9D%E5%92%96%E5%95%A1-blue&#41;]&#40;#请作者喝一杯咖啡-&#41;)
-
-[//]: # (<p align="center">)
-
-[//]: # (  <img height="360" src="https://github.com/gaozhangmin/staticResource/blob/master/images/wechat_pay.jpeg" />)
-
-[//]: # (  <img height="360" src="https://github.com/gaozhangmin/staticResource/blob/master/images/alipay.jpeg" />)
-
-[//]: # (</p>)
-
-[//]: # (<a href="#readme">)
-
-[//]: # (    <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">)
-
-[//]: # (</a>)
 
 # 交流社区 [![](https://img.shields.io/badge/-%E4%BA%A4%E6%B5%81%E7%A4%BE%E5%8C%BA-blue)](#交流社区-)
 

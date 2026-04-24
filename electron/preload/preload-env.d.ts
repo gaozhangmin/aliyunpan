@@ -33,4 +33,9 @@ declare interface Window {
   WebOpenUrl: any
   WebShutDown: any
   WebSetProxy: any
+  MsImageCacheSyncConfig: any
+  MsImageCacheStats: () => Promise<{ totalBytes: number; servers: unknown[] }>
+  MsImageCacheClear: (serverId?: string) => Promise<{ cleared: number }>
+  TvBoxInvoke: (channel: string, data: unknown) => Promise<unknown>
+  IsMainPage: boolean
 }

@@ -11,7 +11,7 @@ const cb = (val: any) => {
 
 <template>
   <div class="settingcard">
-    <div class="settinghead">:上传时 最大并行任务数</div>
+    <div class="settinghead">上传时 最大并行任务数</div>
     <div class="settingrow">
       <a-select tabindex="-1" :style="{ width: '252px' }" :model-value="settingStore.uploadFileMax" :popup-container="'#SettingDiv'" @update:model-value="cb({ uploadFileMax: $event })">
         <a-option :value="1">
@@ -31,7 +31,7 @@ const cb = (val: any) => {
     </div>
 
     <div class="settingspace"></div>
-    <div class="settinghead">:上传时 总上传速度限制</div>
+    <div class="settinghead">上传时 总上传速度限制</div>
     <div class="settingrow" style="display: flex; align-items: center">
       <a-input-number
         tabindex="-1"
@@ -63,7 +63,7 @@ const cb = (val: any) => {
     </div>
 
     <div class="settingspace"></div>
-    <div class="settinghead">:上传时 使用秒传模式</div>
+    <div class="settinghead">上传时 使用秒传模式</div>
     <div class="settingrow">
       <MySwitch :value="settingStore.downUploadBreakFile" @update:value="cb({ downUploadBreakFile: $event })"> 上传中 只通过秒传上传，暂停不能秒传的任务</MySwitch>
       <a-popover position="bottom">
@@ -81,7 +81,7 @@ const cb = (val: any) => {
   </div>
 
   <div class="settingcard">
-    <div class="settinghead">:上传下载完 自动关机</div>
+    <div class="settinghead">上传下载完 自动关机</div>
     <div class="settingrow">
       <MySwitch :value="settingStore.downAutoShutDown > 0"
                 @update:value="cb({ downAutoShutDown: $event ? 1 : 0 })">
@@ -100,12 +100,12 @@ const cb = (val: any) => {
       </a-popover>
     </div>
     <div class="settingspace"></div>
-    <div class="settinghead">:上传下载完 声音提示</div>
+    <div class="settinghead">上传下载完 声音提示</div>
     <div class="settingrow">
       <MySwitch :value="settingStore.downFinishAudio" @update:value="cb({ downFinishAudio: $event })"> 下载中/上传中 的任务全部完成后声音提示</MySwitch>
     </div>
     <div class="settingspace"></div>
-    <div class="settinghead">:上传下载时 优先传输小文件</div>
+    <div class="settinghead">上传下载时 优先传输小文件</div>
     <div class="settingrow">
       <MySwitch :value="settingStore.downSmallFileFirst" @update:value="cb({ downSmallFileFirst: $event })"> 下载中/上传中 优先传输小于100MB的文件</MySwitch>
       <a-popover position="right">
@@ -121,13 +121,13 @@ const cb = (val: any) => {
     </div>
 
     <div class="settingspace"></div>
-    <div class="settinghead">:上传下载时 任务栏显示总进度</div>
+    <div class="settinghead">上传下载时 任务栏显示总进度</div>
     <div class="settingrow">
       <MySwitch :value="settingStore.downSaveShowPro" @update:value="cb({ downSaveShowPro: $event })"> 下载中/上传中 在任务栏显示总进度</MySwitch>
     </div>
     <div class="settingspace"></div>
     <div class="settinghead">
-      :上传下载时 预先过滤文件
+      上传下载时 预先过滤文件
       <a-popover position="bottom">
         <i class="iconfont iconbulb" />
         <template #content>

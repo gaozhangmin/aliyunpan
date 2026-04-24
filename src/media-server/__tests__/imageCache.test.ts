@@ -3,7 +3,7 @@ import { toMsCacheUrl } from '../imageCache'
 
 describe('toMsCacheUrl', () => {
   it('returns mscache URL when serverId and url are provided', () => {
-    const result = toMsCacheUrl('server1', 'http://192.168.1.1:8096/Items/abc/Images/Primary?quality=80')
+    const result = toMsCacheUrl('server1', 'http://192.168.1.1:8096/Items/abc/Images/Primary?quality=90')
     expect(result).toMatch(/^mscache:\/\/server1\/[A-Za-z0-9\-_]+$/)
   })
 

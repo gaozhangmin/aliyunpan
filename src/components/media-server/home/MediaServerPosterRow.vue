@@ -2,7 +2,7 @@
   <div class="home-section">
     <div class="home-section-header">
       <h4>{{ title }}</h4>
-      <a-button v-if="showSeeAll && items.length > 0" type="text" class="see-all-button" @click="$emit('see-all')">查看全部</a-button>
+      <a-button v-if="showSeeAll && items.length > 0" type="text" class="see-all-button" @click="$emit('see-all')">{{ seeAllLabel }}</a-button>
       <span v-else-if="loading">加载中...</span>
       <span v-else-if="errorText">{{ errorText }}</span>
       <span v-else>{{ items.length }} 项</span>
@@ -125,6 +125,7 @@ const props = withDefaults(defineProps<{
   showPosterLabels?: boolean
   showTopOverlay?: boolean
   showSeeAll?: boolean
+  seeAllLabel?: string
   enableContextMenu?: boolean
   headingMode?: 'title' | 'parent-or-title'
   subtitleMode?: 'overview' | 'title' | 'year-only' | 'year-or-overview' | 'year-or-parent-or-overview'
@@ -133,6 +134,7 @@ const props = withDefaults(defineProps<{
   showPosterLabels: true,
   showTopOverlay: false,
   showSeeAll: true,
+  seeAllLabel: '查看全部',
   enableContextMenu: false,
   headingMode: 'title',
   subtitleMode: 'overview'

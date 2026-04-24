@@ -1,5 +1,5 @@
 {
-  "appId": "com.alixby.app",
+  "appId": "com.xbyboxplayer.app",
   "productName": "小白羊 BoxPlayer",
   "protocols": [
     {
@@ -19,7 +19,7 @@
   "mac": {
     "icon": "./static/images/icon.icns",
     "type": "distribution",
-    "artifactName": "alixby-${version}-mac-${arch}.${ext}",
+    "artifactName": "xbyboxplayer-${version}-mac-${arch}.${ext}",
     "darkModeSupport": true,
     "hardenedRuntime": true,
     "gatekeeperAssess": false,
@@ -39,7 +39,7 @@
   "linux": {
     "icon": "./static/images/icon_256x256.png",
     "category": "Network",
-    "artifactName": "alixby-${version}-linux-${arch}.${ext}",
+    "artifactName": "xbyboxplayer-${version}-linux-${arch}.${ext}",
     "extraResources": [
       { "from": "./static/images/icon_30x30.png", "to": "./images/icon_30x30.png"},
       { "from": "./static/images/icon_64x64.png", "to": "./images/icon_64x64.png"},
@@ -55,7 +55,7 @@
   },
   "win": {
     "icon": "./static/images/icon_256x256.ico",
-    "artifactName": "alixby-${version}-win-${arch}.${ext}",
+    "artifactName": "xbyboxplayer-${version}-win-${arch}.${ext}",
     "requestedExecutionLevel": "asInvoker",
     "extraResources": [
       { "from": "./static/images/icon_64x64.png", "to": "./images/icon_64x64.png"},

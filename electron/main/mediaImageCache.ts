@@ -1,10 +1,8 @@
 // electron/main/mediaImageCache.ts
-import { app, ipcMain, protocol } from 'electron'
+import { app, ipcMain, net, protocol } from 'electron'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync } from 'node:fs'
 import { readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
-import http from 'node:http'
-import https from 'node:https'
 import path from 'node:path'
 
 // ──────────────────────────────────────────────────────────────────
@@ -50,6 +48,8 @@ function decodeOriginalUrl(encoded: string): string {
   return decodeURIComponent(decoded)
 }
 
+const UA = 'BoxPlayer'
+
 /** 构建鉴权请求头 */
 function buildAuthHeaders(config: CachedServerConfig): Record<string, string> {
   const APP_NAME = 'XbyBoxPlayer'
@@ -59,7 +59,8 @@ function buildAuthHeaders(config: CachedServerConfig): Record<string, string> {
     return {
       'X-Plex-Token': config.accessToken || '',
       'X-Plex-Product': APP_NAME,
-      'X-Plex-Client-Identifier': config.deviceId || ''
+      'X-Plex-Client-Identifier': config.deviceId || '',
+      'User-Agent': UA
     }
   }
 
@@ -76,50 +77,57 @@ function buildAuthHeaders(config: CachedServerConfig): Record<string, string> {
   if (config.type === 'emby') {
     return {
       'X-Emby-Authorization': authValue,
-      'X-Emby-Token': config.accessToken || ''
+      'X-Emby-Token': config.accessToken || '',
+      'User-Agent': UA
     }
   }
-  return { Authorization: authValue }
+  return { Authorization: authValue, 'User-Agent': UA }
 }
 
-/** 用 Node http/https 拉取图片，返回 Buffer 和 Content-Type */
+/** 用 Electron net 模块拉取图片（与渲染进程共用 Chromium 网络栈，继承代理/TLS 能力） */
 function fetchImage(
   url: string,
   headers: Record<string, string>
 ): Promise<{ buffer: Buffer; contentType: string }> {
   return new Promise((resolve, reject) => {
-    const parsed = new URL(url)
-    const isHttps = parsed.protocol === 'https:'
-    const mod = isHttps ? https : http
-    const req = mod.request(
-      {
-        hostname: parsed.hostname,
-        port: parsed.port || (isHttps ? 443 : 80),
-        path: parsed.pathname + parsed.search,
-        method: 'GET',
-        headers,
-        rejectUnauthorized: false
-      },
-      (res) => {
-        if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
-          res.resume()
-          reject(new Error(`HTTP ${res.statusCode ?? 'unknown'}`))
-          return
-        }
-        const contentType = (res.headers['content-type'] ?? 'image/jpeg')
-          .split(';')[0]
-          .trim()
-        const chunks: Buffer[] = []
-        res.on('data', (chunk: Buffer) => chunks.push(chunk))
-        res.on('end', () => resolve({ buffer: Buffer.concat(chunks), contentType }))
-        res.on('error', reject)
-      }
-    )
-    req.on('error', reject)
-    req.setTimeout(10000, () => {
-      req.destroy()
+    const req = net.request({ url, method: 'GET' })
+
+    for (const [key, val] of Object.entries(headers)) {
+      req.setHeader(key, val)
+    }
+
+    const timer = setTimeout(() => {
+      req.abort()
       reject(new Error('Image fetch timeout'))
+    }, 15000)
+
+    req.on('response', (res) => {
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        clearTimeout(timer)
+        res.resume()
+        reject(new Error(`HTTP ${res.statusCode}`))
+        return
+      }
+      const contentType = ((res.headers['content-type'] as string) ?? 'image/jpeg')
+        .split(';')[0]
+        .trim()
+      const chunks: Buffer[] = []
+      res.on('data', (chunk: Buffer) => chunks.push(chunk))
+      res.on('end', () => {
+        clearTimeout(timer)
+        resolve({ buffer: Buffer.concat(chunks), contentType })
+      })
+      res.on('error', (err: Error) => {
+        clearTimeout(timer)
+        reject(err)
+      })
     })
+
+    req.on('error', (err: Error) => {
+      clearTimeout(timer)
+      reject(err)
+    })
+
     req.end()
   })
 }
@@ -191,7 +199,10 @@ async function handleRequest(
   let buffer: Buffer
   let contentType: string
   try {
-    const headers = buildAuthHeaders(config)
+    const isForbidUrl = originalUrl.includes('younoyes') || originalUrl.includes('onatoshi')
+    const headers = isForbidUrl
+      ? { ...buildAuthHeaders(config), 'User-Agent': 'SenPlayer' }
+      : buildAuthHeaders(config)
     ;({ buffer, contentType } = await fetchImage(originalUrl, headers))
   } catch (e) {
     console.error('[mscache] fetchImage failed. url:', originalUrl, e)

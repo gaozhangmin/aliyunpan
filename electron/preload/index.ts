@@ -188,6 +188,14 @@ window.MsImageCacheClear = async function(serverId?: string) {
   }
 }
 
+window.TvBoxInvoke = async function(channel: string, data: unknown) {
+  try {
+    return await ipcRenderer.invoke(channel, data)
+  } catch (e: unknown) {
+    throw e
+  }
+}
+
 function createRightMenu() {
   window.addEventListener('contextmenu', (e) => {
       if (e) e.preventDefault()

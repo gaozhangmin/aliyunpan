@@ -11,6 +11,7 @@ declare type VideoQuality = 'Origin' | 'QHD' | 'FHD' | 'HD' | 'SD' | 'LD'
 export interface SettingState {
   // 应用设置
   uiTheme: string
+  uiDefaultTab: string
   uiImageMode: string
   uiExitOnClose: boolean
   uiLaunchAutoCheckUpdate: boolean
@@ -139,6 +140,7 @@ export interface SettingState {
 const setting: SettingState = {
   // 应用设置
   uiTheme: 'system',
+  uiDefaultTab: 'pan',
   uiImageMode: 'fill',
   uiExitOnClose: false,
   uiLaunchAutoCheckUpdate: false,
@@ -275,6 +277,7 @@ function _loadSetting(val: any) {
   console.log('_loadSetting', val)
   // 应用设置
   setting.uiTheme = defaultValue(val.uiTheme, ['system', 'light', 'dark'])
+  setting.uiDefaultTab = defaultValue(val.uiDefaultTab, ['pan', 'media', 'media-server'])
   setting.uiImageMode = defaultValue(val.uiImageMode, ['fill', 'width', 'web'])
   setting.uiExitOnClose = defaultBool(val.uiExitOnClose, false)
   setting.uiLaunchAutoCheckUpdate = defaultBool(val.uiLaunchAutoCheckUpdate, false)

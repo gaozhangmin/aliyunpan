@@ -22,6 +22,63 @@ import { isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
 export const UserTokenMap = new Map<string, ITokenInfo>()
 
 export default class UserDAL {
+  private static async ensureTokenReady(token: ITokenInfo): Promise<ITokenInfo | null> {
+    try {
+      if (isCloud123User(token)) {
+        const expireTime = new Date(token.expire_time || 0).getTime()
+        if (!token.access_token || (expireTime && expireTime <= Date.now())) {
+          const refreshed = await refreshCloud123AccessToken(token.refresh_token)
+          if (!refreshed) return null
+          refreshed.user_id = token.user_id || refreshed.user_id
+          refreshed.user_name = refreshed.user_name || token.user_name
+          refreshed.nick_name = refreshed.nick_name || token.nick_name
+          refreshed.avatar = refreshed.avatar || token.avatar
+          refreshed.tokenfrom = 'cloud123'
+          this.SaveUserToken(refreshed)
+          return refreshed
+        }
+        return token
+      }
+      if (isBaiduUser(token)) {
+        const expireTime = new Date(token.expire_time || 0).getTime()
+        if (!token.access_token || (expireTime && expireTime <= Date.now())) {
+          const refreshed = await refreshBaiduAccessToken(token.refresh_token)
+          if (!refreshed) return null
+          refreshed.user_id = token.user_id || refreshed.user_id
+          refreshed.user_name = refreshed.user_name || token.user_name
+          refreshed.nick_name = refreshed.nick_name || token.nick_name
+          refreshed.avatar = refreshed.avatar || token.avatar
+          refreshed.tokenfrom = 'baidu'
+          this.SaveUserToken(refreshed)
+          return refreshed
+        }
+        return token
+      }
+      if (isDrive115User(token)) {
+        if (!token.user_id) {
+          const nextId = build115UserId(token.refresh_token, token.access_token)
+          if (nextId) token.user_id = nextId
+        }
+        const expireTime = new Date(token.expire_time || 0).getTime()
+        if (!token.access_token || (expireTime && expireTime <= Date.now())) {
+          const refreshed = await refresh115AccessToken(token.refresh_token)
+          if (!refreshed?.access_token) return null
+          token.access_token = refreshed.access_token
+          if (refreshed.refresh_token) token.refresh_token = refreshed.refresh_token
+          if (typeof refreshed.expires_in === 'number') token.expires_in = refreshed.expires_in
+          token.token_type = refreshed.token_type || token.token_type
+          token.expire_time = new Date(Date.now() + (token.expires_in || 0) * 1000).toISOString()
+          this.SaveUserToken(token)
+        }
+        return token.user_id ? token : null
+      }
+      const ok = !!(token.user_id && (await AliUser.ApiTokenRefreshAccount(token, false)))
+      return ok ? token : null
+    } catch (err: any) {
+      DebugLog.mSaveDanger('ensureTokenReady', err)
+      return null
+    }
+  }
 
   static async aLoadFromDB() {
     const tokenList = await DB.getUserAll()
@@ -31,58 +88,15 @@ export default class UserDAL {
     UserTokenMap.clear()
     try {
       for (const token of tokenList) {
-        if (isBaiduUser(token)) {
-          const expireTime = new Date(token.expire_time || 0).getTime()
-          const shouldLogin = (token.user_id && token.user_id === defaultUser) || (!defaultUser && !hasLogin)
-          if (!token.access_token || (expireTime && expireTime <= Date.now())) {
-            const refreshed = await refreshBaiduAccessToken(token.refresh_token)
-            if (refreshed) {
-              refreshed.user_id = token.user_id || refreshed.user_id
-              if (shouldLogin) {
-                await this.UserLogin(refreshed).catch()
-                hasLogin = true
-                if (!defaultUser || refreshed.user_id === defaultUser) defaultUserAdd = true
-              } else {
-                await this.UserAutoSign(refreshed)
-              }
-            }
-          } else if (token.user_id) {
-            if (shouldLogin) {
-              await this.UserLogin(token).catch()
-              hasLogin = true
-              if (!defaultUser || token.user_id === defaultUser) defaultUserAdd = true
-            } else {
-              await this.UserAutoSign(token)
-            }
-          }
-          continue
-        }
-        if (isDrive115User(token)) {
-          if (!token.user_id) {
-            const nextId = build115UserId(token.refresh_token, token.access_token)
-            if (nextId) {
-              token.user_id = nextId
-              UserDAL.SaveUserToken(token)
-            }
-          }
-          if (token.user_id) {
-            if ((token.user_id && token.user_id === defaultUser) || (!defaultUser && !hasLogin)) {
-              await this.UserLogin(token).catch()
-              hasLogin = true
-              if (!defaultUser || token.user_id === defaultUser) defaultUserAdd = true
-            } else {
-              await this.UserAutoSign(token)
-            }
-          }
-          continue
-        }
-        if (token.user_id && await AliUser.ApiTokenRefreshAccount(token, false)) {
-          if (token.user_id === defaultUser) {
-            defaultUserAdd = true
-            await this.UserLogin(token).catch()
-          } else {
-            await this.UserAutoSign(token)
-          }
+        const prepared = await this.ensureTokenReady(token)
+        if (!prepared?.user_id) continue
+        const shouldLogin = (prepared.user_id && prepared.user_id === defaultUser) || (!defaultUser && !hasLogin)
+        if (shouldLogin) {
+          await this.UserLogin(prepared).catch()
+          hasLogin = true
+          if (!defaultUser || prepared.user_id === defaultUser) defaultUserAdd = true
+        } else {
+          await this.UserAutoSign(prepared)
         }
       }
     } catch (err: any) {
@@ -244,9 +258,12 @@ export default class UserDAL {
   static async UserLogin(token: ITokenInfo) {
     const loadingKey = 'userlogin_' + Date.now().toString()
     message.loading('加载用户信息中...', 0, loadingKey)
-    await DB.saveValueString('uiDefaultUser', token.user_id)
-    useUserStore().userLogin(token.user_id)
-    UserTokenMap.set(token.user_id, token)
+    const initialUserId = token.user_id
+    if (initialUserId) {
+      await DB.saveValueString('uiDefaultUser', initialUserId)
+      useUserStore().userLogin(initialUserId)
+      UserTokenMap.set(initialUserId, token)
+    }
     if (isCloud123User(token)) {
       // 非阿里云盘仅刷新 OpenApi Token（123 走自己的刷新逻辑）
       await AliUser.OpenApiTokenRefreshAccount(token, false)
@@ -270,6 +287,17 @@ export default class UserDAL {
         UserDAL.UserAutoSign(token)
       ])
     }
+    if (token.user_id && token.user_id !== initialUserId) {
+      if (initialUserId) {
+        UserTokenMap.delete(initialUserId)
+        await DB.deleteUser(initialUserId)
+      }
+      await DB.saveValueString('uiDefaultUser', token.user_id)
+      useUserStore().userLogin(token.user_id)
+    } else if (token.user_id) {
+      useUserStore().userLogin(token.user_id)
+    }
+    UserDAL.SaveUserToken(token)
     window.WebUserToken({
       user_id: token.user_id,
       name: token.user_name,
@@ -391,8 +419,6 @@ export default class UserDAL {
     }
     if (!isLogin) {
       message.warning('该账号需要重新登陆[' + token.name + ']')
-      await DB.deleteUser(user_id)
-      UserTokenMap.delete(user_id)
       return false
     }
     await this.UserLogin(token).catch()

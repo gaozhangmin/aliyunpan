@@ -272,6 +272,14 @@ defineExpose({
   min-width: 24px;
 }
 
+.filebtn .gengduo[disabled] {
+  opacity: 0;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
 .filesize {
   width: 80px;
   flex-shrink: 0;

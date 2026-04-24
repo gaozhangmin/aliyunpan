@@ -27,7 +27,13 @@
             :selectedGenre="selectedGenre"
             :selectedYear="selectedYear"
             :selectedRating="selectedRating"
+            :fromHomeNavigation="homeNavigationActive"
             @categoryDrillDown="handleCategoryDrillDown"
+            @categoryDrillBack="handleCategoryDrillBack"
+            @navigateCategory="handleHomeNavigateCategory"
+            @navigateFolder="handleFolderSelected"
+            @homeNavigationBack="handleHomeNavigationBack"
+            @manageLibrary="handleManageLibrary"
           />
         </div>
       </template>
@@ -86,11 +92,13 @@ const props = defineProps<{
 
 // 状态
 const showScanProgress = ref(false)
-const activeCategory = ref('recently-added')
+const activeCategory = ref('home')
 const selectedFolder = ref<MediaLibraryFolder>()
 const selectedGenre = ref('')
 const selectedYear = ref('')
 const selectedRating = ref('')
+const homeNavigationActive = ref(false)
+const workspaceMode = ref<'library' | 'tvbox'>('library')
 const scanPercent = computed(() => {
   if (mediaStore.scanTotal === 0) return 0
   return Math.round((mediaStore.scanProgress / mediaStore.scanTotal) * 100)
@@ -98,8 +106,57 @@ const scanPercent = computed(() => {
 const scanCurrent = computed(() => mediaStore.scanProgress)
 const scanTotal = computed(() => mediaStore.scanTotal)
 
-const resolveFolderUserId = async (folder: MediaLibraryFolder): Promise<string> => {
-  if (folder.userId) return folder.userId
+const resetDrillDownFilters = () => {
+  selectedGenre.value = ''
+  selectedYear.value = ''
+  selectedRating.value = ''
+}
+
+const isSameFolderSource = (candidate: MediaLibraryFolder | undefined, folder: MediaLibraryFolder) => {
+  if (!candidate) return false
+  if (candidate.id && folder.id && candidate.id === folder.id) return true
+  if (candidate.fileId && folder.fileId && candidate.fileId === folder.fileId && candidate.driveId === folder.driveId) return true
+  if (candidate.path && folder.path && candidate.path === folder.path && candidate.driveId === folder.driveId) return true
+  return false
+}
+
+const inferFolderContextFromMedia = (folder: MediaLibraryFolder) => {
+  const relatedItems = mediaStore.mediaItems.filter((item) => {
+    if (item.folderId && folder.id && item.folderId === folder.id) return true
+    if (item.folderPath && folder.path && item.folderPath === folder.path) return true
+    return false
+  })
+
+  for (const item of relatedItems) {
+    for (const file of item.driveFiles || []) {
+      if (file.userId || file.driveId) {
+        return {
+          userId: file.userId || '',
+          driveId: file.driveId || folder.driveId || ''
+        }
+      }
+    }
+  }
+
+  return {
+    userId: '',
+    driveId: folder.driveId || ''
+  }
+}
+
+const resolveFolderRuntimeContext = async (folder: MediaLibraryFolder): Promise<{ userId: string; driveId: string }> => {
+  if (folder.userId && folder.driveId) {
+    return {
+      userId: folder.userId,
+      driveId: folder.driveId
+    }
+  }
+
+  const inferred = inferFolderContextFromMedia(folder)
+  if (inferred.userId && inferred.driveId) {
+    return inferred
+  }
+
   const userList = await UserDAL.GetUserListFromDB()
   const matched = userList.find((token) => {
     if (folder.driveId === 'cloud123' || folder.driveServerId === 'cloud123') return isCloud123User(token)
@@ -107,16 +164,20 @@ const resolveFolderUserId = async (folder: MediaLibraryFolder): Promise<string> 
     if (folder.driveId === 'baidu' || folder.driveServerId === 'baidu') return isBaiduUser(token)
     return isAliyunUser(token)
   })
-  return matched?.user_id || panTreeStore.user_id
+
+  return {
+    userId: folder.userId || inferred.userId || matched?.user_id || panTreeStore.user_id,
+    driveId: folder.driveId || inferred.driveId || panTreeStore.drive_id
+  }
 }
 
 // 方法
 const handleFolderSelected = async (folder: MediaLibraryFolder) => {
+  homeNavigationActive.value = false
+  mediaNav.value?.syncSelectedFolder?.(folder)
   selectedFolder.value = folder
   activeCategory.value = ''
-  selectedGenre.value = ''
-  selectedYear.value = ''
-  selectedRating.value = ''
+  resetDrillDownFilters()
   console.log('Selected folder:', folder)
 
   // 直接加载文件夹内容并显示
@@ -151,8 +212,40 @@ const loadFolderContent = async (folder: MediaLibraryFolder) => {
 
     // 使用 fileId 字段，如果不存在则从复合ID中提取
     const fileId = folder.fileId || (folder.id.includes('_') ? folder.id.split('_')[1] : folder.id)
-    const userId = await resolveFolderUserId(folder)
-    const driveId = folder.driveId
+    const runtimeContext = await resolveFolderRuntimeContext(folder)
+    const userId = runtimeContext.userId
+    const driveId = runtimeContext.driveId
+
+    if (!isSameFolderSource(selectedFolder.value, folder)) {
+      selectedFolder.value = {
+        ...folder,
+        userId,
+        driveId
+      }
+    } else {
+      selectedFolder.value = {
+        ...(selectedFolder.value as MediaLibraryFolder),
+        userId,
+        driveId
+      }
+    }
+
+    mediaStore.addFolder({
+      ...folder,
+      userId,
+      driveId
+    })
+
+    console.warn('[MediaLibraryDebug] loadFolderContent context', {
+      folderId: folder.id,
+      folderName: folder.name,
+      folderFileId: folder.fileId,
+      folderPath: folder.path,
+      originalUserId: folder.userId,
+      originalDriveId: folder.driveId,
+      resolvedUserId: userId,
+      resolvedDriveId: driveId
+    })
 
     console.log('Using file_id:', fileId, 'userId:', userId, 'driveId:', driveId)
 
@@ -304,25 +397,45 @@ const processVideoFileFromApi = async (apiFile: any, folder: MediaLibraryFolder)
 }
 
 const handleCategorySelected = (category: string) => {
+  homeNavigationActive.value = false
+  mediaNav.value?.syncActiveCategory?.(category)
   activeCategory.value = category
   selectedFolder.value = undefined
-  selectedGenre.value = ''
-  selectedYear.value = ''
-  selectedRating.value = ''
+  resetDrillDownFilters()
   console.log('Selected category:', category)
 }
 
+const handleHomeNavigateCategory = (category: string) => {
+  homeNavigationActive.value = true
+  mediaNav.value?.syncActiveCategory?.(category)
+  activeCategory.value = category
+  selectedFolder.value = undefined
+  resetDrillDownFilters()
+}
+
 const handleGenreSelected = (genre: string) => {
+  homeNavigationActive.value = false
+  activeCategory.value = 'all'
+  selectedFolder.value = undefined
+  resetDrillDownFilters()
   selectedGenre.value = genre
   console.log('Selected genre:', genre)
 }
 
 const handleYearSelected = (year: string) => {
+  homeNavigationActive.value = false
+  activeCategory.value = 'all'
+  selectedFolder.value = undefined
+  resetDrillDownFilters()
   selectedYear.value = year
   console.log('Selected year:', year)
 }
 
 const handleRatingSelected = (rating: string) => {
+  homeNavigationActive.value = false
+  activeCategory.value = 'all'
+  selectedFolder.value = undefined
+  resetDrillDownFilters()
   selectedRating.value = rating
   console.log('Selected rating:', rating)
 }
@@ -337,7 +450,10 @@ const handleCategoryDrillDown = (data: {
     year?: string
   }
 }) => {
+  homeNavigationActive.value = false
   console.log('Category drill down:', data)
+
+  resetDrillDownFilters()
 
   // 根据钻取数据更新筛选条件
   if (data.filter.genre) {
@@ -350,28 +466,49 @@ const handleCategoryDrillDown = (data: {
     selectedYear.value = data.filter.year
   }
 
-  // 切换到对应的媒体内容视图
-  switch (data.categoryType) {
-    case 'genre':
-      activeCategory.value = 'search' // 切换到搜索视图以显示筛选结果
-      break
-    case 'rating':
-      activeCategory.value = 'search'
-      break
-    case 'year':
-      activeCategory.value = 'search'
-      break
-    default:
-      activeCategory.value = 'search'
-  }
+  // 退出聚合分类页，进入普通媒体结果列表
+  activeCategory.value = 'all'
 
   // 清除选中的文件夹
   selectedFolder.value = undefined
 }
 
+const handleCategoryDrillBack = (data: { categoryType: string }) => {
+  homeNavigationActive.value = false
+  selectedFolder.value = undefined
+  resetDrillDownFilters()
+
+  switch (data.categoryType) {
+    case 'genre':
+      activeCategory.value = 'genres'
+      break
+    case 'year':
+      activeCategory.value = 'years'
+      break
+    case 'rating':
+      activeCategory.value = 'ratings'
+      break
+    default:
+      activeCategory.value = 'home'
+      break
+  }
+}
+
 const handleRefresh = async () => {
   console.log('Refreshing media library...')
   message.info('刷新功能待实现')
+}
+
+const handleManageLibrary = () => {
+  mediaNav.value?.openLibraryManager?.()
+}
+
+const handleHomeNavigationBack = () => {
+  homeNavigationActive.value = false
+  selectedFolder.value = undefined
+  resetDrillDownFilters()
+  activeCategory.value = 'home'
+  mediaNav.value?.syncActiveCategory?.('home')
 }
 
 
@@ -456,8 +593,46 @@ defineExpose({
 
 .library-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   height: 100%;
+}
+
+
+.workspace-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--color-neutral-3);
+  flex-shrink: 0;
+  background: var(--color-bg-1);
+}
+
+.workspace-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--color-text-2);
+  transition: background-color .2s, color .2s;
+}
+
+.workspace-tab:hover {
+  background: var(--color-fill-2);
+  color: var(--color-text-1);
+}
+
+.workspace-tab.active {
+  background: rgb(var(--primary-6));
+  color: #fff;
+}
+
+.workspace-tab i {
+  font-size: 14px;
 }
 
 

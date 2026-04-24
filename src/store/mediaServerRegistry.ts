@@ -218,14 +218,6 @@ const useMediaServerRegistryStore = defineStore('media-server-registry', {
     },
     setCurrentServer(id: string) {
       this.preferences.currentServerId = id
-      const index = this.servers.findIndex((server) => server.id === id)
-      if (index >= 0) {
-        this.servers[index] = {
-          ...this.servers[index],
-          lastUsedAt: Date.now(),
-          updatedAt: Date.now()
-        }
-      }
       this.save()
     },
     setCurrentServerLine(lineKey?: string) {
@@ -241,8 +233,7 @@ const useMediaServerRegistryStore = defineStore('media-server-registry', {
           ...current,
           selectedLineName: nextSelectedLineName
         }),
-        updatedAt: Date.now(),
-        lastUsedAt: Date.now()
+        updatedAt: Date.now()
       }
       this.save()
     },

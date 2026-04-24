@@ -65,8 +65,12 @@ const handleImportAsar = () => {
 
 <template>
   <div class='settingcard'>
-    <div class='appver'>小白羊 BoxPlayer {{ getAppVersion }}</div>
-    <div class='appver'>
+    <div class='settings-app-hero'>
+      <div class='settings-app-badge'>Application</div>
+      <div class='appver'>小白羊 BoxPlayer {{ getAppVersion }}</div>
+      <div class='settings-app-subtitle'>统一配置桌面外观、启动行为、更新策略与系统集成体验</div>
+    </div>
+    <div class='settings-app-actions'>
       <a-button type='outline' status='success' size='small' tabindex='-1' @click='handleUpdateLog'>
         更新日志
       </a-button>
@@ -83,7 +87,7 @@ const handleImportAsar = () => {
     </div>
     <div class='settingspace'></div>
     <div class='settingspace'></div>
-    <div class='settinghead'>:界面颜色</div>
+    <div class='settinghead'>界面颜色</div>
     <div class='settingrow'>
       <a-radio-group type='button' tabindex='-1' :model-value='settingStore.uiTheme'
                      @update:model-value='cb({ uiTheme: $event })'>
@@ -92,9 +96,23 @@ const handleImportAsar = () => {
         <a-radio tabindex='-1' value='dark'>深色模式</a-radio>
       </a-radio-group>
     </div>
+    <div class='settingspace'></div>
+    <div class='settinghead'>默认启动 Tab</div>
+    <div class='settingrow'>
+      <a-radio-group
+        type='button'
+        tabindex='-1'
+        :model-value='settingStore.uiDefaultTab'
+        @update:model-value='cb({ uiDefaultTab: $event })'
+      >
+        <a-radio tabindex='-1' value='pan'>网盘</a-radio>
+        <a-radio tabindex='-1' value='media-server'>媒体服务器</a-radio>
+        <a-radio tabindex='-1' value='media'>媒体库</a-radio>
+      </a-radio-group>
+    </div>
     <template v-if="['win32', 'darwin'].includes(os.platform())">
       <div class='settingspace'></div>
-      <div class='settinghead'>:开机自启设置</div>
+      <div class='settinghead'>开机自启设置</div>
       <div class='settingrow'>
         <MySwitch :value='settingStore.uiLaunchStart' @update:value='cb({ uiLaunchStart: $event })'>
           开机时自动启动
@@ -108,7 +126,7 @@ const handleImportAsar = () => {
       </div>
     </template>
     <div class='settingspace'></div>
-    <div class='settinghead'>:检查更新设置</div>
+    <div class='settinghead'>检查更新设置</div>
     <div class='settingrow'>
       <MySwitch :value='settingStore.uiLaunchAutoCheckUpdate'
                 @update:value='cb({ uiLaunchAutoCheckUpdate: $event })'>
@@ -116,14 +134,14 @@ const handleImportAsar = () => {
       </MySwitch>
     </div>
     <div class='settingspace'></div>
-    <div class='settinghead'>:自动签到设置</div>
+    <div class='settinghead'>自动签到设置</div>
     <div class='settingrow'>
       <MySwitch :value='settingStore.uiLaunchAutoSign' @update:value='cb({ uiLaunchAutoSign: $event })'>
         启动时自动签到
       </MySwitch>
     </div>
     <div class='settingspace'></div>
-    <div class='settinghead'>:关闭时彻底退出</div>
+    <div class='settinghead'>关闭时彻底退出</div>
     <div class='settingrow'>
       <MySwitch :value='settingStore.uiExitOnClose' @update:value='cb({ uiExitOnClose: $event })'>
         关闭窗口时彻底退出小白羊
@@ -140,7 +158,7 @@ const handleImportAsar = () => {
       </a-popover>
     </div>
     <div class='settingspace'></div>
-    <div class='settinghead'>:软件更新代理</div>
+    <div class='settinghead'>软件更新代理</div>
     <div class='settingrow'>
       <MySwitch :value='settingStore.uiUpdateProxyEnable' @update:value='cb({ uiUpdateProxyEnable: $event })'>
         开启软件更新代理
@@ -157,11 +175,57 @@ const handleImportAsar = () => {
 </template>
 
 <style scoped>
+.settings-app-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.settings-app-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(88, 130, 255, 0.12);
+  color: var(--color-primary-6);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .appver {
-  margin-bottom: 0.5em;
   font-weight: 600;
-  font-size: 20px;
+  font-size: 28px;
   line-height: 1.4;
-  text-align: center;
+}
+
+.settings-app-subtitle {
+  max-width: 520px;
+  color: var(--color-text-2);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.settings-app-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.settings-app-actions :deep(.arco-btn) {
+  margin-left: 0 !important;
+}
+
+:global(html.dark) .settings-app-badge {
+  background: rgba(120, 160, 255, 0.2);
+  color: #dbe6ff;
+}
+
+@media (max-width: 900px) {
+  .appver {
+    font-size: 24px;
+  }
 }
 </style>

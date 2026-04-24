@@ -93,7 +93,7 @@ const handleAriaOff = (tip: boolean) => {
     <a-alert banner>可以 把文件直接下载到远程电脑里</a-alert>
     <div class="settingspace"></div>
 
-    <div class="settinghead">:Aria远程下载文件保存位置</div>
+    <div class="settinghead">Aria远程下载文件保存位置</div>
     <div class="settingrow">
       <a-input tabindex="-1" :disabled="!settingStore.AriaIsLocal" :style="{ width: '300px' }" placeholder="粘贴远程电脑上的文件夹路径" v-model:model-value="ariaSavePath" />
       <a-popover position="bottom">
@@ -110,7 +110,7 @@ const handleAriaOff = (tip: boolean) => {
       </a-popover>
     </div>
     <div class="settingspace"></div>
-    <div class="settinghead">:Aria连接地址RPC IP:Port 或 域名:Port</div>
+    <div class="settinghead">Aria连接地址RPC IP:Port 或 域名:Port</div>
     <div class="settingrow">
       <a-input tabindex="-1" :disabled="!settingStore.AriaIsLocal" :style="{ width: '300px' }" placeholder="Aria2连接地址（IP:Port）" v-model:model-value="ariaUrl">
         <template #prefix> ws:// </template>
@@ -132,7 +132,7 @@ const handleAriaOff = (tip: boolean) => {
       </a-popover>
     </div>
     <div class="settingspace"></div>
-    <div class="settinghead">:Aria连接密码 secret</div>
+    <div class="settinghead">Aria连接密码 secret</div>
     <div class="settingrow">
       <a-input tabindex="-1" :disabled="!settingStore.AriaIsLocal" :style="{ width: '300px' }" placeholder="Aria2连接密码" v-model:model-value="ariaPwd" />
       <a-popover position="bottom">
@@ -147,7 +147,7 @@ const handleAriaOff = (tip: boolean) => {
       </a-popover>
     </div>
     <div class="settingspace"></div>
-    <div class="settinghead">:Aria使用ssl链接</div>
+    <div class="settinghead">Aria使用ssl链接</div>
     <div class="settingrow">
       <AntdCheckbox tabindex="-1" :checked="settingStore.ariaHttps" @change="(e:any)=>cb({ ariaHttps: e.target.checked })">使用ssl链接(wss 或 https)</AntdCheckbox>
 
@@ -164,7 +164,7 @@ const handleAriaOff = (tip: boolean) => {
       </a-popover>
     </div>
     <div class="settingspace"></div>
-    <div class="settinghead">:Aria连接状态</div>
+    <div class="settinghead">Aria连接状态</div>
     <div class="settingrow" v-show="settingStore.AriaIsLocal">
       <a-button type="outline" size="small" tabindex="-1" :loading="settingStore.ariaLoading" @click="handleAriaConn">当前是 本地模式，点击切换</a-button>
     </div>

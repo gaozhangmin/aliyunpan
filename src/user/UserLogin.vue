@@ -214,40 +214,18 @@ const handleClose = () => {
 }
 
 const handleOpenCloud123 = () => {
-  loginLoading.value = true
+  loginLoading.value = false
   clearOpenTimers()
   cloud123OpenTimer = setTimeout(() => {
     if (loginProvider.value !== 'cloud123' || !useUser.userShowLogin) return
-    const webview = document.getElementById('loginiframe123') as any
-    if (!webview) {
-      message.error('无法打开登录弹窗')
-      return
-    }
     const authUrl = buildCloud123AuthUrl()
-    webview.loadURL(authUrl)
-    webview.addEventListener('did-finish-load', () => {
-      loginLoading.value = false
-    })
-    webview.addEventListener('did-fail-load', () => {
-      loginLoading.value = false
-    })
-    const handleNav = (event: any) => {
-      const url = event?.url || ''
-      if (!url.includes('xbyboxplayer-oauth://callback')) return
-      try {
-        const parsed = new URL(url)
-        const code = parsed.searchParams.get('code') || ''
-        if (code) {
-          cloud123Code.value = code
-          submitCloud123Code()
-        }
-      } catch {
-        // ignore parse errors
-      }
-    }
-    webview.addEventListener('did-navigate', handleNav)
-    webview.addEventListener('will-redirect', handleNav)
-  }, 300)
+    window.Electron.shell.openExternal(authUrl)
+  }, 50)
+}
+
+const handleReopenCloud123 = () => {
+  const authUrl = buildCloud123AuthUrl()
+  window.Electron.shell.openExternal(authUrl)
 }
 
 const handleOpenBaidu = () => {
@@ -649,17 +627,15 @@ const loginSuccess = (token: ITokenInfo) => {
       <div v-else-if="loginProvider === 'cloud123'">
         <div id='logindiv'>
           <div class='logincontent'>
-            <div id="loginframediv" class="loginframe">
-              <a-spin class="loading" :size="32" v-if='loginLoading' tip="加载中，请稍后..." />
-              <Webview id="loginiframe123" v-show='!loginLoading'
-                       plugins nodeintegration disablewebsecurity
-                       webpreferences="allowRunningInsecureContent"
-                       src="about:blank" style="width: 100%; height: 400px; border: none; overflow: hidden" />
+            <div class="browser-login-hint">
+              <p style="margin: 32px 0 8px; font-size: 15px;">已在系统浏览器中打开 123 网盘授权页面</p>
+              <p style="color: var(--color-text-3); font-size: 13px;">请在浏览器中完成登录，授权后将自动跳转回应用</p>
+              <a-button style="margin-top: 16px;" @click="handleReopenCloud123">重新打开浏览器</a-button>
             </div>
-            <div class="cloud123-code">
-              <a-input v-model="cloud123Code" placeholder="授权 code（自动填充）" allow-clear />
-              <a-button type="primary" :loading="cloud123Loading" @click="submitCloud123Code">确认登录</a-button>
-            </div>
+<!--            <div class="cloud123-code">-->
+<!--              <a-input v-model="cloud123Code" placeholder="授权 code（自动填充）" allow-clear />-->
+<!--              <a-button type="primary" :loading="cloud123Loading" @click="submitCloud123Code">确认登录</a-button>-->
+<!--            </div>-->
           </div>
         </div>
       </div>

@@ -13,6 +13,15 @@ const BAIDU_APP_SECRET = Config.BAIDU_APP_SECRET
 const BAIDU_REDIRECT_URL = 'xbyboxplayer-oauth://callback'
 const BAIDU_SCOPE = 'basic,netdisk'
 
+const hashString = (value: string): string => {
+  let hash = 0
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash << 5) - hash + value.charCodeAt(i)
+    hash |= 0
+  }
+  return Math.abs(hash).toString(36)
+}
+
 const normalizeToken = (data: any): ITokenInfo | null => {
   if (!data?.access_token) return null
   const expiresIn = Number(data.expires_in || 0)
@@ -30,7 +39,7 @@ const normalizeToken = (data: any): ITokenInfo | null => {
     device_id: '',
     expires_in: expiresIn,
     token_type: data.token_type || 'Bearer',
-    user_id: '',
+    user_id: `baidu_${hashString(data.refresh_token || data.access_token)}`,
     user_name: '百度网盘',
     avatar: '',
     nick_name: '百度网盘',
@@ -136,7 +145,7 @@ export const exchangeBaiduCodeForToken = async (code: string): Promise<ITokenInf
       const info = await fetchBaiduUserInfo(token.access_token)
       if (info) {
         const uk = info.uk ?? info.user_id
-        if (uk) token.user_id = `baidu_${uk}`
+        if (!token.user_id && uk) token.user_id = `baidu_${uk}`
         token.user_name = info.netdisk_name || info.baidu_name || token.user_name
         token.nick_name = info.netdisk_name || info.baidu_name || token.nick_name
         token.avatar = info.avatar_url || token.avatar
@@ -183,7 +192,7 @@ export const refreshBaiduAccessToken = async (refreshToken: string): Promise<ITo
       const info = await fetchBaiduUserInfo(token.access_token)
       if (info) {
         const uk = info.uk ?? info.user_id
-        if (uk) token.user_id = `baidu_${uk}`
+        if (!token.user_id && uk) token.user_id = `baidu_${uk}`
         token.user_name = info.netdisk_name || info.baidu_name || token.user_name
         token.nick_name = info.netdisk_name || info.baidu_name || token.nick_name
         token.avatar = info.avatar_url || token.avatar

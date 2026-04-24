@@ -32,9 +32,9 @@ watch(
 
 <template>
   <a-layout style="height: 100%">
-    <a-layout-sider hide-trigger :width="158" class="xbyleft">
+    <a-layout-sider hide-trigger :width="208" class="xbyleft rss-sider">
       <div class="headdesc">好玩的插件</div>
-      <a-menu :style="{ width: '100%' }" class="xbyleftmenu"
+      <a-menu :style="{ width: '100%' }" class="xbyleftmenu rss-leftmenu"
               :selected-keys="[appStore.GetAppTabMenu]"
               @update:selected-keys="appStore.toggleTabMenu('rss', $event[0])">
         <a-menu-item key="RssXiMa">
@@ -92,5 +92,13 @@ watch(
 .iconnode-tree1,
 .iconshuzhuangtu {
   opacity: 0.8;
+}
+
+.rss-sider {
+  min-width: 208px;
+}
+
+.rss-leftmenu .arco-menu-item {
+  padding-right: 14px !important;
 }
 </style>

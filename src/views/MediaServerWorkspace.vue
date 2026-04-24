@@ -19,6 +19,9 @@
         <div class="toolbar-left">
           <a-button type="text" class="back-button" @click="handleBack">
             <template #icon><i class="iconfont iconarrow-left-2-icon" /></template>
+            <span class="back-button-server-icon">
+              <img :src="serverDisplayIcon(registry.currentServer)" :alt="registry.currentServer?.name || 'server'" />
+            </span>
             {{ currentBackLabel }}
           </a-button>
         </div>
@@ -36,54 +39,33 @@
             <template #icon><i class="iconfont iconlist" /></template>
             媒体管理
           </a-button>
-          <a-dropdown v-if="currentRoute.kind === 'home'" trigger="click" position="br">
-            <a-button type="outline">
-              <template #icon><i class="iconfont iconsetting-2-icon" /></template>
-              首页设置
+          <div v-if="currentRoute.kind === 'home'" class="home-poster-toggle">
+            <a-button
+              :type="homePosterMode === 'landscape' ? 'primary' : 'outline'"
+              @click="setHomePosterMode('landscape')"
+            >
+              横版
             </a-button>
-            <template #content>
-              <div class="home-settings-menu">
-                <div class="home-settings-title">主页内容</div>
-                <a-checkbox :model-value="homePreferences.showRecentlyAdded" @change="toggleHomePreference('showRecentlyAdded', $event)">显示最近添加</a-checkbox>
-                <a-checkbox :model-value="homePreferences.resumeNextUp" @change="toggleHomePreference('resumeNextUp', $event)">Next Up 支持重看</a-checkbox>
-                <a-checkbox :model-value="homePreferences.showPosterLabels" @change="toggleHomePreference('showPosterLabels', $event)">显示海报文字</a-checkbox>
-                <div class="home-settings-row">
-                  <span>Next Up 海报</span>
-                  <a-select :model-value="homePreferences.nextUpPosterType" size="mini" @change="setPosterType('nextUpPosterType', $event)">
-                    <a-option value="portrait">竖版</a-option>
-                    <a-option value="landscape">横版</a-option>
-                  </a-select>
-                </div>
-                <div class="home-settings-row">
-                  <span>最近添加海报</span>
-                  <a-select :model-value="homePreferences.recentlyAddedPosterType" size="mini" @change="setPosterType('recentlyAddedPosterType', $event)">
-                    <a-option value="portrait">竖版</a-option>
-                    <a-option value="landscape">横版</a-option>
-                  </a-select>
-                </div>
-                <div class="home-settings-row">
-                  <span>媒体库海报</span>
-                  <a-select :model-value="homePreferences.latestInLibraryPosterType" size="mini" @change="setPosterType('latestInLibraryPosterType', $event)">
-                    <a-option value="portrait">竖版</a-option>
-                    <a-option value="landscape">横版</a-option>
-                  </a-select>
-                </div>
-                <div class="home-settings-row">
-                  <span>Next Up 天数</span>
-                  <a-input-number
-                    :model-value="homePreferences.maxNextUpDays"
-                    size="mini"
-                    :min="0"
-                    :max="3650"
-                    @change="setMaxNextUpDays"
-                  />
-                </div>
-              </div>
-            </template>
-          </a-dropdown>
+            <a-button
+              :type="homePosterMode === 'portrait' ? 'primary' : 'outline'"
+              @click="setHomePosterMode('portrait')"
+            >
+              竖版
+            </a-button>
+          </div>
           <a-dropdown trigger="click" class="server-switch-dropdown">
             <a-button type="outline">
-              {{ registry.currentServer.name }} · {{ currentServerLineLabel }}
+              <span class="server-switch-trigger">
+                <span class="server-switch-trigger-icon">
+                  <img :src="serverDisplayIcon(registry.currentServer)" :alt="registry.currentServer.name" />
+                </span>
+                <span
+                  class="server-switch-trigger-text"
+                  :title="`${registry.currentServer.name} · ${currentServerLineLabel}`"
+                >
+                  {{ registry.currentServer.name }} · {{ currentServerLineLabel }}
+                </span>
+              </span>
             </a-button>
             <template #content>
               <div class="server-switch-menu">
@@ -203,6 +185,7 @@
                   :poster-type="homePreferences.nextUpPosterType"
                   :show-poster-labels="homePreferences.showPosterLabels"
                   :enable-context-menu="true"
+                  :see-all-label="`查看全部 (${currentHome.nextUpTotal || currentHome.nextUp.length})`"
                   heading-mode="parent-or-title"
                   subtitle-mode="year-only"
                   @select="handleLibraryItemClick($event.id, $event.title, $event)"
@@ -222,6 +205,7 @@
                   :show-poster-labels="homePreferences.showPosterLabels"
                   :enable-context-menu="true"
                   :show-top-overlay="true"
+                  :see-all-label="`查看全部 (${currentHome.latestTotal || currentHome.latest.length})`"
                   subtitle-mode="year-only"
                   @select="handleLibraryItemClick($event.id, $event.title, $event)"
                   @play="playHomeMediaItem"
@@ -240,6 +224,7 @@
                   :show-poster-labels="homePreferences.showPosterLabels"
                   :enable-context-menu="true"
                   :show-top-overlay="true"
+                  :see-all-label="`查看全部 (${section.library.total || section.library.items.length})`"
                   subtitle-mode="year-only"
                   @select="handleLibraryItemClick($event.id, $event.title, $event)"
                   @play="playHomeMediaItem"
@@ -248,13 +233,6 @@
                   @retry="retryHomeLibrarySection(section.library.id)"
                 />
               </template>
-
-              <div
-                v-if="homeLibrariesHasMore"
-                class="home-library-load-more"
-              >
-                <a-button type="outline" @click="loadMoreHomeLibraries()">加载更多媒体库</a-button>
-              </div>
 
               <MediaServerStatsRow :statistics="currentHome.statistics" />
             </template>
@@ -365,18 +343,34 @@
 <!--                </p>-->
               </div>
               <div v-if="currentRoute.kind === 'library-page' || currentRoute.kind === 'genre-page' || currentRoute.kind === 'studio-page'" class="listing-display-toggle">
-                <a-button
-                  :type="currentListingPosterType === 'portrait' ? 'primary' : 'outline'"
-                  @click="setCurrentListingPosterType('portrait')"
-                >
-                  竖版海报
-                </a-button>
-                <a-button
-                  :type="currentListingPosterType === 'landscape' ? 'primary' : 'outline'"
-                  @click="setCurrentListingPosterType('landscape')"
-                >
-                  横版海报
-                </a-button>
+                <div class="listing-toggle-group">
+                  <a-button
+                    :type="currentListingBrowseMode === 'grid' ? 'primary' : 'outline'"
+                    @click="setCurrentListingBrowseMode('grid')"
+                  >
+                    网格
+                  </a-button>
+                  <a-button
+                    :type="currentListingBrowseMode === 'list' ? 'primary' : 'outline'"
+                    @click="setCurrentListingBrowseMode('list')"
+                  >
+                    列表
+                  </a-button>
+                </div>
+                <div class="listing-toggle-group">
+                  <a-button
+                    :type="currentListingPosterType === 'portrait' ? 'primary' : 'outline'"
+                    @click="setCurrentListingPosterType('portrait')"
+                  >
+                    竖版海报
+                  </a-button>
+                  <a-button
+                    :type="currentListingPosterType === 'landscape' ? 'primary' : 'outline'"
+                    @click="setCurrentListingPosterType('landscape')"
+                  >
+                    横版海报
+                  </a-button>
+                </div>
               </div>
             </div>
 
@@ -396,9 +390,16 @@
                   :key="item.id"
                   class="library-card interactive"
                   :class="[listingCardClass, { 'library-card-hero': currentRoute.kind === 'library-root' }]"
-                    @click="handleLibraryItemClick(item.id, item.title, item)"
+                  @click="handleLibraryItemClick(item.id, item.title, item)"
+                >
+                  <div
+                    class="library-cover media-image-frame"
+                    :class="{
+                      'has-image': !!pickLibraryListingImage(item),
+                      'library-cover-fallback': !pickLibraryListingImage(item),
+                      'library-cover-list': currentListingBrowseMode === 'list' && currentRoute.kind !== 'library-root'
+                    }"
                   >
-                  <div class="library-cover media-image-frame" :class="{ 'has-image': !!pickLibraryListingImage(item) }">
                     <img
                       v-if="pickLibraryListingImage(item)"
                       :src="pickLibraryListingImage(item)"
@@ -411,9 +412,30 @@
                     <div v-if="currentRoute.kind === 'library-root'" class="library-cover-title">{{ getListingHeading(item) }}</div>
                     <div v-if="getListingOverlay(item)" class="listing-overlay-badge">{{ getListingOverlay(item) }}</div>
                   </div>
-                  <template v-if="currentRoute.kind !== 'library-root'">
+                  <template v-if="currentRoute.kind !== 'library-root' && currentListingBrowseMode === 'grid'">
                     <h4>{{ getListingHeading(item) }}</h4>
                     <div class="library-meta-line">{{ getListingYearLabel(item) }}</div>
+                  </template>
+                  <template v-else-if="currentRoute.kind !== 'library-root'">
+                    <div class="library-list-body">
+                      <div class="library-list-head">
+                        <div class="library-list-title-wrap">
+                          <h4>{{ getListingHeading(item) }}</h4>
+                        </div>
+                      </div>
+                      <div v-if="getListingMetaItems(item).length > 0" class="library-list-meta">
+                        <span
+                          v-for="meta in getListingMetaItems(item)"
+                          :key="`${item.id}-${meta}`"
+                          class="library-list-meta-chip"
+                        >
+                          {{ meta }}
+                        </span>
+                      </div>
+                      <p class="library-list-overview" :class="{ 'is-empty': !getListingOverview(item) }">
+                        {{ getListingOverview(item) || '暂无简介' }}
+                      </p>
+                    </div>
                   </template>
                 </button>
               </div>
@@ -439,18 +461,34 @@
                 <p>这里展示首页卡片对应的完整列表，行为和 macOS 里的“查看全部”一致，并支持滚动分页加载。</p>
               </div>
               <div class="listing-display-toggle">
-                <a-button
-                  :type="currentListingPosterType === 'portrait' ? 'primary' : 'outline'"
-                  @click="setCurrentListingPosterType('portrait')"
-                >
-                  竖版海报
-                </a-button>
-                <a-button
-                  :type="currentListingPosterType === 'landscape' ? 'primary' : 'outline'"
-                  @click="setCurrentListingPosterType('landscape')"
-                >
-                  横版海报
-                </a-button>
+                <div class="listing-toggle-group">
+                  <a-button
+                    :type="currentListingBrowseMode === 'grid' ? 'primary' : 'outline'"
+                    @click="setCurrentListingBrowseMode('grid')"
+                  >
+                    网格
+                  </a-button>
+                  <a-button
+                    :type="currentListingBrowseMode === 'list' ? 'primary' : 'outline'"
+                    @click="setCurrentListingBrowseMode('list')"
+                  >
+                    列表
+                  </a-button>
+                </div>
+                <div class="listing-toggle-group">
+                  <a-button
+                    :type="currentListingPosterType === 'portrait' ? 'primary' : 'outline'"
+                    @click="setCurrentListingPosterType('portrait')"
+                  >
+                    竖版海报
+                  </a-button>
+                  <a-button
+                    :type="currentListingPosterType === 'landscape' ? 'primary' : 'outline'"
+                    @click="setCurrentListingPosterType('landscape')"
+                  >
+                    横版海报
+                  </a-button>
+                </div>
               </div>
             </div>
 
@@ -462,7 +500,14 @@
                 :class="listingCardClass"
                 @click="handleLibraryItemClick(item.id, item.title, item)"
               >
-                <div class="library-cover media-image-frame" :class="{ 'has-image': !!pickCollectionListingImage(item) }">
+                <div
+                  class="library-cover media-image-frame"
+                  :class="{
+                    'has-image': !!pickCollectionListingImage(item),
+                    'library-cover-fallback': !pickCollectionListingImage(item),
+                    'library-cover-list': currentListingBrowseMode === 'list'
+                  }"
+                >
                   <img
                     v-if="pickCollectionListingImage(item)"
                     :src="pickCollectionListingImage(item)"
@@ -473,8 +518,31 @@
                   <div class="media-card-placeholder media-image-placeholder">{{ item.title.slice(0, 1) }}</div>
                   <div v-if="getListingOverlay(item)" class="listing-overlay-badge">{{ getListingOverlay(item) }}</div>
                 </div>
-                <h4>{{ getListingHeading(item) }}</h4>
-                <div class="library-meta-line">{{ getListingYearLabel(item) }}</div>
+                <template v-if="currentListingBrowseMode === 'grid'">
+                  <h4>{{ getListingHeading(item) }}</h4>
+                  <div class="library-meta-line">{{ getListingYearLabel(item) }}</div>
+                </template>
+                <template v-else>
+                  <div class="library-list-body">
+                    <div class="library-list-head">
+                      <div class="library-list-title-wrap">
+                        <h4>{{ getListingHeading(item) }}</h4>
+                      </div>
+                    </div>
+                    <div v-if="getListingMetaItems(item).length > 0" class="library-list-meta">
+                      <span
+                        v-for="meta in getListingMetaItems(item)"
+                        :key="`${item.id}-${meta}`"
+                        class="library-list-meta-chip"
+                      >
+                        {{ meta }}
+                      </span>
+                    </div>
+                    <p class="library-list-overview" :class="{ 'is-empty': !getListingOverview(item) }">
+                      {{ getListingOverview(item) || '暂无简介' }}
+                    </p>
+                  </div>
+                </template>
               </button>
             </div>
             <div v-if="currentCollectionError && currentCollectionItems.length === 0" class="home-error inline-home-error">
@@ -522,6 +590,9 @@
                   <div class="detail-top-back">
                     <a-button type="text" class="detail-back-button" @click="handleBack">
                       <template #icon><i class="iconfont iconarrow-left-2-icon" /></template>
+                      <span class="back-button-server-icon">
+                        <img :src="serverDisplayIcon(registry.currentServer)" :alt="registry.currentServer?.name || 'server'" />
+                      </span>
                       {{ currentBackLabel }}
                     </a-button>
                   </div>
@@ -748,105 +819,117 @@
                   <div class="detail-top-back">
                     <a-button type="text" class="detail-back-button" @click="handleBack">
                       <template #icon><i class="iconfont iconarrow-left-2-icon" /></template>
+                      <span class="back-button-server-icon">
+                        <img :src="serverDisplayIcon(registry.currentServer)" :alt="registry.currentServer?.name || 'server'" />
+                      </span>
                       {{ currentBackLabel }}
                     </a-button>
                   </div>
 
                   <div class="detail-hero-copy">
                     <div class="detail-overlay-grid">
-                      <div class="detail-title-block">
+                      <div class="detail-hero-poster media-image-frame" :class="{ 'has-image': !!detailHeroPosterImage }">
                         <img
-                          v-if="detailLogoUrl"
-                          class="detail-hero-logo"
-                          :src="detailLogoUrl"
-                          :alt="currentDetail.title"
-                          @error="handleDetailLogoError"
+                          v-if="detailHeroPosterImage"
+                          :src="detailHeroPosterImage"
+                          :alt="currentDetail.title || detailDisplayedItem.title"
+                          @load="handleCardImageLoad"
+                          @error="handleCardImageError"
                         />
-                        <div v-else class="detail-hero-title">{{ currentDetail.title }}</div>
+                        <div class="media-card-placeholder media-image-placeholder">{{ (currentDetail.title || detailDisplayedItem.title).slice(0, 1) }}</div>
                       </div>
 
-                      <div class="detail-actions-column">
-                        <div class="detail-icon-actions">
-                          <button
-                            class="detail-square-action"
-                            :class="{ active: detailIsWatched }"
-                            @click="handleDetailAction('watched')"
-                          >
-                            <span class="detail-square-glyph">✓</span>
-                          </button>
-                          <button
-                            class="detail-square-action"
-                            :class="{ active: detailIsFavorite }"
-                            @click="handleDetailAction('favorite')"
-                          >
-                            <span class="detail-square-glyph">{{ detailIsFavorite ? '★' : '♡' }}</span>
-                          </button>
-                          <a-trigger
-                            v-if="detailSourceOptions.length > 0"
-                            v-model:popup-visible="versionMenuVisible"
-                            trigger="click"
-                            position="bottom"
-                            auto-fit-popup-width="false"
-                            :unmount-on-close="false"
-                          >
-                            <button class="detail-square-action detail-square-action-version">
+                      <div class="detail-hero-main">
+                        <div class="detail-title-block">
+                          <img
+                            v-if="detailLogoUrl"
+                            class="detail-hero-logo"
+                            :src="detailLogoUrl"
+                            :alt="currentDetail.title"
+                            @error="handleDetailLogoError"
+                          />
+                          <div v-else class="detail-hero-title">{{ currentDetail.title }}</div>
+                        </div>
+
+                        <div class="detail-synopsis-column">
+                          <div v-if="detailEpisodeHeading" class="detail-episode-heading">{{ detailEpisodeHeading }}</div>
+                          <div class="detail-rating-line">
+                            <span v-if="typeof detailDisplayedItem.rating === 'number'" class="detail-star-rating">
+                              ★ {{ detailDisplayedItem.rating.toFixed(1) }}
+                            </span>
+                            <span v-if="detailGenreLine">{{ detailGenreLine }}</span>
+                          </div>
+                          <div class="detail-tech-line">
+                            {{ detailTechnicalLine }}
+                          </div>
+                          <div v-if="detailMetaBadges.length > 0" class="detail-meta-badges">
+                            <span v-for="badge in detailMetaBadges" :key="badge" class="detail-meta-badge">{{ badge }}</span>
+                          </div>
+                          <div class="detail-overview-block" :class="{ 'is-empty': !currentOverviewText }">
+                            <p
+                              class="detail-overview"
+                              :class="{ 'is-empty': !currentOverviewText }"
+                              :title="currentOverviewText || '暂无简介'"
+                            >
+                              {{ currentOverviewText || '暂无简介' }}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div class="detail-actions-column">
+                          <div class="detail-icon-actions">
+                            <button
+                              class="detail-square-action"
+                              :class="{ active: detailIsWatched }"
+                              @click="handleDetailAction('watched')"
+                            >
+                              <span class="detail-square-glyph">✓</span>
+                            </button>
+                            <button
+                              class="detail-square-action"
+                              :class="{ active: detailIsFavorite }"
+                              @click="handleDetailAction('favorite')"
+                            >
+                              <span class="detail-square-glyph">{{ detailIsFavorite ? '♥' : '♡' }}</span>
+                            </button>
+                            <a-trigger
+                              v-if="detailSourceOptions.length > 0"
+                              v-model:popup-visible="versionMenuVisible"
+                              trigger="click"
+                              position="bottom"
+                              auto-fit-popup-width="false"
+                              :unmount-on-close="false"
+                            >
+                              <button class="detail-square-action detail-square-action-version">
+                                <span class="detail-square-glyph">⋯</span>
+                              </button>
+                              <template #content>
+                                <div class="detail-version-menu">
+                                  <button
+                                  v-for="source in detailSourceOptions"
+                                  :key="source.id"
+                                  type="button"
+                                  class="detail-version-option"
+                                  :class="{ active: selectedSourceOption?.id === source.id }"
+                                  @click="selectSourceOption(source.id); versionMenuVisible = false"
+                                >
+                                  <div class="detail-version-main">
+                                    <span>{{ source.title }}</span>
+                                    <small v-if="source.fileSubLabel">{{ source.fileSubLabel }}</small>
+                                  </div>
+                                  <span v-if="selectedSourceOption?.id === source.id" class="detail-version-check">当前</span>
+                                </button>
+                                </div>
+                              </template>
+                            </a-trigger>
+                            <button v-else class="detail-square-action detail-square-action-version" disabled>
                               <span class="detail-square-glyph">⋯</span>
                             </button>
-                            <template #content>
-                              <div class="detail-version-menu">
-                                <button
-                                v-for="source in detailSourceOptions"
-                                :key="source.id"
-                                type="button"
-                                class="detail-version-option"
-                                :class="{ active: selectedSourceOption?.id === source.id }"
-                                @click="selectSourceOption(source.id); versionMenuVisible = false"
-                              >
-                                <div class="detail-version-main">
-                                  <span>{{ source.title }}</span>
-                                  <small v-if="source.fileSubLabel">{{ source.fileSubLabel }}</small>
-                                </div>
-                                <span v-if="selectedSourceOption?.id === source.id" class="detail-version-check">当前</span>
-                              </button>
-                              </div>
-                            </template>
-                          </a-trigger>
-                          <button v-else class="detail-square-action detail-square-action-version" disabled>
-                            <span class="detail-square-glyph">⋯</span>
-                          </button>
-                        </div>
+                          </div>
 
-                        <button class="detail-primary-play" @click="handleDetailPlay">
-                          <span class="detail-play-glyph">▶</span>
-                          <span>{{ detailPlayLabel }}</span>
-                        </button>
-                      </div>
-
-                      <div class="detail-synopsis-column">
-                        <div v-if="detailEpisodeHeading" class="detail-episode-heading">{{ detailEpisodeHeading }}</div>
-                        <div class="detail-rating-line">
-                          <span v-if="typeof detailDisplayedItem.rating === 'number'" class="detail-star-rating">
-                            ★ {{ detailDisplayedItem.rating.toFixed(1) }}
-                          </span>
-                          <span v-if="detailGenreLine">{{ detailGenreLine }}</span>
-                        </div>
-                        <div class="detail-tech-line">
-                          {{ detailTechnicalLine }}
-                        </div>
-                        <div v-if="detailMetaBadges.length > 0" class="detail-meta-badges">
-                          <span v-for="badge in detailMetaBadges" :key="badge" class="detail-meta-badge">{{ badge }}</span>
-                        </div>
-                        <div class="detail-overview-block" :class="{ 'is-empty': !currentOverviewText }">
-                          <p class="detail-overview" :class="{ 'is-empty': !currentOverviewText }">
-                            {{ currentOverviewText || '暂无简介' }}
-                          </p>
-                          <button
-                            v-if="shouldShowOverviewMore"
-                            type="button"
-                            class="detail-overview-more"
-                            @click="openOverviewModal"
-                          >
-                            查看更多
+                          <button class="detail-primary-play" @click="handleDetailPlay">
+                            <span class="detail-play-glyph">▶</span>
+                            <span class="detail-play-label">{{ detailPlayLabel }}</span>
                           </button>
                         </div>
                       </div>
@@ -1139,15 +1222,140 @@
             </div>
           </template>
         </a-modal>
+
         <a-modal
-          v-model:visible="overviewModalVisible"
+          v-model:visible="serverIconManagerVisible"
           :footer="false"
-          width="200px"
-          class="detail-overview-modal"
-          modal-class="detail-overview-modal-shell"
-          title="完整简介"
+          width="980px"
+          class="server-icon-manager-modal"
         >
-          <div class="detail-overview-modal-body">{{ currentOverviewText || '暂无简介' }}</div>
+          <div class="server-icon-manager">
+            <div class="server-icon-manager-header">
+              <div>
+                <div class="server-icon-manager-title">媒体服务器图标</div>
+                <div class="server-icon-manager-subtitle">
+                  导入图标集 URL，选择图标后会保存到本地并应用到当前媒体服务器
+                </div>
+              </div>
+              <div class="server-icon-manager-actions">
+                <a-input
+                  v-model="serverIconSearchText"
+                  allow-clear
+                  class="server-icon-search"
+                  placeholder="搜索图标集或图标"
+                />
+                <a-button type="outline" @click="openAddServerIconSetModal">添加图标集 URL</a-button>
+              </div>
+            </div>
+
+            <div class="server-icon-manager-layout">
+              <div class="server-icon-set-column">
+                <div class="server-icon-column-heading">图标集</div>
+                <div v-if="serverIconSetsLoading" class="server-icon-empty">
+                  <a-spin size="small" />
+                  <span>正在加载图标集…</span>
+                </div>
+                <div v-else-if="filteredServerIconSets.length === 0" class="server-icon-empty">
+                  <span>{{ serverIconSetError || '还没有可用的图标集' }}</span>
+                </div>
+                <div v-else class="server-icon-set-list">
+                  <button
+                    v-for="iconSet in filteredServerIconSets"
+                    :key="iconSet.id"
+                    type="button"
+                    class="server-icon-set-card"
+                    :class="{ active: selectedServerIconSetId === iconSet.id }"
+                    @click="selectedServerIconSetId = iconSet.id"
+                  >
+                    <div class="server-icon-set-preview">
+                      <img v-if="iconSet.previewImageURL" :src="iconSet.previewImageURL" :alt="iconSet.name" />
+                      <div v-else class="server-icon-set-preview-empty">图标</div>
+                    </div>
+                    <div class="server-icon-set-meta">
+                      <strong>{{ iconSet.name }}</strong>
+                      <span>{{ iconSet.description || '没有描述' }}</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <div class="server-icon-grid-column">
+                <div class="server-icon-grid-header">
+                  <div>
+                    <div class="server-icon-column-heading">{{ selectedServerIconSet?.name || '图标' }}</div>
+                    <div v-if="selectedServerIconSet?.description" class="server-icon-grid-subtitle">
+                      {{ selectedServerIconSet.description }}
+                    </div>
+                  </div>
+                  <div class="server-icon-grid-tools">
+                    <a-button
+                      v-if="selectedServerIconSet"
+                      type="text"
+                      size="small"
+                      @click="refreshServerIconSet(selectedServerIconSet)"
+                    >
+                      刷新图标集
+                    </a-button>
+                    <a-button
+                      v-if="selectedServerIconSet"
+                      type="text"
+                      size="small"
+                      status="danger"
+                      @click="removeServerIconSet(selectedServerIconSet.id)"
+                    >
+                      删除图标集
+                    </a-button>
+                  </div>
+                </div>
+                <div v-if="!selectedServerIconSet" class="server-icon-empty">
+                  <span>先在左侧选择一个图标集</span>
+                </div>
+                <div v-else-if="filteredSelectedServerIcons.length === 0" class="server-icon-empty">
+                  <span>没有匹配的图标</span>
+                </div>
+                <div v-else class="server-icon-grid">
+                  <button
+                    v-for="icon in filteredSelectedServerIcons"
+                    :key="icon.id"
+                    type="button"
+                    class="server-icon-item"
+                    :class="{ active: icon.url === registry.currentServer?.customIconUrl }"
+                    @click="applyCurrentServerIcon(icon.url)"
+                  >
+                    <div class="server-icon-item-preview">
+                      <img :src="icon.url" :alt="icon.name" />
+                    </div>
+                    <span>{{ icon.name }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </a-modal>
+
+        <a-modal
+          v-model:visible="addServerIconSetVisible"
+          :footer="false"
+          width="560px"
+          class="server-icon-add-modal"
+        >
+          <div class="server-icon-add-panel">
+            <div class="server-icon-manager-title">添加图标集 URL</div>
+            <div class="server-icon-manager-subtitle">
+              远程 JSON 需要包含 `name`、`description` 和 `icons[{ name, url }]`
+            </div>
+            <a-input
+              v-model="serverIconSetUrlInput"
+              allow-clear
+              class="server-icon-add-input"
+              placeholder="https://example.com/iconset.json"
+              @press-enter="submitServerIconSetUrl"
+            />
+            <div class="server-icon-add-footer">
+              <a-button @click="addServerIconSetVisible = false">取消</a-button>
+              <a-button type="primary" :loading="serverIconAdding" @click="submitServerIconSetUrl">导入图标集</a-button>
+            </div>
+          </div>
         </a-modal>
       </div>
     </div>
@@ -1160,6 +1368,9 @@ import MediaServerRegistryPanel from '../components/media-server/MediaServerRegi
 import MediaServerPosterRow from '../components/media-server/home/MediaServerPosterRow.vue'
 import MediaServerResumeRow from '../components/media-server/home/MediaServerResumeRow.vue'
 import MediaServerStatsRow from '../components/media-server/home/MediaServerStatsRow.vue'
+import jellyfinIcon from '../assets/media-server/jellyfin.svg'
+import embyIcon from '../assets/media-server/emby.svg'
+import plexIcon from '../assets/media-server/plex.svg'
 import { getMediaServerPlaybackInfo, getMediaServerSimilarItems, updateMediaServerFavoriteState, updateMediaServerPlayedState } from '../media-server/contentGateway'
 import { resolveMediaServerImage } from '../media-server/imageSources'
 import { toMsCacheUrl } from '../media-server/imageCache'
@@ -1170,7 +1381,7 @@ import message from '../utils/message'
 import { openExternal } from '../utils/electronhelper'
 import useMediaServerContentStore from '../store/mediaServerContent'
 import type { MediaServerCardItem, MediaServerHomeLibrarySection, MediaServerItemDetail, MediaServerLibraryNode, MediaServerMediaInfoCard, MediaServerSearchData, MediaServerSourceOption } from '../types/mediaServerContent'
-import useMediaServerHomePreferencesStore from '../store/mediaServerHomePreferences'
+import useMediaServerHomePreferencesStore, { type MediaServerPosterType } from '../store/mediaServerHomePreferences'
 
 const registry = useMediaServerRegistryStore()
 const wrapCacheUrl = (url: string): string => toMsCacheUrl(registry.currentServer?.id, url)
@@ -1201,14 +1412,40 @@ const detailSimilarLoading = ref(false)
 const detailSimilarError = ref('')
 const mediaInfoModalVisible = ref(false)
 const activeMediaInfoCard = ref<MediaServerMediaInfoCard | null>(null)
-const overviewModalVisible = ref(false)
 const selectedAudioStreamIndex = ref<number>(-1)
 const selectedSubtitleStreamIndex = ref<number>(-1)
 const detailLogoLoadFailed = ref(false)
 const MEDIA_SERVER_PLAYLIST_KEY = 'MediaServer_Playlist'
+const MEDIA_SERVER_ICON_SET_URLS_KEY = 'MediaServer_IconSetUrls'
 const MEDIA_SERVER_PRIMARY_LINE_KEY = '__primary__'
 const playlistIds = ref<string[]>([])
+const serverIconManagerVisible = ref(false)
+const addServerIconSetVisible = ref(false)
+const serverIconSearchText = ref('')
+const serverIconSetUrlInput = ref('')
+const serverIconSetsLoading = ref(false)
+const serverIconAdding = ref(false)
+const serverIconSetError = ref('')
+const serverIconSetUrls = ref<string[]>([])
+const selectedServerIconSetId = ref('')
 let homeRefreshTimer: ReturnType<typeof setInterval> | null = null
+
+type MediaServerIconSetPayload = {
+  name: string
+  description: string
+  icons: Array<{ name: string; url: string }>
+}
+
+type MediaServerIconSet = {
+  id: string
+  sourceUrl: string
+  name: string
+  description: string
+  previewImageURL: string
+  icons: Array<{ id: string; name: string; url: string }>
+}
+
+const serverIconSets = ref<MediaServerIconSet[]>([])
 
 const readLocalIdList = (key: string) => {
   try {
@@ -1225,6 +1462,7 @@ const writeLocalIdList = (key: string, items: string[]) => {
 }
 
 playlistIds.value = readLocalIdList(MEDIA_SERVER_PLAYLIST_KEY)
+serverIconSetUrls.value = readLocalIdList(MEDIA_SERVER_ICON_SET_URLS_KEY)
 
 const currentRoute = computed(() => navigation.currentRoute)
 const normalizeServerHost = (baseUrl: string) => {
@@ -1241,6 +1479,12 @@ const currentServerLineKey = computed(() => {
   const selectedLineName = registry.currentServerRecord?.selectedLineName || ''
   return selectedLineName || MEDIA_SERVER_PRIMARY_LINE_KEY
 })
+const providerIconByType = (type: MediaServerType) => {
+  if (type === 'jellyfin') return jellyfinIcon
+  if (type === 'emby') return embyIcon
+  return plexIcon
+}
+const serverDisplayIcon = (server?: MediaServerConfig) => server?.customIconUrl || providerIconByType(server?.type || 'jellyfin')
 const serverLineOptions = (server: MediaServerConfig) => {
   const options = [{
     key: MEDIA_SERVER_PRIMARY_LINE_KEY,
@@ -1302,8 +1546,8 @@ const enabledHomeLibraries = computed(() => {
   const hidden = new Set(homePreferences.hiddenHomeLibraryIds || [])
   return orderedHomeLibraries.value.filter((library) => !hidden.has(library.id))
 })
-const visibleHomeLibraries = computed(() => enabledHomeLibraries.value.slice(0, visibleHomeLibraryCount.value))
-const homeLibrariesHasMore = computed(() => enabledHomeLibraries.value.length > visibleHomeLibraryCount.value)
+const visibleHomeLibraries = computed(() => enabledHomeLibraries.value)
+const homeLibrariesHasMore = computed(() => false)
 const homeSectionDescriptors = computed<HomeSectionDescriptor[]>(() => [
   { key: 'resume', id: 'resume', title: '继续观看', kind: 'resume' },
   { key: 'nextup', id: 'nextup', title: '下一集', kind: 'nextup' },
@@ -1338,6 +1582,13 @@ const visibleHomeSections = computed(() => {
     if (section.kind === 'library') return !!section.library && visibleLibraryIds.has(section.library.id)
     return true
   })
+})
+const homePosterMode = computed<MediaServerPosterType>(() => {
+  const libraryPoster = homePreferences.latestInLibraryPosterType
+  if (libraryPoster === 'landscape') return 'landscape'
+  if (homePreferences.recentlyAddedPosterType === 'landscape') return 'landscape'
+  if (homePreferences.nextUpPosterType === 'landscape') return 'landscape'
+  return 'portrait'
 })
 const currentLibraryItems = computed<MediaServerLibraryNode[]>(() => {
   const serverId = registry.currentServer?.id || ''
@@ -1488,8 +1739,21 @@ const currentListingPosterType = computed(() => {
   }
   return 'portrait' as const
 })
-const listingShellClass = computed(() => currentListingPosterType.value === 'portrait' ? 'library-shell-portrait' : 'library-shell-landscape')
-const listingCardClass = computed(() => currentListingPosterType.value === 'portrait' ? 'library-card-portrait' : 'library-card-landscape')
+const currentListingBrowseMode = computed(() => {
+  if (currentRoute.value.kind === 'collection-page') return homePreferences.collectionBrowseMode
+  if (currentRoute.value.kind === 'library-page' || currentRoute.value.kind === 'genre-page' || currentRoute.value.kind === 'studio-page') {
+    return homePreferences.latestInLibraryBrowseMode
+  }
+  return 'grid' as const
+})
+const listingShellClass = computed(() => [
+  currentListingPosterType.value === 'portrait' ? 'library-shell-portrait' : 'library-shell-landscape',
+  currentListingBrowseMode.value === 'list' ? 'library-shell-list' : 'library-shell-grid'
+])
+const listingCardClass = computed(() => [
+  currentListingPosterType.value === 'portrait' ? 'library-card-portrait' : 'library-card-landscape',
+  currentListingBrowseMode.value === 'list' ? 'library-card-list' : 'library-card-grid'
+])
 const currentPanelLabel = computed(() => {
   switch (currentRoute.value.kind) {
     case 'home': return '主页'
@@ -1513,6 +1777,27 @@ const currentBackLabel = computed(() => {
   if (currentRoute.value.kind === 'person-page') return currentDetail.value?.title || currentRoute.value.title || '人物'
   if (currentRoute.value.kind === 'genre-page') return currentRoute.value.title || '类型'
   return registry.currentServer?.name || '返回'
+})
+const normalizedServerIconSearchText = computed(() => serverIconSearchText.value.trim().toLowerCase())
+const iconSetMatchesSearch = (iconSet: MediaServerIconSet, keyword: string) => {
+  if (!keyword) return true
+  if (iconSet.name.toLowerCase().includes(keyword) || iconSet.description.toLowerCase().includes(keyword)) return true
+  return iconSet.icons.some((icon) => icon.name.toLowerCase().includes(keyword))
+}
+const filteredServerIconSets = computed(() => {
+  const keyword = normalizedServerIconSearchText.value
+  return serverIconSets.value.filter((iconSet) => iconSetMatchesSearch(iconSet, keyword))
+})
+const selectedServerIconSet = computed(() => {
+  if (!serverIconSets.value.length) return undefined
+  return serverIconSets.value.find((iconSet) => iconSet.id === selectedServerIconSetId.value) || serverIconSets.value[0]
+})
+const filteredSelectedServerIcons = computed(() => {
+  const iconSet = selectedServerIconSet.value
+  if (!iconSet) return []
+  const keyword = normalizedServerIconSearchText.value
+  if (!keyword) return iconSet.icons
+  return iconSet.icons.filter((icon) => icon.name.toLowerCase().includes(keyword))
 })
 
 const upscaleHeroImageUrl = (value?: string) => {
@@ -1578,7 +1863,7 @@ const compareEpisodeItems = (left: MediaServerLibraryNode, right: MediaServerLib
 
 const pickLibraryListingImage = (item?: MediaServerLibraryNode) => {
   if (!item) return ''
-  if (currentRoute.value.kind === 'library-root') return pickLandscapeImage(item) || pickPrimaryImage(item)
+  if (currentRoute.value.kind === 'library-root') return pickPrimaryImage(item) || pickLandscapeImage(item)
   return currentListingPosterType.value === 'landscape'
     ? pickLandscapeImage(item)
     : pickPrimaryImage(item)
@@ -1613,6 +1898,12 @@ const detailBackdropUrl = computed(() => {
   return wrapCacheUrl(upscaleHeroImageUrl(currentDetail.value.images?.backdrop))
 })
 
+const detailHeroPosterImage = computed(() => {
+  const detailImage = pickPrimaryImage(currentDetail.value)
+  if (detailImage) return detailImage
+  return pickPrimaryImage(detailDisplayedItem.value)
+})
+
 const detailLogoUrl = computed(() => {
   if (!currentDetail.value || detailLogoLoadFailed.value) return ''
   return wrapCacheUrl(resolveMediaServerImage(currentDetail.value, 'logo'))
@@ -1629,13 +1920,15 @@ const detailSeasonMenu = computed<MediaServerLibraryNode[]>(() => {
 })
 
 const selectedDetailSeason = computed(() => detailSeasonMenu.value.find((season) => season.id === selectedSeasonId.value))
+const activeDetailSeason = computed(() => selectedDetailSeason.value || detailSeasonMenu.value[0])
 
 const detailEpisodeItems = computed<MediaServerLibraryNode[]>(() => {
   const serverId = registry.currentServer?.id || ''
   if (!serverId || !currentDetail.value) return []
   if (currentDetail.value.kind === 'series') {
-    if (detailSeasonMenu.value.length > 0) {
-      return [...content.currentLibraryPage(`${serverId}:${selectedSeasonId.value}`).filter((item) => item.kind === 'episode')].sort(compareEpisodeItems)
+    const season = activeDetailSeason.value
+    if (season) {
+      return [...content.currentLibraryPage(`${serverId}:${season.id}`).filter((item) => item.kind === 'episode')].sort(compareEpisodeItems)
     }
     return [...detailChildren.value.filter((item) => item.kind === 'episode')].sort(compareEpisodeItems)
   }
@@ -1650,8 +1943,8 @@ const pickDetailEpisodeCardImage = (item?: MediaServerLibraryNode) => {
   return pickEpisodeStillImage(item)
     || pickLandscapeImage(item)
     || pickPrimaryImage(item)
-    || pickLandscapeImage(selectedDetailSeason.value)
-    || pickPrimaryImage(selectedDetailSeason.value)
+    || pickLandscapeImage(activeDetailSeason.value)
+    || pickPrimaryImage(activeDetailSeason.value)
     || pickLandscapeImage(currentDetail.value)
     || pickPrimaryImage(currentDetail.value)
 }
@@ -1738,7 +2031,6 @@ const detailPlayLabel = computed(() => {
 })
 
 const currentOverviewText = computed(() => detailDisplayedItem.value.overview || currentDetail.value?.overview || '')
-const shouldShowOverviewMore = computed(() => currentOverviewText.value.trim().length > 72)
 
 const detailEpisodeHeading = computed(() => {
   if (!currentDetail.value) return ''
@@ -1798,8 +2090,7 @@ const detailMetaBadges = computed(() => {
 })
 
 const detailSeasonTitle = computed(() => {
-  const selectedSeason = detailSeasonMenu.value.find((season) => season.id === selectedSeasonId.value)
-  if (selectedSeason) return selectedSeason.title
+  if (activeDetailSeason.value) return activeDetailSeason.value.title
   if (currentDetail.value?.kind === 'season') return currentDetail.value.title
   return '内容'
 })
@@ -1882,6 +2173,136 @@ const serverTypeLabel = (type: MediaServerType) => {
   return 'Plex'
 }
 
+const selectFirstAvailableServerIconSet = () => {
+  if (!selectedServerIconSetId.value || !serverIconSets.value.some((iconSet) => iconSet.id === selectedServerIconSetId.value)) {
+    selectedServerIconSetId.value = serverIconSets.value[0]?.id || ''
+  }
+}
+
+const normalizeServerIconSet = (sourceUrl: string, payload: MediaServerIconSetPayload): MediaServerIconSet => ({
+  id: sourceUrl,
+  sourceUrl,
+  name: payload.name?.trim() || '未命名图标集',
+  description: payload.description?.trim() || '',
+  previewImageURL: payload.icons[0]?.url || '',
+  icons: (payload.icons || [])
+    .filter((icon) => typeof icon?.url === 'string' && icon.url.trim())
+    .map((icon, index) => ({
+      id: `${sourceUrl}#${index}`,
+      name: icon.name?.trim() || `图标 ${index + 1}`,
+      url: icon.url.trim()
+    }))
+})
+
+const loadServerIconSetFromUrl = async (sourceUrl: string) => {
+  const response = await fetch(sourceUrl)
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  const payload = await response.json() as MediaServerIconSetPayload
+  if (!payload || !Array.isArray(payload.icons)) throw new Error('图标集格式不正确')
+  const iconSet = normalizeServerIconSet(sourceUrl, payload)
+  if (!iconSet.icons.length) throw new Error('图标集里没有可用图标')
+  return iconSet
+}
+
+const loadAllServerIconSets = async () => {
+  if (!serverIconSetUrls.value.length) {
+    serverIconSets.value = []
+    selectedServerIconSetId.value = ''
+    return
+  }
+  serverIconSetsLoading.value = true
+  serverIconSetError.value = ''
+  const loaded: MediaServerIconSet[] = []
+  for (const sourceUrl of serverIconSetUrls.value) {
+    try {
+      loaded.push(await loadServerIconSetFromUrl(sourceUrl))
+    } catch (error: any) {
+      console.error(`failed to load media server icon set from ${sourceUrl}`, error)
+      serverIconSetError.value = `部分图标集加载失败：${error?.message || '未知错误'}`
+    }
+  }
+  serverIconSets.value = loaded
+  selectFirstAvailableServerIconSet()
+  serverIconSetsLoading.value = false
+}
+
+const openServerIconManager = () => {
+  serverIconManagerVisible.value = true
+}
+
+const openAddServerIconSetModal = () => {
+  addServerIconSetVisible.value = true
+}
+
+const submitServerIconSetUrl = async () => {
+  const sourceUrl = serverIconSetUrlInput.value.trim()
+  if (!sourceUrl) {
+    message.error('先输入图标集 URL')
+    return
+  }
+  if (serverIconSetUrls.value.includes(sourceUrl)) {
+    message.info('这个图标集已经导入过了')
+    addServerIconSetVisible.value = false
+    serverIconSetUrlInput.value = ''
+    return
+  }
+  serverIconAdding.value = true
+  try {
+    const iconSet = await loadServerIconSetFromUrl(sourceUrl)
+    serverIconSetUrls.value = [...serverIconSetUrls.value, sourceUrl]
+    writeLocalIdList(MEDIA_SERVER_ICON_SET_URLS_KEY, serverIconSetUrls.value)
+    serverIconSets.value = [...serverIconSets.value, iconSet]
+    selectedServerIconSetId.value = iconSet.id
+    addServerIconSetVisible.value = false
+    serverIconSetUrlInput.value = ''
+    serverIconSetError.value = ''
+    message.success('图标集已导入')
+  } catch (error: any) {
+    message.error(`导入失败：${error?.message || '未知错误'}`)
+  } finally {
+    serverIconAdding.value = false
+  }
+}
+
+const refreshServerIconSet = async (iconSet: MediaServerIconSet) => {
+  try {
+    const refreshed = await loadServerIconSetFromUrl(iconSet.sourceUrl)
+    serverIconSets.value = serverIconSets.value.map((item) => item.id === iconSet.id ? refreshed : item)
+    if (selectedServerIconSetId.value === iconSet.id) {
+      selectedServerIconSetId.value = refreshed.id
+    }
+    message.success('图标集已刷新')
+  } catch (error: any) {
+    message.error(`刷新失败：${error?.message || '未知错误'}`)
+  }
+}
+
+const removeServerIconSet = (iconSetId: string) => {
+  const target = serverIconSets.value.find((item) => item.id === iconSetId)
+  if (!target) return
+  serverIconSets.value = serverIconSets.value.filter((item) => item.id !== iconSetId)
+  serverIconSetUrls.value = serverIconSetUrls.value.filter((url) => url !== target.sourceUrl)
+  writeLocalIdList(MEDIA_SERVER_ICON_SET_URLS_KEY, serverIconSetUrls.value)
+  if (selectedServerIconSetId.value === iconSetId) {
+    selectedServerIconSetId.value = serverIconSets.value[0]?.id || ''
+  }
+  message.success('图标集已删除')
+}
+
+const applyCurrentServerIcon = (iconUrl: string) => {
+  const currentServer = registry.currentServer
+  if (!currentServer) return
+  registry.updateServer(currentServer.id, { customIconUrl: iconUrl })
+  message.success('媒体服务器图标已更新')
+}
+
+const resetCurrentServerIcon = () => {
+  const currentServer = registry.currentServer
+  if (!currentServer) return
+  registry.updateServer(currentServer.id, { customIconUrl: '' })
+  message.success('已恢复默认图标')
+}
+
 const handleAddServer = () => {
   navigation.openRegistry()
 }
@@ -1938,6 +2359,7 @@ const handleBack = () => {
 onMounted(() => {
   registry.ensureLoaded()
   homePreferences.ensureLoaded()
+  void loadAllServerIconSets()
   if (currentRoute.value.kind === 'search') searchText.value = currentRoute.value.query || ''
   if (registry.currentServer && currentRoute.value.kind === 'home') {
     loadCurrentServerHome(false)
@@ -1993,9 +2415,7 @@ const queueVisibleHomeLibrarySections = (force = false) => {
 }
 
 const loadMoreHomeLibraries = () => {
-  if (!homeLibrariesHasMore.value) return
-  visibleHomeLibraryCount.value = Math.min(currentHome.value.libraries.length, visibleHomeLibraryCount.value + HOME_LIBRARY_BATCH_SIZE)
-  queueVisibleHomeLibrarySections(false)
+  return
 }
 
 const retryHomeSection = (kind: 'resume' | 'latest' | 'nextup') => {
@@ -2088,10 +2508,15 @@ const openMediaServerPlayback = async (
   item: MediaServerCardItem | MediaServerItemDetail,
   options?: {
     sourceId?: string
+    sourceLabel?: string
+    sourceOptions?: Array<{ id: string, label: string, subLabel?: string }>
+    videoStreamIndex?: number
     audioStreamIndex?: number
     subtitleStreamIndex?: number
+    videoOptions?: Array<{ streamIndex: number, label: string }>
     audioOptions?: Array<{ streamIndex: number, label: string }>
     subtitleOptions?: Array<{ streamIndex: number, label: string }>
+    videoLabel?: string
     audioLabel?: string
     subtitleLabel?: string
     playlistLabel?: string
@@ -2104,6 +2529,7 @@ const openMediaServerPlayback = async (
     server,
     item.id,
     options?.sourceId,
+    options?.videoStreamIndex ?? -1,
     options?.audioStreamIndex ?? -1,
     options?.subtitleStreamIndex ?? -1
   )
@@ -2127,7 +2553,11 @@ const openMediaServerPlayback = async (
       media_server_id: server.id,
       media_server_item_id: item.id,
       media_server_source_id: options?.sourceId || '',
+      media_server_source_label: options?.sourceLabel || '',
       media_server_play_session_id: playback.playSessionId || '',
+      media_server_source_options: options?.sourceOptions || [],
+      media_server_video_label: options?.videoLabel || '',
+      media_server_video_options: options?.videoOptions || [],
       media_server_audio_label: options?.audioLabel || '',
       media_server_subtitle_label: options?.subtitleLabel || '',
       media_server_audio_options: options?.audioOptions || [],
@@ -2345,6 +2775,14 @@ const setPosterType = (key: 'nextUpPosterType' | 'recentlyAddedPosterType' | 'la
   homePreferences.setPartial({ [key]: value })
 }
 
+const setHomePosterMode = (value: MediaServerPosterType) => {
+  homePreferences.setPartial({
+    nextUpPosterType: value,
+    recentlyAddedPosterType: value,
+    latestInLibraryPosterType: value
+  })
+}
+
 const setCurrentListingPosterType = (value: 'portrait' | 'landscape') => {
   if (currentRoute.value.kind === 'collection-page') {
     if (currentCollectionKind.value === 'nextup') {
@@ -2354,8 +2792,18 @@ const setCurrentListingPosterType = (value: 'portrait' | 'landscape') => {
     homePreferences.setPartial({ recentlyAddedPosterType: value })
     return
   }
-  if (currentRoute.value.kind === 'library-page') {
+  if (currentRoute.value.kind === 'library-page' || currentRoute.value.kind === 'genre-page' || currentRoute.value.kind === 'studio-page') {
     homePreferences.setPartial({ latestInLibraryPosterType: value })
+  }
+}
+
+const setCurrentListingBrowseMode = (value: 'grid' | 'list') => {
+  if (currentRoute.value.kind === 'collection-page') {
+    homePreferences.setPartial({ collectionBrowseMode: value })
+    return
+  }
+  if (currentRoute.value.kind === 'library-page' || currentRoute.value.kind === 'genre-page' || currentRoute.value.kind === 'studio-page') {
+    homePreferences.setPartial({ latestInLibraryBrowseMode: value })
   }
 }
 
@@ -2380,6 +2828,42 @@ const getListingOverlay = (item: MediaServerLibraryNode) => {
   if (item.kind === 'series') return '剧集'
   if (item.kind === 'movie') return '电影'
   return ''
+}
+
+const formatRuntimeMinutes = (runtimeMinutes?: number) => {
+  if (!runtimeMinutes || runtimeMinutes <= 0) return ''
+  if (runtimeMinutes < 60) return `${runtimeMinutes} 分钟`
+  const hours = Math.floor(runtimeMinutes / 60)
+  const minutes = runtimeMinutes % 60
+  return minutes > 0 ? `${hours} 小时 ${minutes} 分钟` : `${hours} 小时`
+}
+
+const getListingKindLabel = (item: MediaServerLibraryNode) => {
+  if (item.kind === 'series') return '剧集'
+  if (item.kind === 'movie') return '电影'
+  if (item.kind === 'season') return item.seasonNumber ? `第 ${item.seasonNumber} 季` : '季度'
+  if (item.kind === 'episode') {
+    if (typeof item.seasonNumber === 'number' && typeof item.episodeNumber === 'number') {
+      return `S${item.seasonNumber} · E${item.episodeNumber}`
+    }
+    if (typeof item.episodeNumber === 'number') return `第 ${item.episodeNumber} 集`
+    return '剧集'
+  }
+  return item.collectionType || '媒体'
+}
+
+const getListingMetaItems = (item: MediaServerLibraryNode) => {
+  const parts = [
+    item.year ? `${item.year}` : '',
+    typeof item.rating === 'number' ? `评分 ${item.rating.toFixed(1)}` : '',
+    formatRuntimeMinutes(item.runtimeMinutes),
+    item.parentTitle && item.parentTitle !== item.title ? item.parentTitle : ''
+  ].filter(Boolean)
+  return [...new Set(parts)]
+}
+
+const getListingOverview = (item: MediaServerLibraryNode) => {
+  return item.overview || ''
 }
 
 const detailEpisodeLocator = (item: MediaServerLibraryNode) => {
@@ -2456,8 +2940,16 @@ const handleDetailPlay = async () => {
   const item = detailDisplayedItem.value
   if (!server || !item.id) return
   try {
+    const selectedVideoCard = detailMediaCards.value.find((card) => card.kind === 'video' && card.selected)
+      || detailMediaCards.value.find((card) => card.kind === 'video')
     const selectedAudioCard = detailMediaCards.value.find((card) => card.kind === 'audio' && card.selected)
     const selectedSubtitleCard = detailMediaCards.value.find((card) => card.kind === 'subtitle' && card.selected)
+    const videoOptions = detailMediaCards.value
+      .filter((card) => card.kind === 'video' && typeof card.streamIndex === 'number')
+      .map((card) => ({
+        streamIndex: card.streamIndex as number,
+        label: card.title
+      }))
     const audioOptions = detailMediaCards.value
       .filter((card) => card.kind === 'audio' && typeof card.streamIndex === 'number')
       .map((card) => ({
@@ -2472,8 +2964,17 @@ const handleDetailPlay = async () => {
       }))
     await openMediaServerPlayback(item, {
       sourceId: selectedSourceOption.value?.id || detailSourceOptions.value[0]?.id || '',
+      sourceLabel: selectedSourceOption.value?.title || detailSourceOptions.value[0]?.title || '',
+      sourceOptions: detailSourceOptions.value.map((source) => ({
+        id: source.id,
+        label: source.title,
+        subLabel: source.fileSubLabel
+      })),
+      videoStreamIndex: typeof selectedVideoCard?.streamIndex === 'number' ? selectedVideoCard.streamIndex : -1,
       audioStreamIndex: selectedAudioStreamIndex.value,
       subtitleStreamIndex: selectedSubtitleStreamIndex.value,
+      videoLabel: selectedVideoCard?.title || '',
+      videoOptions,
       audioLabel: selectedAudioCard?.title || '',
       subtitleLabel: selectedSubtitleCard?.title || '',
       audioOptions,
@@ -2508,11 +3009,6 @@ const openStudioSearch = (studio: string) => {
 const openExternalLink = (url: string) => {
   if (!url) return
   openExternal(url)
-}
-
-const openOverviewModal = () => {
-  if (!currentOverviewText.value) return
-  overviewModalVisible.value = true
 }
 
 const selectMediaInfoCard = (card: MediaServerMediaInfoCard) => {
@@ -2626,6 +3122,7 @@ watch(() => [
 const loadCurrentDetail = async (force = false) => {
   if (!registry.currentServer || (currentRoute.value.kind !== 'item-detail' && currentRoute.value.kind !== 'person-page')) return
   const detailId = currentRoute.value.kind === 'item-detail' ? currentRoute.value.itemId : currentRoute.value.personId
+  const shouldForceDetailLoad = force || currentRoute.value.kind === 'person-page'
   try {
     selectedSeasonId.value = ''
     selectedEpisodeId.value = ''
@@ -2634,7 +3131,7 @@ const loadCurrentDetail = async (force = false) => {
     detailSimilarError.value = ''
     if (force) detailSimilarItems.value = []
     await Promise.all([
-      content.loadItemDetail(registry.currentServer, detailId, force),
+      content.loadItemDetail(registry.currentServer, detailId, shouldForceDetailLoad),
       currentRoute.value.kind === 'person-page'
         ? content.loadPersonPage(registry.currentServer, detailId, force)
         : content.loadLibraryPage(registry.currentServer, detailId, force, false)
@@ -2661,8 +3158,8 @@ watch(() => [
 
 watch(() => [currentDetail.value?.id, currentDetail.value?.kind, detailSeasonMenu.value.map((item) => item.id).join(',')] as const, async ([detailId, detailKind]) => {
   if (!detailId) return
-  if (detailKind === 'series' && detailSeasonMenu.value.length > 0 && !selectedSeasonId.value) {
-    selectedSeasonId.value = detailSeasonMenu.value[0].id
+  if (detailKind === 'series' && detailSeasonMenu.value.length > 0 && !selectedDetailSeason.value) {
+    selectedSeasonId.value = activeDetailSeason.value?.id || ''
     if (registry.currentServer) {
       try {
         await content.loadLibraryPage(registry.currentServer, selectedSeasonId.value, false, false)
@@ -2695,7 +3192,6 @@ watch(() => detailDisplayedItem.value.id, () => {
   versionMenuVisible.value = false
   mediaInfoModalVisible.value = false
   activeMediaInfoCard.value = null
-  overviewModalVisible.value = false
   selectedAudioStreamIndex.value = -1
   selectedSubtitleStreamIndex.value = -1
 })
@@ -2827,7 +3323,7 @@ onUnmounted(() => {
 
 .workspace-toolbar {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto minmax(320px, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, auto);
   align-items: center;
   gap: 16px;
   margin-bottom: 18px;
@@ -2874,27 +3370,86 @@ onUnmounted(() => {
 .toolbar-center {
   display: flex;
   justify-content: center;
+  min-width: 0;
 }
 
 .toolbar-right {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: nowrap;
+  max-width: 100%;
+}
+
+.home-poster-toggle {
+  display: inline-flex;
+  gap: 8px;
 }
 
 .home-settings-menu {
-  min-width: 260px;
-  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  min-width: 320px;
+  padding: 14px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(244, 248, 255, 0.4));
+  border: 1px solid rgba(255, 255, 255, 0.64);
+  box-shadow:
+    0 18px 40px rgba(63, 46, 37, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.38);
+  backdrop-filter: blur(22px) saturate(140%);
+}
+
+.home-settings-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .home-settings-title {
-  font-size: 13px;
+  font-size: 18px;
+  font-weight: 800;
+  color: rgba(15, 23, 42, 0.96);
+}
+
+.home-settings-subtitle {
+  color: rgba(71, 85, 105, 0.86);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.home-settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.home-settings-group-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(100, 116, 139, 0.92);
+}
+
+.home-settings-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(17, 24, 39, 0.92);
+  font-size: 14px;
   font-weight: 700;
-  color: #64748b;
+}
+
+.home-settings-check :deep(.arco-checkbox-label) {
+  display: none;
 }
 
 .home-settings-row {
@@ -2903,19 +3458,33 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 12px;
   font-size: 13px;
-}
-
-.back-button {
-  background: rgba(250, 245, 240, 0.52);
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  box-shadow: 0 12px 30px rgba(63, 46, 37, 0.1);
-  backdrop-filter: blur(18px) saturate(135%);
+  color: rgba(17, 24, 39, 0.88);
   font-weight: 700;
 }
 
-.back-button:hover {
-  background: rgba(255, 255, 255, 0.58);
-  border-color: rgba(255, 255, 255, 0.86);
+.server-switch-menu {
+  padding: 8px;
+  min-width: 240px;
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.54), rgba(244, 248, 255, 0.36));
+  border: 1px solid rgba(255, 255, 255, 0.56);
+  box-shadow:
+    0 22px 48px rgba(63, 46, 37, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(24px) saturate(145%);
+}
+
+:deep(.server-switch-dropdown .arco-dropdown-list-wrapper),
+:deep(.server-switch-dropdown .arco-dropdown-list) {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.back-button {
+  min-height: 52px;
+  padding: 0 18px;
 }
 
 .workspace-header-card {
@@ -2982,23 +3551,21 @@ onUnmounted(() => {
 }
 
 .workspace-tab {
-  padding: 10px 18px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  background: rgba(250, 245, 240, 0.52);
-  box-shadow: 0 12px 30px rgba(63, 46, 37, 0.1);
-  backdrop-filter: blur(18px) saturate(135%);
+  min-height: 52px;
+  padding: 0 18px;
+  border-radius: 18px;
   font-weight: 700;
-  color: var(--color-text-2);
+  color: rgba(17, 24, 39, 0.92);
   cursor: pointer;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .workspace-tab.active {
-  color: #1677ff;
-  border-color: rgba(22, 119, 255, 0.2);
-  background: rgba(22, 119, 255, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  background: rgba(240, 235, 230, 0.74);
+  color: rgba(22, 22, 22, 0.92);
 }
 
 .placeholder-card {
@@ -3053,6 +3620,85 @@ onUnmounted(() => {
   gap: 10px;
   flex-wrap: wrap;
   flex-shrink: 0;
+}
+
+.listing-toggle-group {
+  display: inline-flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.workspace-toolbar :deep(.arco-btn),
+.home-page :deep(.arco-btn),
+.search-shell-media-server :deep(.arco-btn),
+.library-shell :deep(.arco-btn),
+.collection-shell :deep(.arco-btn),
+.server-empty-shell :deep(.arco-btn),
+.back-button,
+.workspace-tab,
+.server-switcher-chip {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background:
+    linear-gradient(180deg, rgba(226, 232, 240, 0.52), rgba(203, 213, 225, 0.32)),
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.3), transparent 70%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.46),
+    0 14px 30px rgba(148, 163, 184, 0.22),
+    0 4px 12px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(24px) saturate(145%);
+  color: rgba(22, 22, 22, 0.92);
+  font-weight: 700;
+}
+
+.workspace-toolbar :deep(.arco-btn),
+.home-page :deep(.arco-btn),
+.search-shell-media-server :deep(.arco-btn),
+.library-shell :deep(.arco-btn),
+.collection-shell :deep(.arco-btn),
+.server-empty-shell :deep(.arco-btn),
+.server-switcher-chip {
+  min-height: 52px;
+  padding: 0 18px;
+  border-radius: 18px;
+}
+
+.workspace-toolbar :deep(.arco-btn:hover),
+.home-page :deep(.arco-btn:hover),
+.search-shell-media-server :deep(.arco-btn:hover),
+.library-shell :deep(.arco-btn:hover),
+.collection-shell :deep(.arco-btn:hover),
+.server-empty-shell :deep(.arco-btn:hover),
+.back-button:hover,
+.workspace-tab:hover,
+.server-switcher-chip:hover {
+  border-color: rgba(96, 165, 250, 0.34);
+  background:
+    linear-gradient(180deg, rgba(219, 234, 254, 0.58), rgba(191, 219, 254, 0.34)),
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.38), transparent 70%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.54),
+    0 18px 36px rgba(96, 165, 250, 0.2),
+    0 4px 12px rgba(15, 23, 42, 0.06);
+  color: rgba(22, 22, 22, 0.92);
+}
+
+.workspace-toolbar :deep(.arco-btn.arco-btn-primary),
+.home-page :deep(.arco-btn.arco-btn-primary),
+.search-shell-media-server :deep(.arco-btn.arco-btn-primary),
+.library-shell :deep(.arco-btn.arco-btn-primary),
+.collection-shell :deep(.arco-btn.arco-btn-primary),
+.server-empty-shell :deep(.arco-btn.arco-btn-primary),
+.workspace-tab.active,
+.server-switcher-chip.active {
+  border-color: rgba(96, 165, 250, 0.4);
+  background:
+    linear-gradient(180deg, rgba(191, 219, 254, 0.72), rgba(147, 197, 253, 0.4)),
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.34), transparent 70%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.52),
+    0 18px 38px rgba(96, 165, 250, 0.24),
+    0 4px 12px rgba(15, 23, 42, 0.06);
+  color: rgba(22, 22, 22, 0.92);
 }
 
 .home-loading,
@@ -3585,6 +4231,7 @@ onUnmounted(() => {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
   margin-top: 24px;
+  align-items: start;
 }
 
 .library-shell.library-shell-portrait {
@@ -3595,13 +4242,19 @@ onUnmounted(() => {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
 
+.library-shell.library-shell-list {
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
 .library-card {
-  padding: 16px;
-  border-radius: 20px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.7));
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  box-shadow: 0 18px 32px rgba(15, 23, 42, 0.06);
-  backdrop-filter: blur(12px);
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  align-self: start;
 }
 
 .library-card.library-card-hero {
@@ -3615,32 +4268,56 @@ onUnmounted(() => {
 .library-card:not(.library-card-hero) {
   display: flex;
   flex-direction: column;
+  gap: 14px;
+}
+
+.library-card.library-card-list {
+  flex-direction: row;
+  align-items: stretch;
+  gap: 18px;
 }
 
 .library-card.library-card-portrait {
-  padding: 16px;
+  padding: 0;
+}
+
+.library-card.library-card-list.library-card-portrait .library-cover {
+  width: 170px;
+  min-width: 170px;
+}
+
+.library-card.library-card-list.library-card-landscape .library-cover {
+  width: 280px;
+  min-width: 280px;
 }
 
 .library-card.interactive {
-  border: 1px solid rgba(15, 23, 42, 0.08);
   cursor: pointer;
   text-align: left;
-  transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
+  transition: transform 0.24s ease;
 }
 
 .library-card.interactive:hover {
   transform: translateY(-2px);
-  border-color: rgba(22, 119, 255, 0.2);
-  box-shadow: 0 22px 42px rgba(15, 23, 42, 0.1);
 }
 
 .library-cover {
   position: relative;
+  display: block;
+  width: 100%;
+  flex: 0 0 auto;
   overflow: hidden;
-  margin-bottom: 14px;
   border-radius: 16px;
   aspect-ratio: 16 / 9;
   background: linear-gradient(135deg, #dbeafe, #f8fafc);
+}
+
+.library-cover.library-cover-fallback {
+  background: transparent;
+}
+
+.library-cover.library-cover-list {
+  margin-bottom: 0;
 }
 
 .library-card-hero .library-cover {
@@ -3693,18 +4370,33 @@ onUnmounted(() => {
 
 .library-card-portrait .library-cover {
   aspect-ratio: 2 / 3;
+  min-height: 0;
 }
 
 .library-card-landscape .library-cover {
   aspect-ratio: 16 / 9;
+  min-height: 0;
 }
 
 .library-cover img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
   transition: transform 0.28s ease;
+}
+
+.library-cover .media-image-placeholder {
+  position: absolute;
+  inset: 0;
+}
+
+.library-cover.library-cover-fallback .media-image-placeholder {
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.42), transparent 56%),
+    linear-gradient(180deg, rgba(226, 232, 240, 0.94) 0%, rgba(203, 213, 225, 0.98) 100%);
 }
 
 .detail-shell {
@@ -4088,7 +4780,7 @@ onUnmounted(() => {
 }
 
 .library-card:not(.library-card-hero) > h4 {
-  margin: 0 0 6px;
+  margin: 0;
   font-size: 16px;
   font-weight: 700;
   color: #111827;
@@ -4103,7 +4795,13 @@ onUnmounted(() => {
   word-break: keep-all;
 }
 
+.library-card.library-card-list > h4,
+.library-card.library-card-list > .library-meta-line {
+  display: none;
+}
+
 .library-meta-line {
+  margin-top: -8px;
   color: #6b7280;
   font-size: 12px;
   line-height: 1.5;
@@ -4112,6 +4810,96 @@ onUnmounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.library-list-body {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.library-list-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.library-list-title-wrap {
+  min-width: 0;
+  flex: 1;
+}
+
+.library-list-kicker {
+  margin-bottom: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 700;
+  color: rgba(86, 97, 117, 0.82);
+}
+
+.library-list-body h4 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.28;
+  font-weight: 800;
+  color: #0f172a;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal !important;
+}
+
+.library-list-badge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+  color: rgba(15, 23, 42, 0.76);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.library-list-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.library-list-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.08);
+  color: rgba(25, 56, 120, 0.88);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.library-list-overview {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.72;
+  color: rgba(33, 41, 56, 0.82);
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+.library-list-overview.is-empty {
+  color: rgba(100, 116, 139, 0.72);
 }
 
 .library-card.interactive:hover .library-cover img {
@@ -4132,14 +4920,91 @@ onUnmounted(() => {
 
 .server-option-main {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   min-width: 0;
-  gap: 2px;
+  gap: 10px;
 }
 
 .server-option-main > span {
   font-weight: 600;
   color: #111827;
+}
+
+.server-option-icon,
+.server-switch-trigger-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  overflow: hidden;
+  border-radius: 9px;
+  background: rgba(148, 163, 184, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.54);
+}
+
+.server-option-icon img,
+.server-switch-trigger-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.server-switch-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.server-switch-trigger-text {
+  display: block;
+  min-width: 0;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.server-switch-dropdown {
+  width: 260px;
+  flex: 0 0 260px;
+  min-width: 260px;
+  max-width: 260px;
+}
+
+:deep(.server-switch-dropdown .arco-btn) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+:deep(.server-switch-dropdown .arco-btn-content) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.back-button-server-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 2px;
+  overflow: hidden;
+  border-radius: 7px;
+  background: rgba(148, 163, 184, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.54);
+}
+
+.back-button-server-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .server-option-main > small {
@@ -4150,11 +5015,6 @@ onUnmounted(() => {
   word-break: break-all;
 }
 
-.server-switch-menu {
-  padding: 6px 0;
-  min-width: 240px;
-}
-
 :deep(.server-switch-dropdown .arco-dropdown-option),
 :deep(.server-switch-dropdown .arco-dropdown-submenu) {
   width: calc(100% - 8px) !important;
@@ -4163,6 +5023,7 @@ onUnmounted(() => {
   padding: 10px 12px !important;
   line-height: 1.2 !important;
   border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 :deep(.server-switch-dropdown .arco-dropdown-option-content) {
@@ -4195,6 +5056,241 @@ onUnmounted(() => {
   height: 1px;
   margin: 6px 0;
   background: rgba(148, 163, 184, 0.18);
+}
+
+.server-icon-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.server-icon-manager-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.server-icon-manager-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.server-icon-manager-subtitle,
+.server-icon-grid-subtitle {
+  margin-top: 6px;
+  color: rgba(71, 85, 105, 0.78);
+  line-height: 1.5;
+}
+
+.server-icon-manager-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.server-icon-search {
+  width: 280px;
+}
+
+.server-icon-manager-layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 18px;
+  min-height: 420px;
+  max-height: 68vh;
+}
+
+.server-icon-set-column,
+.server-icon-grid-column,
+.server-icon-add-panel {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(247, 250, 255, 0.82));
+  box-shadow:
+    0 22px 44px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+}
+
+.server-icon-set-column,
+.server-icon-grid-column {
+  padding: 18px;
+}
+
+.server-icon-column-heading {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.server-icon-set-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+  max-height: 454px;
+  overflow: auto;
+}
+
+.server-icon-set-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.56);
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.server-icon-set-card:hover,
+.server-icon-set-card.active {
+  border-color: rgba(59, 130, 246, 0.28);
+  background: linear-gradient(180deg, rgba(240, 247, 255, 0.92), rgba(230, 240, 255, 0.84));
+  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.12);
+}
+
+.server-icon-set-preview {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(148, 163, 184, 0.14);
+  flex: 0 0 auto;
+}
+
+.server-icon-set-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.server-icon-set-preview-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: rgba(71, 85, 105, 0.72);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.server-icon-set-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 4px;
+  text-align: left;
+}
+
+.server-icon-set-meta strong,
+.server-icon-item span {
+  color: #0f172a;
+}
+
+.server-icon-set-meta span {
+  color: rgba(71, 85, 105, 0.76);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.server-icon-grid-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.server-icon-grid-tools {
+  display: flex;
+  gap: 8px;
+}
+
+.server-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 14px;
+  max-height: 420px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.server-icon-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.56);
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.server-icon-item:hover,
+.server-icon-item.active {
+  border-color: rgba(59, 130, 246, 0.3);
+  background: linear-gradient(180deg, rgba(240, 247, 255, 0.94), rgba(230, 240, 255, 0.86));
+  box-shadow: 0 16px 28px rgba(37, 99, 235, 0.12);
+}
+
+.server-icon-item-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  overflow: hidden;
+  border-radius: 22px;
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.server-icon-item-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.server-icon-item span {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.45;
+}
+
+.server-icon-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 240px;
+  color: rgba(71, 85, 105, 0.72);
+}
+
+.server-icon-add-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px;
+}
+
+.server-icon-add-input {
+  width: 100%;
+}
+
+.server-icon-add-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 .server-option-check {
@@ -4610,7 +5706,7 @@ onUnmounted(() => {
 
 .detail-backdrop-stage {
   position: relative;
-  min-height: clamp(820px, 88vh, 1080px);
+  min-height: clamp(940px, 96vh, 1180px);
   overflow: hidden;
   border-radius: 0;
 }
@@ -4679,35 +5775,35 @@ onUnmounted(() => {
 }
 
 .detail-hero-copy {
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 2;
-  min-height: clamp(820px, 88vh, 1080px);
+  min-height: 0;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 120px 48px 42px;
+  padding: 120px 58px 78px;
 }
 
 .detail-title-block {
-  grid-area: title;
   margin-bottom: 0;
-  max-width: 460px;
+  max-width: 760px;
 }
 
 .detail-hero-title {
   max-width: 760px;
-  font-size: 62px;
-  line-height: 1.02;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  color: rgba(10, 10, 10, 0.96);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.18);
+  font-size: clamp(34px, 4.2vw, 62px);
+  line-height: 1.08;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: rgba(10, 15, 24, 0.98);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 .detail-hero-logo {
   display: block;
-  max-width: 440px;
-  max-height: 150px;
+  max-width: 430px;
+  max-height: 130px;
   object-fit: contain;
   object-position: left center;
   filter:
@@ -4717,25 +5813,44 @@ onUnmounted(() => {
 
 .detail-overlay-grid {
   display: grid;
-  grid-template-columns: 460px minmax(0, 1fr);
-  grid-template-areas:
-    'title .'
-    'actions synopsis';
-  column-gap: 38px;
-  row-gap: 4px;
-  align-items: start;
+  grid-template-columns: 280px minmax(0, 1fr);
+  column-gap: 30px;
+  align-items: end;
+  width: min(1880px, 100%);
 }
 
+.detail-hero-poster {
+  width: 280px;
+  aspect-ratio: 2 / 3;
+  border-radius: 24px;
+  overflow: hidden;
+  background: rgba(18, 24, 36, 0.08);
+  box-shadow: 0 26px 64px rgba(34, 43, 58, 0.18);
+}
+
+.detail-hero-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.detail-hero-main {
+  min-height: 470px;
+  max-width: 1040px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 14px;
+}
 
 .detail-actions-column {
-  grid-area: actions;
-  align-self: end;
-  justify-self: stretch;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  width: 100%;
-  max-width: 460px;
+  width: 340px;
+  min-width: 340px;
+  max-width: 340px;
 }
 
 .detail-icon-actions {
@@ -4757,8 +5872,8 @@ onUnmounted(() => {
 
 .detail-square-action {
   width: 100%;
-  height: 88px;
-  border-radius: 22px;
+  height: 62px;
+  border-radius: 18px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -4771,24 +5886,48 @@ onUnmounted(() => {
 }
 
 .detail-square-glyph {
-  font-size: 26px;
+  font-size: 22px;
   line-height: 1;
   font-weight: 700;
 }
 
 .detail-primary-play {
   width: 100%;
-  height: 82px;
-  border-radius: 24px;
+  min-width: 0;
+  height: 62px;
+  border-radius: 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
   color: #fff;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 800;
-  background: rgba(238, 232, 226, 0.45);
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.96), rgba(59, 130, 246, 0.88));
+  border-color: rgba(96, 165, 250, 0.38);
+  box-shadow: 0 22px 42px rgba(24, 70, 166, 0.32);
   cursor: pointer;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.detail-primary-play:hover {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.98), rgba(96, 165, 250, 0.9));
+  border-color: rgba(147, 197, 253, 0.48);
+  box-shadow: 0 26px 52px rgba(24, 70, 166, 0.42);
+}
+
+.detail-primary-play > span {
+  position: relative;
+  z-index: 1;
+}
+
+.detail-play-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .detail-square-action-version[disabled] {
@@ -4868,28 +6007,25 @@ onUnmounted(() => {
 }
 
 .detail-play-glyph {
-  font-size: 18px;
+  font-size: 15px;
   line-height: 1;
 }
 
 .detail-synopsis-column {
-  grid-area: synopsis;
-  align-self: end;
-  justify-self: start;
   max-width: 760px;
-  min-height: 184px;
-  max-height: 184px;
+  min-height: 0;
+  max-height: none;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 14px;
   padding-top: 0;
   padding-bottom: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .detail-episode-heading {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 800;
   color: rgba(22, 22, 22, 0.94);
 }
@@ -4897,10 +6033,11 @@ onUnmounted(() => {
 .detail-rating-line {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
-  font-size: 19px;
+  gap: 12px;
+  font-size: 16px;
   font-weight: 700;
-  color: rgba(35, 35, 35, 0.74);
+  color: rgba(18, 24, 35, 0.9);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .detail-star-rating {
@@ -4908,10 +6045,11 @@ onUnmounted(() => {
 }
 
 .detail-tech-line {
-  font-size: 18px;
-  line-height: 1.6;
-  font-weight: 700;
-  color: rgba(27, 27, 27, 0.76);
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 800;
+  color: rgba(18, 24, 35, 0.9);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .detail-meta-badges {
@@ -4926,18 +6064,15 @@ onUnmounted(() => {
   flex: 0 0 auto;
   padding: 4px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(146, 146, 146, 0.46);
-  background: rgba(255, 255, 255, 0.16);
-  color: rgba(91, 91, 91, 0.9);
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: rgba(255, 255, 255, 0.46);
+  color: rgba(17, 24, 39, 0.9);
   font-size: 14px;
   font-weight: 700;
 }
 
 .detail-overview-block {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 10px;
+  display: block;
   min-height: 0;
   padding-top: 6px;
 }
@@ -4948,34 +6083,19 @@ onUnmounted(() => {
 
 .detail-overview {
   margin: 0;
-  font-size: 17px;
-  line-height: 1.82;
-  color: rgba(31, 31, 31, 0.72);
-  height: calc(1.82em * 1);
+  font-size: 15px;
+  line-height: 1.72;
+  color: rgba(12, 18, 28, 0.9);
+  font-weight: 600;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.14);
   display: -webkit-box;
   overflow: hidden;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
 .detail-overview.is-empty {
-  min-height: calc(1.82em * 1);
-}
-
-.detail-overview-more {
-  flex: 0 0 auto;
-  border: 0;
-  padding: 0;
-  background: transparent;
-  color: #2457ff;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.8;
-  cursor: pointer;
-}
-
-.detail-overview-more:hover {
-  color: #1146f5;
+  min-height: calc(1.72em * 2);
 }
 
 .detail-lower-content {
@@ -5022,7 +6142,7 @@ onUnmounted(() => {
   gap: 8px;
   padding: 11px 20px;
   border-radius: 18px;
-  color: rgba(34, 34, 34, 0.92);
+  color: rgba(17, 24, 39, 0.94);
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
@@ -5330,6 +6450,14 @@ onUnmounted(() => {
 
 .home-library-manager-panel {
   padding: 8px 4px 2px;
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.54), rgba(244, 248, 255, 0.36));
+  border: 1px solid rgba(255, 255, 255, 0.56);
+  box-shadow:
+    0 22px 48px rgba(63, 46, 37, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(24px) saturate(145%);
 }
 
 .home-library-manager-hint {
@@ -5342,8 +6470,8 @@ onUnmounted(() => {
 .home-library-manager-list {
   padding: 8px 18px;
   border-radius: 16px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(255, 255, 255, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.18);
   min-height: 280px;
 }
 
@@ -5367,7 +6495,7 @@ onUnmounted(() => {
 }
 
 .home-library-manager-item:hover {
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .home-library-manager-item :deep(.arco-checkbox) {
@@ -5393,7 +6521,7 @@ onUnmounted(() => {
 }
 
 .home-library-manager-drag-icon:hover {
-  background: rgba(255, 255, 255, 0.48);
+  background: rgba(255, 255, 255, 0.22);
   color: rgba(24, 24, 24, 0.72);
 }
 
@@ -5448,26 +6576,6 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 12px 18px;
-}
-
-.detail-overview-modal :deep(.ant-modal-content) {
-  border-radius: 28px;
-  background: rgba(247, 241, 234, 0.86);
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(24px);
-  box-shadow: 0 28px 60px rgba(56, 44, 30, 0.18);
-}
-
-.detail-overview-modal :deep(.arco-modal),
-:global(.detail-overview-modal-shell.arco-modal) {
-  max-width: calc(100vw - 96px);
-}
-
-.detail-overview-modal-body {
-  font-size: 16px;
-  line-height: 1.9;
-  color: rgba(31, 31, 31, 0.86);
-  white-space: pre-wrap;
 }
 
 .detail-media-modal-row {
@@ -5535,6 +6643,19 @@ onUnmounted(() => {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .library-shell.library-shell-list {
+    grid-template-columns: 1fr;
+  }
+
+  .library-card.library-card-list {
+    gap: 16px;
+  }
+
+  .library-card.library-card-list.library-card-landscape .library-cover {
+    width: 240px;
+    min-width: 240px;
+  }
+
   .detail-backdrop-stage {
     min-height: 980px;
   }
@@ -5555,11 +6676,11 @@ onUnmounted(() => {
 
   .detail-overlay-grid {
     grid-template-columns: 1fr;
-    grid-template-areas:
-      'title'
-      'actions'
-      'synopsis';
-    gap: 8px;
+    gap: 18px;
+  }
+
+  .detail-hero-poster {
+    width: min(300px, 54vw);
   }
 
   .detail-actions-column {
@@ -5596,6 +6717,27 @@ onUnmounted(() => {
 
   .person-shelf-card {
     width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  .library-card.library-card-list {
+    flex-direction: column;
+  }
+
+  .library-card.library-card-list.library-card-portrait .library-cover,
+  .library-card.library-card-list.library-card-landscape .library-cover {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .library-list-body {
+    padding: 0;
+  }
+
+  .library-list-head {
+    flex-direction: column;
+    gap: 10px;
   }
 }
 
@@ -5645,7 +6787,8 @@ onUnmounted(() => {
 [arco-theme='dark'] .person-name,
 [arco-theme='dark'] .person-role,
 [arco-theme='dark'] .person-rail-title,
-[arco-theme='dark'] .person-rail-title-episode {
+[arco-theme='dark'] .person-rail-title-episode,
+[arco-theme='dark'] .library-list-body h4 {
   color: rgba(244, 247, 252, 0.96);
 }
 
@@ -5677,13 +6820,40 @@ onUnmounted(() => {
 [arco-theme='dark'] .detail-inline-state,
 [arco-theme='dark'] .detail-version-main small,
 [arco-theme='dark'] .detail-version-main span,
+[arco-theme='dark'] .library-list-kicker,
+[arco-theme='dark'] .library-list-overview,
 [arco-theme='dark'] .person-rail-subtitle,
 [arco-theme='dark'] .person-rail-overview {
   color: rgba(191, 201, 216, 0.78);
 }
 
+[arco-theme='dark'] .library-list-overview.is-empty {
+  color: rgba(148, 163, 184, 0.74);
+}
+
+[arco-theme='dark'] .library-list-badge {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(241, 245, 249, 0.88);
+}
+
+[arco-theme='dark'] .library-list-meta-chip {
+  background: rgba(96, 165, 250, 0.14);
+  color: rgba(219, 234, 254, 0.92);
+}
+
 [arco-theme='dark'] .server-option-main > span {
   color: rgba(244, 247, 252, 0.96);
+}
+
+[arco-theme='dark'] .server-option-icon,
+[arco-theme='dark'] .server-switch-trigger-icon {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[arco-theme='dark'] .back-button-server-icon {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 [arco-theme='dark'] .server-option-main > small,
@@ -5814,12 +6984,212 @@ onUnmounted(() => {
 [arco-theme='dark'] .detail-chip-button,
 [arco-theme='dark'] .detail-chip-link,
 [arco-theme='dark'] .detail-square-action,
-[arco-theme='dark'] .detail-primary-play,
 [arco-theme='dark'] .detail-pill-button,
 [arco-theme='dark'] .person-mini-action {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.08);
   color: rgba(233, 239, 247, 0.92);
+}
+
+[arco-theme='dark'] .detail-square-action {
+  background: linear-gradient(180deg, rgba(28, 32, 42, 0.96), rgba(20, 24, 33, 0.94));
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
+}
+
+[arco-theme='dark'] .workspace-toolbar :deep(.arco-btn),
+[arco-theme='dark'] .home-page :deep(.arco-btn),
+[arco-theme='dark'] .search-shell-media-server :deep(.arco-btn),
+[arco-theme='dark'] .library-shell :deep(.arco-btn),
+[arco-theme='dark'] .collection-shell :deep(.arco-btn),
+[arco-theme='dark'] .server-empty-shell :deep(.arco-btn),
+[arco-theme='dark'] .back-button,
+[arco-theme='dark'] .workspace-tab,
+[arco-theme='dark'] .server-switcher-chip {
+  background: linear-gradient(180deg, rgba(28, 32, 42, 0.96), rgba(20, 24, 33, 0.94));
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
+  color: rgba(244, 247, 252, 0.96);
+}
+
+[arco-theme='dark'] .detail-square-action {
+  color: rgba(244, 247, 252, 0.96);
+}
+
+[arco-theme='dark'] .workspace-toolbar :deep(.arco-btn:hover),
+[arco-theme='dark'] .home-page :deep(.arco-btn:hover),
+[arco-theme='dark'] .search-shell-media-server :deep(.arco-btn:hover),
+[arco-theme='dark'] .library-shell :deep(.arco-btn:hover),
+[arco-theme='dark'] .collection-shell :deep(.arco-btn:hover),
+[arco-theme='dark'] .server-empty-shell :deep(.arco-btn:hover),
+[arco-theme='dark'] .back-button:hover,
+[arco-theme='dark'] .workspace-tab:hover,
+[arco-theme='dark'] .server-switcher-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.34);
+}
+
+[arco-theme='dark'] .home-settings-menu {
+  background:
+    linear-gradient(180deg, rgba(24, 29, 40, 0.64), rgba(17, 21, 30, 0.48));
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 24px 52px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+[arco-theme='dark'] .home-settings-title,
+[arco-theme='dark'] .home-settings-subtitle,
+[arco-theme='dark'] .home-settings-group-title,
+[arco-theme='dark'] .home-settings-check,
+[arco-theme='dark'] .home-settings-label,
+[arco-theme='dark'] .home-settings-row {
+  color: rgba(244, 247, 252, 0.96);
+}
+
+[arco-theme='dark'] .home-settings-subtitle {
+  color: rgba(148, 163, 184, 0.88);
+}
+
+[arco-theme='dark'] .home-settings-group {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+[arco-theme='dark'] .home-settings-select :deep(.arco-select-view),
+[arco-theme='dark'] .home-settings-number :deep(.arco-input-wrapper),
+[arco-theme='dark'] .home-settings-number :deep(.arco-input-number) {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+[arco-theme='dark'] .server-switch-menu,
+[arco-theme='dark'] .home-library-manager-panel {
+  background:
+    linear-gradient(180deg, rgba(24, 29, 40, 0.64), rgba(17, 21, 30, 0.48));
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 24px 52px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+[arco-theme='dark'] :deep(.server-switch-dropdown .arco-dropdown-option),
+[arco-theme='dark'] :deep(.server-switch-dropdown .arco-dropdown-submenu),
+[arco-theme='dark'] .home-library-manager-list {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+[arco-theme='dark'] .home-settings-select :deep(.arco-select-view-value),
+[arco-theme='dark'] .home-settings-select :deep(.arco-select-view-icon),
+[arco-theme='dark'] .home-settings-number :deep(input),
+[arco-theme='dark'] .home-settings-number :deep(.arco-input-number-input) {
+  color: rgba(244, 247, 252, 0.96);
+}
+
+[arco-theme='dark'] .server-icon-manager-title,
+[arco-theme='dark'] .server-icon-column-heading,
+[arco-theme='dark'] .server-icon-set-meta strong,
+[arco-theme='dark'] .server-icon-item span {
+  color: rgba(244, 247, 252, 0.96);
+}
+
+[arco-theme='dark'] .server-icon-manager-subtitle,
+[arco-theme='dark'] .server-icon-grid-subtitle,
+[arco-theme='dark'] .server-icon-set-meta span,
+[arco-theme='dark'] .server-icon-empty,
+[arco-theme='dark'] .server-icon-set-preview-empty {
+  color: rgba(191, 201, 216, 0.72);
+}
+
+[arco-theme='dark'] .server-icon-set-column,
+[arco-theme='dark'] .server-icon-grid-column,
+[arco-theme='dark'] .server-icon-add-panel {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(24, 29, 40, 0.96), rgba(17, 21, 30, 0.92));
+  box-shadow:
+    0 24px 52px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[arco-theme='dark'] .server-icon-set-card,
+[arco-theme='dark'] .server-icon-item {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[arco-theme='dark'] .server-icon-set-card:hover,
+[arco-theme='dark'] .server-icon-set-card.active,
+[arco-theme='dark'] .server-icon-item:hover,
+[arco-theme='dark'] .server-icon-item.active {
+  border-color: rgba(96, 165, 250, 0.3);
+  background: linear-gradient(180deg, rgba(31, 49, 78, 0.92), rgba(24, 40, 66, 0.88));
+  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.3);
+}
+
+[arco-theme='dark'] .server-icon-set-preview,
+[arco-theme='dark'] .server-icon-item-preview {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[arco-theme='dark'] .detail-square-action:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.34);
+}
+
+[arco-theme='dark'] .detail-primary-play {
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.96), rgba(59, 130, 246, 0.88));
+  border-color: rgba(96, 165, 250, 0.38);
+  color: #fff;
+  box-shadow: 0 22px 42px rgba(24, 70, 166, 0.32);
+}
+
+[arco-theme='dark'] .detail-primary-play:hover {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.98), rgba(96, 165, 250, 0.9));
+  border-color: rgba(147, 197, 253, 0.48);
+  box-shadow: 0 26px 52px rgba(24, 70, 166, 0.42);
+}
+
+[arco-theme='dark'] .detail-play-label,
+[arco-theme='dark'] .detail-play-glyph,
+[arco-theme='dark'] .detail-square-glyph {
+  color: currentColor;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+[arco-theme='dark'] .detail-episode-heading,
+[arco-theme='dark'] .detail-rating-line,
+[arco-theme='dark'] .detail-tech-line,
+[arco-theme='dark'] .detail-overview {
+  color: rgba(248, 250, 252, 0.94);
+}
+
+[arco-theme='dark'] .detail-rating-line span,
+[arco-theme='dark'] .detail-tech-line,
+[arco-theme='dark'] .detail-overview {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.26);
+}
+
+[arco-theme='dark'] .detail-meta-badge {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: rgba(248, 250, 252, 0.9);
+}
+
+[arco-theme='dark'] .detail-chip-button,
+[arco-theme='dark'] .detail-chip-link,
+[arco-theme='dark'] .workspace-tab {
+  color: rgba(248, 250, 252, 0.92);
+}
+
+[arco-theme='dark'] .detail-chip-button.active,
+[arco-theme='dark'] .workspace-tab.active {
+  color: #fff;
 }
 
 [arco-theme='dark'] .workspace-toolbar :deep(.arco-btn),
@@ -5855,13 +7225,21 @@ onUnmounted(() => {
 }
 
 [arco-theme='dark'] .workspace-tab.active,
+[arco-theme='dark'] .workspace-toolbar :deep(.arco-btn.arco-btn-primary),
+[arco-theme='dark'] .home-page :deep(.arco-btn.arco-btn-primary),
+[arco-theme='dark'] .search-shell-media-server :deep(.arco-btn.arco-btn-primary),
+[arco-theme='dark'] .library-shell :deep(.arco-btn.arco-btn-primary),
+[arco-theme='dark'] .collection-shell :deep(.arco-btn.arco-btn-primary),
+[arco-theme='dark'] .server-empty-shell :deep(.arco-btn.arco-btn-primary),
 [arco-theme='dark'] .detail-chip-button.active,
 [arco-theme='dark'] .detail-square-action.active,
 [arco-theme='dark'] .person-mini-action.active,
-[arco-theme='dark'] .detail-version-option.active {
-  background: linear-gradient(180deg, rgba(37, 99, 235, 0.9), rgba(59, 130, 246, 0.82));
-  color: #fff;
-  border-color: rgba(96, 165, 250, 0.36);
+[arco-theme='dark'] .detail-version-option.active,
+[arco-theme='dark'] .server-switcher-chip.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.98);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.34);
 }
 
 [arco-theme='dark'] .search-input,
@@ -5875,6 +7253,16 @@ onUnmounted(() => {
 [arco-theme='dark'] .detail-top-back {
   border-color: rgba(255, 255, 255, 0.08);
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.24);
+}
+
+[arco-theme='dark'] .library-cover.library-cover-fallback {
+  background: transparent;
+}
+
+[arco-theme='dark'] .library-cover.library-cover-fallback .media-image-placeholder {
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 54%),
+    linear-gradient(180deg, rgba(44, 52, 66, 0.94) 0%, rgba(28, 34, 46, 0.98) 100%);
 }
 
 [arco-theme='dark'] .detail-backdrop-bottom-haze {

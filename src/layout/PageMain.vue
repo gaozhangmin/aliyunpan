@@ -22,6 +22,7 @@ import Share from '../share/index.vue'
 import Down from '../down/index.vue'
 import Pan from '../pan/index.vue'
 import MediaLibraryView from '../views/MediaLibraryView.vue'
+import MediaServerView from '../views/MediaServerView.vue'
 
 import UserInfo from '../user/UserInfo.vue'
 import UserLogin from '../user/UserLogin.vue'
@@ -34,6 +35,7 @@ import { throttle } from '../utils/debounce'
 const panVisible = ref(true)
 const mediaNavVisible = ref(true)
 const appStore = useAppStore()
+const settingStore = useSettingStore()
 const winStore = useWinStore()
 const keyboardStore = useKeyboardStore()
 const mouseStore = useMouseStore()
@@ -70,6 +72,30 @@ const themeTitle = computed(() => {
   }
 })
 
+const primaryTabDefinitions = [
+  { key: 'pan', title: 'Alt+1', label: '网盘' },
+  { key: 'media-server', title: 'Alt+6', label: '媒体服务器' },
+  { key: 'media', title: 'Alt+5', label: '媒体库' }
+]
+
+const orderedPrimaryTabs = computed(() => {
+  const preferred = settingStore.uiDefaultTab || 'pan'
+  return [...primaryTabDefinitions].sort((a, b) => {
+    if (a.key === preferred) return -1
+    if (b.key === preferred) return 1
+    return primaryTabDefinitions.findIndex((item) => item.key === a.key)
+      - primaryTabDefinitions.findIndex((item) => item.key === b.key)
+  })
+})
+
+const trailingTabs = [
+  { key: 'down', title: 'Alt+2', label: '传输' },
+  { key: 'share', title: 'Alt+3', label: '资源' },
+  { key: 'rss', title: 'Alt+4', label: '插件' }
+]
+
+const topNavTabs = computed(() => [...orderedPrimaryTabs.value, ...trailingTabs])
+
 const handleHideClick = (_e: any) => {
   if (window.WebToElectron) window.WebToElectron({ cmd: useSettingStore().uiExitOnClose ? 'exit' : 'close' })
 }
@@ -91,7 +117,8 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
   if (TestAlt('3', state.KeyDownEvent, () => appStore.toggleTab('share'))) return
   if (TestAlt('4', state.KeyDownEvent, () => appStore.toggleTab('rss'))) return
   if (TestAlt('5', state.KeyDownEvent, () => appStore.toggleTab('media'))) return
-  if (TestAlt('6', state.KeyDownEvent, () => appStore.toggleTab('setting'))) return
+  if (TestAlt('6', state.KeyDownEvent, () => appStore.toggleTab('media-server'))) return
+  if (TestAlt('7', state.KeyDownEvent, () => appStore.toggleTab('setting'))) return
   if (TestAlt('f4', state.KeyDownEvent, () => handleHideClick(undefined))) return
   if (TestAlt('m', state.KeyDownEvent, () => handleMinClick(undefined))) return
   if (TestAlt('enter', state.KeyDownEvent, () => handleMaxClick(undefined))) return
@@ -160,6 +187,9 @@ const handleAudioStop = () => {
 }
 
 onMounted(() => {
+  if (settingStore.uiDefaultTab && appStore.appTab !== settingStore.uiDefaultTab) {
+    appStore.toggleTab(settingStore.uiDefaultTab)
+  }
   onResize()
   DebugLog.aLoadFromDB()
   window.addEventListener('resize', onResize, { passive: true })
@@ -186,7 +216,7 @@ onUnmounted(() => {
           <i class='iconfont iconmenuon' v-if='panVisible' />
           <i class='iconfont iconmenuoff' v-else />
         </a-button>
-        <a-button v-show="appStore.appTab === 'media'" type='text' size='small' @click='handleMediaNavVisible'>
+        <a-button v-show="appStore.appTab === 'media' || appStore.appTab === 'media-server'" type='text' size='small' @click='handleMediaNavVisible'>
           <i class='iconfont iconmenuon' v-if='mediaNavVisible' />
           <i class='iconfont iconmenuoff' v-else />
         </a-button>
@@ -194,11 +224,13 @@ onUnmounted(() => {
 
         <a-menu mode='horizontal' :selected-keys='[appStore.appTab]'
                 @update:selected-keys='appStore.toggleTab($event[0])'>
-          <a-menu-item key='pan' title='Alt+1'>网盘</a-menu-item>
-          <a-menu-item key='media' title='Alt+5'>媒体库</a-menu-item>
-          <a-menu-item key='down' title='Alt+2'>传输</a-menu-item>
-          <a-menu-item key='share' title='Alt+3'>资源</a-menu-item>
-          <a-menu-item key='rss' title='Alt+4'>插件</a-menu-item>
+          <a-menu-item
+            v-for='item in topNavTabs'
+            :key='item.key'
+            :title='item.title'
+          >
+            {{ item.label }}
+          </a-menu-item>
         </a-menu>
 
         <div class='flexauto'></div>
@@ -242,7 +274,10 @@ onUnmounted(() => {
         <a-tab-pane key='media' title='5'>
           <MediaLibraryView :navVisible="mediaNavVisible" />
         </a-tab-pane>
-        <a-tab-pane key='setting' title='6'>
+        <a-tab-pane key='media-server' title='6'>
+          <MediaServerView :navVisible="mediaNavVisible" />
+        </a-tab-pane>
+        <a-tab-pane key='setting' title='7'>
           <Setting />
         </a-tab-pane>
       </a-tabs>
@@ -394,16 +429,15 @@ onUnmounted(() => {
 }
 
 #xbyhead2 .title {
-  min-width: 160px;
-  padding: 0 8px 0 4px;
-  overflow: hidden;
+  flex: 0 0 auto;
+  min-width: max-content;
+  max-width: none;
+  padding: 0 12px 0 4px;
   font-weight: 600;
   font-size: 17px;
   line-height: 37px;
   letter-spacing: 0.01em;
   white-space: nowrap;
-  word-break: keep-all;
-  text-overflow: ellipsis;
 }
 
 #xbyhead2 button {
@@ -437,21 +471,29 @@ onUnmounted(() => {
 }
 
 #xbyhead2 .arco-menu-horizontal {
-  width: 420px;
+  width: 0;
+  min-width: 0;
+  flex: 1 1 auto;
+  max-width: none;
   height: 37px;
   line-height: 24px;
+  overflow: visible;
 }
 
 #xbyhead2 .arco-menu-horizontal .arco-menu-inner {
+  display: flex;
+  flex-wrap: nowrap;
   padding: 0;
   overflow: visible;
 }
 
 #xbyhead2 .arco-menu-horizontal .arco-menu-item {
   line-height: 24px;
-  padding: 0;
-  min-width: 56px;
+  padding: 0 8px;
+  min-width: 0;
   text-align: center;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 #xbyhead2 .arco-menu-horizontal .arco-menu-item.arco-menu-selected {

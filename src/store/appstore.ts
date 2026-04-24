@@ -40,6 +40,20 @@ export interface IPageVideoXBT {
   file_name: string
 }
 
+export interface IPageVideoPlaylistEntry {
+  user_id: string
+  drive_id: string
+  file_id: string
+  parent_file_id: string
+  file_name: string
+  html: string
+  ext?: string
+  description?: string
+  play_cursor?: number
+  password?: string
+  encType?: string
+}
+
 export interface IPageVideo {
   user_id: string
   drive_id: string
@@ -53,6 +67,24 @@ export interface IPageVideo {
   expire_time: number
   play_cursor: number
   play_esposide?: number
+  media_url?: string
+  media_headers?: Record<string, string>
+  media_server_id?: string
+  media_server_item_id?: string
+  media_server_source_id?: string
+  media_server_source_label?: string
+  media_server_play_session_id?: string
+  media_server_source_options?: Array<{ id: string, label: string, subLabel?: string }>
+  media_server_video_label?: string
+  media_server_audio_label?: string
+  media_server_subtitle_label?: string
+  media_server_video_options?: Array<{ streamIndex: number, label: string }>
+  media_server_audio_options?: Array<{ streamIndex: number, label: string }>
+  media_server_subtitle_options?: Array<{ streamIndex: number, label: string }>
+  media_server_playlist_label?: string
+  media_server_episode_playlist?: Array<{ id: string, title: string }>
+  custom_playlist_label?: string
+  custom_playlist?: IPageVideoPlaylistEntry[]
 }
 
 export interface AppState {
@@ -85,6 +117,7 @@ const useAppStore = defineStore('app', {
       ['share', 'ShareSiteRight'],
       ['rss', 'RssXiMa'],
       ['media', 'MediaLibrary'],
+      ['media-server', 'MediaServerWorkspace'],
       ['setting', 'SettingUI']
     ]),
     appDark: false,
@@ -135,6 +168,7 @@ const useAppStore = defineStore('app', {
           ['share', 'ShareSiteRight'],
           ['rss', 'RssXiMa'],
           ['media', 'MediaLibrary'],
+          ['media-server', 'MediaServerWorkspace'],
           ['setting', 'SettingUI']
         ])
       })
@@ -183,6 +217,14 @@ const useAppStore = defineStore('app', {
           break
         }
         case 'rss': {
+          this.appTab = 'media'
+          break
+        }
+        case 'media': {
+          this.appTab = 'media-server'
+          break
+        }
+        case 'media-server': {
           this.appTab = 'setting'
           DebugLog.aLoadFromDB()
           break

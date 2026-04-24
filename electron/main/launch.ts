@@ -158,7 +158,7 @@ export default class launch extends EventEmitter {
         session.defaultSession.webRequest.onBeforeSendHeaders((details, cb) => {
           const shouldGieeReferer = details.url.indexOf('gitee.com') > 0
           const shouldBaidu = /baidu|baidupcs|bdstatic|bcebos/i.test(details.url)
-          const should115 = /(^https?:\/\/[^/]*115\.com\/)|(^https?:\/\/[^/]*anxia\.com\/)/i.test(details.url)
+          const should115 = /(^https?:\/\/[^/]*115\.com\/)/i.test(details.url) || details.url.includes('cdnfhnfile.115cdn.net')
           const shouldBiliBili = details.url.indexOf('bilibili.com') > 0
           const shouldQQTv = details.url.indexOf('v.qq.com') > 0 || details.url.indexOf('video.qq.com') > 0
           const shouldAliPanOrigin =   details.url.indexOf('.aliyundrive.com') > 0 || details.url.indexOf('.alipan.com') > 0
@@ -166,6 +166,9 @@ export default class launch extends EventEmitter {
           const shouldToken = shouldAliPanOrigin && details.url.includes('download')
           const shouldOpenApiToken = details.url.includes('adrive/v1.0') || details.url.includes('adrive/v1.1')
           const forbidUrl = details.url.includes('younoyes') || details.url.includes('onatoshi')
+          const hasAuthorizationHeader = Object.keys(details.requestHeaders || {}).some((key) => key.toLowerCase() === 'authorization')
+          const fallbackAccessToken = this.userToken?.access_token || ''
+          const fallbackOpenApiToken = this.userToken?.open_api_access_token || ''
 
           cb({
             cancel: false,
@@ -207,12 +210,12 @@ export default class launch extends EventEmitter {
                   : {}),
                 'user-agent': DEFAULT_DOWN_AGENT
               }),
-              ...(shouldToken && {
-                Authorization: this.userToken.access_token,
+              ...(shouldToken && !hasAuthorizationHeader && fallbackAccessToken && {
+                Authorization: fallbackAccessToken,
                 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0'
               }),
-              ...(shouldOpenApiToken && {
-                Authorization: this.userToken.open_api_access_token,
+              ...(shouldOpenApiToken && !hasAuthorizationHeader && fallbackOpenApiToken && {
+                Authorization: 'Bearer ' + fallbackOpenApiToken,
                 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0'
               }),
               'X-Canary': 'client=windows,app=adrive,version=v4.12.0',
