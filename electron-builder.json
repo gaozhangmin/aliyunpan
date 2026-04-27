@@ -1,6 +1,6 @@
 {
   "appId": "com.xbyboxplayer.app",
-  "productName": "小白羊 BoxPlayer",
+  "productName": "boxplayer",
   "protocols": [
     {
       "name": "xbyboxplayer OAuth",

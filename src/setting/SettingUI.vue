@@ -67,7 +67,7 @@ const handleImportAsar = () => {
   <div class='settingcard'>
     <div class='settings-app-hero'>
       <div class='settings-app-badge'>Application</div>
-      <div class='appver'>小白羊 BoxPlayer {{ getAppVersion }}</div>
+      <div class='appver'>boxplayer {{ getAppVersion }}</div>
       <div class='settings-app-subtitle'>统一配置桌面外观、启动行为、更新策略与系统集成体验</div>
     </div>
     <div class='settings-app-actions'>

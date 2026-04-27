@@ -220,7 +220,7 @@ onUnmounted(() => {
           <i class='iconfont iconmenuon' v-if='mediaNavVisible' />
           <i class='iconfont iconmenuoff' v-else />
         </a-button>
-        <div class='title'>小白羊 BoxPlayer</div>
+        <div class='title'>boxplayer</div>
 
         <a-menu mode='horizontal' :selected-keys='[appStore.appTab]'
                 @update:selected-keys='appStore.toggleTab($event[0])'>

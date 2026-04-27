@@ -137,6 +137,59 @@
 
 # 安装 [![](https://img.shields.io/badge/-%E5%AE%89%E8%A3%85-blue)](#安装-)
 
+## 安装包说明（release 文件夹）
+
+`release` 文件夹中包含各平台、各架构的安装包，按文件名中的关键词区分：
+
+### Windows
+
+| 文件名 | 适用平台 | 说明 |
+|--------|----------|------|
+| `...-win.exe` | Windows（通用） | 自动检测系统架构，**推荐大多数用户使用** |
+| `...-win-x64.exe` | Windows 64位 x86 | 适用于 Intel / AMD 64位处理器 |
+| `...-win-ia32.exe` | Windows 32位 | 适用于 32位系统或老旧处理器 |
+| `...-win-arm64.exe` | Windows ARM64 | 适用于 ARM64 处理器（如高通骁龙 X Elite） |
+| `...-win-x64.zip` | Windows 64位 免安装 | 解压即用，无需安装 |
+| `...-win-ia32.zip` | Windows 32位 免安装 | 解压即用，无需安装 |
+| `...-win-arm64.zip` | Windows ARM64 免安装 | 解压即用，无需安装 |
+
+**安装方式：** 双击 `.exe` 安装包，按提示完成安装。便携版解压 `.zip` 后直接运行 `xbyboxplayer.exe`。
+
+### macOS
+
+| 文件名 | 适用平台 | 说明 |
+|--------|----------|------|
+| `...-mac-x64.dmg` | macOS Intel | 适用于搭载 Intel 芯片的 Mac |
+| `...-mac-arm64.dmg` | macOS Apple Silicon | 适用于搭载 M1 / M2 / M3 / M4 芯片的 Mac |
+
+**安装方式：** 双击 `.dmg` 文件，将应用拖拽至 `Applications` 文件夹即可。Apple Silicon 用户若安装后提示文件损坏，请在终端执行：
+```sh
+sudo xattr -d com.apple.quarantine /Applications/xbyboxplayer.app
+```
+
+### Linux
+
+| 文件名 | 适用平台 | 说明 |
+|--------|----------|------|
+| `...-linux-amd64.deb` | Debian / Ubuntu x64 | 适用于 Debian、Ubuntu 等发行版，64位 Intel/AMD |
+| `...-linux-arm64.deb` | Debian / Ubuntu ARM64 | 适用于 ARM64 架构的 Debian / Ubuntu |
+| `...-linux-armv7l.deb` | Debian / Ubuntu ARMv7 | 适用于 32位 ARM 架构的 Debian / Ubuntu |
+| `...-linux-x86_64.AppImage` | Linux 通用 x64 | 免安装，适用于绝大多数 64位 Linux 发行版 |
+| `...-linux-arm64.AppImage` | Linux 通用 ARM64 | 免安装，适用于 ARM64 架构 Linux 发行版 |
+| `...-linux-armv7l.AppImage` | Linux 通用 ARMv7 | 免安装，适用于 32位 ARM Linux 发行版 |
+| `...-linux-x64.pacman` | Arch Linux / Manjaro x64 | 适用于 Arch Linux 及衍生发行版，64位 |
+| `...-linux-aarch64.pacman` | Arch Linux ARM64 | 适用于 Arch Linux ARM64 |
+| `...-linux-armv7l.pacman` | Arch Linux ARMv7 | 适用于 Arch Linux ARMv7 |
+| `...-linux-x64.zip` / `arm64.zip` / `armv7l.zip` | Linux 各架构 免安装 | 解压后直接运行可执行文件 |
+
+**安装方式：**
+- `.deb`：`sudo dpkg -i <文件名>.deb`
+- `.AppImage`：`chmod +x <文件名>.AppImage && ./<文件名>.AppImage`
+- `.pacman`：`sudo pacman -U <文件名>.pacman`
+- `.zip`：解压后直接运行目录内的可执行文件
+
+---
+
 ## Windows
 > * ia32：64位x86架构的处理器
 > * x64：Apple M1处理器版本

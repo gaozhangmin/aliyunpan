@@ -127,7 +127,7 @@ export function createMainWindow() {
   AppWindow.mainWindow.on('ready-to-show', function() {
     AppWindow.mainWindow!.webContents.send('setPage', { page: 'PageMain' })
     AppWindow.mainWindow!.webContents.send('setTheme', { dark: nativeTheme.shouldUseDarkColors })
-    AppWindow.mainWindow!.setTitle('小白羊 BoxPlayer')
+    AppWindow.mainWindow!.setTitle('boxplayer')
     if (is.windows() && process.argv && process.argv.join(' ').indexOf('--openAsHidden') < 0) {
       AppWindow.mainWindow!.show()
     } else if (is.macOS() && !app.getLoginItemSettings().wasOpenedAsHidden) {
@@ -179,7 +179,7 @@ export function createTray() {
   const icon = getStaticPath('icon_256x256.ico')
   AppWindow.appTray = new Tray(icon)
   const contextMenu = Menu.buildFromTemplate(trayMenuTemplate)
-  AppWindow.appTray.setToolTip('小白羊 BoxPlayer')
+  AppWindow.appTray.setToolTip('boxplayer')
   AppWindow.appTray.setContextMenu(contextMenu)
   AppWindow.appTray.on('click', () => {
     if (AppWindow.mainWindow && AppWindow.mainWindow.isDestroyed() == false) {
@@ -367,7 +367,7 @@ function createUpload() {
   AppWindow.uploadWindow.on('ready-to-show', function() {
     creatUploadPort()
     AppWindow.uploadWindow!.webContents.send('setPage', { page: 'PageWorker', data: { type: 'upload' } })
-    AppWindow.uploadWindow!.setTitle('小白羊 BoxPlayer上传进程')
+    AppWindow.uploadWindow!.setTitle('boxplayer上传进程')
   })
 
   AppWindow.uploadWindow.webContents.on('render-process-gone', function(event, details) {
@@ -391,7 +391,7 @@ function createDownload() {
   AppWindow.downloadWindow.on('ready-to-show', function() {
     creatDownloadPort()
     AppWindow.downloadWindow!.webContents.send('setPage', { page: 'PageWorker', data: { type: 'download' } })
-    AppWindow.downloadWindow!.setTitle('小白羊 BoxPlayer下载进程')
+    AppWindow.downloadWindow!.setTitle('boxplayer下载进程')
   })
 
   AppWindow.downloadWindow.webContents.on('render-process-gone', function(event, details) {

@@ -1,5 +1,7 @@
 import UserDAL from '../user/userdal'
 
+const CLOUD123_OPEN_API = 'https://open-api.123pan.com'
+
 export type Cloud123CreateFileResp = {
   reuse: boolean
   fileID: number
@@ -19,7 +21,7 @@ export const cloud123CreateFile = async (
 ): Promise<Cloud123CreateFileResp | null> => {
   const token = UserDAL.GetUserToken(user_id)
   if (!token?.access_token) return null
-  const url = 'https://open-api.123pan.com/upload/v2/file/create'
+  const url = `${CLOUD123_OPEN_API}/upload/v2/file/create`
   const body = {
     parentFileID,
     filename,
@@ -50,11 +52,10 @@ export const cloud123CreateFile = async (
 }
 
 export const cloud123UploadComplete = async (
-  server: string,
   accessToken: string,
   preuploadID: string
-): Promise<{ completed: boolean; fileID: number }> => {
-  const url = normalizeServer(server) + '/upload/v2/file/upload_complete'
+): Promise<{ completed: boolean; fileID: number; requestOk: boolean; code: number }> => {
+  const url = `${CLOUD123_OPEN_API}/upload/v2/file/upload_complete`
   const resp = await fetch(url, {
     method: 'POST',
     headers: {
@@ -63,13 +64,22 @@ export const cloud123UploadComplete = async (
       Authorization: `Bearer ${accessToken}`
     },
     body: JSON.stringify({ preuploadID })
-  })
-  if (!resp.ok) return { completed: false, fileID: 0 }
-  const data = await resp.json()
-  if (data?.code !== 0) return { completed: false, fileID: 0 }
+  }).catch(() => undefined)
+  if (!resp?.ok) return { completed: false, fileID: 0, requestOk: false, code: resp?.status || -1 }
+  const data = await resp.json().catch(() => undefined)
+  if (data?.code !== 0) {
+    return {
+      completed: false,
+      fileID: 0,
+      requestOk: false,
+      code: Number(data?.code || 0)
+    }
+  }
   return {
     completed: !!data?.data?.completed,
-    fileID: Number(data?.data?.fileID || 0)
+    fileID: Number(data?.data?.fileID || 0),
+    requestOk: true,
+    code: 0
   }
 }
 

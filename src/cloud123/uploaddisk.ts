@@ -12,21 +12,72 @@ import { Sleep } from '../utils/format'
 
 const md5Buffer = (buff: Buffer) => crypto.createHash('md5').update(buff).digest('hex')
 
-const md5File = async (filePath: string): Promise<string> => {
-  const hash = crypto.createHash('md5')
-  const fh = await OpenFileHandle(filePath)
-  if (fh.error || !fh.handle) return ''
-  const handle = fh.handle
-  const buff = Buffer.alloc(1024 * 1024)
-  let pos = 0
-  while (true) {
-    const read = await handle.read(buff, 0, buff.length, pos)
-    if (!read.bytesRead) break
-    hash.update(buff.subarray(0, read.bytesRead))
-    pos += read.bytesRead
+const HASH_CONCURRENCY = 2
+let hashingCount = 0
+const hashingQueue: Array<() => void> = []
+
+const acquireHashSlot = async () => {
+  if (hashingCount < HASH_CONCURRENCY) {
+    hashingCount += 1
+    return
   }
-  await handle.close()
-  return hash.digest('hex')
+  await new Promise<void>((resolve) => {
+    hashingQueue.push(() => {
+      hashingCount += 1
+      resolve()
+    })
+  })
+}
+
+const releaseHashSlot = () => {
+  hashingCount = Math.max(0, hashingCount - 1)
+  const next = hashingQueue.shift()
+  if (next) next()
+}
+
+const shouldRetryFileOpen = (error: string) => {
+  return (
+    error.includes('同时打开文件过多') ||
+    error.includes('文件被其他程序占用') ||
+    error.includes('操作超时') ||
+    error.includes('IO错误')
+  )
+}
+
+const openFileHandleWithRetry = async (filePath: string) => {
+  let lastError = ''
+  for (let i = 0; i < 5; i++) {
+    const fh = await OpenFileHandle(filePath)
+    if (!fh.error && fh.handle) return fh
+    lastError = fh.error || '打开文件失败'
+    if (!shouldRetryFileOpen(lastError) || i === 4) {
+      return { handle: undefined, error: lastError }
+    }
+    await Sleep(400 * (i + 1))
+  }
+  return { handle: undefined, error: lastError || '打开文件失败' }
+}
+
+const md5File = async (filePath: string): Promise<{ etag: string; error: string }> => {
+  const hash = crypto.createHash('md5')
+  const fh = await openFileHandleWithRetry(filePath)
+  if (fh.error || !fh.handle) return { etag: '', error: fh.error || '打开文件失败' }
+  const handle = fh.handle
+  try {
+    const buff = Buffer.alloc(1024 * 1024)
+    let pos = 0
+    while (true) {
+      const read = await handle.read(buff, 0, buff.length, pos)
+      if (!read.bytesRead) break
+      hash.update(buff.subarray(0, read.bytesRead))
+      pos += read.bytesRead
+    }
+    return { etag: hash.digest('hex'), error: '' }
+  } catch (err: any) {
+    return { etag: '', error: err?.message || '计算md5失败' }
+  } finally {
+    await handle.close().catch(() => {})
+  }
 }
 
 const buildMultipart = (preuploadID: string, sliceNo: number, sliceMD5: string, sliceBuff: Buffer) => {
@@ -90,9 +141,11 @@ export default class Cloud123UploadDisk {
 
     const filePath = path.join(fileui.localFilePath, fileui.File.partPath)
     fileui.Info.uploadState = 'hashing'
-    const etag = await md5File(filePath)
+    await acquireHashSlot()
+    const { etag, error: md5Error } = await md5File(filePath)
+    releaseHashSlot()
     fileui.Info.uploadState = 'running'
-    if (!etag) return '计算md5失败'
+    if (!etag) return md5Error || '计算md5失败'
 
     const parentFileID = Number(fileui.parent_file_id || 0) || 0
     const createResp = await cloud123CreateFile(
@@ -116,7 +169,7 @@ export default class Cloud123UploadDisk {
     }
 
     const server = createResp.servers[0]
-    const fileHandle = await OpenFileHandle(filePath)
+    const fileHandle = await openFileHandleWithRetry(filePath)
     if (fileHandle.error || !fileHandle.handle) return fileHandle.error || '打开文件失败'
 
     const sliceSize = createResp.sliceSize
@@ -147,15 +200,20 @@ export default class Cloud123UploadDisk {
     }
     await fileHandle.handle.close()
 
-    for (let i = 0; i < 60; i++) {
-      const complete = await cloud123UploadComplete(server, token.access_token, createResp.preuploadID)
+    let lastCompleteCode = 0
+    for (let i = 0; i < 90; i++) {
+      const complete = await cloud123UploadComplete(token.access_token, createResp.preuploadID)
       if (complete.completed && complete.fileID) {
         fileui.File.uploaded_file_id = String(complete.fileID)
         fileui.File.uploaded_is_rapid = false
         return 'success'
       }
+      if (!complete.requestOk) {
+        lastCompleteCode = complete.code
+      }
       await Sleep(1000)
     }
+    if (lastCompleteCode > 0) return `上传完成确认失败(${lastCompleteCode})`
     return '上传完成确认超时'
   }
 }
