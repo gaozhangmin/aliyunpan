@@ -2,7 +2,7 @@
   <img src="screenshot/icon.svg" alt="小白羊网盘 BoxPlayer">
 </p>
 <p align="center">
-    <br> English | <a href="README-CN.md">中文</a>
+    <br> 中文 | <a href="./README.en.md">English</a>
 </p>
 <p align="center">
     <em>小白羊网盘 BoxPlayer - 多网盘统一管理 + 智能媒体库 + 媒体服务器 + 高速下载.</em>
