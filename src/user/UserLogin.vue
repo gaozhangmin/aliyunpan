@@ -15,12 +15,14 @@ import { buildQrImageUrl, DRIVE115_APP_ID, exchangeDeviceCode, generatePkce, nor
 
 const useUser = useUserStore()
 const settingStore = useSettingStore()
+const ALIYUN_APP_ID = 'df43e22f022d4c04b6e29964f3b8b46d'
+const ALIYUN_APP_SECRET = '63f06c3c5c5d4e1196e2c13e8588ae29'
 const loginCur = ref(1)
 const loginToken = ref<ITokenInfo>()
 const loginStatus = ref<'wait' | 'error' | 'finish' | 'process'>('process')
 const loginLoading = ref(true)
-const client_id = ref('df43e22f022d4c04b6e29964f3b8b46d')
-const client_secret = ref('63f06c3c5c5d4e1196e2c13e8588ae29')
+const client_id = ref(ALIYUN_APP_ID)
+const client_secret = ref(ALIYUN_APP_SECRET)
 
 const intervalId = ref()
 const qrCodeUrl = ref('')
@@ -189,8 +191,8 @@ const handleOpen = () => {
 
 const handleClose = () => {
   loginLoading.value = true
-  client_id.value = Config.ALIYUN_APP_ID
-  client_secret.value = Config.ALIYUN_APP_SECRET
+  client_id.value = ALIYUN_APP_ID
+  client_secret.value = ALIYUN_APP_SECRET
   clearInterval(intervalId.value)
   clearOpenTimers()
   if (drive115Timer) {
@@ -435,8 +437,8 @@ const loginStepFirst = async (msg: string) => {
         client_id.value = settingStore.uiOpenApiClientId.trim()
         client_secret.value = settingStore.uiOpenApiClientSecret.trim()
       } else {
-        client_id.value = Config.ALIYUN_APP_ID
-        client_secret.value = Config.ALIYUN_APP_SECRET
+        client_id.value = ALIYUN_APP_ID
+        client_secret.value = ALIYUN_APP_SECRET
       }
       refreshStepTips('process', 2)
       loginStepSecond(token)
@@ -530,8 +532,8 @@ const handlerChangeType = () => {
       }
     })
   } else {
-    client_id.value = Config.ALIYUN_APP_ID
-    client_secret.value = Config.ALIYUN_APP_SECRET
+    client_id.value = ALIYUN_APP_ID
+    client_secret.value = ALIYUN_APP_SECRET
     handleRefreshQrCodeUrl()
   }
 }

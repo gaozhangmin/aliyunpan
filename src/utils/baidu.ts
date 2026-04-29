@@ -1,15 +1,14 @@
 import { ITokenInfo } from '../user/userstore'
 import UserDAL from '../user/userdal'
 import message from './message'
-import Config from '../config'
 
 const BAIDU_AUTH_URL = 'https://openapi.baidu.com/oauth/2.0/authorize'
 const BAIDU_TOKEN_URL = 'https://openapi.baidu.com/oauth/2.0/token'
 const BAIDU_USER_INFO_URL = 'https://pan.baidu.com/rest/2.0/xpan/nas'
 const BAIDU_QUOTA_URL = 'https://pan.baidu.com/api/quota'
 
-const BAIDU_APP_ID = Config.BAIDU_APP_ID
-const BAIDU_APP_SECRET = Config.BAIDU_APP_SECRET
+const BAIDU_APP_ID = ''
+const BAIDU_APP_SECRET = ''
 const BAIDU_REDIRECT_URL = 'xbyboxplayer-oauth://callback'
 const BAIDU_SCOPE = 'basic,netdisk'
 

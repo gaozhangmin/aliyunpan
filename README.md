@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="https://github.com/gaozhangmin/staticResource/blob/master/images/icon.png" alt="小白羊网盘">
+  <img src="screenshot/icon.svg" alt="小白羊网盘 BoxPlayer">
 </p>
 <p align="center">
     <br> English | <a href="README-CN.md">中文</a>
 </p>
 <p align="center">
-    <em>小白羊网盘 - 多网盘统一管理 + 智能媒体库 + 媒体服务器 + 高速下载.</em>
+    <em>小白羊网盘 BoxPlayer - 多网盘统一管理 + 智能媒体库 + 媒体服务器 + 高速下载.</em>
 </p>
 
 <p align="center">
@@ -97,37 +97,37 @@
 # 界面 [![](https://img.shields.io/badge/-%E7%95%8C%E9%9D%A2-blue)](#界面-)
 
 ## 🖥️ 媒体服务器管理
-<img src="screenshot/截屏2026-04-24 23.03.06.png" width="400"> <img src="screenshot/截屏2026-04-24 23.04.22.png" width="400">
+<img src="screenshot/截屏2026-04-24 23.03.06.png" width="380"> <img src="screenshot/截屏2026-04-24 23.04.22.png" width="380">
 
 *媒体服务器列表 & 服务器卡片视图（支持自定义图标）*
 
 ## 🏠 媒体服务器主页
-<img src="screenshot/截屏2026-04-24 23.06.07.png" width="400"> <img src="screenshot/截屏2026-04-24 23.18.46.png" width="400">
+<img src="screenshot/截屏2026-04-24 23.06.07.png" width="380"> <img src="screenshot/截屏2026-04-24 23.18.46.png" width="380">
 
 *继续观看 & 分类媒体库（图库视图）*
 
 ## 🎬 剧集与媒体详情
-<img src="screenshot/截屏2026-04-24 23.06.22.png" width="400"> <img src="screenshot/截屏2026-04-24 23.28.52.png" width="400">
+<img src="screenshot/截屏2026-04-24 23.06.22.png" width="380"> <img src="screenshot/截屏2026-04-24 23.28.52.png" width="380">
 
 *剧集详情页 & 剧集列表*
 
 ## 📺 动漫与分类浏览
-<img src="screenshot/截屏2026-04-24 23.19.14.png" width="400"> <img src="screenshot/截屏2026-04-24 23.19.41.png" width="400">
+<img src="screenshot/截屏2026-04-24 23.19.14.png" width="380"> <img src="screenshot/截屏2026-04-24 23.19.41.png" width="380">
 
 *动漫库 & 媒体服务器搜索*
 
 ## 🔍 媒体库与聚合搜索
-<img src="screenshot/截屏2026-04-24 23.19.53.png" width="400"> <img src="screenshot/截屏2026-04-24 23.20.36.png" width="400">
+<img src="screenshot/截屏2026-04-24 23.19.53.png" width="380"> <img src="screenshot/截屏2026-04-24 23.20.36.png" width="380">
 
 *聚合搜索 & 本地媒体库列表视图*
 
 ## 📂 文件管理界面
-<img src="screenshot/截屏2026-04-24 23.20.18.png" width="400"> <img src="images/folder-tree.png" width="400">
+<img src="screenshot/截屏2026-04-24 23.20.18.png" width="380"> <img src="images/folder-tree.png" width="380">
 
 *文件管理主界面 & 文件夹树视图*
 
 ## 👤 多账号登录
-<img src="images/multi-account.png" width="400"> <img src="images/login-qr.png" width="400">
+<img src="images/multi-account.png" width="380"> <img src="images/login-qr.png" width="380">
 
 *多网盘账号管理 & 二维码登录*
 
@@ -190,65 +190,9 @@ sudo xattr -d com.apple.quarantine /Applications/xbyboxplayer.app
 
 ---
 
-## Windows
-> * ia32：64位x86架构的处理器
-> * x64：Apple M1处理器版本
-> * portable.exe 免安装版本
-
-1. 在 [Latest Release](https://github.com/gaozhangmin/aliyunpan/releases/latest) 页面下载 `XBYDriver-Setup-*.exe` 的安装包
-2. 下载完成后双击安装包进行安装
-3. 如果提示不安全，可以点击 `更多信息` -> `仍要运行` 进行安装
-4. 开始使用吧！
-
-
-## MacOS
-> * x64：64位x86架构的处理器
-> * arm64：Apple M1处理器版本
-
-1.  去 [Latest Release](https://github.com/gaozhangmin/aliyunpan/releases/latest) 页面下载对应芯片以 `.dmg` 的安装包（Apple Silicon机器请使用arm64版本，并注意执行下文`xattr`指令）
-2.  下载完成后双击安装包进行安装，然后将 `小白羊` 拖动到 `Applications` 文件夹。
-3.  开始使用吧！
-
-## Linux
-> * x64：64位x86架构的处理器
-> * arm64：64位ARM架构的处理器。
-> * armv7l：32位ARM架构的处理器。
-### deb安装包
-1.  去 [Latest Release](https://github.com/gaozhangmin/aliyunpan/releases/latest) 页面下载以 `.deb` 结尾的安装包
-2.  执行`sudo dpkg -i XBYDriver-3.11.6-linux-amd64.deb`
-### AppImage安装包
-1.  去 [Latest Release](https://github.com/gaozhangmin/aliyunpan/releases/latest) 页面下载以 `.AppImage` 结尾的安装包
-2.  chmod +x XBYDriver-3.11.6-linux-amd64.AppImage`
-3.  下载完成后双击安装包进行安装。
-4.  开始使用吧！
-
-
-### 故障排除
-
--   "小白羊网盘" can't be opened because the developer cannot be verified.
-
-    <p align="center">
-      <img width="300" src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/a850d1ed-f177-47a3-a61e-b82d46c6c47d" />
-    </p>
-
-  -   点击 `Cancel` 按钮，然后去 `设置` -> `隐私与安全性` 页面，点击 `仍要打开` 按钮，然后在弹出窗口里点击 `打开` 按钮即可，以后就再也不会有任何弹窗告警了 🎉
-
-      <p align="center">
-        <img width="500" src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/53743a9f-0b0e-49e2-9331-aabc93483f73" /> <img width="200" src="https://github.com/gaozhangmin/aliyunpan/assets/9278488/0d97a636-7018-4b9a-bd68-27c1c17f6cd8" />
-      </p>
-
-  -   如果在 `隐私与安全性` 中找不到以上选项，或启动时提示文件损坏（Apple Silicon版本）。打开 `Terminal.app`，并输入以下命令（中途可能需要输入密码），然后重启 `小白羊云盘` 即可：
-
-      ```sh
-      sudo xattr -d com.apple.quarantine /Applications/小白羊云盘.app
-      ```
-<a href="#readme">
-    <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
-</a>
-
 # 小白羊公众号 [![](https://img.shields.io/badge/-%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7-blue)](#小白羊公众号-)
 <p align="center">
-  <img height="360" src="https://github.com/gaozhangmin/staticResource/blob/master/images/qrcode_search_white.png" />
+  <img src="screenshot/qrcode_wechat.jpg" width="380">
 </p>
 <a href="#readme">
     <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">

@@ -4,11 +4,10 @@ import type { ClientRequest } from 'http'
 import path from 'path'
 import { FileHandle } from 'fs/promises'
 import UserDAL from '../user/userdal'
-import Config from '../config'
 
 const BAIDU_API_HOST = 'https://pan.baidu.com'
 const BAIDU_PCS_HOST = 'https://d.pcs.baidu.com'
-const BAIDU_PCS_APP_ID = Config.BAIDU_PCS_APP_ID
+const BAIDU_PCS_APP_ID = ''
 
 const BAIDU_BLOCK_SIZE = 4 * 1024 * 1024
 const BAIDU_SLICE_SIZE = 256 * 1024

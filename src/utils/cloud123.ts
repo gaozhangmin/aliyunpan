@@ -1,14 +1,13 @@
 import { ITokenInfo } from '../user/userstore'
 import UserDAL from '../user/userdal'
 import message from './message'
-import Config from '../config'
 
 const CLOUD123_AUTH_URL = 'https://www.123pan.com/auth'
 const CLOUD123_ACCESS_TOKEN_URL = 'https://open-api.123pan.com/api/v1/oauth2/access_token'
 const CLOUD123_USER_INFO_URL = 'https://open-api.123pan.com/api/v1/user/info'
 
-const CLOUD123_APP_ID = Config.PAN123_APP_ID
-const CLOUD123_APP_SECRET = Config.PAN123_APP_SECRET
+const CLOUD123_APP_ID = ''
+const CLOUD123_APP_SECRET = ''
 const CLOUD123_REDIRECT_URL = 'xbyboxplayer-oauth://callback'
 
 const CLOUD123_SCOPE = 'user:base,file:all:read,file:all:write'

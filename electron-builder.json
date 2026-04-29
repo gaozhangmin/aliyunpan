@@ -1,13 +1,13 @@
 {
   "appId": "com.xbyboxplayer.app",
-  "productName": "boxplayer",
+  "productName": "BoxPlayer",
   "protocols": [
     {
       "name": "xbyboxplayer OAuth",
       "schemes": ["xbyboxplayer-oauth"]
     }
   ],
-  "copyright": "copyright ©2023 gaozhangmin",
+  "copyright": "copyright ©2026 GaoZhangMin",
   "asar": true,
   "compression": "maximum",
   "directories": { "output": "release" },
@@ -68,10 +68,13 @@
     ]
   },
   "dmg": {
-    "window": { "width": 540, "height": 380 },
+    "title": "BoxPlayer",
+    "background": "./build/dmg-background.png",
+    "window": { "width": 560, "height": 320 },
+    "iconSize": 96,
     "contents": [
-      { "x": 410, "y": 230, "type": "link", "path": "/Applications" },
-      { "x": 130, "y": 230, "type": "file" }
+      { "x": 400, "y": 160, "type": "link", "path": "/Applications" },
+      { "x": 160, "y": 160, "type": "file" }
     ]
   },
   "nsis": {

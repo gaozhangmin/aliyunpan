@@ -1,7 +1,7 @@
 {
-  "name": "boxplayer",
-  "description": "boxplayer",
-  "version": "4.0.4-beta",
+  "name": "BoxPlayer",
+  "description": "BoxPlayer",
+  "version": "4.0.5-beta",
   "main": "dist/electron/main/index.js",
   "author": {
     "name": "gaozhangmin",

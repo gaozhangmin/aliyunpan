@@ -1,14 +1,11 @@
 import { ITokenInfo } from '../user/userstore'
-import Config from '../config'
 
 const DRIVE115_AUTH_DEVICE_URL = 'https://passportapi.115.com/open/authDeviceCode'
 const DRIVE115_QR_STATUS_URL = 'https://qrcodeapi.115.com/get/status/'
 const DRIVE115_TOKEN_URL = 'https://passportapi.115.com/open/deviceCodeToToken'
 const DRIVE115_REFRESH_URL = 'https://passportapi.115.com/open/refreshToken'
-const CLOUD123_APP_ID = Config.PAN115_APP_ID
-const CLOUD123_APP_SECRET = Config.PAN115_APP_SECRET
-export const DRIVE115_APP_ID = CLOUD123_APP_ID
-export const DRIVE115_APP_SECRET = CLOUD123_APP_SECRET
+export const DRIVE115_APP_ID = ''
+export const DRIVE115_APP_SECRET = ''
 
 const base64UrlEncode = (input: ArrayBuffer): string => {
   const bytes = new Uint8Array(input)

@@ -2,7 +2,7 @@ import type { MediaServerConfig } from '../types/mediaServer'
 import type { PlexPin, PlexResource } from '../types/mediaServerPlex'
 import { openExternal } from '../utils/electronhelper'
 
-const PLEX_CLIENT_ID = '38BE0A23-C85F-4950-ABFE-EF2EFF26D2E3'
+const PLEX_CLIENT_ID = ''
 const PLEX_PRODUCT = 'BoxPlayer'
 const PLEX_VERSION = '1.7.20'
 const PLEX_PLATFORM = 'BoxPlayer_Electron'

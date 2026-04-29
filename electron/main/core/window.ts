@@ -127,7 +127,7 @@ export function createMainWindow() {
   AppWindow.mainWindow.on('ready-to-show', function() {
     AppWindow.mainWindow!.webContents.send('setPage', { page: 'PageMain' })
     AppWindow.mainWindow!.webContents.send('setTheme', { dark: nativeTheme.shouldUseDarkColors })
-    AppWindow.mainWindow!.setTitle('boxplayer')
+    AppWindow.mainWindow!.setTitle('BoxPlayer')
     if (is.windows() && process.argv && process.argv.join(' ').indexOf('--openAsHidden') < 0) {
       AppWindow.mainWindow!.show()
     } else if (is.macOS() && !app.getLoginItemSettings().wasOpenedAsHidden) {
@@ -179,7 +179,7 @@ export function createTray() {
   const icon = getStaticPath('icon_256x256.ico')
   AppWindow.appTray = new Tray(icon)
   const contextMenu = Menu.buildFromTemplate(trayMenuTemplate)
-  AppWindow.appTray.setToolTip('boxplayer')
+  AppWindow.appTray.setToolTip('BoxPlayer')
   AppWindow.appTray.setContextMenu(contextMenu)
   AppWindow.appTray.on('click', () => {
     if (AppWindow.mainWindow && AppWindow.mainWindow.isDestroyed() == false) {
