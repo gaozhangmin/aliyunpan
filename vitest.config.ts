@@ -7,6 +7,7 @@ export default defineConfig({
     include: [
       'electron/main/download/__tests__/**/*.test.ts',
       'src/media-server/__tests__/**/*.test.ts',
+      'src/utils/__tests__/**/*.test.ts',
     ],
   },
 })

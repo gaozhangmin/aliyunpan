@@ -20,6 +20,7 @@ import fsPromises from 'fs/promises'
 import { DecodeEncName } from '../aliapi/utils'
 import { getEncType } from '../utils/proxyhelper'
 import { SHA256 } from 'crypto-js'
+import { shouldRemoveAriaStoppedResult } from '../utils/aria2Rpc'
 
 export interface IStateDownFile {
   DownID: string
@@ -349,13 +350,13 @@ export default class DownDAL {
           }
         } else if (isStop) {
           downingStore.mUpdateDownState(downingItem, 'stop')
-          dellist.push(gid)
+          if (shouldRemoveAriaStoppedResult(status)) dellist.push(gid)
         } else if (isError) {
           if (!Down.FailedMessage) {
             Down.FailedMessage = '下载失败'
           }
           downingStore.mUpdateDownState(downingItem, 'error', Down.FailedMessage)
-          dellist.push(gid)
+          if (shouldRemoveAriaStoppedResult(status)) dellist.push(gid)
         } else if (isDowning) {
           hasSpeed += Down.DownSpeed
           let lastTime = ((totalLengthInt - Down.DownSize) / (Down.DownSpeed + 1)) % 356400

@@ -3976,7 +3976,7 @@ onUnmounted(() => {
   width: clamp(48px, 20%, 76px);
   height: clamp(48px, 20%, 76px);
   border-radius: 18px;
-  background: center / contain no-repeat url('/favicon.ico');
+  background: center / contain no-repeat url('/icon.svg');
   box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.28);
   filter: grayscale(1) brightness(0.72) contrast(0.92);
   opacity: 0.88;
@@ -4744,7 +4744,7 @@ onUnmounted(() => {
   width: clamp(40px, 40%, 58px);
   height: clamp(40px, 40%, 58px);
   border-radius: 16px;
-  background: center / contain no-repeat url('/favicon.ico');
+  background: center / contain no-repeat url('/icon.svg');
   box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.28);
   filter: grayscale(1) brightness(0.72) contrast(0.92);
   opacity: 0.88;

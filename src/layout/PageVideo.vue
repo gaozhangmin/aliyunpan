@@ -2,21 +2,48 @@
 import { KeyboardState, useAppStore, useKeyboardStore, useSettingStore } from '../store'
 import { useMediaLibraryStore } from '../store/medialibrary'
 import type { MediaLibraryItem } from '../types/media'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { h, onBeforeUnmount, onMounted, ref } from 'vue'
+import { Button, Input, Modal, Option as AOption, Select } from '@arco-design/web-vue'
 import Artplayer from 'artplayer'
 import HlsJs from 'hls.js'
+import * as dashjs from 'dashjs'
 import AliFile from '../aliapi/file'
 import AliDirFileList from '../aliapi/dirfilelist'
 import levenshtein from 'fast-levenshtein'
 import type { SettingOption } from 'artplayer/types/setting'
 import type { Option } from 'artplayer/types/option'
 import AliFileCmd from '../aliapi/filecmd'
+import PlayerUtils from '../utils/playerhelper'
 import { getEncType, getProxyUrl, getRawUrl, IRawUrl } from '../utils/proxyhelper'
 import { TestAlt, TestKey } from '../utils/keyboardhelper'
 import { GetExpiresTime } from '../utils/utils'
-import artplayerPluginDanmuku from '../../src/module/video-plugins/artplayer-plugin-danmuku'
-import artplayerPluginLibass from '../../src/module/video-plugins/artplayer-plugin-libass'
-import PlayerUtils from '../utils/playerhelper'
+import artplayerPluginDanmuku from 'artplayer-plugin-danmuku'
+import type { Danmu } from 'artplayer-plugin-danmuku'
+import artplayerPluginChapter from 'artplayer-plugin-chapter'
+import artplayerPluginDashControl from 'artplayer-plugin-dash-control'
+import artplayerPluginHlsControl from 'artplayer-plugin-hls-control'
+import artplayerPluginJassub from 'artplayer-plugin-jassub'
+import artplayerPluginMultipleSubtitles from 'artplayer-plugin-multiple-subtitles'
+import JASSUBWorker from 'jassub/dist/jassub-worker.js?url'
+import JASSUBWorkerWasm from 'jassub/dist/jassub-worker.wasm?url'
+import JASSUBWorkerModernWasm from 'jassub/dist/jassub-worker-modern.wasm?url'
+import JASSUBDefaultFont from 'jassub/dist/default.woff2?url'
+import {
+  autoMatchDanmaku,
+  buildDanmakuPluginOption,
+  getBangumiDetail,
+  loadDanmakuComments,
+  searchAnime
+} from '../utils/danmakuApi'
+import type { DanmakuApiConfig, DanmakuEpisode, DanmakuSearchAnime } from '../utils/danmakuApi'
+import {
+  formatSubtitleDownloadCount,
+  getSubtitleDownload,
+  getSubtitleExtension,
+  searchSubtitles
+} from '../utils/subtitleApi'
+import type { SubtitleSearchResult } from '../utils/subtitleApi'
+import message from '../utils/message'
 import { simpleToTradition, traditionToSimple } from 'chinese-simple2traditional'
 import path from 'path'
 import UserDAL from '../user/userdal'
@@ -50,6 +77,8 @@ let mediaServerStopReported = false
 let mediaServerLastProgressSecond = -1
 let pendingMediaServerSeekTime: number | null = null
 const mediaServerControlNames = new Set<string>()
+let danmakuAutoLoadingKey = ''
+let danmakuAutoLoadedKey = ''
 
 const updateWindowTitle = (name?: string) => {
   document.title = name || pageVideo.file_name || '视频在线预览'
@@ -91,6 +120,7 @@ const options: Option = {
   container: '#artPlayer',
   url: '',
   volume: 1,
+  backdrop: false,
   autoSize: false,
   autoMini: true,
   loop: false,
@@ -107,6 +137,9 @@ const options: Option = {
   subtitleOffset: false,
   screenshot: true,
   miniProgressBar: false,
+  subtitle: {
+    escape: false
+  },
   playsInline: true,
   moreVideoAttr: {
     // @ts-ignore
@@ -115,7 +148,8 @@ const options: Option = {
   },
   customType: {
     m3u8: (video: HTMLMediaElement, url: string, art: Artplayer) => playByHls(video, url, art),
-    ts: (video: HTMLMediaElement, url: string, art: Artplayer) => playByHls(video, url, art)
+    ts: (video: HTMLMediaElement, url: string, art: Artplayer) => playByHls(video, url, art),
+    mpd: (video: HTMLMediaElement, url: string, art: Artplayer) => playByDash(video, url, art)
   }
 }
 
@@ -162,14 +196,7 @@ const refreshMediaServerPlayback = async (
   if (subtitleStreamIndex >= 0) {
     pageVideo.media_server_subtitle_label = (pageVideo.media_server_subtitle_options || []).find((item) => item.streamIndex === subtitleStreamIndex)?.label || pageVideo.media_server_subtitle_label || ''
   }
-  const nextProxyUrl = getProxyUrl({
-    user_id: pageVideo.user_id,
-    drive_id: pageVideo.drive_id,
-    file_id: pageVideo.file_id,
-    proxy_url: playback.url,
-    proxy_headers: playback.headers ? JSON.stringify(playback.headers) : ''
-  })
-  art.url = nextProxyUrl
+  setArtVideoUrl(art, playback.url, getArtVideoType(playback.url))
   mediaServerReportStarted = false
   mediaServerStopReported = false
   await sendMediaServerStartReport(resumeTime)
@@ -244,6 +271,7 @@ const playByHls = (video: HTMLMediaElement, url: string, art: Artplayer) => {
   if (HlsJs.isSupported()) {
     // @ts-ignore
     if (art.hls) art.hls.destroy()
+    destroyArtDash(art)
     const hls = new HlsJs({
       maxBufferLength: 500
     })
@@ -269,8 +297,15 @@ const playByHls = (video: HTMLMediaElement, url: string, art: Artplayer) => {
         }
       }
     })
+    hls.on(HlsJs.Events.MANIFEST_PARSED, () => {
+      if ((art as any).hls === hls && isHlsVideoType(art.type)) getHlsControlPlugin(art)?.update?.()
+    })
+    hls.on(HlsJs.Events.AUDIO_TRACKS_UPDATED, () => {
+      if ((art as any).hls === hls && isHlsVideoType(art.type)) getHlsControlPlugin(art)?.update?.()
+    })
     // @ts-ignore
     art.hls = hls
+    ensureHlsControlPlugin(art)
     art.on('destroy', () => hls.destroy())
   } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
     video.src = url
@@ -279,11 +314,202 @@ const playByHls = (video: HTMLMediaElement, url: string, art: Artplayer) => {
   }
 }
 
+const playByDash = (video: HTMLMediaElement, url: string, art: Artplayer) => {
+  if (!dashjs.supportsMediaSource()) {
+    art.notice.show = '不支持的视频格式：mpd'
+    return
+  }
+  destroyArtHls(art)
+  destroyArtDash(art)
+  const dash = dashjs.MediaPlayer().create()
+  dash.initialize(video, url, art.option.autoplay)
+  ;(art as any).dash = dash
+  ensureDashControlPlugin(art)
+  const events = dashjs.MediaPlayer.events
+  dash.on(events.STREAM_INITIALIZED, () => {
+    if ((art as any).dash === dash && isDashVideoType(art.type)) getDashControlPlugin(art)?.update?.()
+  })
+  dash.on(events.PLAYBACK_METADATA_LOADED, () => {
+    if ((art as any).dash === dash && isDashVideoType(art.type)) getDashControlPlugin(art)?.update?.()
+  })
+  art.on('destroy', () => dash.destroy())
+}
+
+const getArtVideoType = (url: string, type?: string) => {
+  const normalizedType = String(type || '').toLowerCase()
+  if (normalizedType === 'hls' || normalizedType === 'm3u8') return 'm3u8'
+  if (normalizedType === 'dash' || normalizedType === 'mpd') return 'mpd'
+  if (normalizedType === 'ts') return 'ts'
+  const pathname = url.split('?')[0].split('#')[0].toLowerCase()
+  if (pathname.endsWith('.m3u8')) return 'm3u8'
+  if (pathname.endsWith('.ts')) return 'ts'
+  if (pathname.endsWith('.mpd')) return 'mpd'
+  return ''
+}
+
+const isHlsVideoType = (type: string) => ['m3u8', 'hls', 'ts'].includes(type)
+const isDashVideoType = (type: string) => ['mpd', 'dash'].includes(type)
+
+const destroyArtHls = (art: Artplayer) => {
+  if ((art as any).hls) {
+    ;(art as any).hls.detachMedia?.()
+    ;(art as any).hls.destroy?.()
+    delete (art as any).hls
+  }
+  cleanupStreamingControlPlugin(art, 'hls')
+}
+
+const destroyArtDash = (art: Artplayer) => {
+  if ((art as any).dash) {
+    ;(art as any).dash.destroy?.()
+    delete (art as any).dash
+  }
+  cleanupStreamingControlPlugin(art, 'dash')
+}
+
+const setArtVideoUrl = (art: Artplayer, url: string, type?: string) => {
+  const artType = getArtVideoType(url, type)
+  art.type = artType as any
+  if (!isHlsVideoType(artType)) destroyArtHls(art)
+  if (!isDashVideoType(artType)) destroyArtDash(art)
+  art.url = url
+  scheduleCleanupInactiveStreamingControls(art)
+}
+
+const getHlsControlPlugin = (art: Artplayer) => {
+  return art.plugins.artplayerPluginHlsControl as any
+}
+
+const safeRemoveArtControl = (art: Artplayer, name: string) => {
+  try {
+    art.controls.remove(name)
+  } catch (error) {
+    if ((art.controls as any).cache?.has?.(name)) console.warn(`移除播放器控件失败: ${name}`, error)
+  }
+}
+
+const safeRemoveArtSetting = (art: Artplayer, name: string) => {
+  try {
+    if (art.setting.find?.(name)) art.setting.remove(name)
+  } catch (error) {
+    console.warn(`移除播放器设置失败: ${name}`, error)
+  }
+}
+
+const forceRemoveStreamingControlDom = (art: Artplayer, name: string) => {
+  const player = (art as any).template?.$player as HTMLElement | undefined
+  if (!player) return
+  player.querySelectorAll(`.art-control-${name}, .art-setting-item[data-name="${name}"]`)
+    .forEach((element) => element.remove())
+}
+
+const cleanupStreamingControlPlugin = (art: Artplayer, type: 'hls' | 'dash') => {
+  const plugin = type === 'hls' ? getHlsControlPlugin(art) : getDashControlPlugin(art)
+  if (plugin?.update) {
+    art.off('ready', plugin.update)
+    art.off('restart', plugin.update)
+  }
+  safeRemoveArtControl(art, `${type}-quality`)
+  safeRemoveArtControl(art, `${type}-audio`)
+  safeRemoveArtSetting(art, `${type}-quality`)
+  safeRemoveArtSetting(art, `${type}-audio`)
+  forceRemoveStreamingControlDom(art, `${type}-quality`)
+  forceRemoveStreamingControlDom(art, `${type}-audio`)
+}
+
+const cleanupInactiveStreamingControls = (art: Artplayer) => {
+  if (!isHlsVideoType(art.type)) cleanupStreamingControlPlugin(art, 'hls')
+  if (!isDashVideoType(art.type)) cleanupStreamingControlPlugin(art, 'dash')
+}
+
+const scheduleCleanupInactiveStreamingControls = (art: Artplayer) => {
+  cleanupInactiveStreamingControls(art)
+  window.setTimeout(() => cleanupInactiveStreamingControls(art), 0)
+  window.setTimeout(() => cleanupInactiveStreamingControls(art), 250)
+}
+
+const ensureHlsControlPlugin = (art: Artplayer) => {
+  if (getHlsControlPlugin(art)) return
+  art.plugins.add(artplayerPluginHlsControl({
+    quality: {
+      control: true,
+      setting: true,
+      getName: (level: any) => level.name || (level.height ? `${level.height}P` : '未知'),
+      title: '清晰度',
+      auto: '自动'
+    },
+    audio: {
+      control: true,
+      setting: true,
+      getName: (track: any) => track.name || track.lang || track.language || '默认音轨',
+      title: '音轨',
+      auto: '自动'
+    }
+  }))
+}
+
+const getDashControlPlugin = (art: Artplayer) => {
+  return art.plugins.artplayerPluginDashControl as any
+}
+
+const ensureDashControlPlugin = (art: Artplayer) => {
+  if (getDashControlPlugin(art)) return
+  art.plugins.add(artplayerPluginDashControl({
+    quality: {
+      control: true,
+      setting: true,
+      getName: (level: any) => level.height ? `${level.height}P` : '未知',
+      title: '清晰度',
+      auto: '自动'
+    },
+    audio: {
+      control: true,
+      setting: true,
+      getName: (track: any) => String(track.lang || track.id || '默认音轨').toUpperCase(),
+      title: '音轨',
+      auto: '自动'
+    }
+  }))
+}
+
+const getChapterPlugin = (art: Artplayer) => {
+  return art.plugins.artplayerPluginChapter as any
+}
+
+const getMediaServerChapters = (art: Artplayer) => {
+  if (pageVideo.drive_id !== 'media_server') return []
+  const duration = Number(art.duration || 0)
+  if (!duration) return []
+  return (pageVideo.media_server_chapters || [])
+    .map((chapter) => ({
+      start: Number(chapter.start),
+      end: chapter.end === Infinity ? Infinity : Number(chapter.end),
+      title: String(chapter.title || '')
+    }))
+    .filter((chapter) => (
+      Number.isFinite(chapter.start)
+      && chapter.start >= 0
+      && chapter.start < duration
+      && (chapter.end === Infinity || (Number.isFinite(chapter.end) && chapter.end > chapter.start))
+    ))
+    .map((chapter) => ({
+      ...chapter,
+      end: chapter.end === Infinity ? Infinity : Math.min(chapter.end, duration)
+    }))
+}
+
+const updateVideoChapters = (art: Artplayer) => {
+  getChapterPlugin(art)?.update?.({
+    chapters: getMediaServerChapters(art)
+  })
+}
+
 type selectorItem = {
   url: string;
   html: string;
   type?: string;
   name?: string;
+  data?: string;
   default?: boolean;
   file_id?: string;
   ext?: string;
@@ -294,6 +520,13 @@ type selectorItem = {
   parent_file_id?: string;
   password?: string;
   encType?: string;
+}
+
+type MultipleSubtitleTrack = {
+  name: string;
+  label: string;
+  url: string;
+  type: 'srt' | 'vtt';
 }
 
 type mediaServerStreamOption = {
@@ -387,6 +620,7 @@ const loadMediaServerSourceState = async (
   pageVideo.media_server_video_label = videoOptions.find((item) => item.streamIndex === videoStreamIndex)?.label || ''
   pageVideo.media_server_audio_label = audioOptions.find((item) => item.streamIndex === audioStreamIndex)?.label || ''
   pageVideo.media_server_subtitle_label = subtitleOptions.find((item) => item.streamIndex === subtitleStreamIndex)?.label || ''
+  pageVideo.media_server_chapters = detail.chapters || []
 
   return {
     sourceId: selectedSource?.id || '',
@@ -655,10 +889,17 @@ const switchMediaServerPlaylistItem = async (art: Artplayer, item: selectorItem)
     pageVideo.media_server_subtitle_label = selectedSubtitleCard?.title || ''
     pageVideo.media_server_audio_options = audioOptions
     pageVideo.media_server_subtitle_options = subtitleOptions
+    pageVideo.media_server_chapters = detail.chapters || []
 
     mediaServerReportStarted = false
     mediaServerStopReported = false
     mediaServerLastProgressSecond = -1
+    if (onlineSubData.dataUrl) URL.revokeObjectURL(onlineSubData.dataUrl)
+    onlineSubData.data = ''
+    onlineSubData.ext = ''
+    onlineSubData.name = ''
+    onlineSubData.dataUrl = ''
+    clearDownloadedSubtitleSelector()
 
     pendingMediaServerSeekTime = pageVideo.play_cursor || playback.playCursorSeconds || 0
     await getVideoInfo(art)
@@ -668,6 +909,7 @@ const switchMediaServerPlaylistItem = async (art: Artplayer, item: selectorItem)
     await applyPendingMediaServerSeek(art)
     art.playbackRate = playbackRate
     await sendMediaServerStartReport(art.currentTime || pageVideo.play_cursor || 0)
+    await autoLoadDanmaku(art)
     return handlerPlayTitle(detail.title)
   } catch (error: any) {
     console.error('播放器内切换剧集失败:', error)
@@ -690,6 +932,7 @@ onMounted(async () => {
   await refreshPlayList(ArtPlayerRef)
   await loadPlugins(ArtPlayerRef)
   await getVideoInfo(ArtPlayerRef)
+  await autoLoadDanmaku(ArtPlayerRef)
   // 加载设置
   await defaultSettings(ArtPlayerRef)
   await defaultControls(ArtPlayerRef)
@@ -784,6 +1027,7 @@ const initEvent = (art: Artplayer) => {
     await getVideoCursor(art, pageVideo.play_cursor)
     await applyPendingMediaServerSeek(art)
     art.playbackRate = playbackRate
+    scheduleCleanupInactiveStreamingControls(art)
     if (pageVideo.drive_id === 'media_server') {
       await sendMediaServerStartReport(art.currentTime || pageVideo.play_cursor || 0)
     }
@@ -793,6 +1037,7 @@ const initEvent = (art: Artplayer) => {
     await getVideoCursor(art, pageVideo.play_cursor)
     await applyPendingMediaServerSeek(art)
     art.playbackRate = playbackRate
+    scheduleCleanupInactiveStreamingControls(art)
     if (pageVideo.drive_id === 'media_server') {
       mediaServerLastProgressSecond = -1
       await sendMediaServerStartReport(art.currentTime || pageVideo.play_cursor || 0)
@@ -841,6 +1086,13 @@ const initEvent = (art: Artplayer) => {
       if ($current) Artplayer.utils.inverseClass($current as HTMLElement, 'art-current')
     }
   })
+  art.on('video:loadedmetadata', () => {
+    updateVideoChapters(art)
+    scheduleCleanupInactiveStreamingControls(art)
+  })
+  art.on('video:canplay', () => {
+    scheduleCleanupInactiveStreamingControls(art)
+  })
   // 播放时间变化
   art.on('video:timeupdate', async () => {
     if (art.video.currentTime > 0
@@ -883,11 +1135,7 @@ const jumpToNextVideo = async (art: Artplayer) => {
   await updateVideoTime()
   await refreshSetting(art, item)
   await refreshPlayList(art, item.file_id)
-  // 重新载入弹幕
-  if (!(art.plugins.artplayerPluginDanmaku as any)?.isHide) {
-    await (art.plugins.artplayerPluginDanmaku as any)?.stop()
-    await (art.plugins.artplayerPluginDanmaku as any)?.load()
-  }
+  await autoLoadDanmaku(art)
 }
 
 const curDirFileList: any[] = []
@@ -965,8 +1213,9 @@ const refreshSetting = async (art: Artplayer, item: any) => {
     URL.revokeObjectURL(onlineSubData.dataUrl)
   }
   onlineSubData.data = ''
-  onlineSubData.type = ''
+  onlineSubData.ext = ''
   onlineSubData.name = ''
+  clearDownloadedSubtitleSelector()
   // 刷新信息
   await getVideoInfo(art)
   await defaultSettings(art)
@@ -1046,6 +1295,508 @@ const defaultSettings = async (art: Artplayer) => {
   })
 }
 
+const getVideoDanmakuTitle = () => {
+  return pageVideo.file_name || pageVideo.html || ''
+}
+
+const getVideoSearchTitle = () => {
+  return pageVideo.file_name || pageVideo.html || ''
+}
+
+const getDanmakuVideoKey = () => {
+  return [
+    pageVideo.drive_id || '',
+    pageVideo.user_id || '',
+    pageVideo.file_id || '',
+    pageVideo.media_server_item_id || '',
+    getVideoDanmakuTitle(),
+    autoPlayNumber
+  ].join('|')
+}
+
+const getDanmakuApis = (): DanmakuApiConfig[] => {
+  return useSettingStore().danmakuApis
+    .filter((api) => api.name.trim() && api.url.trim())
+    .map((api) => ({
+      id: api.id,
+      name: api.name.trim(),
+      url: api.url.trim()
+    }))
+}
+
+const getDanmakuPlugin = (art: Artplayer) => {
+  return art.plugins.artplayerPluginDanmuku as any
+}
+
+const applyDanmakuPluginConfig = (art: Artplayer) => {
+  const plugin = getDanmakuPlugin(art)
+  plugin?.config?.(buildDanmakuPluginOption(useSettingStore()) as any)
+}
+
+const loadDanmakuToPlayer = async (art: Artplayer, danmus: Danmu[], tip = '已加载弹幕') => {
+  const plugin = getDanmakuPlugin(art)
+  if (!plugin) return
+  applyDanmakuPluginConfig(art)
+  await plugin.load?.(danmus)
+  if (useSettingStore().danmakuVisible) plugin.show?.()
+  else plugin.hide?.()
+  message.success(`${tip}（${danmus.length} 条）`)
+}
+
+const getJassubInstance = (art: Artplayer) => {
+  return (art.plugins.artplayerPluginJassub as any)?.instance
+}
+
+const setJassubVisible = (art: Artplayer, visible: boolean) => {
+  const instance = getJassubInstance(art)
+  const canvasParent = instance?._canvasParent as HTMLElement | undefined
+  if (canvasParent) canvasParent.style.display = visible ? 'block' : 'none'
+  if (visible) instance?.resize?.()
+}
+
+const clearJassubSubtitle = (art: Artplayer) => {
+  const instance = getJassubInstance(art)
+  instance?.freeTrack?.()
+  setJassubVisible(art, false)
+  const subtitleElement = (art as any).template?.$subtitle as HTMLElement | undefined
+  if (subtitleElement) subtitleElement.style.visibility = 'visible'
+}
+
+const isAssSubtitleType = (type?: string) => {
+  return ['ass', 'ssa'].includes(String(type || '').toLowerCase())
+}
+
+const getSubtitleItemExt = (item: selectorItem) => {
+  return String(item.ext || getSubtitleExtension(item.name || item.url || item.html)).toLowerCase()
+}
+
+const switchSubtitleText = async (art: Artplayer, name: string, ext: string, data: string) => {
+  if (isAssSubtitleType(ext)) {
+    const instance = getJassubInstance(art)
+    if (!instance) throw new Error('JASSUB 未初始化')
+    const subtitleElement = (art as any).template?.$subtitle as HTMLElement | undefined
+    if (subtitleElement) subtitleElement.style.visibility = 'hidden'
+    instance.freeTrack?.()
+    instance.setTrack(data)
+    setJassubVisible(art, true)
+    art.subtitle.show = true
+    art.notice.show = `切换字幕：${name}`
+    return
+  }
+
+  clearJassubSubtitle(art)
+  await art.subtitle.switch(onlineSubData.dataUrl, {
+    name,
+    type: ext,
+    escape: false
+  })
+  art.subtitle.show = true
+  art.notice.show = `切换字幕：${name}`
+}
+
+const autoLoadDanmaku = async (art: Artplayer) => {
+  const videoKey = getDanmakuVideoKey()
+  if (!videoKey || danmakuAutoLoadedKey === videoKey || danmakuAutoLoadingKey === videoKey) return
+  const apis = getDanmakuApis()
+  if (!apis.length) return
+  danmakuAutoLoadingKey = videoKey
+  try {
+    const match = await autoMatchDanmaku(getVideoDanmakuTitle(), apis)
+    const firstMatch = match?.response.matches?.[0]
+    if (!match || !firstMatch) throw new Error('no danmaku match')
+    const danmus = await loadDanmakuComments(firstMatch.episodeId, match.api)
+    if (!danmus.length) throw new Error('empty danmaku')
+    if (getDanmakuVideoKey() !== videoKey) return
+    const title = firstMatch.episodeTitle || firstMatch.animeTitle || match.api.name
+    await loadDanmakuToPlayer(art, danmus, `已自动加载弹幕：${title}`)
+    danmakuAutoLoadedKey = videoKey
+  } catch (error) {
+    console.warn('自动加载弹幕失败:', error)
+    if (getDanmakuVideoKey() === videoKey) {
+      message.warning('自动加载弹幕失败，可以自己搜索。')
+      danmakuAutoLoadedKey = videoKey
+    }
+  } finally {
+    if (danmakuAutoLoadingKey === videoKey) danmakuAutoLoadingKey = ''
+  }
+}
+
+const subtitleLanguages = [
+  { code: 'zh-cn', name: '简体中文' },
+  { code: 'en', name: 'English' },
+  { code: 'zh-tw', name: '繁體中文' }
+]
+
+const getSelectedDanmakuApi = (apis: DanmakuApiConfig[], apiId: string) => {
+  return apis.find((api) => api.id === apiId) || apis[0]
+}
+
+const toStringValue = (value: unknown) => {
+  return typeof value === 'string' ? value : String(value ?? '')
+}
+
+const openDanmakuSearchModal = (art: Artplayer) => {
+  const apis = getDanmakuApis()
+  if (!apis.length) {
+    message.warning('请先在设置中配置弹幕库 API')
+    return
+  }
+
+  const keyword = ref(getVideoDanmakuTitle())
+  const apiId = ref(apis[0].id)
+  const loading = ref(false)
+  const animes = ref<DanmakuSearchAnime[]>([])
+  const episodes = ref<DanmakuEpisode[]>([])
+  const selectedAnimeTitle = ref('')
+  const selectedAnimeMeta = ref('')
+  const viewMode = ref<'search' | 'episodes'>('search')
+  let modal: any
+
+  const renderEmpty = (text: string) => {
+    return h('div', { class: 'danmaku-empty' }, text)
+  }
+
+  const renderAnimeRow = (anime: DanmakuSearchAnime) => {
+    const selected = selectedAnimeTitle.value === anime.animeTitle
+    return h('button', {
+      class: ['danmaku-result-row', selected ? 'is-active' : ''],
+      type: 'button',
+      onClick: () => loadEpisodes(anime)
+    }, [
+      h('span', { class: 'danmaku-result-icon' }, [
+        h('span', { class: 'danmaku-video-glyph' })
+      ]),
+      h('span', { class: 'danmaku-result-copy' }, [
+        h('span', { class: 'danmaku-result-title' }, anime.animeTitle),
+        h('span', { class: 'danmaku-result-meta' }, [
+          anime.typeDescription || anime.type || '番剧',
+          typeof anime.episodeCount === 'number' ? `  ${anime.episodeCount} 集` : ''
+        ].join(''))
+      ]),
+      h('span', { class: 'danmaku-result-arrow' }, '›')
+    ])
+  }
+
+  const renderEpisodeRow = (episode: DanmakuEpisode) => {
+    const title = episode.episodeTitle || `第 ${episode.episodeNumber || episode.episodeId} 集`
+    return h('button', {
+      class: 'danmaku-episode-card',
+      type: 'button',
+      onClick: () => loadEpisode(episode)
+    }, [
+      h('span', { class: 'danmaku-episode-number' }, typeof episode.episodeNumber !== 'undefined' ? `第 ${episode.episodeNumber} 话` : title),
+      h('span', { class: 'danmaku-episode-title' }, title)
+    ])
+  }
+
+  const runSearch = async () => {
+    const api = getSelectedDanmakuApi(apis, apiId.value)
+    if (!api || !keyword.value.trim()) return
+    loading.value = true
+    episodes.value = []
+    selectedAnimeTitle.value = ''
+    selectedAnimeMeta.value = ''
+    viewMode.value = 'search'
+    try {
+      animes.value = await searchAnime(keyword.value, api)
+      if (!animes.value.length) message.warning('没有搜索到弹幕')
+    } catch (error: any) {
+      message.error(error?.message || '搜索弹幕失败')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const loadEpisodes = async (anime: DanmakuSearchAnime) => {
+    const api = getSelectedDanmakuApi(apis, apiId.value)
+    if (!api) return
+    loading.value = true
+    try {
+      const detail = await getBangumiDetail(anime.animeId, api)
+      selectedAnimeTitle.value = detail.animeTitle || anime.animeTitle
+      selectedAnimeMeta.value = anime.typeDescription || anime.type || detail.typeDescription || detail.type || ''
+      episodes.value = detail.episodes || []
+      if (!episodes.value.length) message.warning('没有可加载的剧集弹幕')
+      else viewMode.value = 'episodes'
+    } catch (error: any) {
+      message.error(error?.message || '获取剧集弹幕失败')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const loadEpisode = async (episode: DanmakuEpisode) => {
+    const api = getSelectedDanmakuApi(apis, apiId.value)
+    if (!api) return
+    loading.value = true
+    try {
+      const danmus = await loadDanmakuComments(episode.episodeId, api)
+      if (!danmus.length) throw new Error('该剧集没有可加载的弹幕')
+      await loadDanmakuToPlayer(art, danmus, `已加载弹幕：${episode.episodeTitle}`)
+      danmakuAutoLoadedKey = getDanmakuVideoKey()
+      modal?.close?.()
+    } catch (error: any) {
+      message.error(error?.message || '加载弹幕失败')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const renderHeader = () => {
+    return h('div', { class: 'danmaku-full-header' }, [
+      h('button', {
+        class: 'danmaku-close-button',
+        type: 'button',
+        onClick: () => modal?.close?.()
+      }, '×'),
+      h('div', { class: 'danmaku-full-title' }, '在线弹幕搜索')
+    ])
+  }
+
+  const renderSearchView = () => {
+    return h('div', { class: 'danmaku-full-content' }, [
+      h('div', { class: 'danmaku-searchbar' }, [
+        h(Select, {
+          class: 'danmaku-api-select',
+          modelValue: apiId.value,
+          triggerProps: { autoFitPopupMinWidth: true },
+          'onUpdate:modelValue': (value: string | number | boolean | Record<string, any> | Array<string | number | boolean | Record<string, any>>) => {
+            apiId.value = toStringValue(value)
+            animes.value = []
+            episodes.value = []
+            selectedAnimeTitle.value = ''
+            selectedAnimeMeta.value = ''
+            if (keyword.value.trim()) void runSearch()
+          }
+        }, () => apis.map((api) => h(AOption, { value: api.id }, () => api.name))),
+      h('div', { class: 'danmaku-input-wrap' }, [
+          h(Input, {
+            class: 'danmaku-search-input',
+            modelValue: keyword.value,
+            placeholder: '输入剧集名称或电影标题',
+            onInput: (value: string) => { keyword.value = value },
+            'onUpdate:modelValue': (value: string) => { keyword.value = value },
+            onPressEnter: runSearch
+          })
+        ]),
+        h(Button, {
+          class: 'danmaku-search-button',
+          loading: loading.value,
+          onClick: runSearch
+        }, () => '搜索')
+      ]),
+      h('p', { class: 'danmaku-search-tip' }, '搜索时只保留剧集名称或电影标题，切换弹幕源将自动重新搜索'),
+      h('section', { class: 'danmaku-result-shell' }, [
+        h('div', { class: 'danmaku-modal-list' }, animes.value.length ? animes.value.map(renderAnimeRow) : renderEmpty('暂无搜索结果'))
+      ])
+    ])
+  }
+
+  const renderEpisodesView = () => {
+    return h('div', { class: 'danmaku-full-content danmaku-full-content-episodes' }, [
+      h('button', {
+        class: 'danmaku-back-button',
+        type: 'button',
+        onClick: () => { viewMode.value = 'search' }
+      }, '‹  返回剧集搜索'),
+      h('section', { class: 'danmaku-episode-shell' }, [
+        h('div', { class: 'danmaku-episode-grid' }, episodes.value.length ? episodes.value.map(renderEpisodeRow) : renderEmpty('没有可加载的剧集弹幕'))
+      ])
+    ])
+  }
+
+  modal = Modal.open({
+    title: '',
+    width: 1456,
+    hideTitle: true,
+    closable: false,
+    footer: false,
+    maskClosable: false,
+    modalClass: 'danmaku-search-modal',
+    bodyClass: 'danmaku-search-modal-body',
+    onOpen: runSearch,
+    content: () => h('div', { class: 'danmaku-modal' }, [
+      renderHeader(),
+      viewMode.value === 'episodes' ? renderEpisodesView() : renderSearchView()
+    ])
+  })
+}
+
+const loadSubtitleTextToPlayer = async (art: Artplayer, name: string, ext: string, data: string) => {
+  clearMultipleSubtitleState(art)
+  if (onlineSubData.dataUrl) URL.revokeObjectURL(onlineSubData.dataUrl)
+  const subtitleTranslate = art.storage.get('subtitleTranslate')
+  if (subtitleTranslate === 1) {
+    onlineSubData.data = traditionToSimple(data)
+  } else if (subtitleTranslate === 2) {
+    onlineSubData.data = simpleToTradition(data)
+  } else {
+    onlineSubData.data = data
+  }
+  onlineSubData.name = name
+  onlineSubData.ext = ext
+  onlineSubData.dataUrl = URL.createObjectURL(new Blob([onlineSubData.data], { type: ext }))
+  await switchSubtitleText(art, name, ext, onlineSubData.data)
+}
+
+const addDownloadedSubtitleToSelector = (name: string, ext: string, data: string) => {
+  downloadedSubSelector.forEach((item) => { item.default = false })
+  const html = `搜索: ${name}`
+  const index = downloadedSubSelector.findIndex((item) => item.name === name)
+  const item = {
+    url: '',
+    html,
+    name,
+    ext,
+    data,
+    default: true
+  }
+  if (index >= 0) downloadedSubSelector.splice(index, 1, item)
+  else downloadedSubSelector.push(item)
+}
+
+const loadSubtitleUrlToPlayer = async (art: Artplayer, item: selectorItem) => {
+  clearMultipleSubtitleState(art)
+  if (typeof item.data === 'string') {
+    await loadSubtitleTextToPlayer(art, item.name || item.html, item.ext || getSubtitleExtension(item.name || item.html), item.data)
+    return item.html
+  }
+  const ext = getSubtitleExtension(item.name || item.url || item.html)
+  if (isAssSubtitleType(ext)) {
+    const response = await fetch(item.url)
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    await loadSubtitleTextToPlayer(art, item.name || item.html, ext, await response.text())
+    return item.html
+  }
+  clearJassubSubtitle(art)
+  onlineSubData.name = item.name || item.html
+  onlineSubData.data = ''
+  onlineSubData.dataUrl = ''
+  onlineSubData.ext = ext
+  await art.subtitle.switch(item.url, { name: item.name, escape: false })
+  return item.html
+}
+
+const openSubtitleSearchModal = (art: Artplayer) => {
+  const keyword = ref(getVideoSearchTitle())
+  const language = ref('zh-cn')
+  const loading = ref(false)
+  const errorText = ref('')
+  const results = ref<SubtitleSearchResult[]>([])
+  let modal: any
+
+  const runSearch = async () => {
+    if (!keyword.value.trim()) return
+    loading.value = true
+    errorText.value = ''
+    try {
+      results.value = await searchSubtitles(keyword.value, language.value)
+      if (!results.value.length) message.warning('未找到相关字幕')
+    } catch (error: any) {
+      errorText.value = error?.message || '搜索失败，请重试'
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const loadSubtitle = async (subtitle: SubtitleSearchResult) => {
+    loading.value = true
+    errorText.value = ''
+    try {
+      const detail = await getSubtitleDownload(subtitle.fileId)
+      const response = await fetch(detail.link)
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const data = await response.text()
+      await loadSubtitleTextToPlayer(art, detail.fileName, getSubtitleExtension(detail.fileName), data)
+      addDownloadedSubtitleToSelector(detail.fileName, getSubtitleExtension(detail.fileName), data)
+      await getSubTitleList(art)
+      modal?.close?.()
+    } catch (error: any) {
+      errorText.value = error?.message || '下载失败，请重试'
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const renderSubtitleRow = (subtitle: SubtitleSearchResult) => {
+    return h('button', {
+      class: 'danmaku-result-row',
+      type: 'button',
+      disabled: loading.value,
+      onClick: () => loadSubtitle(subtitle)
+    }, [
+      h('span', { class: 'danmaku-result-icon' }, [
+        h('span', { class: 'subtitle-doc-glyph' })
+      ]),
+      h('span', { class: 'danmaku-result-copy' }, [
+        h('span', { class: 'danmaku-result-title' }, subtitle.name),
+        h('span', { class: 'danmaku-result-meta' }, `${subtitle.language}  下载: ${formatSubtitleDownloadCount(subtitle.downloadCount)}`)
+      ]),
+      h('span', { class: 'subtitle-download-arrow' }, '↓')
+    ])
+  }
+
+  const renderContentState = () => {
+    if (loading.value && !results.value.length) return h('div', { class: 'danmaku-empty' }, '搜索中...')
+    if (errorText.value) return h('div', { class: 'danmaku-empty' }, errorText.value)
+    if (!results.value.length) return h('div', { class: 'danmaku-empty' }, keyword.value.trim() ? '未找到相关字幕' : '请输入搜索关键词')
+    return results.value.map(renderSubtitleRow)
+  }
+
+  modal = Modal.open({
+    title: '',
+    width: 860,
+    hideTitle: true,
+    closable: false,
+    footer: false,
+    maskClosable: false,
+    modalClass: 'danmaku-search-modal subtitle-search-modal',
+    bodyClass: 'danmaku-search-modal-body',
+    onOpen: runSearch,
+    content: () => h('div', { class: 'danmaku-modal' }, [
+      h('div', { class: 'danmaku-full-header' }, [
+        h('button', {
+          class: 'danmaku-close-button',
+          type: 'button',
+          onClick: () => modal?.close?.()
+        }, '×'),
+        h('div', { class: 'danmaku-full-title' }, '在线字幕搜索')
+      ]),
+      h('div', { class: 'danmaku-full-content' }, [
+        h('div', { class: 'danmaku-searchbar subtitle-searchbar' }, [
+          h(Select, {
+            class: 'danmaku-api-select',
+            modelValue: language.value,
+            triggerProps: { autoFitPopupMinWidth: true },
+            'onUpdate:modelValue': (value: string | number | boolean | Record<string, any> | Array<string | number | boolean | Record<string, any>>) => {
+              language.value = toStringValue(value)
+            }
+          }, () => subtitleLanguages.map((item) => h(AOption, { value: item.code }, () => item.name))),
+          h('div', { class: 'danmaku-input-wrap' }, [
+            h(Input, {
+              class: 'danmaku-search-input',
+              modelValue: keyword.value,
+              placeholder: '搜索字幕或输入 TMDB ID',
+              onInput: (value: string) => { keyword.value = value },
+              'onUpdate:modelValue': (value: string) => { keyword.value = value },
+              onPressEnter: runSearch
+            })
+          ]),
+          h(Button, {
+            class: 'danmaku-search-button',
+            loading: loading.value,
+            disabled: !keyword.value.trim(),
+            onClick: runSearch
+          }, () => '搜索')
+        ]),
+        h('section', { class: 'danmaku-result-shell' }, [
+          h('div', { class: 'danmaku-modal-list' }, renderContentState())
+        ])
+      ])
+    ])
+  })
+}
+
 const defaultControls = async (art: Artplayer) => {
   if (playList.length > 1) {
     art.controls.update({
@@ -1091,15 +1842,58 @@ const defaultControls = async (art: Artplayer) => {
       }
     }
   })
+  const danmakuSearchControl = {
+    name: 'danmakuSearch',
+    index: 60,
+    position: 'right',
+    style: { padding: '0 10px', marginRight: '8px' },
+    html: '弹幕搜索',
+    tooltip: '搜索弹幕',
+    click: () => openDanmakuSearchModal(art)
+  }
+  try {
+    art.controls.add(danmakuSearchControl as any)
+  } catch {
+    art.controls.update(danmakuSearchControl as any)
+  }
+  const subtitleSearchControl = {
+    name: 'subtitleSearch',
+    index: 62,
+    position: 'right',
+    style: { padding: '0 10px', marginRight: '8px' },
+    html: '字幕搜索',
+    tooltip: '搜索字幕',
+    click: () => openSubtitleSearchModal(art)
+  }
+  try {
+    art.controls.add(subtitleSearchControl as any)
+  } catch {
+    art.controls.update(subtitleSearchControl as any)
+  }
 }
 
 const loadPlugins = async (art: Artplayer) => {
+  // 章节插件
+  art.plugins.add(artplayerPluginChapter({
+    chapters: []
+  }))
   // 弹幕插件
   art.plugins.add(artplayerPluginDanmuku({
-    danmuku: async (option) => PlayerUtils.getVideoDanmuList(pageVideo, option, autoPlayNumber)
+    ...buildDanmakuPluginOption(useSettingStore()),
+    danmuku: []
+  } as any))
+  // ASS/SSA 字幕插件
+  art.plugins.add(artplayerPluginJassub({
+    workerUrl: JASSUBWorker,
+    wasmUrl: JASSUBWorkerWasm,
+    modernWasmUrl: JASSUBWorkerModernWasm,
+    availableFonts: {
+      'liberation sans': JASSUBDefaultFont
+    },
+    fallbackFont: 'liberation sans',
+    subContent: '[Script Info]\nScriptType: v4.00+'
   }))
-  // 字幕插件
-  art.plugins.add(artplayerPluginLibass({}))
+  clearJassubSubtitle(art)
 }
 
 const getVideoInfo = async (art: Artplayer) => {
@@ -1108,7 +1902,7 @@ const getVideoInfo = async (art: Artplayer) => {
     const filePath = pageVideo.file_id || (pageVideo as any).file_path || ''
     if (filePath) {
       const fileUrl = urlModule?.pathToFileURL ? urlModule.pathToFileURL(filePath).href : `file://${encodeURI(filePath)}`
-      art.url = fileUrl
+      setArtVideoUrl(art, fileUrl)
       return
     }
   }
@@ -1127,14 +1921,7 @@ const getVideoInfo = async (art: Artplayer) => {
       art.emit('video:error', '获取媒体服务器播放地址失败')
       return
     }
-    const proxyUrl = getProxyUrl({
-      user_id: pageVideo.user_id,
-      drive_id: pageVideo.drive_id,
-      file_id: pageVideo.file_id,
-      proxy_url: mediaUrl,
-      proxy_headers: pageVideo.media_headers ? JSON.stringify(pageVideo.media_headers) : ''
-    })
-    art.url = proxyUrl
+    setArtVideoUrl(art, mediaUrl, getArtVideoType(mediaUrl))
     renderMediaServerControls(art)
     return
   }
@@ -1161,7 +1948,7 @@ const getVideoInfo = async (art: Artplayer) => {
       let preData = data.qualities.filter(q => q.width)
       defaultQuality = preData.find(q => q.quality === uiVideoQuality) || preData[0] || data.qualities[0]
     }
-    art.url = defaultQuality.url
+    setArtVideoUrl(art, defaultQuality.url, defaultQuality.type)
     defaultQuality.default = true
     pageVideo.expire_time = GetExpiresTime(defaultQuality.url)
     art.controls.update({
@@ -1173,12 +1960,12 @@ const getVideoInfo = async (art: Artplayer) => {
       selector: data.qualities,
       onSelect: (selector: any, element: HTMLElement, event: Event) => {
         const item = selector as selectorItem
-        if (item.html === '原画' && (art as any).hls) {
-          (art as any).hls.detachMedia()
-          (art as any).hls.destroy()
-          delete (art as any).hls
-        }
+        const artType = getArtVideoType(item.url, item.type)
+        art.type = artType as any
+        if (!isHlsVideoType(artType)) destroyArtHls(art)
+        if (!isDashVideoType(artType)) destroyArtDash(art)
         art.switchQuality(item.url).then(() => {
+          scheduleCleanupInactiveStreamingControls(art)
           art.playbackRate = playbackRate
         })
         return item.html
@@ -1293,12 +2080,7 @@ const refreshPlayList = async (art: Artplayer, file_id?: string) => {
           refreshSetting(art, item).then(() => {
             lastPlayNumber = autoPlayNumber - 1
             Artplayer.utils.inverseClass(element, 'art-list-icon')
-            // 重新载入弹幕
-            if (!(art.plugins.artplayerPluginDanmaku as any)?.isHide) {
-              (art.plugins.artplayerPluginDanmaku as any)?.stop?.().then(() => {
-                (art.plugins.artplayerPluginDanmaku as any)?.load?.()
-              })
-            }
+            void autoLoadDanmaku(art)
           })
         })
         return handlerPlayTitle(item.html)
@@ -1343,31 +2125,128 @@ const getVideoCursor = async (art: Artplayer, play_cursor?: number) => {
   }
 }
 
-let onlineSubData: any = { name: '', data: '', dataUrl: '', type: '' }
+let onlineSubData: any = { name: '', data: '', dataUrl: '', ext: '' }
+
+let multipleSubtitleBlobUrls: string[] = []
+let multipleSubtitleMode = 'single'
+
+const applyMultipleSubtitleStyle = () => {
+  const style = `
+.art-subtitle-primary {
+  color: #ffffff;
+  font-size: 1em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .85);
+}
+
+.art-subtitle-secondary {
+  color: #ffd859;
+  font-size: .82em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .85);
+}
+`
+  const oldStyle = document.getElementById('artplayer-multiple-subtitle-style')
+  if (oldStyle) {
+    oldStyle.textContent = style
+    return
+  }
+  const styleElement = document.createElement('style')
+  styleElement.id = 'artplayer-multiple-subtitle-style'
+  styleElement.textContent = style
+  document.head.appendChild(styleElement)
+}
+
+const cleanupMultipleSubtitleBlobs = () => {
+  multipleSubtitleBlobUrls.forEach((url) => URL.revokeObjectURL(url))
+  multipleSubtitleBlobUrls = []
+}
+
+const clearMultipleSubtitleState = (art: Artplayer) => {
+  ;(art.plugins as any).multipleSubtitles?.tracks?.([])
+  cleanupMultipleSubtitleBlobs()
+  multipleSubtitleMode = 'single'
+}
+
+const isMultipleSubtitleSupported = (item: selectorItem) => {
+  const ext = getSubtitleItemExt(item)
+  return ['srt', 'vtt'].includes(ext) && (!!item.url || !!item.file_id || typeof item.data === 'string')
+}
+
+const hasSubtitleSource = (item?: selectorItem) => {
+  return !!item && (!!item.url || !!item.file_id || typeof item.data === 'string')
+}
+
+const readSubtitleItemText = async (item: selectorItem) => {
+  if (!item.file_id) return ''
+  return AliFile.ApiFileDownText(pageVideo.user_id, pageVideo.drive_id, item.file_id, -1, -1, item.encType)
+}
+
+const buildMultipleSubtitleTrack = async (art: Artplayer, item: selectorItem, index: number): Promise<MultipleSubtitleTrack | undefined> => {
+  const ext = getSubtitleItemExt(item)
+  if (ext !== 'srt' && ext !== 'vtt') return undefined
+  const label = item.name || item.html || `字幕 ${index + 1}`
+  if (item.url) {
+    return {
+      name: index === 0 ? 'primary' : 'secondary',
+      label,
+      url: item.url,
+      type: ext
+    }
+  }
+  if (typeof item.data === 'string') {
+    const url = URL.createObjectURL(new Blob([item.data], { type: ext }))
+    multipleSubtitleBlobUrls.push(url)
+    return {
+      name: index === 0 ? 'primary' : 'secondary',
+      label,
+      url,
+      type: ext
+    }
+  }
+  const data = await readSubtitleItemText(item)
+  if (!data) return undefined
+  const url = URL.createObjectURL(new Blob([data], { type: ext }))
+  multipleSubtitleBlobUrls.push(url)
+  return {
+    name: index === 0 ? 'primary' : 'secondary',
+    label,
+    url,
+    type: ext
+  }
+}
+
+const applyMultipleSubtitles = async (art: Artplayer, items: selectorItem[], reverse = false) => {
+  const subtitleItems = [...items]
+  if (reverse) subtitleItems.reverse()
+  clearMultipleSubtitleState(art)
+  clearJassubSubtitle(art)
+  const tracks = (await Promise.all(
+    subtitleItems.slice(0, 2).map((item, index) => buildMultipleSubtitleTrack(art, item, index))
+  )).filter(Boolean) as MultipleSubtitleTrack[]
+  if (tracks.length < 2) {
+    art.notice.show = '至少需要两个 SRT/VTT 字幕'
+    return false
+  }
+  applyMultipleSubtitleStyle()
+  const plugin = await artplayerPluginMultipleSubtitles({
+    subtitles: tracks.map((track) => ({
+      name: track.name,
+      url: track.url,
+      type: track.type
+    }))
+  })(art) as any
+  ;(art.plugins as any).multipleSubtitles = plugin
+  ;(art.plugins as any).multipleSubtitles.tracks(tracks.map((track) => track.name))
+  art.subtitle.show = true
+  multipleSubtitleMode = reverse ? 'reverse' : 'double'
+  art.notice.show = `已加载双字幕：${tracks.map((track) => track.label).join(' / ')}`
+  return true
+}
+
 const loadOnlineSub = async (art: Artplayer, item: any) => {
+  clearMultipleSubtitleState(art)
   const data = await AliFile.ApiFileDownText(pageVideo.user_id, pageVideo.drive_id, item.file_id, -1, -1, item.encType)
   if (data) {
-    const subtitleTranslate = art.storage.get('subtitleTranslate')
-    if (subtitleTranslate === 1) {
-      onlineSubData.data = traditionToSimple(onlineSubData.data)
-    } else if (subtitleTranslate === 2) {
-      onlineSubData.data = simpleToTradition(onlineSubData.data)
-    } else {
-      onlineSubData.data = data
-    }
-    onlineSubData.name = item.name
-    onlineSubData.ext = item.ext
-    onlineSubData.dataUrl = URL.createObjectURL(
-      new Blob([onlineSubData.data], { type: item.ext })
-    )
-    let type = onlineSubData.ext === 'ass' ? 'libass' : onlineSubData.ext
-    await art.subtitle.switch(onlineSubData.dataUrl, {
-      name: onlineSubData.name,
-      type: type,
-      escape: false
-    })
-    art.subtitle.show = true
-    art.notice.show = `切换字幕：${item.name}`
+    await loadSubtitleTextToPlayer(art, item.name, item.ext, data)
     return item.html
   } else {
     art.notice.show = `加载${item.name}字幕失败`
@@ -1376,6 +2255,12 @@ const loadOnlineSub = async (art: Artplayer, item: any) => {
 
 // 内嵌字幕
 let embedSubSelector: selectorItem[] = []
+let downloadedSubSelector: selectorItem[] = []
+
+const clearDownloadedSubtitleSelector = () => {
+  downloadedSubSelector = []
+}
+
 const getSubTitleList = async (art: Artplayer) => {
   // 尝试加载当前文件夹字幕文件
   let subSelector: selectorItem[]
@@ -1390,14 +2275,15 @@ const getSubTitleList = async (art: Artplayer) => {
   } else {
     file_id = pageVideo.parent_file_id
   }
-  let onlineSubSelector = await getDirFileList(file_id, hasDir, '', /srt|vtt|ass/) || []
+  let onlineSubSelector = await getDirFileList(file_id, hasDir, '', /srt|vtt|ass|ssa/) || []
   // console.log('onlineSubSelector', onlineSubSelector)
-  subSelector = [...embedSubSelector, ...onlineSubSelector]
+  subSelector = [...embedSubSelector, ...onlineSubSelector, ...downloadedSubSelector]
   if (subSelector.length === 0) {
     subSelector.push({ html: '无可用字幕', name: '', url: '', default: true })
   } else {
     let subtitleSize = art.storage.get('subtitleSize') + 'px'
-    if (onlineSubSelector.length > 0) {
+    const hasDownloadedDefault = downloadedSubSelector.some((item) => item.default)
+    if (onlineSubSelector.length > 0 && !hasDownloadedDefault) {
       const fileName = pageVideo.file_name
       // 自动加载同名字幕
       const similarity = subSelector.reduce((min, item, index) => {
@@ -1415,27 +2301,29 @@ const getSubTitleList = async (art: Artplayer) => {
         art.subtitle.style('fontSize', subtitleSize)
         await loadOnlineSub(art, subSelector[similarity.index])
       }
-    } else {
+    } else if (embedSubSelector.length > 0 && !hasDownloadedDefault) {
       art.subtitle.url = embedSubSelector[0].url
       art.subtitle.style('fontSize', subtitleSize)
     }
   }
   const subDefault = subSelector.find((item) => item.default) || subSelector[0]
+  const multipleSubtitleCandidates = subSelector.filter(isMultipleSubtitleSupported)
   const subtitleTranslate = art.storage.get('subtitleTranslate')
   // 字幕设置面板
   art.setting.update({
     name: 'Subtitle',
     html: '字幕设置',
-    tooltip: art.subtitle.show ? (subDefault.url !== '' ? '字幕开启' : subDefault.html) : '字幕关闭',
+    tooltip: art.subtitle.show ? (hasSubtitleSource(subDefault) ? '字幕开启' : subDefault.html) : '字幕关闭',
     selector: [{
       html: '字幕开关',
       icon: art.icons.pip,
-      tooltip: subDefault.url !== '' ? '开启' : '关闭',
-      switch: subDefault.url !== '',
+      tooltip: hasSubtitleSource(subDefault) ? '开启' : '关闭',
+      switch: hasSubtitleSource(subDefault),
       onSwitch: (item: SettingOption) => {
-        if (subDefault.url !== '') {
+        if (hasSubtitleSource(subDefault)) {
           item.tooltip = item.switch ? '关闭' : '开启'
           art.subtitle.show = !item.switch
+          if (isAssSubtitleType(onlineSubData.ext)) setJassubVisible(art, !item.switch)
           art.notice.show = '字幕' + item.tooltip
           let subtitleSize = art.storage.get('subtitleSize') + 'px'
           art.subtitle.style('fontSize', subtitleSize)
@@ -1446,9 +2334,9 @@ const getSubTitleList = async (art: Artplayer) => {
               if (item.switch) {
                 !art.subtitle.url && Artplayer.utils.removeClass(currentElement, 'art-current')
                 Artplayer.utils.addClass(currentElement, 'disable')
-                item.$parentItem.tooltip = subDefault.url !== '' ? '字幕开启' : subDefault.html
+                if (item.$parent) item.$parent.tooltip = hasSubtitleSource(subDefault) ? '字幕开启' : subDefault.html
               } else {
-                item.$parentItem.tooltip = '字幕开启'
+                if (item.$parent) item.$parent.tooltip = '字幕开启'
                 Artplayer.utils.removeClass(currentElement, 'disable')
               }
             })
@@ -1487,17 +2375,11 @@ const getSubTitleList = async (art: Artplayer) => {
             data = simpleToTradition(onlineSubData.data)
             tips = '字幕：简体转繁体'
           }
-          URL.revokeObjectURL(onlineSubData.dataUrl)
+          if (onlineSubData.dataUrl) URL.revokeObjectURL(onlineSubData.dataUrl)
           onlineSubData.dataUrl = URL.createObjectURL(
             new Blob([data], { type: onlineSubData.ext })
           )
-          let type = onlineSubData.ext === 'ass' ? ' libass' : onlineSubData.ext
-          await art.subtitle.switch(onlineSubData.dataUrl, {
-            name: onlineSubData.name,
-            type: type,
-            escape: false
-          })
-          art.subtitle.show = true
+          await switchSubtitleText(art, onlineSubData.name, onlineSubData.ext, data)
           art.notice.show = tips
         }
         return item.html
@@ -1512,12 +2394,57 @@ const getSubTitleList = async (art: Artplayer) => {
         await getSubTitleList(art)
         return !item.switch
       }
+    }, ...(multipleSubtitleCandidates.length >= 2 ? [{
+      html: '双字幕',
+      tooltip: multipleSubtitleMode === 'double' ? '开启' : (multipleSubtitleMode === 'reverse' ? '反向' : '关闭'),
+      selector: [{
+        default: multipleSubtitleMode === 'single',
+        html: '关闭',
+        mode: 'single'
+      }, {
+        default: multipleSubtitleMode === 'double',
+        html: '双字幕',
+        mode: 'double'
+      }, {
+        default: multipleSubtitleMode === 'reverse',
+        html: '双字幕反向',
+        mode: 'reverse'
+      }],
+      onSelect: async (item: SettingOption) => {
+        if (item.mode === 'single') {
+          clearMultipleSubtitleState(art)
+          if (subDefault.file_id) await loadOnlineSub(art, subDefault)
+          else if (subDefault.url) await loadSubtitleUrlToPlayer(art, subDefault)
+          art.notice.show = '已关闭双字幕'
+          return item.html
+        }
+        const ok = await applyMultipleSubtitles(art, multipleSubtitleCandidates.slice(0, 2), item.mode === 'reverse')
+        if (ok && item.$parent) item.$parent.tooltip = item.mode === 'reverse' ? '反向' : '开启'
+        return item.html
+      }
     }, {
+      html: '单字幕',
+      tooltip: '选择显示',
+      selector: multipleSubtitleCandidates.slice(0, 2).map((candidate, index) => ({
+        html: candidate.name || candidate.html || `字幕 ${index + 1}`,
+        subtitleIndex: index
+      })),
+      onSelect: async (item: SettingOption) => {
+        const candidate = multipleSubtitleCandidates[item.subtitleIndex]
+        if (!candidate) return item.html
+        clearMultipleSubtitleState(art)
+        if (candidate.file_id) await loadOnlineSub(art, candidate)
+        else await loadSubtitleUrlToPlayer(art, candidate)
+        return item.html
+      }
+    }] : []), {
       html: '字幕偏移',
       tooltip: '0s',
       range: [0, -5, 10, 0.1],
       onChange(item: SettingOption) {
         art.subtitleOffset = item.range
+        const instance = getJassubInstance(art)
+        if (instance) instance.timeOffset = item.range
         return item.range + 's'
       }
     }, {
@@ -1536,8 +2463,9 @@ const getSubTitleList = async (art: Artplayer) => {
       if (art.subtitle.show) {
         if (!item.file_id) {
           art.notice.show = ''
-          art.subtitle.switch(item.url, { name: item.name, escape: false }).then(() => {
-            return item.html
+          loadSubtitleUrlToPlayer(art, item).then(() => item.html).catch((error) => {
+            console.error('加载字幕失败:', error)
+            art.notice.show = `加载${item.name || item.html}字幕失败`
           })
         } else {
           loadOnlineSub(art, item).then((result) => {
@@ -1626,7 +2554,8 @@ onBeforeUnmount(() => {
   }
   onlineSubData.name = ''
   onlineSubData.data = ''
-  onlineSubData.type = ''
+  onlineSubData.ext = ''
+  cleanupMultipleSubtitleBlobs()
   autoPlayNumber = 0
   lastPlayNumber = -1
   playbackRate = 1
@@ -1697,6 +2626,841 @@ onBeforeUnmount(() => {
     border-radius: 4px;
     font-size: 16px;
     font-weight: bold;
+  }
+}
+
+:deep(#artPlayer .JASSUB) {
+  position: absolute !important;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 20;
+}
+
+:deep(#artPlayer .JASSUB canvas) {
+  pointer-events: none;
+}
+
+.danmaku-modal {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 34% 18%, rgba(255, 255, 255, .035), transparent 26%),
+    linear-gradient(135deg, #1b1b1b 0%, #242424 48%, #181818 100%);
+  color: #f1f1f1;
+}
+
+.danmaku-full-header {
+  position: relative;
+  display: flex;
+  height: 72px;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255, 255, 255, .12);
+}
+
+.danmaku-close-button {
+  position: absolute;
+  left: 32px;
+  top: 18px;
+  display: flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .7);
+  color: #242424;
+  cursor: pointer;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.danmaku-close-button:hover {
+  background: rgba(255, 255, 255, .9);
+}
+
+.danmaku-full-title {
+  color: #f2f2f2;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.danmaku-full-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 28px;
+  padding: 36px;
+}
+
+.danmaku-full-content-episodes {
+  padding-top: 34px;
+}
+
+.danmaku-searchbar {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr) 210px;
+  gap: 24px;
+  align-items: center;
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .045);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+
+.danmaku-search-input,
+.danmaku-api-select,
+.danmaku-search-button {
+  min-width: 0;
+}
+
+.danmaku-api-select :deep(.arco-select-view-single) {
+  height: 48px;
+  border: 0;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .08);
+  color: #f1f1f1;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.danmaku-input-wrap {
+  position: relative;
+  display: flex;
+  height: 80px;
+  align-items: center;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, .28);
+}
+
+.danmaku-search-button-icon {
+  position: relative;
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 4px solid currentColor;
+  border-radius: 50%;
+}
+
+.danmaku-search-icon {
+  margin-left: 34px;
+  color: rgba(255, 255, 255, .7);
+}
+
+.danmaku-search-icon::after,
+.danmaku-search-button-icon::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 4px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translate(15px, 18px) rotate(45deg);
+}
+
+.danmaku-search-input {
+  flex: 1;
+}
+
+.danmaku-search-input :deep(.arco-input-wrapper) {
+  height: 80px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.danmaku-search-input :deep(.arco-input) {
+  color: #f1f1f1;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.danmaku-search-input :deep(.arco-input::placeholder) {
+  color: rgba(255, 255, 255, .36);
+}
+
+.danmaku-search-button {
+  height: 104px;
+  border: 0;
+  border-radius: 999px;
+  background: #f7f7f7;
+  color: #060606;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.danmaku-search-button :deep(.arco-btn-content) {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.danmaku-search-button-icon {
+  width: 20px;
+  height: 20px;
+  border-width: 4px;
+}
+
+.danmaku-search-tip {
+  margin: 4px 8px 8px;
+  color: rgba(255, 255, 255, .58);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.danmaku-result-shell,
+.danmaku-episode-shell {
+  flex: 1;
+  min-height: 0;
+  border: 1px solid rgba(255, 255, 255, .07);
+  border-radius: 28px;
+  background: rgba(0, 0, 0, .08);
+  padding: 42px 40px;
+}
+
+.danmaku-modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+  overflow: auto;
+}
+
+.danmaku-result-row {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) 36px;
+  width: 100%;
+  min-height: 128px;
+  align-items: center;
+  gap: 28px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 22px;
+  padding: 24px 36px 24px 28px;
+  background: rgba(255, 255, 255, .045);
+  color: #f0f0f0;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color .16s ease, border-color .16s ease, transform .16s ease;
+}
+
+.danmaku-result-row:hover {
+  background: rgba(255, 255, 255, .07);
+  border-color: rgba(255, 255, 255, .14);
+  transform: translateY(-1px);
+}
+
+.danmaku-result-row.is-active {
+  border-color: rgba(64, 128, 255, .8);
+}
+
+.danmaku-result-icon {
+  display: flex;
+  width: 80px;
+  height: 80px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .06);
+  color: rgba(255, 255, 255, .68);
+}
+
+.danmaku-video-glyph {
+  position: relative;
+  display: block;
+  width: 42px;
+  height: 30px;
+  border: 4px solid currentColor;
+  border-radius: 4px;
+}
+
+.danmaku-video-glyph::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 6px;
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-left: 11px solid currentColor;
+}
+
+.danmaku-video-glyph::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  bottom: -14px;
+  width: 20px;
+  height: 4px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.danmaku-result-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.danmaku-result-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.danmaku-result-meta {
+  overflow: hidden;
+  color: rgba(255, 255, 255, .58);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.danmaku-result-arrow {
+  color: #3f83ff;
+  font-size: 56px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.danmaku-back-button {
+  align-self: flex-start;
+  min-width: 190px;
+  height: 56px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 24px;
+  background: rgba(255, 255, 255, .07);
+  color: #f1f1f1;
+  cursor: pointer;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.danmaku-back-button:hover {
+  background: rgba(255, 255, 255, .12);
+}
+
+.danmaku-episode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-content: flex-start;
+  gap: 16px;
+  height: 100%;
+  overflow: auto;
+  padding: 52px 24px;
+}
+
+.danmaku-episode-card {
+  display: flex;
+  min-height: 180px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 20px;
+  padding: 24px;
+  background: rgba(255, 255, 255, .035);
+  color: #f1f1f1;
+  cursor: pointer;
+  text-align: center;
+}
+
+.danmaku-episode-card:hover {
+  background: rgba(255, 255, 255, .065);
+  border-color: rgba(255, 255, 255, .16);
+}
+
+.danmaku-episode-number {
+  font-size: 25px;
+  font-weight: 900;
+}
+
+.danmaku-episode-title {
+  max-width: 100%;
+  color: rgba(255, 255, 255, .62);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.danmaku-empty {
+  display: flex;
+  min-height: 260px;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, .5);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+:global(.danmaku-search-modal) {
+  background: transparent;
+}
+
+:global(.danmaku-search-modal .arco-modal-header) {
+  display: none;
+}
+
+:global(.danmaku-search-modal-body) {
+  height: 100vh;
+  padding: 0 !important;
+  background: transparent;
+}
+
+:global(.danmaku-search-modal .arco-modal-close-btn) {
+  display: none;
+}
+
+:global(.danmaku-search-modal .arco-modal-footer) {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .danmaku-searchbar {
+    grid-template-columns: 1fr;
+  }
+
+  .danmaku-search-button {
+    height: 72px;
+  }
+
+  .danmaku-result-row {
+    grid-template-columns: 56px minmax(0, 1fr) 24px;
+    min-height: 100px;
+    gap: 16px;
+    padding: 18px;
+  }
+
+  .danmaku-result-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+  }
+
+  .danmaku-result-title {
+    font-size: 18px;
+  }
+
+  .danmaku-result-meta {
+    font-size: 15px;
+  }
+}
+</style>
+
+<style lang="less">
+.danmaku-search-modal {
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 34% 18%, rgba(255, 255, 255, .035), transparent 26%),
+    linear-gradient(135deg, #1b1b1b 0%, #242424 48%, #181818 100%);
+
+  .arco-modal-header,
+  .arco-modal-close-btn,
+  .arco-modal-footer {
+    display: none;
+  }
+}
+
+.danmaku-search-modal-body {
+  height: min(620px, calc(100vh - 96px));
+  overflow: hidden;
+  padding: 0 !important;
+  background: transparent;
+}
+
+.danmaku-modal {
+  display: flex;
+  height: min(620px, calc(100vh - 96px));
+  overflow: hidden;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 34% 18%, rgba(255, 255, 255, .035), transparent 26%),
+    linear-gradient(135deg, #1b1b1b 0%, #242424 48%, #181818 100%);
+  color: #f1f1f1;
+}
+
+.danmaku-full-header {
+  position: relative;
+  display: flex;
+  height: 56px;
+  flex: 0 0 56px;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255, 255, 255, .12);
+}
+
+.danmaku-close-button {
+  position: absolute;
+  left: 18px;
+  top: 14px;
+  display: flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .7);
+  color: #242424;
+  cursor: pointer;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.danmaku-full-title {
+  color: #f2f2f2;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.danmaku-full-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px 24px 24px;
+}
+
+.danmaku-searchbar {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 116px;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .045);
+}
+
+.subtitle-searchbar {
+  grid-template-columns: 150px minmax(0, 1fr) 116px;
+}
+
+.danmaku-api-select .arco-select-view-single {
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .04);
+  color: #f1f1f1;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.danmaku-input-wrap {
+  position: relative;
+  display: flex;
+  height: 44px;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, .28);
+}
+
+.danmaku-search-icon,
+.danmaku-search-button-icon {
+  position: relative;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+.danmaku-search-button-icon::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translate(11px, 12px) rotate(45deg);
+}
+
+.danmaku-search-input {
+  min-width: 0;
+  flex: 1;
+  width: 100%;
+}
+
+.danmaku-search-input .arco-input-wrapper {
+  height: 42px;
+  padding-left: 16px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.danmaku-search-input .arco-input {
+  color: #f1f1f1;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.danmaku-search-input .arco-input::placeholder {
+  color: rgba(255, 255, 255, .36);
+}
+
+.danmaku-search-button {
+  min-width: 0;
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .92);
+  color: #111;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.danmaku-search-button .arco-btn-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.danmaku-search-button-icon {
+  width: 16px;
+  height: 16px;
+  border-width: 3px;
+}
+
+.danmaku-search-tip {
+  margin: 0 8px;
+  color: rgba(255, 255, 255, .58);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.danmaku-result-shell,
+.danmaku-episode-shell {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .07);
+  border-radius: 28px;
+  background: rgba(0, 0, 0, .08);
+  padding: 20px;
+}
+
+.danmaku-modal-list {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+}
+
+.danmaku-result-row {
+  display: grid;
+  width: 100%;
+  min-height: 82px;
+  grid-template-columns: 52px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 14px;
+  padding: 14px 20px 14px 16px;
+  background: rgba(255, 255, 255, .045);
+  color: #f0f0f0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.danmaku-result-icon {
+  display: flex;
+  width: 52px;
+  height: 52px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .06);
+  color: rgba(255, 255, 255, .68);
+}
+
+.danmaku-video-glyph {
+  position: relative;
+  display: block;
+  width: 28px;
+  height: 20px;
+  border: 3px solid currentColor;
+  border-radius: 4px;
+}
+
+.danmaku-video-glyph::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 4px;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 8px solid currentColor;
+}
+
+.danmaku-video-glyph::after {
+  content: '';
+  position: absolute;
+  left: 7px;
+  bottom: -10px;
+  width: 14px;
+  height: 3px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.subtitle-doc-glyph {
+  position: relative;
+  display: block;
+  width: 28px;
+  height: 34px;
+  border: 3px solid currentColor;
+  border-radius: 4px;
+}
+
+.subtitle-doc-glyph::before,
+.subtitle-doc-glyph::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  height: 3px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.subtitle-doc-glyph::before {
+  top: 10px;
+}
+
+.subtitle-doc-glyph::after {
+  top: 19px;
+}
+
+.danmaku-result-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.danmaku-result-title {
+  overflow: hidden;
+  color: #f0f0f0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.danmaku-result-meta {
+  overflow: hidden;
+  color: rgba(255, 255, 255, .58);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.danmaku-result-arrow {
+  color: #3f83ff;
+  font-size: 38px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.subtitle-download-arrow {
+  color: #3f83ff;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+}
+
+.danmaku-back-button {
+  align-self: flex-start;
+  min-width: 150px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 24px;
+  background: rgba(255, 255, 255, .07);
+  color: #f1f1f1;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.danmaku-episode-grid {
+  display: grid;
+  height: 100%;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  align-content: flex-start;
+  gap: 16px;
+  overflow: auto;
+  padding: 24px 12px;
+}
+
+.danmaku-episode-card {
+  display: flex;
+  min-height: 120px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 14px;
+  padding: 16px;
+  background: rgba(255, 255, 255, .035);
+  color: #f1f1f1;
+  cursor: pointer;
+  text-align: center;
+}
+
+.danmaku-episode-number {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.danmaku-episode-title {
+  color: rgba(255, 255, 255, .62);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.danmaku-empty {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, .5);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .danmaku-searchbar {
+    grid-template-columns: 1fr;
+  }
+
+  .danmaku-search-button {
+    height: 72px;
   }
 }
 </style>

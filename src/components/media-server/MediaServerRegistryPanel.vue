@@ -364,7 +364,7 @@ const iconSets = ref<IconSet[]>([])
 iconSetUrls.value = (() => {
   try {
     const raw = localStorage.getItem(MEDIA_SERVER_ICON_SET_URLS_KEY)
-    const parsed = raw ? JSON.parse(raw) : []
+    const parsed = raw ? JSON.parse(raw) : ['https://raw.githubusercontent.com/lige47/QuanX-icon-rule/refs/heads/main/lige-emby-icon.json']
     return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : []
   } catch {
     return []

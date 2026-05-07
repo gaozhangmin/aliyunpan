@@ -14,6 +14,7 @@ import path from 'path'
 import fs from 'fs'
 import { getRawUrl } from './proxyhelper'
 import { isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
+import { getAriaAddUriGid, isAriaDuplicateGidError } from './aria2Rpc'
 
 export const localPwd = 'S4znWTaZYQi3cpRNb'
 
@@ -513,7 +514,9 @@ export async function AriaAddUrl(file: IStateDownFile): Promise<string> {
       const result: any = await GetAria()?.multicall(multicall)
       console.log('[aria2] addUri result', info.drive_id, info.file_id, JSON.stringify(result))
       const addResult = result && result.length >= 3 ? result[2] : undefined
-      if (addResult && addResult.code === 0) {
+      const addGid = getAriaAddUriGid(addResult)
+      if (addGid) {
+        info.GID = addGid
         return 'success'
       }
       // GID 不存在时忽略清理错误，尝试单独 addUri
@@ -521,17 +524,33 @@ export async function AriaAddUrl(file: IStateDownFile): Promise<string> {
         gid: info.GID, dir: dirPath, out: outFileName,
         split, referer, 'user-agent': userAgent, header: headers
       }
-      let singleResult: any = await GetAria()?.call('aria2.addUri', [downloadUrl], addOptions).catch(() => undefined)
+      let singleError: any = undefined
+      let singleResult: any = await GetAria()?.call('aria2.addUri', [downloadUrl], addOptions).catch((error: any) => {
+        singleError = error
+        return undefined
+      })
+      const singleGid = getAriaAddUriGid(singleResult)
+      if (singleGid) {
+        info.GID = singleGid
+        return 'success'
+      }
+      if (isAriaDuplicateGidError(singleResult) || isAriaDuplicateGidError(singleError)) {
+        return 'success'
+      }
       if (!singleResult || singleResult.code) {
         delete addOptions.gid
-        singleResult = await GetAria()?.call('aria2.addUri', [downloadUrl], addOptions).catch(() => undefined)
-        if (singleResult && typeof singleResult === 'string') {
-          info.GID = singleResult
+        singleError = undefined
+        singleResult = await GetAria()?.call('aria2.addUri', [downloadUrl], addOptions).catch((error: any) => {
+          singleError = error
+          return undefined
+        })
+        const fallbackGid = getAriaAddUriGid(singleResult)
+        if (fallbackGid) {
+          info.GID = fallbackGid
           return 'success'
         }
-        return '创建aria任务失败，稍后自动重试' + ((singleResult && singleResult.message) || (addResult && addResult.message) || '')
+        return '创建aria任务失败，稍后自动重试' + ((singleResult && singleResult.message) || (singleError && singleError.message) || (addResult && addResult.message) || '')
       }
-      if (typeof singleResult === 'string') return 'success'
     }
   } catch (e: any) {
     SetAriaOnline(false)

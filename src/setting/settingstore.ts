@@ -7,6 +7,12 @@ import { existsSync, readFileSync, writeFileSync } from 'fs'
 
 declare type ProxyType = 'none' | 'http' | 'https' | 'socks4' | 'socks4a' | 'socks5' | 'socks5h'
 declare type VideoQuality = 'Origin' | 'QHD' | 'FHD' | 'HD' | 'SD' | 'LD'
+export type DanmakuMode = 0 | 1 | 2
+export interface DanmakuApiSetting {
+  id: string
+  name: string
+  url: string
+}
 
 export interface SettingState {
   // 应用设置
@@ -56,6 +62,23 @@ export interface SettingState {
 
   uiXBTNumber: number
   uiXBTWidth: number
+
+  // 弹幕库
+  danmakuApis: DanmakuApiSetting[]
+  danmakuSpeed: number
+  danmakuMarginTop: number
+  danmakuMarginBottom: string
+  danmakuOpacity: number
+  danmakuColor: string
+  danmakuMode: DanmakuMode
+  danmakuModes: DanmakuMode[]
+  danmakuFontSize: number
+  danmakuAntiOverlap: boolean
+  danmakuSynchronousPlayback: boolean
+  danmakuHeatmap: boolean
+  danmakuVisible: boolean
+  danmakuTheme: 'dark' | 'light'
+  danmakuFilterText: string
 
   // 网盘设置
   uiShowPanPath: boolean
@@ -185,6 +208,23 @@ const setting: SettingState = {
 
   uiXBTNumber: 36,
   uiXBTWidth: 960,
+
+  // 弹幕库
+  danmakuApis: [],
+  danmakuSpeed: 5,
+  danmakuMarginTop: 10,
+  danmakuMarginBottom: '25%',
+  danmakuOpacity: 1,
+  danmakuColor: '#FFFFFF',
+  danmakuMode: 0,
+  danmakuModes: [0, 1, 2],
+  danmakuFontSize: 25,
+  danmakuAntiOverlap: true,
+  danmakuSynchronousPlayback: false,
+  danmakuHeatmap: false,
+  danmakuVisible: false,
+  danmakuTheme: 'dark',
+  danmakuFilterText: '',
 
   // 网盘设置
   uiShowPanPath: true,
@@ -320,6 +360,33 @@ function _loadSetting(val: any) {
 
   setting.uiXBTNumber = defaultValue(val.uiXBTNumber, [36, 24, 36, 48, 60, 72])
   setting.uiXBTWidth = defaultValue(val.uiXBTWidth, [960, 720, 960, 1080, 1280])
+
+  // 弹幕库
+  setting.danmakuApis = Array.isArray(val.danmakuApis)
+    ? val.danmakuApis
+      .filter((api: any) => api && typeof api.name === 'string' && typeof api.url === 'string')
+      .map((api: any, index: number) => ({
+        id: defaultString(api.id, `danmaku-api-${index}`),
+        name: defaultString(api.name, ''),
+        url: defaultString(api.url, '')
+      }))
+    : []
+  setting.danmakuSpeed = defaultNumberSub(val.danmakuSpeed, 5, 1, 10)
+  setting.danmakuMarginTop = defaultNumberSub(val.danmakuMarginTop, 10, 0, 200)
+  setting.danmakuMarginBottom = defaultString(val.danmakuMarginBottom, '25%')
+  setting.danmakuOpacity = defaultNumberSub(val.danmakuOpacity, 1, 0, 1)
+  setting.danmakuColor = defaultString(val.danmakuColor, '#FFFFFF')
+  setting.danmakuMode = defaultValue(val.danmakuMode, [0, 1, 2])
+  setting.danmakuModes = Array.isArray(val.danmakuModes) && val.danmakuModes.length > 0
+    ? val.danmakuModes.filter((mode: any) => [0, 1, 2].includes(mode))
+    : [0, 1, 2]
+  setting.danmakuFontSize = defaultNumberSub(val.danmakuFontSize, 25, 12, 80)
+  setting.danmakuAntiOverlap = defaultBool(val.danmakuAntiOverlap, true)
+  setting.danmakuSynchronousPlayback = defaultBool(val.danmakuSynchronousPlayback, false)
+  setting.danmakuHeatmap = defaultBool(val.danmakuHeatmap, false)
+  setting.danmakuVisible = defaultBool(val.danmakuVisible, false)
+  setting.danmakuTheme = defaultValue(val.danmakuTheme, ['dark', 'light'])
+  setting.danmakuFilterText = defaultString(val.danmakuFilterText, '')
 
   // 网盘设置
   setting.uiShowPanPath = defaultBool(val.uiShowPanPath, true)

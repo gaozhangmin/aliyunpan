@@ -83,6 +83,7 @@ export interface IPageVideo {
   media_server_subtitle_options?: Array<{ streamIndex: number, label: string }>
   media_server_playlist_label?: string
   media_server_episode_playlist?: Array<{ id: string, title: string }>
+  media_server_chapters?: Array<{ start: number, end: number, title: string }>
   custom_playlist_label?: string
   custom_playlist?: IPageVideoPlaylistEntry[]
 }

@@ -83,6 +83,12 @@ export interface MediaServerPlaybackInfo {
   videoStreamIndex?: number
 }
 
+export interface MediaServerChapter {
+  start: number
+  end: number
+  title: string
+}
+
 export interface MediaServerItemDetail extends MediaServerLibraryNode {
   genres: string[]
   studios: string[]
@@ -104,6 +110,7 @@ export interface MediaServerItemDetail extends MediaServerLibraryNode {
   fileLabel?: string
   fileSubLabel?: string
   playbackPositionTicks?: number
+  chapters?: MediaServerChapter[]
 }
 
 export interface MediaServerHomeLibrarySection {

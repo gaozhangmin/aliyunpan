@@ -69,7 +69,6 @@
   },
   "dmg": {
     "title": "BoxPlayer",
-    "background": "./build/dmg-background.png",
     "window": { "width": 560, "height": 320 },
     "iconSize": 96,
     "contents": [

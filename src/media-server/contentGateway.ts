@@ -60,6 +60,10 @@ interface MediaServerBaseItem {
   BirthPlace?: string
   ProductionLocations?: string[]
   MediaSources?: MediaServerMediaSource[]
+  Chapters?: Array<{
+    Name?: string
+    StartPositionTicks?: number
+  }>
   People?: Array<{
     Id?: string
     Name?: string
@@ -472,6 +476,25 @@ const createSourceOptions = (item: MediaServerBaseItem): MediaServerSourceOption
   }))
 }
 
+const createChapters = (item: MediaServerBaseItem) => {
+  const durationSeconds = item.RunTimeTicks ? item.RunTimeTicks / 10_000_000 : 0
+  const chapters = (item.Chapters || [])
+    .map((chapter) => ({
+      start: typeof chapter.StartPositionTicks === 'number' ? chapter.StartPositionTicks / 10_000_000 : 0,
+      title: chapter.Name || ''
+    }))
+    .filter((chapter) => chapter.start >= 0)
+    .sort((a, b) => a.start - b.start)
+
+  return chapters
+    .map((chapter, index) => ({
+      start: chapter.start,
+      end: chapters[index + 1]?.start ?? (durationSeconds > chapter.start ? durationSeconds : Infinity),
+      title: chapter.title || `章节 ${index + 1}`
+    }))
+    .filter((chapter) => chapter.end > chapter.start)
+}
+
 const mapItemDetail = (config: MediaServerConfig, item: MediaServerBaseItem): MediaServerItemDetail => ({
   ...mapLibraryNode(config, item),
   genres: item.Genres || [],
@@ -493,7 +516,8 @@ const mapItemDetail = (config: MediaServerConfig, item: MediaServerBaseItem): Me
   sourceOptions: createSourceOptions(item),
   fileLabel: item.MediaSources?.[0]?.Path?.split('/').filter(Boolean).pop() || item.MediaSources?.[0]?.Name,
   fileSubLabel: [formatDateLabel(item.PremiereDate), formatSize(item.MediaSources?.[0]?.Size)].filter(Boolean).join('  '),
-  playbackPositionTicks: item.UserData?.PlaybackPositionTicks
+  playbackPositionTicks: item.UserData?.PlaybackPositionTicks,
+  chapters: createChapters(item)
 })
 
 const ensureServerContext = (config: MediaServerConfig) => {
@@ -749,7 +773,7 @@ export const getMediaServerItemDetail = async (
   ensureServerContext(config)
   const payload = await mediaServerFetch<MediaServerBaseItem>(
     config,
-    `/Users/${config.userId}/Items/${itemId}?EnableUserData=true&Fields=Overview,Taglines,Genres,Studios,People,ProviderIds,ExternalUrls,PrimaryImageAspectRatio,MediaSources,MediaStreams,ProductionLocations,DateCreated`
+    `/Users/${config.userId}/Items/${itemId}?EnableUserData=true&Fields=Overview,Taglines,Genres,Studios,People,ProviderIds,ExternalUrls,PrimaryImageAspectRatio,MediaSources,MediaStreams,ProductionLocations,DateCreated,Chapters`
   )
   return mapItemDetail(config, payload)
 }
@@ -758,6 +782,23 @@ const buildAbsoluteMediaServerUrl = (config: MediaServerConfig, value: string) =
   if (!value) return ''
   if (/^https?:\/\//i.test(value)) return value
   return new URL(value, `${config.baseUrl.replace(/\/+$/, '')}/`).toString()
+}
+
+export const withMediaServerPlaybackAuth = (config: MediaServerConfig, url: string) => {
+  const token = (config.accessToken || '').trim()
+  if (!url || !token) return url
+  try {
+    const parsed = new URL(url)
+    if (config.type === 'plex') {
+      if (!parsed.searchParams.has('X-Plex-Token')) parsed.searchParams.set('X-Plex-Token', token)
+    } else {
+      if (!parsed.searchParams.has('api_key')) parsed.searchParams.set('api_key', token)
+      if (!parsed.searchParams.has('X-Emby-Token')) parsed.searchParams.set('X-Emby-Token', token)
+    }
+    return parsed.toString()
+  } catch {
+    return url
+  }
 }
 
 const createJellyfinAuthorization = (config: MediaServerConfig) => {
@@ -802,7 +843,7 @@ export const getMediaServerPlaybackInfo = async (
     const partKey = plexSource.PartKey || plexSource.DirectStreamUrl || plexSource.XOriginDirectStreamUrl || plexSource.Path
     if (!partKey) throw new Error('Plex 未返回可播放地址')
     return {
-      url: buildAbsoluteMediaServerUrl(config, partKey),
+      url: withMediaServerPlaybackAuth(config, buildAbsoluteMediaServerUrl(config, partKey)),
       headers: {
         'X-Plex-Token': config.accessToken || '',
         'X-Plex-Client-Identifier': config.deviceId || '',
@@ -884,7 +925,7 @@ export const getMediaServerPlaybackInfo = async (
       }
 
   return {
-    url: playUrl,
+    url: withMediaServerPlaybackAuth(config, playUrl),
     headers: {
       ...headers,
       ...(source.RequiredHttpHeaders || {})

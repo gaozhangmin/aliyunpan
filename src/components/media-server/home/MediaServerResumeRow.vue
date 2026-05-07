@@ -370,7 +370,7 @@ const handleMediaImageLoad = (event: Event) => {
   width: clamp(44px, 22%, 68px);
   height: clamp(44px, 22%, 68px);
   border-radius: 16px;
-  background: center / contain no-repeat url('/favicon.ico');
+  background: center / contain no-repeat url('/icon.svg');
   box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.28);
   filter: grayscale(1) brightness(0.72) contrast(0.92);
   opacity: 0.88;
