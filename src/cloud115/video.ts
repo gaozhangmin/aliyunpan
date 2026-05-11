@@ -1,6 +1,6 @@
 import UserDAL from '../user/userdal'
 import message from '../utils/message'
-import { apiDrive115FileDetail } from './filecmd'
+import { apiDrive115FileDetailResult } from './filecmd'
 
 type Drive115VideoUrlItem = {
   url: string
@@ -37,6 +37,12 @@ type Drive115VideoHistoryResp = {
 
 const PLAY_URL = 'https://proapi.115.com/open/video/play'
 const HISTORY_URL = 'https://proapi.115.com/open/video/history'
+
+type Drive115PickCodeResult = {
+  pick_code: string
+  play_long: number
+  error: string
+}
 
 const pickCodeCache = new Map<string, { pick_code: string; play_long: number }>()
 
@@ -136,12 +142,15 @@ export const apiDrive115VideoHistoryUpdate = async (
   }
 }
 
-export const getDrive115PickCode = async (user_id: string, file_id: string): Promise<{ pick_code: string; play_long: number } | null> => {
+export const getDrive115PickCode = async (user_id: string, file_id: string): Promise<Drive115PickCodeResult | null> => {
   const cacheKey = `${user_id}:${file_id}`
-  if (pickCodeCache.has(cacheKey)) return pickCodeCache.get(cacheKey) || null
-  const detail = await apiDrive115FileDetail(user_id, file_id)
-  if (!detail?.pick_code) return null
+  if (pickCodeCache.has(cacheKey)) {
+    const cached = pickCodeCache.get(cacheKey)
+    return cached ? { ...cached, error: '' } : null
+  }
+  const { detail, error } = await apiDrive115FileDetailResult(user_id, file_id)
+  if (!detail?.pick_code) return { pick_code: '', play_long: 0, error: error || '获取文件详情失败' }
   const meta = { pick_code: detail.pick_code, play_long: Number(detail.play_long || 0) }
   pickCodeCache.set(cacheKey, meta)
-  return meta
+  return { ...meta, error: '' }
 }

@@ -837,7 +837,7 @@ import type { IPageVideoPlaylistEntry } from '../store/appstore'
 import { getMediaServerSearch, getMediaServerSuggestions } from '../media-server/contentGateway'
 import { resolveMediaServerImage } from '../media-server/imageSources'
 import { toMsCacheUrl } from '../media-server/imageCache'
-import { isCloud123User, isDrive115User, isBaiduUser } from '../aliapi/utils'
+import { isCloud123User, isDrive115User, isBaiduUser, isPikPakUser } from '../aliapi/utils'
 import AliDirFileList from '../aliapi/dirfilelist'
 import { apiBaiduFileList, mapBaiduFileToAliModel } from '../cloudbaidu/dirfilelist'
 import { getWebDavConnection, getWebDavConnectionId, isWebDavDrive, listWebDavDirectory } from '../utils/webdavClient'
@@ -1289,6 +1289,7 @@ const getFolderSourceLabel = (folder: any) => {
   if (folder.driveId === 'cloud123' || folder.driveServerId === 'cloud123') return '123 云盘'
   if (folder.driveId === 'drive115' || folder.driveServerId === 'drive115') return '115 网盘'
   if (folder.driveId === 'baidu' || folder.driveServerId === 'baidu') return '百度网盘'
+  if (folder.driveId === 'pikpak' || folder.driveServerId === 'pikpak') return 'PikPak'
   return '阿里云盘'
 }
 
@@ -2320,6 +2321,16 @@ const handleEnterFolder = async (file: any) => {
         return mapped
       })
       console.log('使用百度网盘API获取子文件夹文件列表，路径:', parentPath)
+    } else if (isPikPakUser(userId) || driveId === 'pikpak') {
+      const { apiPikPakFileList, mapPikPakFileToAliModel } = await import('../pikpak/dirfilelist')
+      const parentId = fileId === 'pikpak_root' ? 'pikpak_root' : fileId
+      const { items: list } = await apiPikPakFileList(userId, parentId, 100)
+      items = list.map((item) => {
+        const mapped = mapPikPakFileToAliModel(item, driveId, parentId)
+        ;(mapped as any).user_id = userId
+        return mapped
+      })
+      console.log('使用PikPak API获取子文件夹文件列表')
     } else {
       // 阿里云盘（默认）
       const result = await AliDirFileList.ApiDirFileList(

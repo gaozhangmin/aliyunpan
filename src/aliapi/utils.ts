@@ -28,6 +28,9 @@ export function GetDriveID(user_id: string, drive: string): string {
     if (isBaiduUser(user_id)) {
       return token.default_drive_id || 'baidu'
     }
+    if (isPikPakUser(user_id)) {
+      return token.default_drive_id || 'pikpak'
+    }
     if (drive.includes('backup')) {
       return token.backup_drive_id
     } else if (drive.includes('resource')) {
@@ -55,6 +58,9 @@ export function GetDriveType(user_id: string, drive_id: string): any {
     }
     if (isBaiduUser(user_id)) {
       return { title: '网盘文件', name: 'baidu', key: 'baidu_root' }
+    }
+    if (isPikPakUser(user_id)) {
+      return { title: '网盘文件', name: 'pikpak', key: 'pikpak_root' }
     }
     switch (drive_id) {
       case token.backup_drive_id:
@@ -107,6 +113,12 @@ export function isBaiduUser(user: string | { user_id?: string; tokenfrom?: strin
   const { user_id, tokenfrom } = resolveUserTokenInfo(user)
   if (tokenfrom === 'baidu') return true
   return user_id.startsWith('baidu_')
+}
+
+export function isPikPakUser(user: string | { user_id?: string; tokenfrom?: string }): boolean {
+  const { user_id, tokenfrom } = resolveUserTokenInfo(user)
+  if (tokenfrom === 'pikpak') return true
+  return user_id.startsWith('pikpak_')
 }
 
 export function GetSignature(nonce: number, user_id: string, deviceId: string) {

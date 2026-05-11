@@ -2,7 +2,7 @@ import DebugLog from '../utils/debuglog'
 import AliHttp from './alihttp'
 import { IAliFileItem, IAliGetFileModel } from './alimodels'
 import AliDirFileList from './dirfilelist'
-import { ApiBatch, ApiBatchMaker, ApiBatchMaker2, ApiBatchSuccess, EncodeEncName, isBaiduUser, isCloud123User, isDrive115User } from './utils'
+import { ApiBatch, ApiBatchMaker, ApiBatchMaker2, ApiBatchSuccess, EncodeEncName, isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from './utils'
 import { IDownloadUrl } from './models'
 import AliFile from './file'
 import message from '../utils/message'
@@ -18,6 +18,7 @@ import { apiDrive115TrashBatch, apiDrive115TrashDelete, apiDrive115TrashRestore 
 import { apiBaiduCopy, apiBaiduDelete, apiBaiduMove, apiBaiduRename } from '../cloudbaidu/filemanager'
 import { apiBaiduCreateDir, buildBaiduUploadPath } from '../cloudbaidu/upload'
 import { copyWebDavPath, createWebDavDirectory, deleteWebDavPath, getWebDavConnection, getWebDavConnectionId, isWebDavDrive, moveWebDavPath, normalizeWebDavPath, renameWebDavPath } from '../utils/webdavClient'
+import { apiPikPakCopyBatch, apiPikPakMkdir, apiPikPakMoveBatch, apiPikPakRename, apiPikPakTrashBatch, apiPikPakTrashDelete, apiPikPakTrashRestore } from '../pikpak/filecmd'
 
 export default class AliFileCmd {
   static ResolveBaiduPaths(file_idList: string[]): string[] {
@@ -88,6 +89,9 @@ export default class AliFileCmd {
       const resp = await apiBaiduCreateDir(user_id, dirPath, rtype)
       return { file_id: resp.path, error: resp.error }
     }
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') {
+      return apiPikPakMkdir(user_id, parent_file_id.includes('root') ? 'pikpak_root' : parent_file_id, creatDirName)
+    }
     if (parent_file_id.includes('root')) parent_file_id = 'root'
     const url = 'adrive/v2/file/createWithFolders'
     const name = EncodeEncName(user_id, creatDirName, true, encType)
@@ -126,6 +130,9 @@ export default class AliFileCmd {
       const paths = AliFileCmd.ResolveBaiduPaths(file_idList)
       return apiBaiduDelete(user_id, paths)
     }
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') {
+      return apiPikPakTrashBatch(user_id, file_idList)
+    }
     const batchList = ApiBatchMaker('/recyclebin/trash', file_idList, (file_id: string) => {
       return { drive_id: drive_id, file_id: file_id }
     })
@@ -162,6 +169,9 @@ export default class AliFileCmd {
     if (isBaiduUser(user_id) || drive_id === 'baidu') {
       const paths = AliFileCmd.ResolveBaiduPaths(file_idList)
       return apiBaiduDelete(user_id, paths)
+    }
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') {
+      return apiPikPakTrashDelete(user_id, file_idList)
     }
     const batchList = ApiBatchMaker('/file/delete', file_idList, (file_id: string) => {
       return { drive_id: drive_id, file_id: file_id }
@@ -221,6 +231,19 @@ export default class AliFileCmd {
       }
       return successList
     }
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') {
+      const successList: { file_id: string; parent_file_id: string; name: string; isDir: boolean }[] = []
+      for (let i = 0, maxi = file_idList.length; i < maxi; i++) {
+        const file_id = file_idList[i]
+        const name = names[i] || ''
+        if (!file_id || !name) continue
+        const resp = await apiPikPakRename(user_id, file_id, name)
+        if (resp.success) {
+          successList.push({ file_id, name: resp.name, parent_file_id: resp.parent_file_id, isDir: resp.isDir })
+        }
+      }
+      return successList
+    }
     const batchList = ApiBatchMaker2('/file/update', file_idList, names, (file_id: string, name: string) => {
       return { drive_id: drive_id, file_id: file_id, name: name, check_name_mode: 'refuse' }
     })
@@ -254,6 +277,9 @@ export default class AliFileCmd {
     if (isDrive115User(user_id) || drive_id === 'drive115') {
       return apiDrive115TrashDelete(user_id, file_idList)
     }
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') {
+      return apiPikPakTrashDelete(user_id, file_idList)
+    }
     const batchList = ApiBatchMaker('/file/delete', file_idList, (file_id: string) => {
       return { drive_id: drive_id, file_id: file_id }
     })
@@ -267,6 +293,9 @@ export default class AliFileCmd {
     }
     if (isDrive115User(user_id) || drive_id === 'drive115') {
       return apiDrive115TrashRestore(user_id, file_idList)
+    }
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') {
+      return apiPikPakTrashRestore(user_id, file_idList)
     }
     const batchList = ApiBatchMaker('/recyclebin/restore', file_idList, (file_id: string) => {
       return { drive_id: drive_id, file_id: file_id }
@@ -296,6 +325,7 @@ export default class AliFileCmd {
     if (isCloud123User(user_id) || drive_id === 'cloud123') return
     if (isDrive115User(user_id) || drive_id === 'drive115') return
     if (isBaiduUser(user_id) || drive_id === 'baidu') return
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') return
     // 防止加密标记清空
     let parts = description.split(',') || []
     let encryptPart = parts.find((part: any) => part.includes('xbyEncrypt')) || ''
@@ -406,6 +436,9 @@ export default class AliFileCmd {
       const paths = AliFileCmd.ResolveBaiduPaths(file_idList)
       return apiBaiduMove(user_id, paths, to_parent_file_id)
     }
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') {
+      return apiPikPakMoveBatch(user_id, file_idList, to_parent_file_id.includes('root') ? 'pikpak_root' : to_parent_file_id)
+    }
     if (to_parent_file_id.includes('root')) to_parent_file_id = 'root'
     const batchList = ApiBatchMaker('/file/move', file_idList, (file_id: string) => {
       if (drive_id == to_drive_id) return {
@@ -463,6 +496,9 @@ export default class AliFileCmd {
       to_parent_file_id = AliFileCmd.ResolveBaiduTargetPath(to_parent_file_id, to_parent_file_id, to_parent_description)
       const paths = AliFileCmd.ResolveBaiduPaths(file_idList)
       return apiBaiduCopy(user_id, paths, to_parent_file_id)
+    }
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') {
+      return apiPikPakCopyBatch(user_id, file_idList, to_parent_file_id.includes('root') ? 'pikpak_root' : to_parent_file_id)
     }
     if (to_parent_file_id.includes('root')) to_parent_file_id = 'root'
     const batchList = ApiBatchMaker('/file/copy', file_idList, (file_id: string) => {

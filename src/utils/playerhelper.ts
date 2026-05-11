@@ -18,12 +18,13 @@ import { IPageVideo } from '../store/appstore'
 import { Input, InputNumber, Modal } from '@arco-design/web-vue'
 import { h } from 'vue'
 import path from 'path'
-import { isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
-import { apiDrive115FileDetail } from '../cloud115/filecmd'
+import { isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../aliapi/utils'
+import { apiDrive115FileDetailResult } from '../cloud115/filecmd'
 import { apiDrive115VideoHistory } from '../cloud115/video'
 import { apiDrive115FileList, mapDrive115DetailToAliModel, mapDrive115FileToAliModel } from '../cloud115/dirfilelist'
 import { apiCloud123FileList, mapCloud123FileToAliModel } from '../cloud123/dirfilelist'
 import { apiBaiduFileList, mapBaiduFileToAliModel } from '../cloudbaidu/dirfilelist'
+import { apiPikPakFileList, mapPikPakFileToAliModel } from '../pikpak/dirfilelist'
 import { getWebDavConnection, getWebDavConnectionId, isWebDavDrive, listWebDavDirectory } from './webdavClient'
 
 const PlayerUtils = {
@@ -174,9 +175,13 @@ const PlayerUtils = {
     if (isWebDavDrive(drive_id)) return undefined
     if (isCloud123User(user_id) || drive_id === 'cloud123') return undefined
     if (isBaiduUser(user_id) || drive_id === 'baidu') return undefined
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') return undefined
     if (isDrive115User(user_id) || drive_id === 'drive115') {
-      const detail = await apiDrive115FileDetail(user_id, file_id)
-      if (!detail) return undefined
+      const { detail, error } = await apiDrive115FileDetailResult(user_id, file_id)
+      if (!detail) {
+        if (error) message.error(error)
+        return undefined
+      }
       const info = mapDrive115DetailToAliModel(detail, drive_id)
       const play_duration = Number(detail.play_long || 0)
       let play_cursor = await apiDrive115VideoHistory(user_id, detail.pick_code)
@@ -228,6 +233,10 @@ const PlayerUtils = {
     } else if (isBaiduUser(user_id) || drive_id === 'baidu') {
       const list = await apiBaiduFileList(user_id, parent_file_id || '/', 'name', 0, 1000)
       items = list.map(item => mapBaiduFileToAliModel(item, drive_id, parent_file_id || '/'))
+    } else if (isPikPakUser(user_id) || drive_id === 'pikpak') {
+      const parentId = parent_file_id && !parent_file_id.includes('root') ? parent_file_id : 'pikpak_root'
+      const list = await apiPikPakFileList(user_id, parentId, 500)
+      items = list.items.map(item => mapPikPakFileToAliModel(item, drive_id, parentId))
     } else {
       const dir = await AliDirFileList.ApiDirFileList(user_id, drive_id, parent_file_id, '', 'name asc', '')
       items = dir.items
@@ -362,7 +371,7 @@ const PlayerUtils = {
           currentFileInfo = playList[status.value]
           // 自动标记
           const { drive_id, file_id, description } = currentFileInfo
-          if (uiAutoColorVideo && (!description || !description.includes('ce74c3c'))) {
+          if (uiAutoColorVideo && !isPikPakUser(token) && drive_id !== 'pikpak' && (!description || !description.includes('ce74c3c'))) {
             AliFileCmd.ApiFileColorBatch(token.user_id, drive_id, description, 'ce74c3c', [file_id])
           }
         }

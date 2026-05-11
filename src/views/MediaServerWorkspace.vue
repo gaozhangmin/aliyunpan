@@ -1382,12 +1382,14 @@ import { openExternal } from '../utils/electronhelper'
 import useMediaServerContentStore from '../store/mediaServerContent'
 import type { MediaServerCardItem, MediaServerHomeLibrarySection, MediaServerItemDetail, MediaServerLibraryNode, MediaServerMediaInfoCard, MediaServerSearchData, MediaServerSourceOption } from '../types/mediaServerContent'
 import useMediaServerHomePreferencesStore, { type MediaServerPosterType } from '../store/mediaServerHomePreferences'
+import useSettingStore from '../setting/settingstore'
 
 const registry = useMediaServerRegistryStore()
 const wrapCacheUrl = (url: string): string => toMsCacheUrl(registry.currentServer?.id, url)
 const navigation = useMediaServerNavigationStore()
 const content = useMediaServerContentStore()
 const homePreferences = useMediaServerHomePreferencesStore()
+const settingStore = useSettingStore()
 const searchText = ref('')
 const workspacePageRef = ref<HTMLElement | null>(null)
 const HOME_LIBRARY_BATCH_SIZE = 3
@@ -2531,7 +2533,11 @@ const openMediaServerPlayback = async (
     options?.sourceId,
     options?.videoStreamIndex ?? -1,
     options?.audioStreamIndex ?? -1,
-    options?.subtitleStreamIndex ?? -1
+    options?.subtitleStreamIndex ?? -1,
+    settingStore.uiMediaServerVideoQuality,
+    settingStore.uiMediaServerCompatibilityMode,
+    settingStore.uiMediaServerCustomDeviceProfile,
+    settingStore.uiMediaServerBitrateTestSize
   )
   window.WebOpenWindow?.({
     page: 'PageVideo',

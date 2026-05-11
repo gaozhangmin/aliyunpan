@@ -14,8 +14,17 @@ import type {
   MediaServerPerson,
   MediaServerSearchData
 } from '../types/mediaServerContent'
-import { buildMediaServerImageUrl, mediaServerFetch, mediaServerFetchVoid } from './http'
+import { buildMediaServerImageUrl, mediaServerFetch, mediaServerFetchVoid, mediaServerHeaders } from './http'
 import type { MediaServerHomePreferencesState } from '../store/mediaServerHomePreferences'
+import {
+  buildMediaServerDeviceProfile,
+  getMediaServerMaxStreamingBitrate,
+  MEDIA_SERVER_MAX_PLAYBACK_BITRATE,
+  type MediaServerBitrateTestSize,
+  type MediaServerCustomDeviceProfile,
+  type MediaServerPlaybackCompatibility,
+  type MediaServerPlaybackQuality
+} from './playbackQuality'
 
 const HOME_ITEM_FIELDS = 'Overview,PrimaryImageAspectRatio,ProductionYear,PremiereDate,DateCreated'
 
@@ -23,6 +32,7 @@ interface MediaServerBaseItem {
   Id?: string
   Key?: string
   ratingKey?: string
+  ETag?: string
   SeriesId?: string
   Duration?: number
   Name?: string
@@ -818,13 +828,36 @@ interface MediaServerPlaybackResponse {
   PlaySessionId?: string
 }
 
+const testMediaServerBitrate = async (
+  config: MediaServerConfig,
+  testSize: MediaServerBitrateTestSize
+): Promise<number> => {
+  const size = Number(testSize)
+  const testStartTime = Date.now()
+  const url = `${config.baseUrl.replace(/\/+$/, '')}/Playback/BitrateTest?${new URLSearchParams({ size: String(size) }).toString()}`
+  const response = await fetch(url, {
+    headers: mediaServerHeaders(config)
+  })
+  if (!response.ok) {
+    throw new Error(`${config.type === 'emby' ? 'Emby' : config.type === 'jellyfin' ? 'Jellyfin' : 'Plex'} 请求失败 (${response.status})`)
+  }
+  await response.arrayBuffer()
+  const testDurationSeconds = Math.max((Date.now() - testStartTime) / 1000, 0.001)
+  const testBitrate = Math.floor((size * 8) / testDurationSeconds)
+  return Math.min(testBitrate, MEDIA_SERVER_MAX_PLAYBACK_BITRATE)
+}
+
 export const getMediaServerPlaybackInfo = async (
   config: MediaServerConfig,
   itemId: string,
   sourceId?: string,
   videoStreamIndex?: number,
   audioStreamIndex?: number,
-  subtitleStreamIndex?: number
+  subtitleStreamIndex?: number,
+  playbackQuality: MediaServerPlaybackQuality = 'max',
+  compatibilityMode: MediaServerPlaybackCompatibility = 'auto',
+  customDeviceProfile?: MediaServerCustomDeviceProfile,
+  bitrateTestSize: MediaServerBitrateTestSize = '5000000'
 ): Promise<MediaServerPlaybackInfo> => {
   ensureServerContext(config)
 
@@ -857,11 +890,16 @@ export const getMediaServerPlaybackInfo = async (
     }
   }
 
+  const maxStreamingBitrate = playbackQuality === 'auto'
+    ? await testMediaServerBitrate(config, bitrateTestSize)
+    : getMediaServerMaxStreamingBitrate(playbackQuality)
+
   const query = new URLSearchParams({
     UserId: config.userId || '',
     StartTimeTicks: '0',
     AutoOpenLiveStream: 'false'
   })
+  if (maxStreamingBitrate) query.set('MaxStreamingBitrate', String(maxStreamingBitrate))
   if (sourceId) query.set('MediaSourceId', sourceId)
   if (typeof videoStreamIndex === 'number' && videoStreamIndex >= 0) query.set('VideoStreamIndex', String(videoStreamIndex))
   if (typeof audioStreamIndex === 'number' && audioStreamIndex >= 0) query.set('AudioStreamIndex', String(audioStreamIndex))
@@ -875,7 +913,7 @@ export const getMediaServerPlaybackInfo = async (
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        DeviceProfile: null,
+        DeviceProfile: buildMediaServerDeviceProfile(maxStreamingBitrate, compatibilityMode, customDeviceProfile),
         VideoStreamIndex: typeof videoStreamIndex === 'number' && videoStreamIndex >= 0 ? videoStreamIndex : undefined,
         AudioStreamIndex: typeof audioStreamIndex === 'number' && audioStreamIndex >= 0 ? audioStreamIndex : undefined,
         SubtitleStreamIndex: typeof subtitleStreamIndex === 'number' && subtitleStreamIndex >= 0 ? subtitleStreamIndex : undefined
@@ -883,13 +921,13 @@ export const getMediaServerPlaybackInfo = async (
     }
   )
 
-  const source = (playbackPayload.MediaSources || []).find((entry) => {
-    if (sourceId && entry.Id === sourceId) return true
-    return false
-  }) || playbackPayload.MediaSources?.[0]
+  const requestedSource = (detailPayload.MediaSources || []).find((entry) => sourceId && entry.Id === sourceId) || detailPayload.MediaSources?.[0]
+  const source = requestedSource
+    ? (playbackPayload.MediaSources || []).find((entry) => entry.Id === requestedSource.Id && entry.ETag === requestedSource.ETag)
+    : undefined
 
   if (!source) {
-    throw new Error('媒体服务器未返回可播放媒体源')
+    throw new Error('Matching media source not in playback info')
   }
 
   const directUrl = source.DirectStreamUrl || source.XOriginDirectStreamUrl
@@ -898,20 +936,19 @@ export const getMediaServerPlaybackInfo = async (
   let playUrl = ''
   if (isHttpProtocol && directUrl) {
     playUrl = buildAbsoluteMediaServerUrl(config, directUrl)
+  } else if (isHttpProtocol && source.Path) {
+    playUrl = source.Path
   } else if (config.type === 'emby' && directUrl) {
     playUrl = buildAbsoluteMediaServerUrl(config, directUrl)
-  } else if (transcodingUrl) {
+  } else if (transcodingUrl && compatibilityMode !== 'directPlay') {
     playUrl = buildAbsoluteMediaServerUrl(config, transcodingUrl)
-  } else if (directUrl) {
-    playUrl = buildAbsoluteMediaServerUrl(config, directUrl)
-  } else if (source.Path && /^https?:\/\//i.test(source.Path)) {
-    playUrl = source.Path
   } else {
     const streamQuery = new URLSearchParams({
       static: 'true',
       playSessionId: playbackPayload.PlaySessionId || source.Id || '',
       mediaSourceId: source.Id || sourceId || ''
     })
+    if (detailPayload.ETag) streamQuery.set('tag', detailPayload.ETag)
     playUrl = `${config.baseUrl.replace(/\/+$/, '')}/Videos/${encodeURIComponent(itemId)}/stream?${streamQuery.toString()}`
   }
 

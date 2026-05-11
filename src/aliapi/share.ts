@@ -3,12 +3,13 @@ import { humanDateTime, humanDateTimeDateStr, humanExpiration, humanSize } from 
 import message from '../utils/message'
 import AliHttp, { IUrlRespData } from './alihttp'
 import ServerHttp from './server'
-import { ApiBatch, ApiBatchMaker, ApiBatchSuccess, isCloud123User } from './utils'
+import { ApiBatch, ApiBatchMaker, ApiBatchSuccess, isCloud123User, isPikPakUser } from './utils'
 import { useSettingStore, useMyShareStore } from '../store'
 import { IAliFileItem, IAliShareAnonymous, IAliShareBottleFish, IAliShareFileItem, IAliShareItem } from './alimodels'
 import getFileIcon from './fileicon'
 import { IAliBatchResult } from './models'
 import { apiCloud123ShareCreate, apiCloud123ShareUpdate } from '../cloud123/share'
+import { apiPikPakShareCreate } from '../pikpak/share'
 
 export interface IAliShareFileResp {
   items: IAliShareFileItem[]
@@ -282,6 +283,38 @@ export default class AliShare {
       }
       return item
     }
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') {
+      const result = await apiPikPakShareCreate(user_id, file_id_list, !!share_pwd, expiration)
+      if (result.error) return result.error
+      const item: IAliShareItem = {
+        created_at: '',
+        creator: '',
+        description: '',
+        display_name: '',
+        display_label: '',
+        download_count: 0,
+        drive_id: drive_id || 'pikpak',
+        expiration,
+        expired: false,
+        file_id: '',
+        file_id_list,
+        icon: 'iconwenjian',
+        preview_count: 0,
+        save_count: 0,
+        share_id: result.shareId,
+        share_msg: humanExpiration(expiration),
+        full_share_msg: '',
+        share_name: share_name || '分享链接',
+        share_policy: '',
+        share_pwd: result.passCode || share_pwd || '',
+        share_url: result.shareUrl,
+        status: '',
+        updated_at: '',
+        is_share_saved: false,
+        share_saved: ''
+      }
+      return item
+    }
     const url = 'adrive/v2/share_link/create'
     const postData = { drive_id, expiration, share_pwd, share_name, file_id_list }
     const resp = await AliHttp.Post(url, postData, user_id, '')
@@ -330,7 +363,7 @@ export default class AliShare {
 
 
   static async ApiCancelShareBatch(user_id: string, share_idList: string[]): Promise<string[]> {
-    if (isCloud123User(user_id)) {
+    if (isCloud123User(user_id) || isPikPakUser(user_id)) {
       message.info('当前网盘类型不支持')
       return []
     }
@@ -343,6 +376,10 @@ export default class AliShare {
 
   static async ApiUpdateShareBatch(user_id: string, share_idList: string[], expirationList: string[], share_pwdList: string[], share_nameList: string[] | undefined): Promise<UpdateShareModel[]> {
     if (!share_idList || share_idList.length == 0) return []
+    if (isPikPakUser(user_id)) {
+      message.info('当前网盘类型不支持')
+      return []
+    }
     if (isCloud123User(user_id)) {
       const update = await apiCloud123ShareUpdate(user_id, share_idList)
       if (!update.success) {

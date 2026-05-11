@@ -11,7 +11,7 @@ import {
   useUploadingStore,
   useWinStore
 } from '../store'
-import { isCloud123User } from '../aliapi/utils'
+import { isCloud123User, isPikPakUser } from '../aliapi/utils'
 import {
   onHideRightMenuScroll,
   onShowRightMenu,
@@ -34,7 +34,7 @@ const appStore = useAppStore()
 const winStore = useWinStore()
 const downingStore = useDowningStore()
 const userStore = useUserStore()
-const isCloudUser = computed(() => isCloud123User(userStore.user_id || ''))
+const isCloudUser = computed(() => isCloud123User(userStore.user_id || '') || isPikPakUser(userStore.user_id || ''))
 
 const isDowning = computed(() => downingStore.ListDataDowningCount > 0)
 watch(isDowning, (value, oldValue) => {

@@ -12,7 +12,7 @@ import message from './message'
 import { modalArchive, modalArchivePassword, modalSelectPanDir, modalSelectVideoQuality } from './modal'
 import PlayerUtils from './playerhelper'
 import { getEncType, getRawUrl } from './proxyhelper'
-import { isAliyunUser, isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
+import { isAliyunUser, isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../aliapi/utils'
 
 async function resolveTokenForFile(file: IAliGetFileModel): Promise<ITokenInfo | undefined> {
   const explicitUserId = (file as any).user_id as string | undefined
@@ -27,7 +27,8 @@ async function resolveTokenForFile(file: IAliGetFileModel): Promise<ITokenInfo |
     (driveId === 'cloud123' && isCloud123User(currentToken))
     || (driveId === 'drive115' && isDrive115User(currentToken))
     || (driveId === 'baidu' && isBaiduUser(currentToken))
-    || (!['cloud123', 'drive115', 'baidu'].includes(driveId) && isAliyunUser(currentToken))
+    || (driveId === 'pikpak' && isPikPakUser(currentToken))
+    || (!['cloud123', 'drive115', 'baidu', 'pikpak'].includes(driveId) && isAliyunUser(currentToken))
   )
   if (matchesCurrent && currentToken?.access_token) return currentToken
 
@@ -36,7 +37,8 @@ async function resolveTokenForFile(file: IAliGetFileModel): Promise<ITokenInfo |
     (driveId === 'cloud123' && isCloud123User(token))
     || (driveId === 'drive115' && isDrive115User(token))
     || (driveId === 'baidu' && isBaiduUser(token))
-    || (!['cloud123', 'drive115', 'baidu'].includes(driveId) && isAliyunUser(token))
+    || (driveId === 'pikpak' && isPikPakUser(token))
+    || (!['cloud123', 'drive115', 'baidu', 'pikpak'].includes(driveId) && isAliyunUser(token))
   ))
   if (!matched?.user_id) return currentToken || undefined
   return await UserDAL.GetUserTokenFromDB(matched.user_id) || undefined
@@ -206,7 +208,7 @@ async function Video(
     uiVideoPlayer,
     uiVideoPlayerPath
   } = useSettingStore()
-  if (uiAutoColorVideo && (!desc || !desc.includes('ce74c3c'))) {
+  if (uiAutoColorVideo && !isPikPakUser(token) && file.drive_id !== 'pikpak' && (!desc || !desc.includes('ce74c3c'))) {
     AliFileCmd.ApiFileColorBatch(token.user_id, file.drive_id, file.description, 'ce74c3c', [file.file_id])
   }
   if (uiVideoPlayer == 'web') {

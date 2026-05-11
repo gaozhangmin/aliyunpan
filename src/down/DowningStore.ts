@@ -252,7 +252,7 @@ const useDowningStore = defineStore('downing', {
       const DowningList = this.ListDataRaw
       for (const downID of this.ListSelected) {
         const selectedDown: IStateDownFile | undefined = DowningList.find(down => down.DownID === downID)
-        if (selectedDown?.Info.offlineProvider === 'cloud123') continue
+        if (selectedDown?.Info.offlineProvider) continue
         if (selectedDown && !selectedDown.Down.IsDowning && !selectedDown.Down.IsCompleted) {
           this.mUpdateDownState(selectedDown, 'queue')
         }
@@ -266,7 +266,7 @@ const useDowningStore = defineStore('downing', {
       const DowningList = this.ListDataRaw
       for (let j = 0; j < DowningList.length; j++) {
         const down = DowningList[j].Down
-        if (DowningList[j].Info.offlineProvider === 'cloud123') continue
+        if (DowningList[j].Info.offlineProvider) continue
         if (down.IsDowning || down.IsCompleted) continue
         this.mUpdateDownState(DowningList[j], 'queue')
       }
@@ -284,7 +284,7 @@ const useDowningStore = defineStore('downing', {
           if (DowningList[j].DownID == DownID) {
             const down = DowningList[j].Down
             if (down.IsCompleted) continue
-            if (DowningList[j].Info.offlineProvider !== 'cloud123') {
+            if (!DowningList[j].Info.offlineProvider) {
               gidList.push(DowningList[j].Info.GID)
               downList.push(DowningList[j])
               this.mUpdateDownState(DowningList[j], 'stop')
@@ -306,7 +306,7 @@ const useDowningStore = defineStore('downing', {
       for (let j = 0; j < DowningList.length; j++) {
         const down = DowningList[j].Down
         if (down.IsCompleted) continue
-        if (DowningList[j].Info.offlineProvider !== 'cloud123') {
+        if (!DowningList[j].Info.offlineProvider) {
           gidList.push(DowningList[j].Info.GID)
           this.mUpdateDownState(DowningList[j], 'stop')
         }
@@ -330,7 +330,7 @@ const useDowningStore = defineStore('downing', {
         const DownID = DowningList[j].DownID
         if (downIDList.includes(DownID)) {
           DowningList[j].Down.DownState = '待删除'
-          if (DowningList[j].Info.offlineProvider !== 'cloud123') {
+          if (!DowningList[j].Info.offlineProvider) {
             gidList.push(DowningList[j].Info.GID)
           }
           deleteList.push(DowningList[j])
@@ -356,7 +356,7 @@ const useDowningStore = defineStore('downing', {
       const DowningList = this.ListDataRaw
       for (let j = 0; j < DowningList.length; j++) {
         DowningList[j].Down.DownState = '待删除'
-        if (DowningList[j].Info.offlineProvider !== 'cloud123') {
+        if (!DowningList[j].Info.offlineProvider) {
           gidList.push(DowningList[j].Info.GID)
         }
       }

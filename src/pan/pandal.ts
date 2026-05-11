@@ -7,14 +7,16 @@ import DB from '../utils/db'
 import DebugLog from '../utils/debuglog'
 import message from '../utils/message'
 import usePanTreeStore from './pantreestore'
-import { GetDriveID, GetDriveType, isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
+import { GetDriveID, GetDriveType, isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../aliapi/utils'
 import AliAlbum from '../aliapi/album'
 import { apiCloud123FileList, mapCloud123FileToAliModel } from '../cloud123/dirfilelist'
 import { apiDrive115Search, mapDrive115SearchToAliModel, mapDrive115TrashToAliModel } from '../cloud115/dirfilelist'
 import { apiDrive115TrashList } from '../cloud115/trash'
 import { apiDrive115FileList, mapDrive115FileToAliModel } from '../cloud115/dirfilelist'
 import { apiBaiduFileList, apiBaiduSearch, mapBaiduFileToAliModel } from '../cloudbaidu/dirfilelist'
+import { apiPikPakFileList, mapPikPakFileToAliModel } from '../pikpak/dirfilelist'
 import { getWebDavConnection, getWebDavConnectionId, isWebDavDrive, listWebDavDirectory } from '../utils/webdavClient'
+import { OrderDir } from '../utils/filenameorder'
 
 export interface PanSelectedData {
   isError: boolean
@@ -119,6 +121,32 @@ export default class PanDAL {
         name: item.server_filename,
         description: item.fs_id ? `:${item.fs_id};baidu_path:${item.path}` : '',
         time: (item.server_mtime || item.server_ctime || 0) * 1000,
+        size: 0
+      }))
+    await TreeStore.ConvertToOneDriver(user_id, drive_id, dirs, false, true)
+    PanDAL.RefreshPanTreeAllNode(drive_id)
+    useFootStore().mSaveLoading('')
+  }
+
+  static async aReLoadPikPakDrive(token: ITokenInfo): Promise<void> {
+    const { user_id } = token
+    const drive_id = token.default_drive_id || 'pikpak'
+    const pantreeStore = usePanTreeStore()
+    pantreeStore.mSaveUser(user_id, drive_id, '', '', '')
+    pantreeStore.drive_id = drive_id
+    if (!user_id) return
+    useFootStore().mSaveLoading('加载 PikPak 文件夹...')
+    const { items } = await apiPikPakFileList(user_id, 'pikpak_root', 100)
+    const driveType = GetDriveType(user_id, drive_id)
+    const dirs = items
+      .filter((item) => (item.kind || '').includes('folder'))
+      .map((item) => ({
+        file_id: String(item.id),
+        drive_id: drive_id,
+        parent_file_id: driveType.key,
+        name: item.name,
+        description: '',
+        time: new Date(item.modified_time || item.created_time || '').getTime() || 0,
         size: 0
       }))
     await TreeStore.ConvertToOneDriver(user_id, drive_id, dirs, false, true)
@@ -378,7 +406,10 @@ export default class PanDAL {
               mapped.drive_id = drive_id
               return mapped
             })
+            const order = TreeStore.GetDirOrder(drive_id, dirID).replace('ext ', 'updated_at ')
             const items = hasFiles ? allItems : allItems.filter((item) => item.isDir)
+            const orders = order.split(' ')
+            OrderDir(orders[0], orders[1], items)
             const dir = NewIAliFileResp(user_id, drive_id, dirID, dirName)
             dir.items = items
             dir.itemsKey = new Set(items.map((item) => item.file_id))
@@ -500,6 +531,42 @@ export default class PanDAL {
         request
           .then((list) => {
             const allItems = list.map((item) => mapBaiduFileToAliModel(item, drive_id, parentPath))
+            const items = hasFiles ? allItems : allItems.filter((item) => item.isDir)
+            const dir = NewIAliFileResp(user_id, drive_id, dirID, dirName)
+            dir.items = items
+            dir.itemsKey = new Set(items.map((item) => item.file_id))
+            dir.next_marker = ''
+            dir.itemsTotal = items.length
+            const panfileStore = usePanFileStore()
+            panfileStore.mSaveDirFileLoadingPart(0, dir, dir.itemsTotal || 0)
+            TreeStore.SaveOneDirFileList(dir, hasFiles).then(() => {
+              if (hasFiles) {
+                panfileStore.mSaveDirFileLoadingFinish(drive_id, dirID, dir.items, dir.itemsTotal || 0)
+              }
+              PanDAL.RefreshPanTreeAllNode(drive_id)
+              resolve(true)
+            })
+          })
+          .catch(() => {
+            if (hasFiles) usePanFileStore().mSaveDirFileLoadingFinish(drive_id, dirID, [])
+            resolve(false)
+          })
+        return
+      }
+
+      if (isPikPakUser(user_id)) {
+        const isTrash = dirID === 'trash'
+        const isSearch = dirID.startsWith('search')
+        if (isSearch) {
+          if (hasFiles) usePanFileStore().mSaveDirFileLoadingFinish(drive_id, dirID, [])
+          message.warning('PikPak 暂不支持搜索')
+          resolve(true)
+          return
+        }
+        const parentId = dirID === 'pikpak_root' || isTrash ? 'pikpak_root' : dirID
+        apiPikPakFileList(user_id, parentId, 100, '', isTrash)
+          .then(({ items: list }) => {
+            const allItems = list.map((item) => mapPikPakFileToAliModel(item, drive_id, parentId))
             const items = hasFiles ? allItems : allItems.filter((item) => item.isDir)
             const dir = NewIAliFileResp(user_id, drive_id, dirID, dirName)
             dir.items = items

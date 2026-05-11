@@ -8,7 +8,8 @@ import message from './message'
 import { apiCloud123FileList, mapCloud123FileToAliModel } from '../cloud123/dirfilelist'
 import { apiDrive115FileList, mapDrive115FileToAliModel } from '../cloud115/dirfilelist'
 import { apiBaiduFileList, mapBaiduFileToAliModel } from '../cloudbaidu/dirfilelist'
-import { isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
+import { apiPikPakFileList, mapPikPakFileToAliModel } from '../pikpak/dirfilelist'
+import { isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../aliapi/utils'
 import { getWebDavConnection, getWebDavConnectionId, isWebDavDrive, listWebDavDirectory, type WebDavConnectionConfig } from './webdavClient'
 
 export class MediaScanner {
@@ -304,6 +305,11 @@ export class MediaScanner {
       return list.map((item) => mapBaiduFileToAliModel(item, driveId, folder.file_id || ''))
     }
 
+    if (isPikPakUser(userId) || driveId === 'pikpak') {
+      const parentId = folder.file_id && !folder.file_id.includes('root') ? folder.file_id : 'pikpak_root'
+      const list = await apiPikPakFileList(userId, parentId, 500)
+      return list.items.map((item) => mapPikPakFileToAliModel(item, driveId, parentId))
+    }
     const resp = await AliDirFileList.ApiDirFileList(
       userId,
       driveId,

@@ -4,6 +4,17 @@ import { getUserDataPath } from '../utils/electronhelper'
 import { useAppStore } from '../store'
 import PanDAL from '../pan/pandal'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
+import {
+  DEFAULT_MEDIA_SERVER_CUSTOM_DEVICE_PROFILE,
+  isMediaServerBitrateTestSize,
+  isMediaServerPlaybackCompatibility,
+  isMediaServerPlaybackQuality,
+  normalizeMediaServerCustomDeviceProfile,
+  type MediaServerBitrateTestSize,
+  type MediaServerCustomDeviceProfile,
+  type MediaServerPlaybackCompatibility,
+  type MediaServerPlaybackQuality
+} from '../media-server/playbackQuality'
 
 declare type ProxyType = 'none' | 'http' | 'https' | 'socks4' | 'socks4a' | 'socks5' | 'socks5h'
 declare type VideoQuality = 'Origin' | 'QHD' | 'FHD' | 'HD' | 'SD' | 'LD'
@@ -47,6 +58,10 @@ export interface SettingState {
 
   // 在线预览
   uiVideoQuality: VideoQuality
+  uiMediaServerVideoQuality: MediaServerPlaybackQuality
+  uiMediaServerBitrateTestSize: MediaServerBitrateTestSize
+  uiMediaServerCompatibilityMode: MediaServerPlaybackCompatibility
+  uiMediaServerCustomDeviceProfile: MediaServerCustomDeviceProfile
   uiVideoQualityTips: boolean
   uiVideoQualityLastSelect: boolean
   uiVideoPlayer: string
@@ -193,6 +208,10 @@ const setting: SettingState = {
 
   // 在线预览
   uiVideoQuality: 'Origin',
+  uiMediaServerVideoQuality: 'max',
+  uiMediaServerBitrateTestSize: '5000000',
+  uiMediaServerCompatibilityMode: 'auto',
+  uiMediaServerCustomDeviceProfile: DEFAULT_MEDIA_SERVER_CUSTOM_DEVICE_PROFILE,
   uiVideoQualityTips: false,
   uiVideoQualityLastSelect: true,
   uiVideoPlayer: 'web',
@@ -346,6 +365,10 @@ function _loadSetting(val: any) {
 
   // 在线预览
   setting.uiVideoQuality = defaultValue(val.uiVideoQuality, ['Origin', 'QHD', 'FHD', 'HD', 'SD', 'LD'])
+  setting.uiMediaServerVideoQuality = isMediaServerPlaybackQuality(val.uiMediaServerVideoQuality) ? val.uiMediaServerVideoQuality : 'max'
+  setting.uiMediaServerBitrateTestSize = isMediaServerBitrateTestSize(val.uiMediaServerBitrateTestSize) ? val.uiMediaServerBitrateTestSize : '5000000'
+  setting.uiMediaServerCompatibilityMode = isMediaServerPlaybackCompatibility(val.uiMediaServerCompatibilityMode) ? val.uiMediaServerCompatibilityMode : 'auto'
+  setting.uiMediaServerCustomDeviceProfile = normalizeMediaServerCustomDeviceProfile(val.uiMediaServerCustomDeviceProfile)
   setting.uiVideoQualityTips = defaultBool(val.uiVideoQualityTips, false)
   setting.uiVideoQualityLastSelect = defaultBool(val.uiVideoQualityLastSelect, true)
   setting.uiVideoPlayer = defaultValue(val.uiVideoPlayer, ['web', 'other'])

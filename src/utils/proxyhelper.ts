@@ -14,6 +14,8 @@ import DebugLog from './debuglog'
 import message from './message'
 import UserDAL from '../user/userdal'
 import Config from '../config'
+import { buildUpstreamProxyHeaders } from './proxyHeaders'
+import { MEDIA_SERVER_DRIVE_ID, shouldRefreshProxyUrl } from './proxyCache'
 
 // 默认maxFreeSockets=256
 const httpsAgent = new HttpsAgent({ keepAlive: true })
@@ -133,7 +135,8 @@ export async function getRawUrl(
   password: string = '',
   weifa: boolean = false,
   preview_type: string = '',
-  quality: string = ''
+  quality: string = '',
+  promotionSkuCode = ''
 ): Promise<string | IRawUrl> {
   let data: any = {
     drive_id: drive_id,
@@ -143,6 +146,7 @@ export async function getRawUrl(
     qualities: [],
     subtitles: []
   }
+  if (drive_id === MEDIA_SERVER_DRIVE_ID) return data
   let { uiVideoQuality, uiVideoPlayer, securityPreviewAutoDecrypt } = useSettingStore()
   // 违规视频也使用转码播放
   if (!encType && preview_type) {
@@ -151,7 +155,7 @@ export async function getRawUrl(
       if (proxyInfo && proxyInfo.encType && proxyInfo.file_id === file_id) {
         // 加密视频通过下载链接播放
       } else {
-        let previewData = await AliFile.ApiVideoPreviewUrl(user_id, drive_id, file_id)
+        let previewData = await AliFile.ApiVideoPreviewUrl(user_id, drive_id, file_id, promotionSkuCode)
         if (typeof previewData != 'string') {
           Object.assign(data, previewData)
           if (quality && quality != 'Origin') {
@@ -161,6 +165,8 @@ export async function getRawUrl(
           } else if (data.qualities.length > 0 && !data.url) {
             data.url = data.qualities[0].url
           }
+        } else if (drive_id === 'drive115') {
+          return previewData
         }
       }
     } else if (preview_type === 'audio') {
@@ -218,14 +224,21 @@ export async function createProxyServer(port: number) {
     const { user_id, drive_id, file_id, file_size, encType, password, weifa, quality, proxy_url, proxy_headers } = query
     console.info('proxy query: ', query)
     if (pathname === '/proxy') {
-      let proxyInfo: any = await Db.getValueObject('ProxyInfo')
+      const driveId = String(drive_id || '')
+      const fileId = String(file_id || '')
+      const isMediaServerProxy = driveId === MEDIA_SERVER_DRIVE_ID
+      let proxyInfo: any = isMediaServerProxy ? undefined : await Db.getValueObject('ProxyInfo')
       let proxyUrl = proxy_url || (proxyInfo && proxyInfo.proxy_url || '') || ''
       let { uiVideoQuality, securityEncType, securityFileNameAutoDecrypt } = useSettingStore()
       let selectQuality = quality || uiVideoQuality
-      let needRefreshUrl = proxyInfo && (file_id != proxyInfo.file_id || proxyInfo.expires_time <= Date.now())
-      let changeVideoQuality = proxyInfo && proxyInfo.videoQuality && (selectQuality !== proxyInfo.videoQuality)
       let subtitle_url = ''
-      if (!proxyUrl || needRefreshUrl || changeVideoQuality) {
+      if (shouldRefreshProxyUrl({
+        driveId,
+        fileId,
+        proxyUrl: String(proxyUrl || ''),
+        selectQuality: String(selectQuality || ''),
+        proxyInfo
+      })) {
         // 获取地址
         let data = await getRawUrl(user_id, drive_id, file_id, encType, '', weifa, 'other', selectQuality)
         console.error('proxy getRawUrl', data)
@@ -242,7 +255,7 @@ export async function createProxyServer(port: number) {
         clientRes.end()
         await Db.deleteValueObject('ProxyInfo')
         return
-      } else if (!proxyInfo) {
+      } else if (!proxyInfo && !isMediaServerProxy) {
         let info: FileInfo = {
           user_id, drive_id, file_id, file_size, encType,
           videoQuality: selectQuality,
@@ -271,36 +284,23 @@ export async function createProxyServer(port: number) {
           await flowEnc.setPosition(start)
         }
       }
-      delete clientReq.headers.host
-      delete clientReq.headers.referer
-      delete clientReq.headers.authorization
-      if (proxy_headers) {
-        try {
-          const extraHeaders = JSON.parse(String(proxy_headers)) as Record<string, string>
-          for (const [key, value] of Object.entries(extraHeaders || {})) {
-            if (!value) continue
-            clientReq.headers[key.toLowerCase()] = value
-          }
-        } catch (error) {
-          console.warn('proxy_headers parse error', error)
-        }
-      }
+      const upstreamHeaders = buildUpstreamProxyHeaders(clientReq.headers, String(proxy_headers || ''))
       if (query.drive_id === 'baidu') {
-        clientReq.headers['User-Agent'] = 'pan.baidu.com'
+        upstreamHeaders['user-agent'] = 'pan.baidu.com'
       }
       if (query.drive_id === 'drive115') {
         const token = UserDAL.GetUserToken(String(query.user_id || ''))
         if (token?.access_token) {
-          clientReq.headers.authorization = `Bearer ${token.access_token}`
+          upstreamHeaders.authorization = `Bearer ${token.access_token}`
         }
-        clientReq.headers['User-Agent'] = Config.downAgent || clientReq.headers['user-agent']
+        upstreamHeaders['user-agent'] = Config.downAgent || upstreamHeaders['user-agent'] || clientReq.headers['user-agent'] || ''
       }
       await new Promise((resolve, reject) => {
         // 处理请求，让下载的流量经过代理服务器
         const httpRequest = ~proxyUrl.indexOf('https') ? https : http
         const agentServer = httpRequest.request(proxyUrl, {
           method: clientReq.method,
-          headers: clientReq.headers,
+          headers: upstreamHeaders,
           rejectUnauthorized: false,
           agent: ~proxyUrl.indexOf('https') ? httpsAgent : httpAgent
         }, (httpResp: any) => {

@@ -21,6 +21,11 @@ export type Drive115DetailResult = {
   path: { file_id: string; file_name: string }[]
 }
 
+export type Drive115DetailApiResult = {
+  detail: Drive115DetailResult | null
+  error: string
+}
+
 const API_URL = 'https://proapi.115.com/open/folder/add'
 const DETAIL_URL = 'https://proapi.115.com/open/folder/get_info'
 
@@ -69,7 +74,7 @@ export const apiDrive115Mkdir = async (user_id: string, parent_id: string, name:
   return result
 }
 
-export const apiDrive115FileDetail = async (user_id: string, file_id: string): Promise<Drive115DetailResult | null> => {
+export const apiDrive115FileDetailResult = async (user_id: string, file_id: string): Promise<Drive115DetailApiResult> => {
   let token = UserDAL.GetUserToken(user_id)
   if (!token?.access_token) {
     const dbToken = await UserDAL.GetUserTokenFromDB(user_id)
@@ -80,7 +85,7 @@ export const apiDrive115FileDetail = async (user_id: string, file_id: string): P
 
     }
   }
-  if (!token?.access_token) return null
+  if (!token?.access_token) return { detail: null, error: '未登录 115 网盘' }
   const params = new URLSearchParams({ file_id })
   const url = `${DETAIL_URL}?${params.toString()}`
   try {
@@ -89,31 +94,41 @@ export const apiDrive115FileDetail = async (user_id: string, file_id: string): P
         Authorization: `Bearer ${token.access_token}`
       }
     })
-    if (!resp.ok) return null
+    if (!resp.ok) return { detail: null, error: '获取文件详情失败' }
     const data = await resp.json()
-    if (data?.code !== 0 || !data?.data) return null
+    if (data?.code !== 0 || !data?.data) {
+      return { detail: null, error: data?.message || '获取文件详情失败' }
+    }
     const info = data.data
     return {
-      file_id: String(info.file_id || file_id),
-      name: info.file_name || '',
-      size: Number(info.size_byte || 0),
-      folder_count: Number(info.folder_count || 0),
-      file_count: Number(info.count || 0),
-      isDir: String(info.file_category) !== '1',
-      created_at: toIsoTime(info.ptime),
-      updated_at: toIsoTime(info.utime),
-      pick_code: info.pick_code || '',
-      sha1: info.sha1 || '',
-      play_long: Number(info.play_long || 0),
-      path: Array.isArray(info.paths)
-        ? info.paths.map((p: any) => ({
-          file_id: String(p.file_id || ''),
-          file_name: String(p.file_name || '')
-        }))
-        : []
+      detail: {
+        file_id: String(info.file_id || file_id),
+        name: info.file_name || '',
+        size: Number(info.size_byte || 0),
+        folder_count: Number(info.folder_count || 0),
+        file_count: Number(info.count || 0),
+        isDir: String(info.file_category) !== '1',
+        created_at: toIsoTime(info.ptime),
+        updated_at: toIsoTime(info.utime),
+        pick_code: info.pick_code || '',
+        sha1: info.sha1 || '',
+        play_long: Number(info.play_long || 0),
+        path: Array.isArray(info.paths)
+          ? info.paths.map((p: any) => ({
+            file_id: String(p.file_id || ''),
+            file_name: String(p.file_name || '')
+          }))
+          : []
+      },
+      error: ''
     }
   } catch (err: any) {
     message.error('获取文件详情失败 ' + (err?.message || ''))
-    return null
+    return { detail: null, error: '获取文件详情失败' }
   }
+}
+
+export const apiDrive115FileDetail = async (user_id: string, file_id: string): Promise<Drive115DetailResult | null> => {
+  const result = await apiDrive115FileDetailResult(user_id, file_id)
+  return result.detail
 }

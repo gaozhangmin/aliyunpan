@@ -48,10 +48,11 @@ import { simpleToTradition, traditionToSimple } from 'chinese-simple2traditional
 import path from 'path'
 import UserDAL from '../user/userdal'
 import Config from '../config'
-import { isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
+import { isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../aliapi/utils'
 import { apiCloud123FileList, mapCloud123FileToAliModel } from '../cloud123/dirfilelist'
 import { apiDrive115FileList, mapDrive115FileToAliModel } from '../cloud115/dirfilelist'
 import { apiBaiduFileList, mapBaiduFileToAliModel } from '../cloudbaidu/dirfilelist'
+import { apiPikPakFileList, mapPikPakFileToAliModel } from '../pikpak/dirfilelist'
 import { getWebDavConnection, getWebDavConnectionId, isWebDavDrive, listWebDavDirectory } from '../utils/webdavClient'
 import useMediaServerRegistryStore from '../store/mediaServerRegistry'
 import {
@@ -178,7 +179,11 @@ const refreshMediaServerPlayback = async (
     sourceId || pageVideo.media_server_source_id || '',
     videoStreamIndex,
     audioStreamIndex,
-    subtitleStreamIndex
+    subtitleStreamIndex,
+    useSettingStore().uiMediaServerVideoQuality,
+    useSettingStore().uiMediaServerCompatibilityMode,
+    useSettingStore().uiMediaServerCustomDeviceProfile,
+    useSettingStore().uiMediaServerBitrateTestSize
   )
   const resumeTime = art.currentTime || pageVideo.play_cursor || playback.playCursorSeconds || 0
   pendingMediaServerSeekTime = resumeTime
@@ -196,7 +201,14 @@ const refreshMediaServerPlayback = async (
   if (subtitleStreamIndex >= 0) {
     pageVideo.media_server_subtitle_label = (pageVideo.media_server_subtitle_options || []).find((item) => item.streamIndex === subtitleStreamIndex)?.label || pageVideo.media_server_subtitle_label || ''
   }
-  setArtVideoUrl(art, playback.url, getArtVideoType(playback.url))
+  const nextProxyUrl = getProxyUrl({
+    user_id: pageVideo.user_id,
+    drive_id: pageVideo.drive_id,
+    file_id: pageVideo.file_id,
+    proxy_url: playback.url,
+    proxy_headers: playback.headers ? JSON.stringify(playback.headers) : ''
+  })
+  setArtVideoUrl(art, nextProxyUrl, getArtVideoType(playback.url))
   mediaServerReportStarted = false
   mediaServerStopReported = false
   await sendMediaServerStartReport(resumeTime)
@@ -552,8 +564,39 @@ const upsertMediaServerControl = (art: Artplayer, option: Record<string, any>) =
 
 const removeMediaServerControl = (art: Artplayer, name: string) => {
   if (!mediaServerControlNames.has(name)) return
-  art.controls.remove?.(name)
+  safeRemoveArtControl(art, name)
   mediaServerControlNames.delete(name)
+}
+
+const renderMediaSearchControl = (art: Artplayer) => {
+  safeRemoveArtControl(art, 'danmakuSearch')
+  safeRemoveArtControl(art, 'subtitleSearch')
+  art.controls.update({
+    name: 'mediaSearch',
+    index: 21,
+    position: 'right',
+    style: { padding: '0 10px', marginRight: '8px', opacity: '0.92' },
+    html: '搜索',
+    selector: [
+      {
+        html: '字幕搜索',
+        type: 'subtitle'
+      },
+      {
+        html: '弹幕搜索',
+        type: 'danmaku'
+      }
+    ],
+    onSelect: (selector: any) => {
+      const item = selector as { type: string }
+      if (item.type === 'subtitle') {
+        openSubtitleSearchModal(art)
+      } else {
+        openDanmakuSearchModal(art)
+      }
+      return '搜索'
+    }
+  })
 }
 
 const loadMediaServerSourceState = async (
@@ -675,7 +718,7 @@ const renderMediaServerControls = (art: Artplayer) => {
       index: 18,
       position: 'right',
       style: { padding: '0 10px', marginRight: '8px', opacity: '0.92' },
-      html: videoLabel || videoOptions[0]?.label || '视频流',
+      html: '视频流',
       selector: videoOptions.map((item) => ({
         html: item.label,
         streamIndex: item.streamIndex,
@@ -691,7 +734,7 @@ const renderMediaServerControls = (art: Artplayer) => {
           findMediaServerStreamIndex(pageVideo.media_server_audio_options, pageVideo.media_server_audio_label),
           findMediaServerStreamIndex(pageVideo.media_server_subtitle_options, pageVideo.media_server_subtitle_label)
         )
-        return item.html
+        return '视频流'
       }
     })
   } else {
@@ -705,7 +748,7 @@ const renderMediaServerControls = (art: Artplayer) => {
       index: 19,
       position: 'right',
       style: { padding: '0 10px', marginRight: '8px', opacity: '0.92' },
-      html: `音轨 ${audioLabel}`,
+      html: '音轨',
       selector: (pageVideo.media_server_audio_options || []).map((item) => ({
         html: item.label,
         streamIndex: item.streamIndex,
@@ -721,7 +764,7 @@ const renderMediaServerControls = (art: Artplayer) => {
           item.streamIndex,
           findMediaServerStreamIndex(pageVideo.media_server_subtitle_options, pageVideo.media_server_subtitle_label)
         )
-        return `音轨 ${item.html}`
+        return '音轨'
       }
     })
   } else {
@@ -734,7 +777,7 @@ const renderMediaServerControls = (art: Artplayer) => {
       index: 20,
       position: 'right',
       style: { padding: '0 10px', marginRight: '8px', opacity: '0.92' },
-      html: `字幕 ${subtitleLabel}`,
+      html: '字幕',
       selector: (pageVideo.media_server_subtitle_options || []).map((item) => ({
         html: item.label,
         streamIndex: item.streamIndex,
@@ -750,12 +793,13 @@ const renderMediaServerControls = (art: Artplayer) => {
           findMediaServerStreamIndex(pageVideo.media_server_audio_options, pageVideo.media_server_audio_label),
           item.streamIndex
         )
-        return `字幕 ${item.html}`
+        return '字幕'
       }
     })
   } else {
     removeMediaServerControl(art, 'mediaServerSubtitle')
   }
+  renderMediaSearchControl(art)
 }
 
 const refreshMediaServerPlayList = async (art: Artplayer, itemId?: string) => {
@@ -863,7 +907,11 @@ const switchMediaServerPlaylistItem = async (art: Artplayer, item: selectorItem)
       sourceOption?.id || '',
       typeof selectedVideoCard?.streamIndex === 'number' ? selectedVideoCard.streamIndex : -1,
       typeof selectedAudioCard?.streamIndex === 'number' ? selectedAudioCard.streamIndex : -1,
-      typeof selectedSubtitleCard?.streamIndex === 'number' ? selectedSubtitleCard.streamIndex : -1
+      typeof selectedSubtitleCard?.streamIndex === 'number' ? selectedSubtitleCard.streamIndex : -1,
+      useSettingStore().uiMediaServerVideoQuality,
+      useSettingStore().uiMediaServerCompatibilityMode,
+      useSettingStore().uiMediaServerCustomDeviceProfile,
+      useSettingStore().uiMediaServerBitrateTestSize
     )
 
     pageVideo.file_id = detail.id
@@ -1157,6 +1205,10 @@ const getDirFileList = async (dir_id: string, hasDir: boolean, category: string 
     } else if (isBaiduUser(pageVideo.user_id) || pageVideo.drive_id === 'baidu') {
       const list = await apiBaiduFileList(pageVideo.user_id, dir_id || '/', 'name', 0, 1000)
       items = list.map(item => mapBaiduFileToAliModel(item, pageVideo.drive_id, dir_id || '/'))
+    } else if (isPikPakUser(pageVideo.user_id) || pageVideo.drive_id === 'pikpak') {
+      const parentId = dir_id && !dir_id.includes('root') ? dir_id : 'pikpak_root'
+      const list = await apiPikPakFileList(pageVideo.user_id, parentId, 500)
+      items = list.items.map(item => mapPikPakFileToAliModel(item, pageVideo.drive_id, parentId))
     } else {
       const dir = await AliDirFileList.ApiDirFileList(pageVideo.user_id, pageVideo.drive_id, dir_id, '', 'name asc', '')
       if (!dir.next_marker) items = dir.items
@@ -1842,34 +1894,7 @@ const defaultControls = async (art: Artplayer) => {
       }
     }
   })
-  const danmakuSearchControl = {
-    name: 'danmakuSearch',
-    index: 60,
-    position: 'right',
-    style: { padding: '0 10px', marginRight: '8px' },
-    html: '弹幕搜索',
-    tooltip: '搜索弹幕',
-    click: () => openDanmakuSearchModal(art)
-  }
-  try {
-    art.controls.add(danmakuSearchControl as any)
-  } catch {
-    art.controls.update(danmakuSearchControl as any)
-  }
-  const subtitleSearchControl = {
-    name: 'subtitleSearch',
-    index: 62,
-    position: 'right',
-    style: { padding: '0 10px', marginRight: '8px' },
-    html: '字幕搜索',
-    tooltip: '搜索字幕',
-    click: () => openSubtitleSearchModal(art)
-  }
-  try {
-    art.controls.add(subtitleSearchControl as any)
-  } catch {
-    art.controls.update(subtitleSearchControl as any)
-  }
+  renderMediaSearchControl(art)
 }
 
 const loadPlugins = async (art: Artplayer) => {
@@ -1921,12 +1946,19 @@ const getVideoInfo = async (art: Artplayer) => {
       art.emit('video:error', '获取媒体服务器播放地址失败')
       return
     }
-    setArtVideoUrl(art, mediaUrl, getArtVideoType(mediaUrl))
+    const proxyUrl = getProxyUrl({
+      user_id: pageVideo.user_id,
+      drive_id: pageVideo.drive_id,
+      file_id: pageVideo.file_id,
+      proxy_url: mediaUrl,
+      proxy_headers: pageVideo.media_headers ? JSON.stringify(pageVideo.media_headers) : ''
+    })
+    setArtVideoUrl(art, proxyUrl, getArtVideoType(mediaUrl))
     renderMediaServerControls(art)
     return
   }
   // 获取视频链接
-  const data: string | IRawUrl = await getRawUrl(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id, pageVideo.encType, pageVideo.password, false, 'video')
+  const data: string | IRawUrl = await getRawUrl(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id, pageVideo.encType, pageVideo.password, false, 'video', '', 'thirdParty')
   if (typeof data != 'string' && data.qualities.length > 0) {
     // 画质
     let uiVideoQuality = useSettingStore().uiVideoQuality
@@ -1987,9 +2019,11 @@ const getVideoInfo = async (art: Artplayer) => {
     // 字幕列表
     await getSubTitleList(art)
   } else {
+    const errorMessage = typeof data === 'string' ? data : '获取视频链接失败'
+    if (typeof data === 'string') message.error(errorMessage)
     art.url = ''
-    art.notice.show = '获取视频链接失败'
-    art.emit('video:error', '获取视频链接失败')
+    art.notice.show = errorMessage
+    art.emit('video:error', errorMessage)
   }
 }
 

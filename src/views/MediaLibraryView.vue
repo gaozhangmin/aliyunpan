@@ -73,7 +73,7 @@ import { MediaScanner } from '../utils/mediaScanner'
 import UserDAL from '../user/userdal'
 import message from '../utils/message'
 import type { MediaLibraryFolder } from '../types/media'
-import { isAliyunUser, isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
+import { isAliyunUser, isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../aliapi/utils'
 import AliDirFileList from '../aliapi/dirfilelist'
 import { apiBaiduFileList, mapBaiduFileToAliModel } from '../cloudbaidu/dirfilelist'
 import { getWebDavConnection, getWebDavConnectionId, isWebDavDrive, listWebDavDirectory } from '../utils/webdavClient'
@@ -162,6 +162,7 @@ const resolveFolderRuntimeContext = async (folder: MediaLibraryFolder): Promise<
     if (folder.driveId === 'cloud123' || folder.driveServerId === 'cloud123') return isCloud123User(token)
     if (folder.driveId === 'drive115' || folder.driveServerId === 'drive115') return isDrive115User(token)
     if (folder.driveId === 'baidu' || folder.driveServerId === 'baidu') return isBaiduUser(token)
+    if (folder.driveId === 'pikpak' || folder.driveServerId === 'pikpak') return isPikPakUser(token)
     return isAliyunUser(token)
   })
 
@@ -274,6 +275,12 @@ const loadFolderContent = async (folder: MediaLibraryFolder) => {
       const list = await apiBaiduFileList(userId, parentPath, 'name', 0, 1000)
       items = list.map((item) => { const mapped = mapBaiduFileToAliModel(item, driveId, parentPath); (mapped as any).user_id = userId; return mapped })
       console.log('使用百度网盘API获取文件列表，路径:', parentPath)
+    } else if (isPikPakUser(userId) || driveId === 'pikpak') {
+      const { apiPikPakFileList, mapPikPakFileToAliModel } = await import('../pikpak/dirfilelist')
+      const parentId = fileId === 'pikpak_root' ? 'pikpak_root' : fileId
+      const { items: list } = await apiPikPakFileList(userId, parentId, 100)
+      items = list.map((item) => { const mapped = mapPikPakFileToAliModel(item, driveId, parentId); (mapped as any).user_id = userId; return mapped })
+      console.log('使用PikPak API获取文件列表')
     } else {
       // 阿里云盘（默认）
       const result = await AliDirFileList.ApiDirFileList(

@@ -12,6 +12,7 @@ import { Input, Modal, Space } from '@arco-design/web-vue'
 import { buildCloud123AuthUrl, exchangeCloud123CodeForToken } from '../utils/cloud123'
 import { buildBaiduAuthUrl, exchangeBaiduCodeForToken } from '../utils/baidu'
 import { buildQrImageUrl, DRIVE115_APP_ID, exchangeDeviceCode, generatePkce, normalize115Token, pollDeviceStatus, requestDeviceCode } from '../utils/drive115'
+import { loginPikPak } from '../pikpak/auth'
 
 const useUser = useUserStore()
 const settingStore = useSettingStore()
@@ -29,12 +30,15 @@ const qrCodeUrl = ref('')
 const qrCodeStatusType = ref()
 const qrCodeStatusTips = ref()
 
-const loginProvider = ref<'aliyun' | 'cloud123' | '115' | 'baidu'>('aliyun')
+const loginProvider = ref<'aliyun' | 'cloud123' | '115' | 'baidu' | 'pikpak'>('aliyun')
 const cloud123Code = ref('')
 const cloud123Loading = ref(false)
 const baiduCode = ref('')
 const baiduLoading = ref(false)
 const baiduAuthUrl = ref('')
+const pikpakUsername = ref('')
+const pikpakPassword = ref('')
+const pikpakLoading = ref(false)
 const drive115ClientId = ref(DRIVE115_APP_ID || '')
 const drive115Verifier = ref('')
 const drive115Uid = ref('')
@@ -65,7 +69,7 @@ const clearOpenTimers = () => {
 
 const handleModalOpen = () => {
   const stored = localStorage.getItem('login_provider')
-  if (stored === 'cloud123' || stored === 'aliyun' || stored === '115' || stored === 'baidu') {
+  if (stored === 'cloud123' || stored === 'aliyun' || stored === '115' || stored === 'baidu' || stored === 'pikpak') {
     loginProvider.value = stored
   }
   if (loginProvider.value === 'cloud123') {
@@ -74,6 +78,8 @@ const handleModalOpen = () => {
     handleOpenBaidu()
   } else if (loginProvider.value === '115') {
     handleOpen115()
+  } else if (loginProvider.value === 'pikpak') {
+    loginLoading.value = false
   } else {
     handleOpen()
   }
@@ -117,6 +123,8 @@ watch(loginProvider, () => {
     handleOpenBaidu()
   } else if (loginProvider.value === '115') {
     handleOpen115()
+  } else if (loginProvider.value === 'pikpak') {
+    loginLoading.value = false
   } else {
     handleOpen()
   }
@@ -213,6 +221,8 @@ const handleClose = () => {
   drive115Tips.value = '请使用 115 App 扫码'
   drive115Loading.value = false
   drive115Polling.value = false
+  pikpakPassword.value = ''
+  pikpakLoading.value = false
 }
 
 const handleOpenCloud123 = () => {
@@ -284,6 +294,25 @@ const submitBaiduCode = async () => {
     message.error('百度网盘登录失败')
   } finally {
     baiduLoading.value = false
+  }
+}
+
+const submitPikPakLogin = async () => {
+  if (pikpakLoading.value) return
+  const username = pikpakUsername.value.trim()
+  if (!username || !pikpakPassword.value) {
+    message.error('请输入 PikPak 账号和密码')
+    return
+  }
+  pikpakLoading.value = true
+  try {
+    const token = await loginPikPak(username, pikpakPassword.value)
+    await UserDAL.UserLogin(token)
+    useUserStore().userShowLogin = false
+  } catch (err: any) {
+    message.error(err?.message || 'PikPak 登录失败')
+  } finally {
+    pikpakLoading.value = false
   }
 }
 
@@ -581,6 +610,7 @@ const loginSuccess = (token: ITokenInfo) => {
         <a-tab-pane key="cloud123" title="123网盘" />
         <a-tab-pane key="115" title="115网盘" />
         <a-tab-pane key="baidu" title="百度网盘" />
+        <a-tab-pane key="pikpak" title="PikPak" />
       </a-tabs>
 
       <div v-if="loginProvider === 'aliyun'">
@@ -683,6 +713,19 @@ const loginSuccess = (token: ITokenInfo) => {
           </div>
         </div>
       </div>
+
+      <div v-else-if="loginProvider === 'pikpak'">
+        <div id='logindiv'>
+          <div class='logincontent'>
+            <div class="pikpak-login-form">
+              <a-input v-model="pikpakUsername" placeholder="PikPak 邮箱 / 手机号 / 用户名" allow-clear />
+              <a-input-password v-model="pikpakPassword" placeholder="PikPak 密码" allow-clear @press-enter="submitPikPakLogin" />
+              <a-button type="primary" long :loading="pikpakLoading" @click="submitPikPakLogin">登录 PikPak</a-button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </a-modal>
 </template>
@@ -744,5 +787,13 @@ const loginSuccess = (token: ITokenInfo) => {
 .browser-login-hint {
   text-align: center;
   padding: 16px 8px 0;
+}
+
+.pikpak-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 300px;
+  margin: 64px auto 0;
 }
 </style>

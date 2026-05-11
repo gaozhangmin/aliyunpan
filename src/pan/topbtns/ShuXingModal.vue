@@ -8,7 +8,7 @@ import { modalCloseAll } from '../../utils/modal'
 import { humanDateTimeDateStr, humanSize, humanTime } from '../../utils/format'
 import { ref } from 'vue'
 import DebugLog from '../../utils/debuglog'
-import { GetDriveID, isBaiduUser, isCloud123User, isDrive115User } from '../../aliapi/utils'
+import { GetDriveID, isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../../aliapi/utils'
 import { getEncType, getRawUrl } from '../../utils/proxyhelper'
 import { apiCloud123FileDetail } from '../../cloud123/filecmd'
 import { apiDrive115FileDetail } from '../../cloud115/filecmd'
@@ -16,6 +16,7 @@ import { mapDrive115DetailToAliModel } from '../../cloud115/dirfilelist'
 import { mapCloud123InfoToAliModel } from '../../cloud123/dirfilelist'
 import TreeStore from '../../store/treestore'
 import { apiBaiduFileMetas, mapBaiduMetaToAliFileItem } from '../../cloudbaidu/filecmd'
+import { apiPikPakFileDetail, mapPikPakFileToAliModel } from '../../pikpak/dirfilelist'
 
 const props = defineProps({
   visible: {
@@ -68,6 +69,7 @@ const handleOpen = async () => {
       || pantreeStore.selectDir.drive_id === 'cloud123'
     const is115User = isDrive115User(pantreeStore.user_id) || drive_id === 'drive115'
     const isBaidu = isBaiduUser(pantreeStore.user_id) || drive_id === 'baidu'
+    const isPikPak = isPikPakUser(pantreeStore.user_id) || drive_id === 'pikpak'
     if (isCloudUser) {
       const pathList = TreeStore.GetDirPath(drive_id, file_id)
       const pathNames = pathList.map((item) => item.name).filter((name) => name)
@@ -130,6 +132,18 @@ const handleOpen = async () => {
       } else {
         console.log('未从描述中解析到 fsid')
       }
+    } else if (isPikPak) {
+      const pathList = TreeStore.GetDirPath(drive_id, file_id)
+      const pathNames = pathList.map((item) => item.name).filter((name) => name)
+      dirPath.value = '/' + pathNames.join('/')
+      const detail = await apiPikPakFileDetail(pantreeStore.user_id, file_id)
+      if (detail) {
+        const mapped: any = mapPikPakFileToAliModel(detail, drive_id, detail.parent_id || 'pikpak_root')
+        mapped.type = mapped.isDir ? 'folder' : 'file'
+        mapped.created_at = detail.created_time || ''
+        mapped.updated_at = detail.modified_time || detail.created_time || ''
+        fileInfo.value = mapped
+      }
     } else {
       let path_file_id = props.ispic ? 'pic_root' : file_id
       let fileName = pantreeStore.selectDir.name
@@ -152,7 +166,7 @@ const handleOpen = async () => {
         fileInfo.value.thumbnail = rawUrl.url
       }
     }
-    if (fileInfo.value?.type == 'folder' && !isCloudUser && !is115User && !isBaidu) {
+    if (fileInfo.value?.type == 'folder' && !isCloudUser && !is115User && !isBaidu && !isPikPak) {
       dirInfo.value = await AliFile.ApiFileGetFolderSize(pantreeStore.user_id, drive_id, file_id)
     }
   }

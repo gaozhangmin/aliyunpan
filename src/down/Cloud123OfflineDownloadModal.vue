@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { modalCloseAll, modalSelectPanDir } from '../utils/modal'
 import { useModalStore, useUserStore } from '../store'
-import { isCloud123User } from '../aliapi/utils'
+import { isCloud123User, isPikPakUser } from '../aliapi/utils'
 import message from '../utils/message'
 import DownDAL from './DownDAL'
 
@@ -16,6 +16,14 @@ const props = defineProps({
 const formRef = ref()
 const okLoading = ref(false)
 const modalStore = useModalStore()
+const userStore = useUserStore()
+const provider = computed(() => {
+  const user = userStore.user_id || ''
+  if (isCloud123User(user)) return 'cloud123'
+  if (isPikPakUser(user)) return 'pikpak'
+  return ''
+})
+const urlPlaceholder = computed(() => provider.value === 'pikpak' ? 'http/https 或 magnet 链接' : 'http/https 链接')
 const form = reactive({
   url: '',
   fileName: '',
@@ -67,9 +75,8 @@ const handleSelectDir = () => {
 }
 
 const handleCreate = async () => {
-  const user = useUserStore().user_id
-  if (!isCloud123User(user)) {
-    message.error('当前账号不是123云盘')
+  if (!provider.value) {
+    message.error('当前账号不支持离线下载')
     return
   }
   const url = form.url.trim()
@@ -77,12 +84,18 @@ const handleCreate = async () => {
     message.error('请输入离线下载地址')
     return
   }
-  if (!/^https?:\/\//i.test(url)) {
+  if (provider.value === 'pikpak' && !/^(https?:\/\/|magnet:\?)/i.test(url)) {
+    message.error('仅支持 http/https 或 magnet 链接')
+    return
+  }
+  if (provider.value !== 'pikpak' && !/^https?:\/\//i.test(url)) {
     message.error('仅支持 http/https 链接')
     return
   }
   okLoading.value = true
-  const result = await DownDAL.aAddCloud123OfflineDownload(url, form.fileName.trim(), form.dirId)
+  const result = provider.value === 'pikpak'
+    ? await DownDAL.aAddPikPakOfflineDownload(url, form.fileName.trim(), form.dirId)
+    : await DownDAL.aAddCloud123OfflineDownload(url, form.fileName.trim(), form.dirId)
   okLoading.value = false
   if (!result.success) {
     message.error(result.message || '创建离线下载失败')
@@ -110,7 +123,7 @@ const handleCreate = async () => {
     <div style="width: 520px">
       <a-form ref="formRef" :model="form" layout="vertical">
         <a-form-item field="url" label="下载链接">
-          <a-input v-model.trim="form.url" placeholder="http/https 链接" />
+          <a-input v-model.trim="form.url" :placeholder="urlPlaceholder" />
         </a-form-item>
         <a-form-item field="fileName" label="自定义文件名（可选）">
           <a-input v-model.trim="form.fileName" placeholder="例如：视频.mp4" />

@@ -468,6 +468,7 @@ const getFolderSourceLabel = (folder: MediaLibraryFolder) => {
   if (folder.driveId === 'cloud123' || folder.driveServerId === 'cloud123') return '123'
   if (folder.driveId === 'drive115' || folder.driveServerId === 'drive115') return '115'
   if (folder.driveId === 'baidu' || folder.driveServerId === 'baidu') return '百度'
+  if (folder.driveId === 'pikpak' || folder.driveServerId === 'pikpak') return 'PikPak'
   return '阿里'
 }
 
@@ -477,6 +478,7 @@ const getFolderSourceClass = (folder: MediaLibraryFolder) => {
   if (folder.driveId === 'cloud123' || folder.driveServerId === 'cloud123') return 'source-123'
   if (folder.driveId === 'drive115' || folder.driveServerId === 'drive115') return 'source-115'
   if (folder.driveId === 'baidu' || folder.driveServerId === 'baidu') return 'source-baidu'
+  if (folder.driveId === 'pikpak' || folder.driveServerId === 'pikpak') return 'source-pikpak'
   return 'source-aliyun'
 }
 
@@ -964,6 +966,12 @@ onUnmounted(() => {
   color: #5f3dc4;
   background: rgba(95, 61, 196, 0.12);
   border-color: rgba(95, 61, 196, 0.18);
+}
+
+.folder-source.source-pikpak {
+  color: #0f766e;
+  background: rgba(15, 118, 110, 0.12);
+  border-color: rgba(15, 118, 110, 0.18);
 }
 
 .folder-source.source-local {

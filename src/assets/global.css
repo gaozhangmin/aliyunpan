@@ -84,6 +84,9 @@ body {
 .q-electron-drag ul,
 .q-electron-drag li,
 .q-electron-drag .arco-menu-item,
+.q-electron-drag .arco-menu-pop,
+.q-electron-drag .arco-menu-pop-header,
+.q-electron-drag .arco-menu-overflow-wrap,
 .q-electron-drag .arco-avatar {
     -webkit-app-region: no-drag;
 }

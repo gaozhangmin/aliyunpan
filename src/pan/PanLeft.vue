@@ -13,7 +13,7 @@ import { TreeNodeData } from '../store/treestore'
 import { dropMoveSelectedFile } from './topbtns/topbtn'
 import message from '../utils/message'
 import { modalUpload } from '../utils/modal'
-import { GetDriveType, isAliyunUser, isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
+import { GetDriveType, isAliyunUser, isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../aliapi/utils'
 
 const treeref = ref()
 const inputselectType = ref('backup')
@@ -80,7 +80,7 @@ watchEffect(() => {
 const handleTreeRightClick = (e: { event: MouseEvent; node: any }) => {
   const { parent = undefined, key } = e.node
   if (key.startsWith('search')) return
-  const isSingleRootDrive = isCloud123User(pantreeStore.user_id || '') || isDrive115User(pantreeStore.user_id || '') || isBaiduUser(pantreeStore.user_id || '')
+  const isSingleRootDrive = isCloud123User(pantreeStore.user_id || '') || isDrive115User(pantreeStore.user_id || '') || isBaiduUser(pantreeStore.user_id || '') || isPikPakUser(pantreeStore.user_id || '')
   if (!isSingleRootDrive && key.length < 40) return
   pantreeStore.mTreeSelected(e)
   onShowRightMenu('leftpanmenu', e.event.clientX, e.event.clientY)
@@ -158,7 +158,7 @@ const handleQuickSelect = (index: number) => {
   }
 }
 const filterTreeData = computed(() => {
-  const isCloudUser = isCloud123User(pantreeStore.user_id || '')
+  const isCloudUser = isCloud123User(pantreeStore.user_id || '') || isPikPakUser(pantreeStore.user_id || '')
   const isWebDavNode = (item: any) => (item?.drive_id || '').startsWith('webdav:')
   const baseList = isCloudUser
     ? pantreeStore.treeData.filter((item) => {
@@ -166,6 +166,7 @@ const filterTreeData = computed(() => {
       if (item.key === 'backup_root') return false
       if (item.key === 'resource_root') return false
       if (item.key === 'pic_root') return false
+      if (isPikPakUser(pantreeStore.user_id || '') && (item.key === 'video' || item.key === 'recover' || item.key === 'favorite')) return false
       return true
     })
     : pantreeStore.treeData.filter((item) => {

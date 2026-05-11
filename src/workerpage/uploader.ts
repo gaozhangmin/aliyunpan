@@ -16,7 +16,7 @@ import fspromises from 'fs/promises'
 import Cloud123UploadDisk from '../cloud123/uploaddisk'
 import BaiduUploadDisk from '../cloudbaidu/uploaddisk'
 import Drive115UploadDisk from '../cloud115/uploaddisk'
-import { isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
+import { isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../aliapi/utils'
 import { apiCloud123Mkdir } from '../cloud123/filecmd'
 
 export async function StartUpload(fileui: IUploadingUI): Promise<void> {
@@ -25,6 +25,12 @@ export async function StartUpload(fileui: IUploadingUI): Promise<void> {
     fileui.Info.uploadState = 'error'
     fileui.Info.failedCode = 402
     fileui.Info.failedMessage = '找不到账号,无法继续'
+    return
+  }
+  if (isPikPakUser(fileui.user_id || '')) {
+    fileui.Info.uploadState = 'error'
+    fileui.Info.failedCode = 505
+    fileui.Info.failedMessage = 'PikPak 本地上传暂不支持，请使用离线下载导入 http/https 或 magnet 链接'
     return
   }
   // 创建文件夹
@@ -74,7 +80,6 @@ export async function StartUpload(fileui: IUploadingUI): Promise<void> {
     }
     return
   }
-
   await checkFileSize(fileui)
   const uploadInfo: IUploadInfo = {
     token_type: token.token_type,

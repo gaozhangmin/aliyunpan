@@ -70,7 +70,7 @@ export interface IStateDownInfo {
   crc64: string
 
   localFilePath?: string
-  offlineProvider?: 'cloud123'
+  offlineProvider?: 'cloud123' | 'pikpak'
   offlineTaskId?: string
   offlineDirId?: string
 }
@@ -96,6 +96,10 @@ const sound = new Howl({
 const buildAriaTaskGid = (file: IAliGetFileModel) => {
   const source = `${file.drive_id || ''}|${file.file_id || ''}|${file.size || 0}`
   return SHA256(source).toString().toLowerCase().replace(/[^0-9a-f]/g, '').slice(0, 16)
+}
+
+const isCompletedDowning = (downFile: IStateDownFile) => {
+  return downFile.Down.IsCompleted && (downFile.Down.DownState === '已完成' || !!downFile.Info.offlineProvider)
 }
 
 export default class DownDAL {
@@ -267,7 +271,7 @@ export default class DownDAL {
         const DownItem = DowningList[i]
         const { DownID, Info, Down } = DownItem
         if (Info.ariaRemote !== ariaRemote) continue
-        if (Down.IsCompleted && Down.DownState === '已完成') {
+        if (isCompletedDowning(DownItem)) {
           // 将下载标记为已完成并添加到列表以供稍后处理
           const completedDownId = `${Date.now()}_${Down.DownTime}`
           // 删除已完成的下载并更新数据库
@@ -295,6 +299,7 @@ export default class DownDAL {
       useFootStore().mSaveDownTotalSpeedInfo('')
     }
     await DownDAL.aCloud123OfflineProgress()
+    await DownDAL.aPikPakOfflineProgress()
 
     downingStore.mRefreshListDataShow(true)
     downedStore.mRefreshListDataShow(true)
@@ -398,10 +403,23 @@ export default class DownDAL {
     // 停止aria2下载任务
     await AriaStopList(gidList)
     await AriaDeleteList(gidList)
+    const pikpakTaskMap = new Map<string, string[]>()
+    for (const downFile of deleteList) {
+      if (downFile.Info.offlineProvider !== 'pikpak' || !downFile.Info.offlineTaskId) continue
+      const list = pikpakTaskMap.get(downFile.Info.user_id) || []
+      list.push(downFile.Info.offlineTaskId)
+      pikpakTaskMap.set(downFile.Info.user_id, list)
+    }
+    if (pikpakTaskMap.size) {
+      const { apiPikPakOfflineDelete } = await import('../pikpak/offline')
+      for (const [userID, taskIds] of pikpakTaskMap) {
+        await apiPikPakOfflineDelete(userID, taskIds)
+      }
+    }
     // 删除临时文件
     for (let downFile of deleteList) {
       let downInfo = downFile.Info
-      if (downInfo.offlineProvider === 'cloud123') continue
+      if (downInfo.offlineProvider) continue
       if (downInfo.ariaRemote) continue
       try {
         if (!downInfo.isDir) {
@@ -488,6 +506,55 @@ export default class DownDAL {
     return { success: true, message: '' }
   }
 
+  static async aAddPikPakOfflineDownload(url: string, fileName: string, dirID: string | undefined) {
+    const userID = useUserStore().user_id
+    if (!userID) return { success: false, message: '请先登录' }
+    const { apiPikPakOfflineCreate } = await import('../pikpak/offline')
+    const resp = await apiPikPakOfflineCreate(userID, url, fileName, dirID)
+    if (!resp.taskId && !resp.fileId) return { success: false, message: resp.error || '创建离线下载失败' }
+    const taskId = String(resp.taskId || resp.fileId)
+    const downitem: IStateDownFile = {
+      DownID: `${userID}|pikpak_offline_${taskId}`,
+      Info: {
+        GID: `pikpak_offline_${taskId}`,
+        user_id: userID,
+        DownSavePath: '',
+        ariaRemote: false,
+        file_id: resp.fileId,
+        drive_id: 'pikpak',
+        name: fileName || url,
+        size: 0,
+        sizestr: '',
+        icon: 'iconcloud-download',
+        isDir: false,
+        encType: '',
+        sha1: '',
+        crc64: '',
+        offlineProvider: 'pikpak',
+        offlineTaskId: taskId,
+        offlineDirId: dirID || ''
+      },
+      Down: {
+        DownState: '离线下载中',
+        DownTime: Date.now(),
+        DownSize: 0,
+        DownSpeed: 0,
+        DownSpeedStr: '',
+        DownProcess: 0,
+        IsStop: false,
+        IsDowning: true,
+        IsCompleted: false,
+        IsFailed: false,
+        FailedCode: 0,
+        FailedMessage: '',
+        AutoTry: 0,
+        DownUrl: url
+      }
+    }
+    useDowningStore().mAddDownload({ downlist: [downitem] })
+    return { success: true, message: '' }
+  }
+
   private static cloud123OfflineTick = 0
 
   static async aCloud123OfflineProgress() {
@@ -526,6 +593,55 @@ export default class DownDAL {
       } else if (info.status === 3) {
         item.Down.IsDowning = true
         item.Down.DownState = `离线下载重试中 ${process}%`
+      } else {
+        item.Down.IsDowning = true
+        item.Down.DownState = `离线下载中 ${process}%`
+      }
+      saveList.push(item)
+    }
+    if (saveList.length) {
+      DBDown.saveDownings(JSON.parse(JSON.stringify(saveList)))
+    }
+  }
+
+  private static pikpakOfflineTick = 0
+
+  static async aPikPakOfflineProgress() {
+    const downingStore = useDowningStore()
+    const list = downingStore.ListDataRaw
+    if (!list.length) return
+    DownDAL.pikpakOfflineTick = (DownDAL.pikpakOfflineTick + 1) % 5
+    if (DownDAL.pikpakOfflineTick !== 0) return
+    const { apiPikPakOfflineProcess } = await import('../pikpak/offline')
+    const saveList: IStateDownFile[] = []
+    for (let i = 0; i < list.length; i++) {
+      const item = list[i]
+      if (item.Info.offlineProvider !== 'pikpak' || !item.Info.offlineTaskId) continue
+      if (item.Down.IsCompleted || item.Down.IsFailed) continue
+      const info = await apiPikPakOfflineProcess(item.Info.user_id, item.Info.offlineTaskId, item.Info.file_id)
+      if (info.error) {
+        item.Down.IsFailed = true
+        item.Down.IsDowning = false
+        item.Down.DownState = '离线下载失败'
+        item.Down.FailedMessage = info.error
+        saveList.push(item)
+        continue
+      }
+      const process = Math.max(0, Math.min(100, info.process))
+      item.Down.DownProcess = process
+      item.Down.DownSpeedStr = ''
+      if (info.status === 2) {
+        item.Down.IsCompleted = true
+        item.Down.IsDowning = false
+        item.Down.DownState = '离线下载完成'
+        item.Down.DownProcess = 100
+      } else if (info.status === 1) {
+        item.Down.IsFailed = true
+        item.Down.IsDowning = false
+        item.Down.DownState = '离线下载失败'
+      } else if (info.status === 3) {
+        item.Down.IsDowning = true
+        item.Down.DownState = `离线下载等待中 ${process}%`
       } else {
         item.Down.IsDowning = true
         item.Down.DownState = `离线下载中 ${process}%`

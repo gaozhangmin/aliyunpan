@@ -10,10 +10,12 @@ import type { ITokenInfo } from './userstore'
 import { isAliyunUser, isBaiduUser } from '../aliapi/utils'
 import { useMediaLibraryStore } from '../store/medialibrary'
 import { Modal } from '@arco-design/web-vue'
+import { showAlipanMemberPromotion, showAlipanMemberQrPromotion } from '../utils/alipanPromotion'
 
 const userStore = useUserStore()
 const mediaLibraryStore = useMediaLibraryStore()
 const isAliyunAccount = computed(() => isAliyunUser(userStore.user_id || userStore.GetUserToken))
+const avatarErrorKeys = ref<Set<string>>(new Set())
 
 const handleUserChange = (val: any, user_id: string) => {
   if (val) UserDAL.UserChange(user_id)
@@ -35,6 +37,17 @@ const handleUserSpace = () => {
 
 const handleUserRewardSpace = () => {
   modalUserRewardSpace(userStore.user_id)
+}
+
+const handleAlipanMemberPromotion = () => {
+  showAlipanMemberPromotion('购买会员，平台返佣支持开发者。开通阿里云盘三方会员后，可享受高速下载通道和高清观影地址。', {
+    userId: userStore.user_id,
+    confirm: false
+  })
+}
+
+const handleAlipanAnnualMemberPromotion = () => {
+  showAlipanMemberQrPromotion('购买会员，平台返佣支持开发者。扫码购买更多 VIP、扩容空间等服务。')
 }
 
 const handleLogOff = () => {
@@ -69,7 +82,7 @@ const handleLogin = () => {
   useUserStore().userShowLogin = true
 }
 
-const activeProvider = ref<'aliyun' | 'cloud123' | '115' | 'baidu'>('aliyun')
+const activeProvider = ref<'aliyun' | 'cloud123' | '115' | 'baidu' | 'pikpak'>('aliyun')
 const userListState = ref<ITokenInfo[]>([])
 
 const refreshUserList = async () => {
@@ -88,6 +101,11 @@ const handle115Login = () => {
 
 const handleBaiduLogin = () => {
   localStorage.setItem('login_provider', 'baidu')
+  useUserStore().userShowLogin = true
+}
+
+const handlePikPakLogin = () => {
+  localStorage.setItem('login_provider', 'pikpak')
   useUserStore().userShowLogin = true
 }
 
@@ -123,9 +141,35 @@ const getProviderLabel = (tokenfrom: string) => {
       return '115网盘'
     case 'baidu':
       return '百度网盘'
+    case 'pikpak':
+      return 'PikPak'
     default:
       return '未知网盘'
   }
+}
+
+const getAvatarKey = (token: ITokenInfo) => `${token.user_id || token.user_name || 'current'}:${token.avatar || ''}`
+
+const hasUsableAvatar = (token: ITokenInfo) => {
+  return !!token.avatar && !avatarErrorKeys.value.has(getAvatarKey(token))
+}
+
+const handleAvatarError = (token: ITokenInfo) => {
+  const next = new Set(avatarErrorKeys.value)
+  next.add(getAvatarKey(token))
+  avatarErrorKeys.value = next
+}
+
+const getAvatarText = (token: ITokenInfo) => {
+  const name = token.nick_name || token.user_name || getProviderLabel(token.tokenfrom)
+  return name.substring(0, 2).toUpperCase()
+}
+
+const getQuotaPercent = (token: ITokenInfo) => {
+  if (!token.total_size) return 0
+  const percent = token.used_size / token.total_size
+  if (!Number.isFinite(percent)) return 0
+  return Math.max(0, Math.min(1, percent))
 }
 
 onMounted(() => {
@@ -144,12 +188,18 @@ watch(
 
 <template>
   <a-popover position='br' trigger='hover'>
-    <a-avatar v-if='userStore.userLogined' :size='28' style='margin-right: 12px'><img
-      :src='userStore.GetUserToken.avatar' /></a-avatar>
+    <a-avatar v-if='userStore.userLogined' :size='28' style='margin-right: 12px' class='user-avatar-placeholder'>
+      <img
+        v-if='hasUsableAvatar(userStore.GetUserToken)'
+        :src='userStore.GetUserToken.avatar'
+        @error='handleAvatarError(userStore.GetUserToken)'
+      />
+      <span v-else>{{ getAvatarText(userStore.GetUserToken) }}</span>
+    </a-avatar>
     <a-avatar v-else :size='28' style='margin-right: 12px' :style="{ backgroundColor: '#3370ff' }">登录</a-avatar>
 
     <template #content>
-      <div v-if='userStore.userLogined' style='width: 300px'>
+      <div v-if='userStore.userLogined' style='width: 430px'>
         <a-row class='userinfo-row' justify='space-between' align='center'>
           <a-col class='userinfo-left' flex='1'>
             <div class='username' :class="{ 'username-wide': !isAliyunAccount }">
@@ -196,6 +246,14 @@ watch(
             <a-button v-if='isAliyunAccount' type='text' size='small' tabindex='-1' style='min-width: 20px; padding: 0 8px' status='success'
                       @click='handleUserRewardSpace()'>福利兑换
             </a-button>
+            <a-button v-if='isAliyunAccount' type='text' size='small' tabindex='-1' style='min-width: 20px; padding: 0 8px' status='success'
+                      title='年费会员购买'
+                      @click='handleAlipanAnnualMemberPromotion()'>年费会员购买
+            </a-button>
+            <a-button v-if='isAliyunAccount' type='text' size='small' tabindex='-1' style='min-width: 20px; padding: 0 8px' status='success'
+                      title='三方APP权益购买'
+                      @click='handleAlipanMemberPromotion()'>三方APP权益购买
+            </a-button>
           </a-col>
         </a-row>
 
@@ -206,28 +264,32 @@ watch(
           </template>
           <template #item='{ item, index }'>
             <a-list-item :key='index'>
-              <div style='padding-right: 8px' :title='item.spaceinfo'>
-                <a-progress type='circle' size='mini' status='warning' :percent='item.used_size / item.total_size' />
+              <div class='user-list-row'>
+                <div class='user-quota' :title='item.spaceinfo'>
+                  <a-progress type='circle' size='mini' status='warning' :percent='getQuotaPercent(item)' />
+                </div>
+                <div class='user-list-main'>
+                  <span class='user-list-name' :title='item.user_name'>{{ item.nick_name ? item.nick_name : item.user_name }}</span>
+                  <span class='user-provider' :title='getProviderLabel(item.tokenfrom)'>{{ getProviderLabel(item.tokenfrom) }}</span>
+                </div>
+                <div class='user-list-actions'>
+                  <a-switch size='small' :model-value='userStore.user_id == item.user_id' title='切换到这个账号'
+                            tabindex='-1' @change='handleUserChange($event, item.user_id) '>
+                    <template #checked> 当前</template>
+                    <template #unchecked> 选我</template>
+                  </a-switch>
+                  <a-button
+                    type='text'
+                    size='small'
+                    status='danger'
+                    tabindex='-1'
+                    title='彻底删除本地保存的该帐号'
+                    @click='handleDeleteLocalAccount(item)'
+                  >
+                    删除
+                  </a-button>
+                </div>
               </div>
-              <span :title='item.user_name'
-                    style='max-width:300px;display:inline-block;'>{{ item.nick_name ? item.nick_name : item.user_name
-                }}</span>
-              <span class='user-provider' :title='getProviderLabel(item.tokenfrom)'>{{ getProviderLabel(item.tokenfrom) }}</span>
-              <a-button
-                type='text'
-                size='small'
-                status='danger'
-                tabindex='-1'
-                title='彻底删除本地保存的该帐号'
-                @click='handleDeleteLocalAccount(item)'
-              >
-                删除
-              </a-button>
-              <a-switch size='small' :model-value='userStore.user_id == item.user_id' title='切换到这个账号'
-                        tabindex='-1' @change='handleUserChange($event, item.user_id) '>
-                <template #checked> 当前</template>
-                <template #unchecked> 选我</template>
-              </a-switch>
             </a-list-item>
           </template>
         </a-list>
@@ -244,6 +306,7 @@ watch(
           <a-tab-pane key='cloud123' title='123网盘' />
           <a-tab-pane key='115' title='115网盘' />
           <a-tab-pane key='baidu' title='百度网盘' />
+          <a-tab-pane key='pikpak' title='PikPak' />
         </a-tabs>
         <a-row align='stretch'>
           <a-col flex='60px'>
@@ -301,6 +364,16 @@ watch(
           >
             登录 百度网盘
           </a-button>
+          <a-button
+            v-else-if="activeProvider === 'pikpak'"
+            type='outline'
+            size='small'
+            tabindex='-1'
+            style='margin: 0 0 8px 0'
+            @click='handlePikPakLogin()'
+          >
+            登录 PikPak
+          </a-button>
         </a-row>
       </div>
     </template>
@@ -326,11 +399,19 @@ watch(
 }
 
 .user-provider {
-  margin-left: auto;
-  margin-right: 10px;
   color: var(--color-text-3);
   font-size: 12px;
   white-space: nowrap;
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-avatar-placeholder {
+  background: #3370ff;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .userinfo-left {
@@ -367,23 +448,59 @@ watch(
   flex-shrink: 0;
   box-sizing: border-box;
   height: 38px;
-  padding: 8px 12px !important;
+  padding: 6px 12px !important;
   line-height: 22px !important;
   overflow: hidden;
 }
 
 .userlist .arco-list-item .arco-list-item-content {
-  display: inline-flex;
-  align-items: center;
+  display: block;
   width: 100%;
 }
 
-.userlist .arco-list-item .arco-list-item-content > span {
-  display: inline-block;
-  flex: 1;
+.user-list-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  gap: 8px;
+}
+
+.user-quota {
+  flex: 0 0 24px;
+}
+
+.user-list-main {
+  display: flex;
+  align-items: center;
+  flex: 1 1 0;
+  min-width: 0;
+  gap: 8px;
+}
+
+.user-list-name {
+  display: block;
+  flex: 1 1 0;
+  min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   word-break: keep-all;
   text-overflow: ellipsis;
 }
+
+.user-list-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 118px;
+  gap: 6px;
+}
+
+.user-list-actions .arco-btn-size-small {
+  height: 24px;
+  padding: 0 4px;
+  line-height: 24px;
+  font-size: 12px;
+}
+
 </style>

@@ -17,7 +17,8 @@ import DebugLog from '../utils/debuglog'
 import { refreshCloud123AccessToken } from '../utils/cloud123'
 import { build115UserId, refresh115AccessToken } from '../utils/drive115'
 import { refreshBaiduAccessToken } from '../utils/baidu'
-import { isBaiduUser, isCloud123User, isDrive115User } from '../aliapi/utils'
+import { applyPikPakQuota, refreshPikPakAccessToken } from '../pikpak/auth'
+import { isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../aliapi/utils'
 
 export const UserTokenMap = new Map<string, ITokenInfo>()
 
@@ -49,6 +50,16 @@ export default class UserDAL {
           refreshed.nick_name = refreshed.nick_name || token.nick_name
           refreshed.avatar = refreshed.avatar || token.avatar
           refreshed.tokenfrom = 'baidu'
+          this.SaveUserToken(refreshed)
+          return refreshed
+        }
+        return token
+      }
+      if (isPikPakUser(token)) {
+        const expireTime = new Date(token.expire_time || 0).getTime()
+        if (!token.access_token || (expireTime && expireTime <= Date.now())) {
+          const refreshed = await refreshPikPakAccessToken(token)
+          if (!refreshed?.access_token) return null
           this.SaveUserToken(refreshed)
           return refreshed
         }
@@ -133,6 +144,17 @@ export default class UserDAL {
             const refreshed = await refreshBaiduAccessToken(token.refresh_token)
             if (refreshed) {
               refreshed.user_id = token.user_id
+              UserTokenMap.set(refreshed.user_id, refreshed)
+              await DB.saveUser(refreshed)
+            }
+          }
+          continue
+        }
+        if (isPikPakUser(token)) {
+          const expireTime = new Date(token.expire_time || 0).getTime()
+          if (expireTime && expireTime - dateNow <= 1000 * 60 * 5) {
+            const refreshed = await refreshPikPakAccessToken(token)
+            if (refreshed) {
               UserTokenMap.set(refreshed.user_id, refreshed)
               await DB.saveUser(refreshed)
             }
@@ -272,6 +294,8 @@ export default class UserDAL {
       await AliUser.DriveBaiduUserInfo(token)
     } else if (isDrive115User(token)) {
       await AliUser.Drive115UserInfo(token)
+    } else if (isPikPakUser(token)) {
+      await applyPikPakQuota(token)
     } else {
       // 加载用户信息
       await Promise.all([
@@ -334,6 +358,11 @@ export default class UserDAL {
       await PanDAL.aReLoadOneDirToShow(token.default_drive_id || 'drive115', 'drive115_root', true)
       return
     }
+    if (isPikPakUser(token)) {
+      await PanDAL.aReLoadPikPakDrive(token)
+      await PanDAL.aReLoadOneDirToShow(token.default_drive_id || 'pikpak', 'pikpak_root', true)
+      return
+    }
     // 刷新网盘数据
     if (!useSettingStore().securityHideResourceDrive) {
       await PanDAL.aReLoadResourceDrive(token)
@@ -357,7 +386,7 @@ export default class UserDAL {
 
     let newUserID = ''
     for (const [user_id, token] of UserTokenMap) {
-      const isLogin = (isDrive115User(token) || isBaiduUser(token))
+      const isLogin = (isDrive115User(token) || isBaiduUser(token) || isPikPakUser(token))
         ? !!token.user_id
         : (token.user_id && (await AliUser.ApiTokenRefreshAccount(token, false)))
       if (isLogin) {
@@ -414,6 +443,15 @@ export default class UserDAL {
         }
       }
       isLogin = !!token.access_token && !!token.user_id
+    } else if (isPikPakUser(token)) {
+      const expireTime = new Date(token.expire_time || 0).getTime()
+      if (!token.access_token || (expireTime && expireTime <= Date.now())) {
+        const refreshed = await refreshPikPakAccessToken(token)
+        if (refreshed?.access_token) {
+          UserDAL.SaveUserToken(refreshed)
+        }
+      }
+      isLogin = !!token.access_token && !!token.user_id
     } else {
       isLogin = !!(token.user_id && (await AliUser.ApiTokenRefreshAccount(token, false)))
     }
@@ -442,6 +480,10 @@ export default class UserDAL {
         return true
       } else if (isDrive115User(token)) {
         await AliUser.Drive115UserInfo(token)
+        return true
+      } else if (isPikPakUser(token)) {
+        await applyPikPakQuota(token)
+        UserDAL.SaveUserToken(token)
         return true
       } else {
         // 仅刷新个人信息
@@ -478,6 +520,10 @@ export default class UserDAL {
           token.token_type = refreshed.token_type || token.token_type
           token.expire_time = new Date(Date.now() + (token.expires_in || 0) * 1000).toISOString()
           UserDAL.SaveUserToken(token)
+        } else if (isPikPakUser(token)) {
+          const refreshed = await refreshPikPakAccessToken(token)
+          if (!refreshed?.access_token) return false
+          UserDAL.SaveUserToken(refreshed)
         } else {
           const isToken = await AliUser.ApiTokenRefreshAccount(token, true)
           if (!isToken) return false
@@ -494,6 +540,8 @@ export default class UserDAL {
         await AliUser.DriveBaiduUserInfo(token)
       } else if (isDrive115User(token)) {
         await AliUser.Drive115UserInfo(token)
+      } else if (isPikPakUser(token)) {
+        await applyPikPakQuota(token)
       } else {
         // 刷新用户信息
         await Promise.all([
@@ -510,7 +558,7 @@ export default class UserDAL {
 
   static async UserAutoSign(token: ITokenInfo) {
     // 自动签到
-    if (isDrive115User(token) || isCloud123User(token) || isBaiduUser(token)) {
+    if (isDrive115User(token) || isCloud123User(token) || isBaiduUser(token) || isPikPakUser(token)) {
       UserDAL.SaveUserToken(token)
       return
     }

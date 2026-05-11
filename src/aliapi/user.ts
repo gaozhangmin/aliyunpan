@@ -209,6 +209,21 @@ export default class AliUser {
     return false
   }
 
+  static async ApiOpenUserBuyToken(user_id: string): Promise<string> {
+    if (!user_id) return ''
+    const resp = await AliHttp.Post('https://openapi.alipan.com/business/v1/openUser/getBuyToken', {}, user_id, '')
+    if (AliHttp.IsSuccess(resp.code)) {
+      const token = resp.body?.token || resp.body?.result?.token || resp.body?.data?.token || ''
+      if (token) return token
+      DebugLog.mSaveWarning('ApiOpenUserBuyToken missing token', resp.body)
+      message.error('获取阿里云盘免登录购买凭证失败')
+      return ''
+    }
+    DebugLog.mSaveWarning('ApiOpenUserBuyToken err=' + (resp.code || '') + ' ' + (resp.body?.code || ''), resp.body)
+    message.error(resp.body?.message || resp.body?.display_message || '获取阿里云盘免登录购买凭证失败')
+    return ''
+  }
+
   static async OpenApiQrCodeUrl(client_id: string, client_secret: string, width: number = 348, height: number = 348): Promise<any> {
     const postData = {
       client_id: client_id,

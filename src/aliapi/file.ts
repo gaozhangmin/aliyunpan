@@ -6,7 +6,7 @@ import AliHttp from './alihttp'
 import { IAliFileItem, IAliGetDirModel, IAliGetFileModel, IAliGetForderSizeModel } from './alimodels'
 import AliDirFileList from './dirfilelist'
 import { ICompilationList, IDownloadUrl, IOfficePreViewUrl, IVideoPreviewUrl, IVideoXBTUrl } from './models'
-import { DecodeEncName, GetDriveType, isAliyunUser, isBaiduUser, isCloud123User, isDrive115User } from './utils'
+import { DecodeEncName, GetDriveType, isAliyunUser, isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from './utils'
 import { getRawUrl } from '../utils/proxyhelper'
 import { apiCloud123DownloadInfo, apiCloud123FileDetail } from '../cloud123/filecmd'
 import { mapCloud123InfoToAliModel } from '../cloud123/dirfilelist'
@@ -17,9 +17,11 @@ import { mapDrive115DetailToAliModel } from '../cloud115/dirfilelist'
 import { apiDrive115VideoHistoryUpdate, apiDrive115VideoPlay, getDrive115PickCode } from '../cloud115/video'
 import { apiBaiduFileList } from '../cloudbaidu/dirfilelist'
 import { apiBaiduFileMetas, mapBaiduMetaToAliFileItem } from '../cloudbaidu/filecmd'
+import { apiPikPakDownloadInfo, apiPikPakFileDetail, mapPikPakFileToAliModel } from '../pikpak/dirfilelist'
 import TreeStore from '../store/treestore'
 import UserDAL from '../user/userdal'
 import { getWebDavConnection, getWebDavConnectionId, getWebDavDownloadUrl, isWebDavDrive } from '../utils/webdavClient'
+import { getAlipanDownloadPromotionReason, getAlipanVideoPromotionReason, showAlipanMemberPromotion } from '../utils/alipanPromotion'
 
 const parseBaiduPath = (file_path: string) => {
   let p = file_path || '/'
@@ -99,6 +101,23 @@ export default class AliFile {
         return mapped
       }
       return undefined
+    }
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') {
+      if (file_id === 'pikpak_root') {
+        return {
+          drive_id,
+          file_id,
+          parent_file_id: '',
+          name: '网盘文件',
+          type: 'folder',
+          isDir: true
+        }
+      }
+      const detail = await apiPikPakFileDetail(user_id, file_id)
+      if (!detail) return undefined
+      const mapped = mapPikPakFileToAliModel(detail, drive_id, detail.parent_id || 'pikpak_root') as any
+      mapped.type = mapped.isDir ? 'folder' : 'file'
+      return mapped
     }
     let url = ''
     let postData = {}
@@ -228,6 +247,20 @@ export default class AliFile {
         size: down.size || detail.size || 0
       }
     }
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') {
+      const info = await apiPikPakDownloadInfo(user_id, file_id)
+      if (info.error) return info.error
+      const detail = info.item
+      const url = info.streamUrl || info.downloadUrl
+      if (!url) return '获取下载地址失败'
+      return {
+        drive_id: drive_id,
+        file_id: file_id,
+        expire_time: GetExpiresTime(url),
+        url,
+        size: Number(detail?.size || 0)
+      }
+    }
     const data: IDownloadUrl = {
       drive_id: drive_id,
       file_id: file_id,
@@ -253,6 +286,8 @@ export default class AliFile {
     }
     const resp = await AliHttp.Post(url, postData, user_id, '')
     if (AliHttp.IsSuccess(resp.code)) {
+      const promotionReason = !isPic ? getAlipanDownloadPromotionReason(resp.body) : ''
+      if (promotionReason) showAlipanMemberPromotion(promotionReason, { userId: user_id })
       data.url = resp.body.cdn_url || resp.body.url
       data.size = resp.body.size
       data.expire_time = GetExpiresTime(data.url)
@@ -271,13 +306,16 @@ export default class AliFile {
     return '网络错误'
   }
 
-  static async ApiVideoPreviewUrl(user_id: string, drive_id: string, file_id: string): Promise<IVideoPreviewUrl | string> {
+  static async ApiVideoPreviewUrl(user_id: string, drive_id: string, file_id: string, promotionSkuCode = ''): Promise<IVideoPreviewUrl | string> {
     if (!drive_id || !file_id) return '参数错误'
     if (isWebDavDrive(drive_id)) {
       return '暂无转码信息'
     }
     if (!user_id || !drive_id || !file_id) return '参数错误'
     if (isBaiduUser(user_id) || drive_id === 'baidu') {
+      return '暂无转码信息'
+    }
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') {
       return '暂无转码信息'
     }
     if (isCloud123User(user_id) || drive_id === 'cloud123') {
@@ -325,7 +363,7 @@ export default class AliFile {
     }
     if (isDrive115User(user_id) || drive_id === 'drive115') {
       const meta = await getDrive115PickCode(user_id, file_id)
-      if (!meta?.pick_code) return '获取文件详情失败'
+      if (!meta?.pick_code) return meta?.error || '获取文件详情失败'
       const playInfo = await apiDrive115VideoPlay(user_id, meta.pick_code)
       if (typeof playInfo === 'string') return playInfo
       const data: IVideoPreviewUrl = {
@@ -405,6 +443,8 @@ export default class AliFile {
       return '视频正在转码中，稍后重试'
     }
     if (resp.body.code == 'ExceedCapacityForbidden') {
+      const promotionReason = getAlipanVideoPromotionReason(resp.body)
+      if (promotionReason) showAlipanMemberPromotion(promotionReason, { userId: user_id, skuCode: promotionSkuCode })
       return '容量超限限制播放，需要扩容或者删除不必要的文件释放空间'
     }
     const data: IVideoPreviewUrl = {
@@ -426,6 +466,8 @@ export default class AliFile {
         }
       }
       const taskList = resp.body.video_preview_play_info?.live_transcoding_task_list || []
+      const promotionReason = getAlipanVideoPromotionReason(resp.body)
+      if (promotionReason) showAlipanMemberPromotion(promotionReason, { userId: user_id, skuCode: promotionSkuCode })
       const qualityMap: any = {
         'LD': { label: '低清', value: '480p' },
         'SD': { label: '标清', value: '540P' },
@@ -455,6 +497,7 @@ export default class AliFile {
       data.duration = Math.floor(resp.body.video_preview_play_info?.meta?.duration || 0)
       data.width = resp.body.video_preview_play_info?.meta?.width || 0
       data.height = resp.body.video_preview_play_info?.meta?.height || 0
+      if (data.qualities.length === 0) return promotionReason || '暂无转码信息'
       data.expire_time = GetExpiresTime(data.qualities[0].url)
       return data
     } else if (!AliHttp.HttpCodeBreak(resp.code)) {
@@ -497,6 +540,7 @@ export default class AliFile {
 
   static async ApiAudioPreviewUrl(user_id: string, drive_id: string, file_id: string): Promise<IDownloadUrl | string> {
     if (!user_id || !drive_id || !file_id) return '参数错误'
+    if (isCloud123User(user_id) || drive_id === 'cloud123' || isPikPakUser(user_id) || drive_id === 'pikpak') return '暂无转码信息'
 
     const url = 'v2/file/get_audio_play_info'
 
@@ -544,6 +588,7 @@ export default class AliFile {
 
   static async ApiOfficePreViewUrl(user_id: string, drive_id: string, file_id: string): Promise<IOfficePreViewUrl | undefined> {
     if (!user_id || !drive_id || !file_id) return undefined
+    if (isCloud123User(user_id) || drive_id === 'cloud123' || isPikPakUser(user_id) || drive_id === 'pikpak') return undefined
     const url = 'v2/file/get_office_preview_url'
     const postData = { drive_id: drive_id, file_id: file_id, url_expire_sec: 14400 }
     const resp = await AliHttp.Post(url, postData, user_id, '')
@@ -565,6 +610,11 @@ export default class AliFile {
 
   static async ApiGetFile(user_id: string, drive_id: string, file_id: string): Promise<IAliGetFileModel | undefined> {
     if (!user_id || !drive_id || !file_id) return undefined
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') {
+      const detail = await apiPikPakFileDetail(user_id, file_id)
+      if (!detail) return undefined
+      return mapPikPakFileToAliModel(detail, drive_id, detail.parent_id || 'pikpak_root')
+    }
     const url = 'v2/file/get'
     const postData = {
       drive_id: drive_id,
@@ -588,6 +638,9 @@ export default class AliFile {
 
   static async ApiFileGetPath(user_id: string, drive_id: string, file_id: string): Promise<IAliGetDirModel[]> {
     if (!user_id || !drive_id || !file_id) return []
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') {
+      return TreeStore.GetDirPath(drive_id, file_id) as IAliGetDirModel[]
+    }
     const url = 'adrive/v1/file/get_path'
     const postData = {
       drive_id: drive_id,
@@ -638,7 +691,7 @@ export default class AliFile {
 
   static async ApiFileGetPathString(user_id: string, drive_id: string, file_id: string, dirsplit: string): Promise<string> {
     if (!user_id || !drive_id || !file_id) return ''
-    if (isCloud123User(user_id) || drive_id === 'cloud123') {
+    if (isCloud123User(user_id) || drive_id === 'cloud123' || isPikPakUser(user_id) || drive_id === 'pikpak') {
       const pathList = TreeStore.GetDirPath(drive_id, file_id)
       const pathNames = pathList.map((item) => item.name).filter((name) => name)
       return pathNames.join(dirsplit)
@@ -675,7 +728,7 @@ export default class AliFile {
 
   static async ApiFileGetFolderSize(user_id: string, drive_id: string, file_id: string): Promise<IAliGetForderSizeModel | undefined> {
     if (!user_id || !drive_id || !file_id) return undefined
-    if (isCloud123User(user_id) || drive_id === 'cloud123') {
+    if (isCloud123User(user_id) || drive_id === 'cloud123' || isPikPakUser(user_id) || drive_id === 'pikpak') {
       return { size: 0, folder_count: 0, file_count: 0, reach_limit: undefined }
     }
     const url = 'adrive/v1/file/get_folder_size_info'
@@ -788,6 +841,7 @@ export default class AliFile {
     if (isWebDavDrive(drive_id)) return undefined
     if (isCloud123User(user_id) || drive_id === 'cloud123') return undefined
     if (isBaiduUser(user_id) || drive_id === 'baidu') return undefined
+    if (isPikPakUser(user_id) || drive_id === 'pikpak') return undefined
     if (isDrive115User(user_id) || drive_id === 'drive115') {
       const meta = await getDrive115PickCode(user_id, file_id)
       if (!meta?.pick_code) return undefined

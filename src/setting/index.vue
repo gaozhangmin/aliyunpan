@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useAppStore } from '../store'
 import SettingPlay from './SettingPlay.vue'
+import SettingMediaServerPlayback from './SettingMediaServerPlayback.vue'
 import SettingDanmaku from './SettingDanmaku.vue'
 import SettingPan from './SettingPan.vue'
 import SettingUI from './SettingUI.vue'
@@ -42,6 +43,7 @@ onMounted(() => {
     'SettingAccount',
     'SettingSecurity',
     'SettingPlay',
+    'SettingMediaServerPlayback',
     'SettingDanmaku',
     'SettingPan',
     'SettingDown',
@@ -91,6 +93,10 @@ onUnmounted(() => {
         <a-menu-item key="SettingPlay">
           <template #icon><i class="iconfont iconshipin" /></template>
           在线预览
+        </a-menu-item>
+        <a-menu-item key="SettingMediaServerPlayback">
+          <template #icon><i class="iconfont iconshipin" /></template>
+          媒体服务器
         </a-menu-item>
         <a-menu-item key="SettingDanmaku">
           <template #icon><i class="iconfont iconshipin" /></template>
@@ -167,6 +173,12 @@ onUnmounted(() => {
             <a-divider :size="2" orientation="center" class="settinghr">在线预览</a-divider>
           </div>
           <SettingPlay />
+        </section>
+        <section id="SettingMediaServerPlayback" class="settings-section">
+          <div>
+            <a-divider :size="2" orientation="center" class="settinghr">媒体服务器</a-divider>
+          </div>
+          <SettingMediaServerPlayback />
         </section>
         <section id="SettingDanmaku" class="settings-section">
           <div>

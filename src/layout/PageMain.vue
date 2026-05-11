@@ -496,6 +496,23 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
+#xbyhead2 .arco-menu-horizontal .arco-menu-pop {
+  height: 32px;
+  line-height: 32px;
+}
+
+#xbyhead2 .arco-menu-horizontal .arco-menu-pop::after {
+  display: none;
+}
+
+#xbyhead2 .arco-menu-horizontal .arco-menu-pop-header {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 8px;
+  line-height: 32px;
+}
+
 #xbyhead2 .arco-menu-horizontal .arco-menu-item.arco-menu-selected {
   font-size: 15px;
 }

@@ -12,11 +12,12 @@ import { Sleep } from '../../utils/format'
 import { treeSelectToExpand } from '../../utils/antdtree'
 import AliTrash from '../../aliapi/trash'
 import { fileiconfn } from '../pantreestore'
-import { GetDriveID, GetDriveType, isBaiduUser, isCloud123User, isDrive115User } from '../../aliapi/utils'
+import { GetDriveID, GetDriveType, isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../../aliapi/utils'
 import { IAliGetDirModel } from '../../aliapi/alimodels'
 import { apiCloud123FileList, mapCloud123FileToAliModel } from '../../cloud123/dirfilelist'
 import { apiDrive115FileList, mapDrive115FileToAliModel } from '../../cloud115/dirfilelist'
 import { apiBaiduFileList, mapBaiduFileToAliModel } from '../../cloudbaidu/dirfilelist'
+import { apiPikPakFileList, mapPikPakFileToAliModel } from '../../pikpak/dirfilelist'
 
 const iconfolder = h('i', { class: 'iconfont iconfile-folder' })
 const foldericonfn = () => iconfolder
@@ -77,7 +78,8 @@ const handleOpen = async () => {
   const isCloudUser = isCloud123User(user_id.value)
   const isDrive115 = isDrive115User(user_id.value)
   const isBaidu = isBaiduUser(user_id.value)
-  const isSingleRootDrive = isCloudUser || isDrive115 || isBaidu
+  const isPikPak = isPikPakUser(user_id.value)
+  const isSingleRootDrive = isCloudUser || isDrive115 || isBaidu || isPikPak
   const driveType = GetDriveType(user_id.value, drive_id.value)
   const expandedKeys: string[] = isSingleRootDrive ? [driveType.key] : ['backup_root', 'resource_root']
   const selectid = props.selectid || localStorage.getItem('selectpandir-' + drive_id.value) || ''
@@ -178,7 +180,7 @@ const handleClose = () => {
     description: '',
     isDir: true
   }
-  if (isCloud123User(pantreeStore.user_id) || isDrive115User(pantreeStore.user_id) || isBaiduUser(pantreeStore.user_id)) {
+  if (isCloud123User(pantreeStore.user_id) || isDrive115User(pantreeStore.user_id) || isBaiduUser(pantreeStore.user_id) || isPikPakUser(pantreeStore.user_id)) {
     treeData.value = [{
       __v_skip: true,
       key: driveType.key,
@@ -362,6 +364,38 @@ const apiLoad = (key: any) => {
         return [] as TreeNodeData[]
       })
   }
+  if (isPikPakUser(user_id.value)) {
+    const parentId = key.includes('root') ? 'pikpak_root' : key
+    return apiPikPakFileList(user_id.value, parentId, 100)
+      .then(({ items: list }) => {
+        const addList: TreeNodeData[] = []
+        for (let i = 0, maxi = list.length; i < maxi; i++) {
+          const mapped = mapPikPakFileToAliModel(list[i], drive_id.value, parentId)
+          if (!mapped.isDir) {
+            if (onlyDirs) continue
+            if (props.category && mapped.category !== props.category) continue
+            if (props.extFilter && !props.extFilter.test(mapped.ext)) continue
+          }
+          addList.push({
+            __v_skip: true,
+            key: mapped.file_id,
+            parent_file_id: mapped.parent_file_id,
+            path: mapped.path || '',
+            title: mapped.name,
+            children: [],
+            isDir: mapped.isDir,
+            isLeaf: !mapped.isDir,
+            description: mapped.description,
+            icon: mapped.isDir ? foldericonfn : () => fileiconfn(mapped.icon)
+          } as TreeNodeData)
+        }
+        autoExpand(addList)
+        return addList
+      })
+      .catch(() => {
+        return [] as TreeNodeData[]
+      })
+  }
   return AliTrash.ApiDirFileListNoLock(user_id.value, selectFile.value.drive_id, key, '', 'name ASC')
     .then((resp) => {
       const addList: TreeNodeData[] = []
@@ -442,20 +476,26 @@ const handleTreeExpand = (keys: any[], info: {
     } else {
       treeExpandedKeys.value = arr.concat([key])
       if (props.selecttype !== 'select' && props.selecttype !== 'offline') { // 仅显示文件夹
-      if (isCloud123User(user_id.value) || isDrive115User(user_id.value) || isBaiduUser(user_id.value)) {
+      if (isCloud123User(user_id.value) || isDrive115User(user_id.value) || isBaiduUser(user_id.value) || isPikPakUser(user_id.value)) {
         const driveType = GetDriveType(user_id.value, drive_id.value)
         const cloudDriveId = GetDriveID(user_id.value, driveType.key) || drive_id.value
         treeData.value = PanDAL.GetPanTreeAllNode(user_id.value, cloudDriveId, treeExpandedKeys.value)
       } else {
-        let backupPan: TreeNodeData[] = []
-        let resourcePan: TreeNodeData[] = []
-        if (!useSettingStore().securityHideBackupDrive) {
-          backupPan = PanDAL.GetPanTreeAllNode(user_id.value, pantreeStore.backup_drive_id, treeExpandedKeys.value)
+        if (isCloud123User(user_id.value) || isDrive115User(user_id.value) || isBaiduUser(user_id.value) || isPikPakUser(user_id.value)) {
+          const driveType = GetDriveType(user_id.value, drive_id.value)
+          const cloudDriveId = GetDriveID(user_id.value, driveType.key) || drive_id.value
+          treeData.value = PanDAL.GetPanTreeAllNode(user_id.value, cloudDriveId, treeExpandedKeys.value)
+        } else {
+          let backupPan: TreeNodeData[] = []
+          let resourcePan: TreeNodeData[] = []
+          if (!useSettingStore().securityHideBackupDrive) {
+            backupPan = PanDAL.GetPanTreeAllNode(user_id.value, pantreeStore.backup_drive_id, treeExpandedKeys.value)
+          }
+          if (!useSettingStore().securityHideResourceDrive) {
+            resourcePan = PanDAL.GetPanTreeAllNode(user_id.value, pantreeStore.resource_drive_id, treeExpandedKeys.value)
+          }
+          treeData.value = [...backupPan, ...resourcePan]
         }
-        if (!useSettingStore().securityHideResourceDrive) {
-          resourcePan = PanDAL.GetPanTreeAllNode(user_id.value, pantreeStore.resource_drive_id, treeExpandedKeys.value)
-        }
-        treeData.value = [...backupPan, ...resourcePan]
       }
     }
   }
