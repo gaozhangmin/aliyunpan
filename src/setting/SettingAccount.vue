@@ -131,8 +131,8 @@ const refreshStatus = () => {
 }
 
 const refreshQrCode = async () => {
-  let client_id = 'df43e22f022d4c04b6e29964f3b8b46d'
-  let client_secret = '63f06c3c5c5d4e1196e2c13e8588ae29'
+  let client_id = ''
+  let client_secret = ''
   const { uiEnableOpenApiType, uiOpenApiClientId, uiOpenApiClientSecret } = storeToRefs(settingStore)
   if (uiEnableOpenApiType.value === 'custom') {
     if (!uiOpenApiClientId.value || !uiOpenApiClientSecret.value) {

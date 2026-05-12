@@ -20,8 +20,8 @@ import { getDriveProviderMeta } from '../utils/driveProvider'
 
 const useUser = useUserStore()
 const settingStore = useSettingStore()
-const ALIYUN_APP_ID = 'df43e22f022d4c04b6e29964f3b8b46d'
-const ALIYUN_APP_SECRET = '63f06c3c5c5d4e1196e2c13e8588ae29'
+const ALIYUN_APP_ID = ''
+const ALIYUN_APP_SECRET = ''
 const loginCur = ref(1)
 const loginToken = ref<ITokenInfo>()
 const loginStatus = ref<'wait' | 'error' | 'finish' | 'process'>('process')

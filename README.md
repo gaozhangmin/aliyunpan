@@ -9,6 +9,28 @@
 </p>
 
 <p align="center">
+  <strong>支持多种网盘与媒体源</strong>
+</p>
+
+<p align="center">
+  <img src="public/images/drive-icons/aliyun.svg" width="36" height="36" alt="阿里云盘" title="阿里云盘">
+  <img src="public/images/drive-icons/baidu.svg" width="36" height="36" alt="百度网盘" title="百度网盘">
+  <img src="public/images/drive-icons/cloud123.svg" width="36" height="36" alt="123网盘" title="123网盘">
+  <img src="public/images/drive-icons/drive115.svg" width="36" height="36" alt="115网盘" title="115网盘">
+  <img src="public/images/drive-icons/pikpak.svg" width="36" height="36" alt="PikPak" title="PikPak">
+  <img src="public/images/drive-icons/dropbox.svg" width="36" height="36" alt="Dropbox" title="Dropbox">
+  <img src="public/images/drive-icons/onedrive.svg" width="36" height="36" alt="OneDrive" title="OneDrive">
+  <img src="public/images/drive-icons/box.svg" width="36" height="36" alt="Box" title="Box">
+</p>
+
+<p align="center">
+  <img src="src/assets/media-server/jellyfin.svg" width="34" height="34" alt="Jellyfin" title="Jellyfin">
+  <img src="src/assets/media-server/emby.svg" width="34" height="34" alt="Emby" title="Emby">
+  <img src="src/assets/media-server/plex.svg" width="34" height="34" alt="Plex" title="Plex">
+  <img src="https://img.shields.io/badge/WebDAV-4f46e5?style=flat-square&logo=webdav&logoColor=white" alt="WebDAV">
+</p>
+
+<p align="center">
   <a href="LICENSE" target="_blank">
     <img alt="MIT License" src="https://img.shields.io/github/license/gaozhangmin/aliyunpan?style=flat-square&logoColor=white" />
   </a>
@@ -56,7 +78,7 @@
 6. **剧集详情**：显示剧集封面、评分、简介、分集列表，支持继续播放进度记录 <br>
 
 ## 🌟 多网盘支持
-7. **多平台网盘接入**：支持阿里云盘、百度网盘、123网盘、115网盘等主流网盘服务 <br>
+7. **多平台网盘接入**：支持阿里云盘、百度网盘、123网盘、115网盘、PikPak、Dropbox、OneDrive、Box 等主流网盘服务 <br>
 8. **WebDAV 连接**：支持通过 WebDAV 协议连接夸克网盘、天翼云等更多网盘服务 <br>
 9. **本地文件夹导入**：支持导入本地文件夹并识别刮削 TMDB 元数据 <br>
 10. **多账号管理**：支持同时登录和管理多个网盘账号 <br>
