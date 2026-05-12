@@ -4,7 +4,7 @@ import { useUserStore } from '../store'
 import message from './message'
 import { openExternal } from './electronhelper'
 
-const alipanCpxCodeUrl = '/images/alipan_cpx_code.png'
+const alipanCpxCodeUrl = 'images/alipan_cpx_code.png'
 
 export {
   ALIPAN_MEMBER_PROMOTION_URL,

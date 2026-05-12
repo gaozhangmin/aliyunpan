@@ -1029,11 +1029,13 @@ const loginSuccess = (token: ITokenInfo) => {
 .login-provider-icon {
   width: 16px;
   height: 16px;
+  overflow: hidden;
 }
 
 .login-provider-heading-icon {
   width: 22px;
   height: 22px;
+  overflow: hidden;
 }
 
 .login-provider-icon img,
@@ -1042,6 +1044,8 @@ const loginSuccess = (token: ITokenInfo) => {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  color: transparent;
+  font-size: 0;
 }
 
 .login-provider-heading {
