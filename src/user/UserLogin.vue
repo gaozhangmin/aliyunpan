@@ -1,5 +1,5 @@
 <script setup lang='ts'>
-import { h, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { computed, h, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { ITokenInfo, useSettingStore, useUserStore } from '../store'
 import UserDAL from '../user/userdal'
 import Config from '../config'
@@ -13,6 +13,10 @@ import { buildCloud123AuthUrl, exchangeCloud123CodeForToken } from '../utils/clo
 import { buildBaiduAuthUrl, exchangeBaiduCodeForToken } from '../utils/baidu'
 import { buildQrImageUrl, DRIVE115_APP_ID, exchangeDeviceCode, generatePkce, normalize115Token, pollDeviceStatus, requestDeviceCode } from '../utils/drive115'
 import { loginPikPak } from '../pikpak/auth'
+import { DROPBOX_APP_KEY, buildDropboxAuthUrl, createDropboxPkceVerifier, exchangeDropboxCodeForToken } from '../dropbox/auth'
+import { ONEDRIVE_CLIENT_ID, buildOneDriveAuthUrl, createOneDrivePkceVerifier, exchangeOneDriveCodeForToken } from '../onedrive/auth'
+import { BOX_CLIENT_ID, buildBoxAuthUrl, createBoxPkceVerifier, exchangeBoxCodeForToken } from '../box/auth'
+import { getDriveProviderMeta } from '../utils/driveProvider'
 
 const useUser = useUserStore()
 const settingStore = useSettingStore()
@@ -30,7 +34,12 @@ const qrCodeUrl = ref('')
 const qrCodeStatusType = ref()
 const qrCodeStatusTips = ref()
 
-const loginProvider = ref<'aliyun' | 'cloud123' | '115' | 'baidu' | 'pikpak'>('aliyun')
+type LoginProvider = 'aliyun' | 'cloud123' | '115' | 'baidu' | 'pikpak' | 'dropbox' | 'onedrive' | 'box'
+
+const loginProvider = ref<LoginProvider>('aliyun')
+const loginProviders: LoginProvider[] = ['aliyun', 'cloud123', '115', 'baidu', 'pikpak', 'dropbox', 'onedrive', 'box']
+const getLoginProviderMeta = (provider: LoginProvider) => getDriveProviderMeta(provider)
+const activeLoginProviderMeta = computed(() => getLoginProviderMeta(loginProvider.value))
 const cloud123Code = ref('')
 const cloud123Loading = ref(false)
 const baiduCode = ref('')
@@ -39,6 +48,18 @@ const baiduAuthUrl = ref('')
 const pikpakUsername = ref('')
 const pikpakPassword = ref('')
 const pikpakLoading = ref(false)
+const dropboxAppKey = ref('')
+const dropboxVerifier = ref('')
+const dropboxLoading = ref(false)
+const dropboxAuthUrl = ref('')
+const onedriveClientId = ref('')
+const onedriveVerifier = ref('')
+const onedriveLoading = ref(false)
+const onedriveAuthUrl = ref('')
+const boxClientId = ref('')
+const boxVerifier = ref('')
+const boxLoading = ref(false)
+const boxAuthUrl = ref('')
 const drive115ClientId = ref(DRIVE115_APP_ID || '')
 const drive115Verifier = ref('')
 const drive115Uid = ref('')
@@ -69,9 +90,12 @@ const clearOpenTimers = () => {
 
 const handleModalOpen = () => {
   const stored = localStorage.getItem('login_provider')
-  if (stored === 'cloud123' || stored === 'aliyun' || stored === '115' || stored === 'baidu' || stored === 'pikpak') {
+  if (stored === 'cloud123' || stored === 'aliyun' || stored === '115' || stored === 'baidu' || stored === 'pikpak' || stored === 'dropbox' || stored === 'onedrive' || stored === 'box') {
     loginProvider.value = stored
   }
+  dropboxAppKey.value = localStorage.getItem('dropbox_app_key') || DROPBOX_APP_KEY
+  onedriveClientId.value = localStorage.getItem('onedrive_client_id') || ONEDRIVE_CLIENT_ID
+  boxClientId.value = localStorage.getItem('box_client_id') || BOX_CLIENT_ID
   if (loginProvider.value === 'cloud123') {
     handleOpenCloud123()
   } else if (loginProvider.value === 'baidu') {
@@ -80,13 +104,19 @@ const handleModalOpen = () => {
     handleOpen115()
   } else if (loginProvider.value === 'pikpak') {
     loginLoading.value = false
+  } else if (loginProvider.value === 'dropbox') {
+    handleOpenDropbox()
+  } else if (loginProvider.value === 'onedrive') {
+    handleOpenOneDrive()
+  } else if (loginProvider.value === 'box') {
+    handleOpenBox()
   } else {
     handleOpen()
   }
 }
 
 const handleOauthCallback = (event: any) => {
-  if (loginProvider.value !== 'cloud123' && loginProvider.value !== 'baidu') return
+  if (loginProvider.value !== 'cloud123' && loginProvider.value !== 'baidu' && loginProvider.value !== 'dropbox' && loginProvider.value !== 'onedrive' && loginProvider.value !== 'box') return
   const url = event?.detail || ''
   if (!url) return
   try {
@@ -99,6 +129,12 @@ const handleOauthCallback = (event: any) => {
       } else if (loginProvider.value === 'baidu') {
         baiduCode.value = code
         submitBaiduCode()
+      } else if (loginProvider.value === 'dropbox') {
+        submitDropboxCode(code)
+      } else if (loginProvider.value === 'onedrive') {
+        submitOneDriveCode(code)
+      } else if (loginProvider.value === 'box') {
+        submitBoxCode(code)
       }
     }
   } catch {
@@ -125,6 +161,12 @@ watch(loginProvider, () => {
     handleOpen115()
   } else if (loginProvider.value === 'pikpak') {
     loginLoading.value = false
+  } else if (loginProvider.value === 'dropbox') {
+    handleOpenDropbox()
+  } else if (loginProvider.value === 'onedrive') {
+    handleOpenOneDrive()
+  } else if (loginProvider.value === 'box') {
+    handleOpenBox()
   } else {
     handleOpen()
   }
@@ -223,6 +265,15 @@ const handleClose = () => {
   drive115Polling.value = false
   pikpakPassword.value = ''
   pikpakLoading.value = false
+  dropboxVerifier.value = ''
+  dropboxLoading.value = false
+  dropboxAuthUrl.value = ''
+  onedriveVerifier.value = ''
+  onedriveLoading.value = false
+  onedriveAuthUrl.value = ''
+  boxVerifier.value = ''
+  boxLoading.value = false
+  boxAuthUrl.value = ''
 }
 
 const handleOpenCloud123 = () => {
@@ -253,6 +304,63 @@ const handleReopenBaidu = () => {
   const authUrl = baiduAuthUrl.value || buildBaiduAuthUrl()
   baiduAuthUrl.value = authUrl
   window.Electron.shell.openExternal(authUrl)
+}
+
+const handleOpenDropbox = async () => {
+  loginLoading.value = false
+  const appKey = (dropboxAppKey.value || localStorage.getItem('dropbox_app_key') || DROPBOX_APP_KEY).trim()
+  if (!appKey) {
+    message.warning('请先在 src/dropbox/auth.ts 填写 DROPBOX_APP_KEY')
+    return
+  }
+  dropboxAppKey.value = appKey
+  localStorage.setItem('dropbox_app_key', appKey)
+  dropboxVerifier.value = createDropboxPkceVerifier()
+  const authUrl = await buildDropboxAuthUrl(appKey, dropboxVerifier.value)
+  dropboxAuthUrl.value = authUrl
+  window.Electron.shell.openExternal(authUrl)
+}
+
+const handleReopenDropbox = () => {
+  handleOpenDropbox().catch((err: any) => message.error(err?.message || '打开 Dropbox 授权页失败'))
+}
+
+const handleOpenOneDrive = async () => {
+  loginLoading.value = false
+  const clientId = (onedriveClientId.value || localStorage.getItem('onedrive_client_id') || ONEDRIVE_CLIENT_ID).trim()
+  if (!clientId) {
+    message.warning('请先在 src/onedrive/auth.ts 填写 ONEDRIVE_CLIENT_ID')
+    return
+  }
+  onedriveClientId.value = clientId
+  localStorage.setItem('onedrive_client_id', clientId)
+  onedriveVerifier.value = createOneDrivePkceVerifier()
+  const authUrl = await buildOneDriveAuthUrl(clientId, onedriveVerifier.value)
+  onedriveAuthUrl.value = authUrl
+  window.Electron.shell.openExternal(authUrl)
+}
+
+const handleReopenOneDrive = () => {
+  handleOpenOneDrive().catch((err: any) => message.error(err?.message || '打开 OneDrive 授权页失败'))
+}
+
+const handleOpenBox = async () => {
+  loginLoading.value = false
+  const clientId = (boxClientId.value || localStorage.getItem('box_client_id') || BOX_CLIENT_ID).trim()
+  if (!clientId) {
+    message.warning('请先在 src/box/auth.ts 填写 BOX_CLIENT_ID')
+    return
+  }
+  boxClientId.value = clientId
+  localStorage.setItem('box_client_id', clientId)
+  boxVerifier.value = createBoxPkceVerifier()
+  const authUrl = await buildBoxAuthUrl(clientId, boxVerifier.value)
+  boxAuthUrl.value = authUrl
+  window.Electron.shell.openExternal(authUrl)
+}
+
+const handleReopenBox = () => {
+  handleOpenBox().catch((err: any) => message.error(err?.message || '打开 Box 授权页失败'))
 }
 
 const submitCloud123Code = async () => {
@@ -294,6 +402,72 @@ const submitBaiduCode = async () => {
     message.error('百度网盘登录失败')
   } finally {
     baiduLoading.value = false
+  }
+}
+
+const submitDropboxCode = async (code: string) => {
+  if (dropboxLoading.value) return
+  const appKey = dropboxAppKey.value.trim()
+  if (!appKey || !dropboxVerifier.value) {
+    message.error('Dropbox 授权信息已失效，请重新打开授权页面')
+    return
+  }
+  dropboxLoading.value = true
+  try {
+    const token = await exchangeDropboxCodeForToken(code, appKey, dropboxVerifier.value)
+    if (token) {
+      await UserDAL.UserLogin(token)
+      useUserStore().userShowLogin = false
+    }
+  } catch (error) {
+    console.error('Dropbox 登录失败:', error)
+    message.error('Dropbox 登录失败')
+  } finally {
+    dropboxLoading.value = false
+  }
+}
+
+const submitOneDriveCode = async (code: string) => {
+  if (onedriveLoading.value) return
+  const clientId = onedriveClientId.value.trim()
+  if (!clientId || !onedriveVerifier.value) {
+    message.error('OneDrive 授权信息已失效，请重新打开授权页面')
+    return
+  }
+  onedriveLoading.value = true
+  try {
+    const token = await exchangeOneDriveCodeForToken(code, clientId, onedriveVerifier.value)
+    if (token) {
+      await UserDAL.UserLogin(token)
+      useUserStore().userShowLogin = false
+    }
+  } catch (error) {
+    console.error('OneDrive 登录失败:', error)
+    message.error('OneDrive 登录失败')
+  } finally {
+    onedriveLoading.value = false
+  }
+}
+
+const submitBoxCode = async (code: string) => {
+  if (boxLoading.value) return
+  const clientId = boxClientId.value.trim()
+  if (!clientId || !boxVerifier.value) {
+    message.error('Box 授权信息已失效，请重新打开授权页面')
+    return
+  }
+  boxLoading.value = true
+  try {
+    const token = await exchangeBoxCodeForToken(code, clientId, boxVerifier.value)
+    if (token) {
+      await UserDAL.UserLogin(token)
+      useUserStore().userShowLogin = false
+    }
+  } catch (error) {
+    console.error('Box 登录失败:', error)
+    message.error('Box 登录失败')
+  } finally {
+    boxLoading.value = false
   }
 }
 
@@ -605,13 +779,25 @@ const loginSuccess = (token: ITokenInfo) => {
            :mask-closable='false' unmount-on-close :footer='false'
            class='userloginmodal' @before-open='handleModalOpen' @close='handleClose'>
     <div class="modalbody" style="width: fit-content;height: fit-content;overflow: hidden">
-      <a-tabs size="small" v-model:active-key="loginProvider" style="margin: 8px 0 12px">
-        <a-tab-pane key="aliyun" title="阿里云盘" />
-        <a-tab-pane key="cloud123" title="123网盘" />
-        <a-tab-pane key="115" title="115网盘" />
-        <a-tab-pane key="baidu" title="百度网盘" />
-        <a-tab-pane key="pikpak" title="PikPak" />
+      <a-tabs size="small" v-model:active-key="loginProvider" class="login-provider-tabs">
+        <a-tab-pane v-for="provider in loginProviders" :key="provider">
+          <template #title>
+            <span class="login-provider-tab" :title="getLoginProviderMeta(provider).label">
+              <span v-if="getLoginProviderMeta(provider).icon" class="login-provider-icon">
+                <img :src="getLoginProviderMeta(provider).icon" :alt="getLoginProviderMeta(provider).label" />
+              </span>
+              <span>{{ getLoginProviderMeta(provider).label }}</span>
+            </span>
+          </template>
+        </a-tab-pane>
       </a-tabs>
+
+      <div class="login-provider-heading" :title="activeLoginProviderMeta.label">
+        <span v-if="activeLoginProviderMeta.icon" class="login-provider-heading-icon">
+          <img :src="activeLoginProviderMeta.icon" :alt="activeLoginProviderMeta.label" />
+        </span>
+        <span>{{ activeLoginProviderMeta.label }}</span>
+      </div>
 
       <div v-if="loginProvider === 'aliyun'">
         <a-steps v-model:current="loginCur" :status="loginStatus">
@@ -726,6 +912,51 @@ const loginSuccess = (token: ITokenInfo) => {
         </div>
       </div>
 
+      <div v-else-if="loginProvider === 'dropbox'">
+        <div id='logindiv'>
+          <div class='logincontent'>
+            <div class="browser-login-hint">
+              <p style="margin: 32px 0 8px; font-size: 15px;">已在系统浏览器中打开 Dropbox 授权页面</p>
+              <p style="color: var(--color-text-3); font-size: 13px;">请在浏览器中完成登录，授权后将自动跳转回应用</p>
+              <p style="color: var(--color-text-3); font-size: 13px; margin: 8px 0 0;">
+                回调地址：xbyboxplayer-oauth://callback
+              </p>
+              <a-button style="margin-top: 16px;" :loading="dropboxLoading" @click="handleReopenDropbox">重新打开浏览器</a-button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="loginProvider === 'onedrive'">
+        <div id='logindiv'>
+          <div class='logincontent'>
+            <div class="browser-login-hint">
+              <p style="margin: 32px 0 8px; font-size: 15px;">已在系统浏览器中打开 OneDrive 授权页面</p>
+              <p style="color: var(--color-text-3); font-size: 13px;">请在浏览器中完成登录，授权后将自动跳转回应用</p>
+              <p style="color: var(--color-text-3); font-size: 13px; margin: 8px 0 0;">
+                回调地址：xbyboxplayer-oauth://callback
+              </p>
+              <a-button style="margin-top: 16px;" :loading="onedriveLoading" @click="handleReopenOneDrive">重新打开浏览器</a-button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="loginProvider === 'box'">
+        <div id='logindiv'>
+          <div class='logincontent'>
+            <div class="browser-login-hint">
+              <p style="margin: 32px 0 8px; font-size: 15px;">已在系统浏览器中打开 Box 授权页面</p>
+              <p style="color: var(--color-text-3); font-size: 13px;">请在浏览器中完成登录，授权后将自动跳转回应用</p>
+              <p style="color: var(--color-text-3); font-size: 13px; margin: 8px 0 0;">
+                回调地址：xbyboxplayer-oauth://callback
+              </p>
+              <a-button style="margin-top: 16px;" :loading="boxLoading" @click="handleReopenBox">重新打开浏览器</a-button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </a-modal>
 </template>
@@ -772,6 +1003,59 @@ const loginSuccess = (token: ITokenInfo) => {
   padding: 0 16px 16px 16px !important;
 }
 
+.login-provider-tabs {
+  margin: 8px 0 8px;
+}
+
+.login-provider-tab {
+  display: inline-flex;
+  align-items: center;
+  max-width: 92px;
+  gap: 5px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: 1;
+}
+
+.login-provider-icon,
+.login-provider-heading-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.login-provider-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.login-provider-heading-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.login-provider-icon img,
+.login-provider-heading-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.login-provider-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  margin: 0 0 8px;
+  gap: 8px;
+  color: var(--color-text-1);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .cloud123-code {
   display: flex;
   gap: 8px;
@@ -796,4 +1080,5 @@ const loginSuccess = (token: ITokenInfo) => {
   width: 300px;
   margin: 64px auto 0;
 }
+
 </style>

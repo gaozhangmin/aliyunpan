@@ -3,7 +3,7 @@ import { IAliGetDirModel } from '../aliapi/alimodels'
 import { h } from 'vue'
 import PanDAL from './pandal'
 import TreeStore, { TreeNodeData } from '../store/treestore'
-import { GetDriveID, isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../aliapi/utils'
+import { GetDriveID, isBaiduUser, isBoxUser, isCloud123User, isDrive115User, isDropboxUser, isOneDriveUser, isPikPakUser } from '../aliapi/utils'
 import message from '../utils/message'
 
 export interface PanTreeState {
@@ -134,6 +134,9 @@ const usePanTreeStore = defineStore('pantree', {
       const isDrive115 = isDrive115User(this.user_id || '')
       const isBaidu = isBaiduUser(this.user_id || '')
       const isPikPak = isPikPakUser(this.user_id || '')
+      const isDropbox = isDropboxUser(this.user_id || '')
+      const isOneDrive = isOneDriveUser(this.user_id || '')
+      const isBox = isBoxUser(this.user_id || '')
       if (isCloudUser) {
         const unsupported = ['video', 'recover', 'pic_root', 'backup_root', 'resource_root', 'favorite']
         if (unsupported.includes(key)) {
@@ -147,6 +150,18 @@ const usePanTreeStore = defineStore('pantree', {
       }
       if (isPikPak && ['video', 'recover', 'pic_root', 'backup_root', 'resource_root', 'favorite'].includes(key)) {
         message.info('PikPak 不支持此功能')
+        return
+      }
+      if (isDropbox && ['video', 'recover', 'pic_root', 'backup_root', 'resource_root', 'favorite', 'trash'].includes(key)) {
+        message.info('Dropbox 不支持此功能')
+        return
+      }
+      if (isOneDrive && ['video', 'recover', 'pic_root', 'backup_root', 'resource_root', 'favorite'].includes(key)) {
+        message.info('OneDrive 不支持此功能')
+        return
+      }
+      if (isBox && ['video', 'recover', 'pic_root', 'backup_root', 'resource_root', 'favorite'].includes(key)) {
+        message.info('Box 不支持此功能')
         return
       }
       if (!kuaijie) {

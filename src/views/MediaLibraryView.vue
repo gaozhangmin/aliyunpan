@@ -73,7 +73,7 @@ import { MediaScanner } from '../utils/mediaScanner'
 import UserDAL from '../user/userdal'
 import message from '../utils/message'
 import type { MediaLibraryFolder } from '../types/media'
-import { isAliyunUser, isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../aliapi/utils'
+import { isAliyunUser, isBaiduUser, isBoxUser, isCloud123User, isDrive115User, isDropboxUser, isOneDriveUser, isPikPakUser } from '../aliapi/utils'
 import AliDirFileList from '../aliapi/dirfilelist'
 import { apiBaiduFileList, mapBaiduFileToAliModel } from '../cloudbaidu/dirfilelist'
 import { getWebDavConnection, getWebDavConnectionId, isWebDavDrive, listWebDavDirectory } from '../utils/webdavClient'
@@ -163,6 +163,9 @@ const resolveFolderRuntimeContext = async (folder: MediaLibraryFolder): Promise<
     if (folder.driveId === 'drive115' || folder.driveServerId === 'drive115') return isDrive115User(token)
     if (folder.driveId === 'baidu' || folder.driveServerId === 'baidu') return isBaiduUser(token)
     if (folder.driveId === 'pikpak' || folder.driveServerId === 'pikpak') return isPikPakUser(token)
+    if (folder.driveId === 'dropbox' || folder.driveServerId === 'dropbox') return isDropboxUser(token)
+    if (folder.driveId === 'onedrive' || folder.driveServerId === 'onedrive') return isOneDriveUser(token)
+    if (folder.driveId === 'box' || folder.driveServerId === 'box') return isBoxUser(token)
     return isAliyunUser(token)
   })
 
@@ -281,7 +284,25 @@ const loadFolderContent = async (folder: MediaLibraryFolder) => {
       const { items: list } = await apiPikPakFileList(userId, parentId, 100)
       items = list.map((item) => { const mapped = mapPikPakFileToAliModel(item, driveId, parentId); (mapped as any).user_id = userId; return mapped })
       console.log('使用PikPak API获取文件列表')
-    } else {
+    } else if (isDropboxUser(userId) || driveId === 'dropbox') {
+      const { apiDropboxFileList, mapDropboxFileToAliModel } = await import('../dropbox/dirfilelist')
+      const parentId = fileId === 'dropbox_root' ? 'dropbox_root' : fileId
+      const list = await apiDropboxFileList(userId, parentId, 500)
+      items = list.map((item) => { const mapped = mapDropboxFileToAliModel(item, driveId, parentId); (mapped as any).user_id = userId; return mapped })
+      console.log('使用Dropbox API获取文件列表')
+    } else if (isOneDriveUser(userId) || driveId === 'onedrive') {
+      const { apiOneDriveFileList, mapOneDriveItemToAliModel } = await import('../onedrive/dirfilelist')
+      const parentId = fileId === 'onedrive_root' ? 'onedrive_root' : fileId
+      const list = await apiOneDriveFileList(userId, parentId)
+      items = list.map((item) => { const mapped = mapOneDriveItemToAliModel(item, driveId, parentId); (mapped as any).user_id = userId; return mapped })
+      console.log('使用OneDrive API获取文件列表')
+    } else if (isBoxUser(userId) || driveId === 'box') {
+      const { apiBoxFileList, mapBoxItemToAliModel } = await import('../box/dirfilelist')
+      const parentId = fileId === 'box_root' ? 'box_root' : fileId
+      const list = await apiBoxFileList(userId, parentId, 500)
+      items = list.map((item) => { const mapped = mapBoxItemToAliModel(item, driveId, parentId); (mapped as any).user_id = userId; return mapped })
+      console.log('使用Box API获取文件列表')
+    } else if (isAliyunUser(userId)) {
       // 阿里云盘（默认）
       const result = await AliDirFileList.ApiDirFileList(
         userId,
@@ -295,6 +316,12 @@ const loadFolderContent = async (folder: MediaLibraryFolder) => {
       )
       items = (result?.items || []).map((item: any) => ({ ...item, user_id: userId }))
       console.log('使用阿里云盘API获取文件列表')
+    } else {
+      console.warn('[MediaLibraryView] skip Aliyun file list for non-Aliyun source', {
+        userId,
+        driveId,
+        fileId
+      })
     }
 
     if (items && items.length > 0) {

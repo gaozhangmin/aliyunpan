@@ -20,7 +20,7 @@ import { useSettingStore, usePanFileStore, useAppStore, usePanTreeStore } from '
 import { computed } from 'vue'
 import { MediaScanner } from '../../utils/mediaScanner'
 import message from '../../utils/message'
-import { isAliyunUser as isAliyunAccountUser, isCloud123User } from '../../aliapi/utils'
+import { isAliyunUser as isAliyunAccountUser, isBoxUser, isCloud123User, isDropboxUser, isOneDriveUser } from '../../aliapi/utils'
 import { isWebDavDrive } from '../../utils/webdavClient'
 
 let istree = false
@@ -99,6 +99,11 @@ const isPic = computed(() => {
 })
 const isCloudUser = computed(() => isCloud123User(panTreeStore.user_id || '') || panTreeStore.drive_id === 'cloud123')
 const isAliyunAccount = computed(() => isAliyunAccountUser(panTreeStore.user_id || ''))
+const isDropbox = computed(() => isDropboxUser(panTreeStore.user_id || '') || panTreeStore.drive_id === 'dropbox')
+const isOneDrive = computed(() => isOneDriveUser(panTreeStore.user_id || '') || panTreeStore.drive_id === 'onedrive')
+const isBox = computed(() => isBoxUser(panTreeStore.user_id || '') || panTreeStore.drive_id === 'box')
+const isThirdPartyDrive = computed(() => isDropbox.value || isOneDrive.value || isBox.value)
+const isShareSupported = computed(() => props.inputselectType.includes('resource') || isDropbox.value || isOneDrive.value || isBox.value)
 const isWebDav = computed(() => isWebDavDrive(panTreeStore.drive_id || panTreeStore.selectDir.drive_id))
 
 // 检查是否选中了文件夹
@@ -115,7 +120,7 @@ const isSelectedFolder = computed(() => {
         <template #icon><i class='iconfont icondownload' /></template>
         <template #default>下载</template>
       </a-doption>
-      <a-doption v-show='inputselectType && inputselectType.includes("resource")'
+      <a-doption v-show='isShareSupported'
                  @click="() => menuCreatShare(istree, 'pan', 'resource_root')">
         <template #icon><i class='iconfont iconfenxiang' /></template>
         <template #default>分享</template>
@@ -131,7 +136,7 @@ const isSelectedFolder = computed(() => {
         <template #default>扫描媒体库</template>
       </a-doption>
 
-      <a-dsubmenu v-if="dirtype !== 'pic' && !isWebDav" id='rightpansubbiaoji' class='rightmenu' trigger='hover'>
+      <a-dsubmenu v-if="dirtype !== 'pic' && !isWebDav && !isThirdPartyDrive" id='rightpansubbiaoji' class='rightmenu' trigger='hover'>
         <template #default>
           <div @click.stop='() => {}'>
             <span class='arco-dropdown-option-icon'>
@@ -184,7 +189,7 @@ const isSelectedFolder = computed(() => {
             <template #icon><i class='iconfont iconcopy' /></template>
             <template #default>复制到...</template>
           </a-doption>
-          <a-doption v-show='isShowBtn && isAliyunAccount && !isWebDav' type='text' size='small' tabindex='-1' title='Ctrl+M'
+          <a-doption v-show='isShowBtn && isAliyunAccount && !isWebDav && !isThirdPartyDrive' type='text' size='small' tabindex='-1' title='Ctrl+M'
                      @click="() => menuFileEncTypeChange(istree)">
             <template #icon><i class='iconfont iconsafebox' /></template>
             <template #default>标记加密</template>
@@ -237,7 +242,7 @@ const isSelectedFolder = computed(() => {
             <template #icon><i class='iconfont iconjietu' /></template>
             <template #default>雪碧图</template>
           </a-doption>
-          <a-doption v-show='isShowBtn && isAliyunAccount && !isWebDav' type='text' size='small' tabindex='-1' title='Ctrl+M'
+          <a-doption v-show='isShowBtn && isAliyunAccount && !isWebDav && !isThirdPartyDrive' type='text' size='small' tabindex='-1' title='Ctrl+M'
                      @click="() => menuFileEncTypeChange(istree)">
             <template #icon><i class='iconfont iconsafebox' /></template>
             <template #default>标记加密</template>
@@ -259,7 +264,7 @@ const isSelectedFolder = computed(() => {
             <template #icon><i class='iconfont iconlist' /></template>
             <template #default>复制文件名</template>
           </a-doption>
-          <a-doption v-show='isselected && !isselectedmulti && !isCloudUser'
+          <a-doption v-show='isselected && !isselectedmulti && !isCloudUser && !isThirdPartyDrive'
                      @click='() => menuCopyFileTree()'>
             <template #icon><i class='iconfont iconnode-tree1' /></template>
             <template #default>复制目录树</template>

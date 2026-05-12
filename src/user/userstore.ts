@@ -3,7 +3,7 @@ import UserDAL from './userdal'
 
 
 export interface ITokenInfo {
-  tokenfrom: 'aliyun' | 'cloud123' | '115' | 'baidu' | 'pikpak' | 'unknown'
+  tokenfrom: 'aliyun' | 'cloud123' | '115' | 'baidu' | 'pikpak' | 'dropbox' | 'onedrive' | 'box' | 'unknown'
 
   access_token: string
   refresh_token: string

@@ -1,7 +1,7 @@
 <script setup lang='ts'>
 import { computed } from 'vue'
 import { usePanTreeStore } from '../../store'
-import { isAliyunUser as isAliyunAccountUser, isCloud123User } from '../../aliapi/utils'
+import { isAliyunUser as isAliyunAccountUser, isBoxUser, isCloud123User, isDropboxUser, isOneDriveUser } from '../../aliapi/utils'
 import { isWebDavDrive } from '../../utils/webdavClient'
 
 import {
@@ -62,6 +62,11 @@ const istree = false
 const panTreeStore = usePanTreeStore()
 const isCloudUser = computed(() => isCloud123User(panTreeStore.user_id || '') || panTreeStore.drive_id === 'cloud123')
 const isAliyunAccount = computed(() => isAliyunAccountUser(panTreeStore.user_id || ''))
+const isDropbox = computed(() => isDropboxUser(panTreeStore.user_id || '') || panTreeStore.drive_id === 'dropbox')
+const isOneDrive = computed(() => isOneDriveUser(panTreeStore.user_id || '') || panTreeStore.drive_id === 'onedrive')
+const isBox = computed(() => isBoxUser(panTreeStore.user_id || '') || panTreeStore.drive_id === 'box')
+const isThirdPartyDrive = computed(() => isDropbox.value || isOneDrive.value || isBox.value)
+const isShareSupported = computed(() => props.inputselectType.includes('resource') || isDropbox.value || isOneDrive.value || isBox.value)
 const isWebDav = computed(() => isWebDavDrive(panTreeStore.drive_id || panTreeStore.selectDir.drive_id))
 const isShowBtn = computed(() => {
   return (props.dirtype === 'pic' && props.inputpicType != 'mypic')
@@ -78,7 +83,7 @@ const isPic = computed(() => {
               @click='() => menuDownload(istree)'>
       <i class='iconfont icondownload' />下载
     </a-button>
-    <a-button v-if="!isPic && dirtype != 'video' && dirtype !== 'search' && inputselectType.includes('resource')" type='text' size='small' tabindex='-1'
+    <a-button v-if="!isPic && dirtype != 'video' && dirtype !== 'search' && isShareSupported" type='text' size='small' tabindex='-1'
               title='Ctrl+S'
               @click="() => menuCreatShare(istree, 'pan', 'resource_root')">
       <i class='iconfont iconfenxiang' />分享
@@ -166,7 +171,7 @@ const isPic = computed(() => {
           <template #icon><i class='iconfont iconshipin' /></template>
           <template #default>清除历史</template>
         </a-doption>
-        <a-doption v-show='isShowBtn && isallcolored && !isWebDav' type='text' size='small' tabindex='-1' title='Ctrl+M'
+        <a-doption v-show='isShowBtn && isallcolored && !isWebDav && !isThirdPartyDrive' type='text' size='small' tabindex='-1' title='Ctrl+M'
                    @click="() => menuFileColorChange(istree, '')">
           <template #icon><i class='iconfont iconfangkuang' /></template>
           <template #default>清除标记</template>

@@ -51,12 +51,13 @@ const isPlaying = ref(false)
 const drive_id = pageImage.drive_id || ''
 const file_id = pageImage.file_id || ''
 const imageList = pageImage.imageList || []
+const thirdPartyImageDrives = new Set(['cloud123', 'drive115', 'baidu', 'pikpak', 'dropbox', 'onedrive', 'box'])
 
 const rawList: OneImageModel[] = []
 for (let i = 0, maxi = imageList.length; i < maxi; i++) {
   const add: OneImageModel = {
     index: i,
-    drive_id: drive_id,
+    drive_id: imageList[i].drive_id || drive_id,
     file_id: imageList[i].file_id,
     name: imageList[i].name,
     bigUrl: '',
@@ -276,7 +277,7 @@ function preload(img: OneImageModel) {
 }
 
 function _imageUrlSmall(item: OneImageModel) {
-  if (item.encType) {
+  if (item.encType || thirdPartyImageDrives.has(item.drive_id) || item.drive_id.startsWith('webdav:')) {
     return getProxyUrl({
       user_id: pageImage.user_id,
       drive_id: item.drive_id,
@@ -290,7 +291,7 @@ function _imageUrlSmall(item: OneImageModel) {
 }
 
 function _imageUrlBig(item: OneImageModel) {
-  if (item.encType) {
+  if (item.encType || thirdPartyImageDrives.has(item.drive_id) || item.drive_id.startsWith('webdav:')) {
     return getProxyUrl({
       user_id: pageImage.user_id,
       drive_id: item.drive_id,
@@ -304,7 +305,7 @@ function _imageUrlBig(item: OneImageModel) {
 }
 
 function _imageUrlRaw(item: OneImageModel) {
-  if (item.encType) {
+  if (item.encType || thirdPartyImageDrives.has(item.drive_id) || item.drive_id.startsWith('webdav:')) {
     return getProxyUrl({
       user_id: pageImage.user_id,
       drive_id: item.drive_id,

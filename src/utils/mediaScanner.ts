@@ -9,8 +9,18 @@ import { apiCloud123FileList, mapCloud123FileToAliModel } from '../cloud123/dirf
 import { apiDrive115FileList, mapDrive115FileToAliModel } from '../cloud115/dirfilelist'
 import { apiBaiduFileList, mapBaiduFileToAliModel } from '../cloudbaidu/dirfilelist'
 import { apiPikPakFileList, mapPikPakFileToAliModel } from '../pikpak/dirfilelist'
-import { isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../aliapi/utils'
+import { apiDropboxFileList, mapDropboxFileToAliModel } from '../dropbox/dirfilelist'
+import { apiOneDriveFileList, mapOneDriveItemToAliModel } from '../onedrive/dirfilelist'
+import { apiBoxFileList, mapBoxItemToAliModel } from '../box/dirfilelist'
+import { isAliyunUser, isBaiduUser, isBoxUser, isCloud123User, isDrive115User, isDropboxUser, isOneDriveUser, isPikPakUser } from '../aliapi/utils'
 import { getWebDavConnection, getWebDavConnectionId, isWebDavDrive, listWebDavDirectory, type WebDavConnectionConfig } from './webdavClient'
+import UserDAL from '../user/userdal'
+
+type ScanContext = {
+  userId: string
+  driveId: string
+  driveServerId: string
+}
 
 export class MediaScanner {
   private static instance: MediaScanner
@@ -52,9 +62,13 @@ export class MediaScanner {
     try {
       console.log('开始扫描网盘文件夹:', folder.name)
 
+      const scanContext = await this.resolveScanContext(folder, driveServerId)
+      folder.drive_id = scanContext.driveId
+      ;(folder as any).user_id = scanContext.userId
+
       // 先收集所有视频文件
       const videoFiles: DriveFileItem[] = []
-      await this.collectVideoFiles(folder, driveServerId, videoFiles, 0, folder.name)
+      await this.collectVideoFiles(folder, scanContext, videoFiles, 0, folder.name)
 
       if (videoFiles.length === 0) {
         message.info('未在该文件夹中找到视频文件')
@@ -66,7 +80,7 @@ export class MediaScanner {
 
       // 批量处理视频文件
       const batchSize = 5 // 每次处理5个文件
-      const folderKey = driveServerId === 'webdav' ? `webdav_${folder.drive_id}_${folder.file_id}` : `${folder.file_id}`
+      const folderKey = scanContext.driveServerId === 'webdav' ? `webdav_${folder.drive_id}_${folder.file_id}` : `${folder.file_id}`
       for (let i = 0; i < videoFiles.length && !this.shouldStop; i += batchSize) {
         const batch = videoFiles.slice(i, i + batchSize)
         const promises = batch.map(file => this.processVideoFile(file, folder.name, folderKey))
@@ -85,15 +99,14 @@ export class MediaScanner {
 
       if (!this.shouldStop) {
         // 添加文件夹到媒体库
-        const isWebDavFolder = driveServerId === 'webdav'
         const mediaFolder: MediaLibraryFolder = {
           id: folderKey,
           fileId: folder.file_id, // 真正的云盘文件ID
           name: folder.name,
           path: folder.path || '', // 保存文件夹路径信息（对百度网盘很重要）
-          userId: isWebDavFolder ? getWebDavConnectionId(folder.drive_id) : this.panTreeStore.user_id,
-          driveId: folder.drive_id,
-          driveServerId,
+          userId: scanContext.userId,
+          driveId: scanContext.driveId,
+          driveServerId: scanContext.driveServerId,
           scanDate: new Date(),
           itemCount: videoFiles.length
         }
@@ -219,7 +232,7 @@ export class MediaScanner {
   // 递归收集所有视频文件 - 参考Swift版本的广度优先遍历
   private async collectVideoFiles(
     folder: IAliGetFileModel,
-    driveServerId: string,
+    scanContext: ScanContext,
     videoFiles: DriveFileItem[],
     depth = 0,
     currentPath = ''
@@ -229,7 +242,7 @@ export class MediaScanner {
     try {
       console.log(`正在扫描文件夹: ${folder.name} (深度: ${depth})`)
 
-      const items = await this.getFolderItems(folder)
+      const items = await this.getFolderItems(folder, scanContext)
       if (!items || items.length === 0) {
         console.log(`文件夹 ${folder.name} 无内容或获取失败`)
         return
@@ -243,7 +256,7 @@ export class MediaScanner {
         const itemPath = currentPath ? `${currentPath}/${item.name}` : item.name
         if (item.isDir) {
           // 递归处理子文件夹
-          await this.collectVideoFiles(item, driveServerId, videoFiles, depth + 1, itemPath)
+          await this.collectVideoFiles(item, scanContext, videoFiles, depth + 1, itemPath)
         } else {
           if (this.isVideoFile(item.name)) {
             console.log(`✓ 找到视频文件: ${item.name} ${item.thumbnail ? '(有缩略图)' : '(无缩略图)'}`)
@@ -252,9 +265,9 @@ export class MediaScanner {
               id: item.file_id,
               name: item.name,
               path: itemPath,
-              userId: isWebDavDrive(item.drive_id || '') ? getWebDavConnectionId(item.drive_id) : this.panTreeStore.user_id,
-              driveId: item.drive_id,
-              driveServerId: driveServerId,
+              userId: scanContext.userId,
+              driveId: item.drive_id || scanContext.driveId,
+              driveServerId: scanContext.driveServerId,
               fileSize: item.size || 0,
               contentHash: item.description || '', // 使用 description 替代 sha1
               thumbnailLink: item.thumbnail || undefined,
@@ -271,9 +284,9 @@ export class MediaScanner {
     }
   }
 
-  private async getFolderItems(folder: IAliGetFileModel): Promise<IAliGetFileModel[]> {
-    const userId = this.panTreeStore.user_id
-    const driveId = folder.drive_id || this.panTreeStore.drive_id
+  private async getFolderItems(folder: IAliGetFileModel, scanContext: ScanContext): Promise<IAliGetFileModel[]> {
+    const userId = scanContext.userId
+    const driveId = folder.drive_id || scanContext.driveId
 
     if (isWebDavDrive(driveId)) {
       const connectionId = getWebDavConnectionId(driveId)
@@ -290,25 +303,50 @@ export class MediaScanner {
       return list.map((item) => {
         const mapped = mapCloud123FileToAliModel(item)
         mapped.drive_id = driveId
+        ;(mapped as any).user_id = userId
         return mapped
       })
     }
 
     if (isDrive115User(userId) || driveId === 'drive115') {
       const list = await apiDrive115FileList(userId, folder.file_id, 200, 0, true)
-      return list.map((item) => mapDrive115FileToAliModel(item, driveId))
+      return list.map((item) => this.withScanUser(mapDrive115FileToAliModel(item, driveId), userId, driveId))
     }
 
     if (isBaiduUser(userId) || driveId === 'baidu') {
       const parentPath = folder.path || '/'
       const list = await apiBaiduFileList(userId, parentPath, 'name', 0, 1000)
-      return list.map((item) => mapBaiduFileToAliModel(item, driveId, folder.file_id || ''))
+      return list.map((item) => this.withScanUser(mapBaiduFileToAliModel(item, driveId, folder.file_id || ''), userId, driveId))
     }
 
     if (isPikPakUser(userId) || driveId === 'pikpak') {
       const parentId = folder.file_id && !folder.file_id.includes('root') ? folder.file_id : 'pikpak_root'
       const list = await apiPikPakFileList(userId, parentId, 500)
-      return list.items.map((item) => mapPikPakFileToAliModel(item, driveId, parentId))
+      return list.items.map((item) => this.withScanUser(mapPikPakFileToAliModel(item, driveId, parentId), userId, driveId))
+    }
+
+    if (isDropboxUser(userId) || driveId === 'dropbox') {
+      const parentId = folder.file_id && !folder.file_id.includes('root') ? folder.file_id : 'dropbox_root'
+      const list = await apiDropboxFileList(userId, parentId, 500)
+      return list.map((item) => this.withScanUser(mapDropboxFileToAliModel(item, driveId, parentId), userId, driveId))
+    }
+    if (isOneDriveUser(userId) || driveId === 'onedrive') {
+      const parentId = folder.file_id && !folder.file_id.includes('root') ? folder.file_id : 'onedrive_root'
+      const list = await apiOneDriveFileList(userId, parentId)
+      return list.map((item) => this.withScanUser(mapOneDriveItemToAliModel(item, driveId, parentId), userId, driveId))
+    }
+    if (isBoxUser(userId) || driveId === 'box') {
+      const parentId = folder.file_id && !folder.file_id.includes('root') ? folder.file_id : 'box_root'
+      const list = await apiBoxFileList(userId, parentId, 500)
+      return list.map((item) => this.withScanUser(mapBoxItemToAliModel(item, driveId, parentId), userId, driveId))
+    }
+    if (!isAliyunUser(userId)) {
+      console.warn('[MediaScanner] skip Aliyun file list for non-Aliyun source', {
+        userId,
+        driveId,
+        fileId: folder.file_id
+      })
+      return []
     }
     const resp = await AliDirFileList.ApiDirFileList(
       userId,
@@ -322,6 +360,76 @@ export class MediaScanner {
     )
 
     return resp?.items || []
+  }
+
+  private async resolveScanContext(folder: IAliGetFileModel, driveServerId: string): Promise<ScanContext> {
+    const driveId = folder.drive_id || driveServerId || this.panTreeStore.drive_id
+    const folderUserId = (folder as any).user_id || ''
+    if (isWebDavDrive(driveId) || driveServerId === 'webdav') {
+      const webDavDriveId = isWebDavDrive(driveId) ? driveId : folder.drive_id
+      return {
+        userId: getWebDavConnectionId(webDavDriveId),
+        driveId: webDavDriveId,
+        driveServerId: 'webdav'
+      }
+    }
+
+    const currentUserId = this.panTreeStore.user_id || ''
+    const userId = folderUserId || this.matchCurrentUser(currentUserId, driveId) || (await this.findUserIdForDrive(driveId)) || currentUserId
+    return {
+      userId,
+      driveId,
+      driveServerId: this.resolveDriveServerId(userId, driveId, driveServerId)
+    }
+  }
+
+  private matchCurrentUser(userId: string, driveId: string): string {
+    if (!userId) return ''
+    if (driveId === 'cloud123' && isCloud123User(userId)) return userId
+    if (driveId === 'drive115' && isDrive115User(userId)) return userId
+    if (driveId === 'baidu' && isBaiduUser(userId)) return userId
+    if (driveId === 'pikpak' && isPikPakUser(userId)) return userId
+    if (driveId === 'dropbox' && isDropboxUser(userId)) return userId
+    if (driveId === 'onedrive' && isOneDriveUser(userId)) return userId
+    if (driveId === 'box' && isBoxUser(userId)) return userId
+    if (driveId !== 'cloud123' && driveId !== 'drive115' && driveId !== 'baidu' && driveId !== 'pikpak' && driveId !== 'dropbox' && driveId !== 'onedrive' && driveId !== 'box') return userId
+    return ''
+  }
+
+  private async findUserIdForDrive(driveId: string): Promise<string> {
+    const users = await UserDAL.GetUserListFromDB()
+    const matched = users.find((token) => {
+      if (driveId === 'cloud123') return isCloud123User(token)
+      if (driveId === 'drive115') return isDrive115User(token)
+      if (driveId === 'baidu') return isBaiduUser(token)
+      if (driveId === 'pikpak') return isPikPakUser(token)
+      if (driveId === 'dropbox') return isDropboxUser(token)
+      if (driveId === 'onedrive') return isOneDriveUser(token)
+      if (driveId === 'box') return isBoxUser(token)
+      return token.default_drive_id === driveId
+        || token.resource_drive_id === driveId
+        || token.backup_drive_id === driveId
+        || token.pic_drive_id === driveId
+        || token.default_sbox_drive_id === driveId
+    })
+    return matched?.user_id || ''
+  }
+
+  private resolveDriveServerId(userId: string, driveId: string, fallback: string): string {
+    if (isCloud123User(userId) || driveId === 'cloud123') return 'cloud123'
+    if (isDrive115User(userId) || driveId === 'drive115') return 'drive115'
+    if (isBaiduUser(userId) || driveId === 'baidu') return 'baidu'
+    if (isPikPakUser(userId) || driveId === 'pikpak') return 'pikpak'
+    if (isDropboxUser(userId) || driveId === 'dropbox') return 'dropbox'
+    if (isOneDriveUser(userId) || driveId === 'onedrive') return 'onedrive'
+    if (isBoxUser(userId) || driveId === 'box') return 'box'
+    return fallback
+  }
+
+  private withScanUser(item: IAliGetFileModel, userId: string, driveId: string): IAliGetFileModel {
+    item.drive_id = item.drive_id || driveId
+    ;(item as any).user_id = userId
+    return item
   }
 
   private async collectLocalVideoFiles(

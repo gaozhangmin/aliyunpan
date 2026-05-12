@@ -18,7 +18,10 @@ import { refreshCloud123AccessToken } from '../utils/cloud123'
 import { build115UserId, refresh115AccessToken } from '../utils/drive115'
 import { refreshBaiduAccessToken } from '../utils/baidu'
 import { applyPikPakQuota, refreshPikPakAccessToken } from '../pikpak/auth'
-import { isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../aliapi/utils'
+import { applyDropboxQuota, refreshDropboxAccessToken } from '../dropbox/auth'
+import { applyOneDriveQuota, refreshOneDriveAccessToken } from '../onedrive/auth'
+import { applyBoxQuota, refreshBoxAccessToken } from '../box/auth'
+import { isBaiduUser, isBoxUser, isCloud123User, isDrive115User, isDropboxUser, isOneDriveUser, isPikPakUser } from '../aliapi/utils'
 
 export const UserTokenMap = new Map<string, ITokenInfo>()
 
@@ -59,6 +62,36 @@ export default class UserDAL {
         const expireTime = new Date(token.expire_time || 0).getTime()
         if (!token.access_token || (expireTime && expireTime <= Date.now())) {
           const refreshed = await refreshPikPakAccessToken(token)
+          if (!refreshed?.access_token) return null
+          this.SaveUserToken(refreshed)
+          return refreshed
+        }
+        return token
+      }
+      if (isDropboxUser(token)) {
+        const expireTime = new Date(token.expire_time || 0).getTime()
+        if (!token.access_token || (expireTime && expireTime <= Date.now())) {
+          const refreshed = await refreshDropboxAccessToken(token)
+          if (!refreshed?.access_token) return null
+          this.SaveUserToken(refreshed)
+          return refreshed
+        }
+        return token
+      }
+      if (isOneDriveUser(token)) {
+        const expireTime = new Date(token.expire_time || 0).getTime()
+        if (!token.access_token || (expireTime && expireTime <= Date.now())) {
+          const refreshed = await refreshOneDriveAccessToken(token)
+          if (!refreshed?.access_token) return null
+          this.SaveUserToken(refreshed)
+          return refreshed
+        }
+        return token
+      }
+      if (isBoxUser(token)) {
+        const expireTime = new Date(token.expire_time || 0).getTime()
+        if (!token.access_token || (expireTime && expireTime <= Date.now())) {
+          const refreshed = await refreshBoxAccessToken(token)
           if (!refreshed?.access_token) return null
           this.SaveUserToken(refreshed)
           return refreshed
@@ -154,6 +187,39 @@ export default class UserDAL {
           const expireTime = new Date(token.expire_time || 0).getTime()
           if (expireTime && expireTime - dateNow <= 1000 * 60 * 5) {
             const refreshed = await refreshPikPakAccessToken(token)
+            if (refreshed) {
+              UserTokenMap.set(refreshed.user_id, refreshed)
+              await DB.saveUser(refreshed)
+            }
+          }
+          continue
+        }
+        if (isDropboxUser(token)) {
+          const expireTime = new Date(token.expire_time || 0).getTime()
+          if (expireTime && expireTime - dateNow <= 1000 * 60 * 5) {
+            const refreshed = await refreshDropboxAccessToken(token)
+            if (refreshed) {
+              UserTokenMap.set(refreshed.user_id, refreshed)
+              await DB.saveUser(refreshed)
+            }
+          }
+          continue
+        }
+        if (isOneDriveUser(token)) {
+          const expireTime = new Date(token.expire_time || 0).getTime()
+          if (expireTime && expireTime - dateNow <= 1000 * 60 * 5) {
+            const refreshed = await refreshOneDriveAccessToken(token)
+            if (refreshed) {
+              UserTokenMap.set(refreshed.user_id, refreshed)
+              await DB.saveUser(refreshed)
+            }
+          }
+          continue
+        }
+        if (isBoxUser(token)) {
+          const expireTime = new Date(token.expire_time || 0).getTime()
+          if (expireTime && expireTime - dateNow <= 1000 * 60 * 5) {
+            const refreshed = await refreshBoxAccessToken(token)
             if (refreshed) {
               UserTokenMap.set(refreshed.user_id, refreshed)
               await DB.saveUser(refreshed)
@@ -296,6 +362,12 @@ export default class UserDAL {
       await AliUser.Drive115UserInfo(token)
     } else if (isPikPakUser(token)) {
       await applyPikPakQuota(token)
+    } else if (isDropboxUser(token)) {
+      await applyDropboxQuota(token)
+    } else if (isOneDriveUser(token)) {
+      await applyOneDriveQuota(token)
+    } else if (isBoxUser(token)) {
+      await applyBoxQuota(token)
     } else {
       // 加载用户信息
       await Promise.all([
@@ -363,6 +435,21 @@ export default class UserDAL {
       await PanDAL.aReLoadOneDirToShow(token.default_drive_id || 'pikpak', 'pikpak_root', true)
       return
     }
+    if (isDropboxUser(token)) {
+      await PanDAL.aReLoadDropboxDrive(token)
+      await PanDAL.aReLoadOneDirToShow(token.default_drive_id || 'dropbox', 'dropbox_root', true)
+      return
+    }
+    if (isOneDriveUser(token)) {
+      await PanDAL.aReLoadOneDrive(token)
+      await PanDAL.aReLoadOneDirToShow(token.default_drive_id || 'onedrive', 'onedrive_root', true)
+      return
+    }
+    if (isBoxUser(token)) {
+      await PanDAL.aReLoadBoxDrive(token)
+      await PanDAL.aReLoadOneDirToShow(token.default_drive_id || 'box', 'box_root', true)
+      return
+    }
     // 刷新网盘数据
     if (!useSettingStore().securityHideResourceDrive) {
       await PanDAL.aReLoadResourceDrive(token)
@@ -386,7 +473,7 @@ export default class UserDAL {
 
     let newUserID = ''
     for (const [user_id, token] of UserTokenMap) {
-      const isLogin = (isDrive115User(token) || isBaiduUser(token) || isPikPakUser(token))
+      const isLogin = (isDrive115User(token) || isBaiduUser(token) || isPikPakUser(token) || isDropboxUser(token) || isOneDriveUser(token) || isBoxUser(token))
         ? !!token.user_id
         : (token.user_id && (await AliUser.ApiTokenRefreshAccount(token, false)))
       if (isLogin) {
@@ -452,6 +539,33 @@ export default class UserDAL {
         }
       }
       isLogin = !!token.access_token && !!token.user_id
+    } else if (isDropboxUser(token)) {
+      const expireTime = new Date(token.expire_time || 0).getTime()
+      if (!token.access_token || (expireTime && expireTime <= Date.now())) {
+        const refreshed = await refreshDropboxAccessToken(token)
+        if (refreshed?.access_token) {
+          UserDAL.SaveUserToken(refreshed)
+        }
+      }
+      isLogin = !!token.access_token && !!token.user_id
+    } else if (isOneDriveUser(token)) {
+      const expireTime = new Date(token.expire_time || 0).getTime()
+      if (!token.access_token || (expireTime && expireTime <= Date.now())) {
+        const refreshed = await refreshOneDriveAccessToken(token)
+        if (refreshed?.access_token) {
+          UserDAL.SaveUserToken(refreshed)
+        }
+      }
+      isLogin = !!token.access_token && !!token.user_id
+    } else if (isBoxUser(token)) {
+      const expireTime = new Date(token.expire_time || 0).getTime()
+      if (!token.access_token || (expireTime && expireTime <= Date.now())) {
+        const refreshed = await refreshBoxAccessToken(token)
+        if (refreshed?.access_token) {
+          UserDAL.SaveUserToken(refreshed)
+        }
+      }
+      isLogin = !!token.access_token && !!token.user_id
     } else {
       isLogin = !!(token.user_id && (await AliUser.ApiTokenRefreshAccount(token, false)))
     }
@@ -483,6 +597,18 @@ export default class UserDAL {
         return true
       } else if (isPikPakUser(token)) {
         await applyPikPakQuota(token)
+        UserDAL.SaveUserToken(token)
+        return true
+      } else if (isDropboxUser(token)) {
+        await applyDropboxQuota(token)
+        UserDAL.SaveUserToken(token)
+        return true
+      } else if (isOneDriveUser(token)) {
+        await applyOneDriveQuota(token)
+        UserDAL.SaveUserToken(token)
+        return true
+      } else if (isBoxUser(token)) {
+        await applyBoxQuota(token)
         UserDAL.SaveUserToken(token)
         return true
       } else {
@@ -524,6 +650,18 @@ export default class UserDAL {
           const refreshed = await refreshPikPakAccessToken(token)
           if (!refreshed?.access_token) return false
           UserDAL.SaveUserToken(refreshed)
+        } else if (isDropboxUser(token)) {
+          const refreshed = await refreshDropboxAccessToken(token)
+          if (!refreshed?.access_token) return false
+          UserDAL.SaveUserToken(refreshed)
+        } else if (isOneDriveUser(token)) {
+          const refreshed = await refreshOneDriveAccessToken(token)
+          if (!refreshed?.access_token) return false
+          UserDAL.SaveUserToken(refreshed)
+        } else if (isBoxUser(token)) {
+          const refreshed = await refreshBoxAccessToken(token)
+          if (!refreshed?.access_token) return false
+          UserDAL.SaveUserToken(refreshed)
         } else {
           const isToken = await AliUser.ApiTokenRefreshAccount(token, true)
           if (!isToken) return false
@@ -542,6 +680,12 @@ export default class UserDAL {
         await AliUser.Drive115UserInfo(token)
       } else if (isPikPakUser(token)) {
         await applyPikPakQuota(token)
+      } else if (isDropboxUser(token)) {
+        await applyDropboxQuota(token)
+      } else if (isOneDriveUser(token)) {
+        await applyOneDriveQuota(token)
+      } else if (isBoxUser(token)) {
+        await applyBoxQuota(token)
       } else {
         // 刷新用户信息
         await Promise.all([
@@ -558,7 +702,7 @@ export default class UserDAL {
 
   static async UserAutoSign(token: ITokenInfo) {
     // 自动签到
-    if (isDrive115User(token) || isCloud123User(token) || isBaiduUser(token) || isPikPakUser(token)) {
+    if (isDrive115User(token) || isCloud123User(token) || isBaiduUser(token) || isPikPakUser(token) || isDropboxUser(token) || isOneDriveUser(token) || isBoxUser(token)) {
       UserDAL.SaveUserToken(token)
       return
     }

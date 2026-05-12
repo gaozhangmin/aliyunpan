@@ -31,6 +31,15 @@ export function GetDriveID(user_id: string, drive: string): string {
     if (isPikPakUser(user_id)) {
       return token.default_drive_id || 'pikpak'
     }
+    if (isDropboxUser(user_id)) {
+      return token.default_drive_id || 'dropbox'
+    }
+    if (isOneDriveUser(user_id)) {
+      return token.default_drive_id || 'onedrive'
+    }
+    if (isBoxUser(user_id)) {
+      return token.default_drive_id || 'box'
+    }
     if (drive.includes('backup')) {
       return token.backup_drive_id
     } else if (drive.includes('resource')) {
@@ -61,6 +70,15 @@ export function GetDriveType(user_id: string, drive_id: string): any {
     }
     if (isPikPakUser(user_id)) {
       return { title: '网盘文件', name: 'pikpak', key: 'pikpak_root' }
+    }
+    if (isDropboxUser(user_id)) {
+      return { title: '网盘文件', name: 'dropbox', key: 'dropbox_root' }
+    }
+    if (isOneDriveUser(user_id)) {
+      return { title: '网盘文件', name: 'onedrive', key: 'onedrive_root' }
+    }
+    if (isBoxUser(user_id)) {
+      return { title: '网盘文件', name: 'box', key: 'box_root' }
     }
     switch (drive_id) {
       case token.backup_drive_id:
@@ -119,6 +137,24 @@ export function isPikPakUser(user: string | { user_id?: string; tokenfrom?: stri
   const { user_id, tokenfrom } = resolveUserTokenInfo(user)
   if (tokenfrom === 'pikpak') return true
   return user_id.startsWith('pikpak_')
+}
+
+export function isDropboxUser(user: string | { user_id?: string; tokenfrom?: string }): boolean {
+  const { user_id, tokenfrom } = resolveUserTokenInfo(user)
+  if (tokenfrom === 'dropbox') return true
+  return user_id.startsWith('dropbox_')
+}
+
+export function isOneDriveUser(user: string | { user_id?: string; tokenfrom?: string }): boolean {
+  const { user_id, tokenfrom } = resolveUserTokenInfo(user)
+  if (tokenfrom === 'onedrive') return true
+  return user_id.startsWith('onedrive_')
+}
+
+export function isBoxUser(user: string | { user_id?: string; tokenfrom?: string }): boolean {
+  const { user_id, tokenfrom } = resolveUserTokenInfo(user)
+  if (tokenfrom === 'box') return true
+  return user_id.startsWith('box_')
 }
 
 export function GetSignature(nonce: number, user_id: string, deviceId: string) {

@@ -12,7 +12,7 @@ import message from './message'
 import { modalArchive, modalArchivePassword, modalSelectPanDir, modalSelectVideoQuality } from './modal'
 import PlayerUtils from './playerhelper'
 import { getEncType, getRawUrl } from './proxyhelper'
-import { isAliyunUser, isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../aliapi/utils'
+import { isAliyunUser, isBaiduUser, isBoxUser, isCloud123User, isDrive115User, isDropboxUser, isOneDriveUser, isPikPakUser } from '../aliapi/utils'
 
 async function resolveTokenForFile(file: IAliGetFileModel): Promise<ITokenInfo | undefined> {
   const explicitUserId = (file as any).user_id as string | undefined
@@ -28,7 +28,10 @@ async function resolveTokenForFile(file: IAliGetFileModel): Promise<ITokenInfo |
     || (driveId === 'drive115' && isDrive115User(currentToken))
     || (driveId === 'baidu' && isBaiduUser(currentToken))
     || (driveId === 'pikpak' && isPikPakUser(currentToken))
-    || (!['cloud123', 'drive115', 'baidu', 'pikpak'].includes(driveId) && isAliyunUser(currentToken))
+    || (driveId === 'dropbox' && isDropboxUser(currentToken))
+    || (driveId === 'onedrive' && isOneDriveUser(currentToken))
+    || (driveId === 'box' && isBoxUser(currentToken))
+    || (!['cloud123', 'drive115', 'baidu', 'pikpak', 'dropbox', 'onedrive', 'box'].includes(driveId) && isAliyunUser(currentToken))
   )
   if (matchesCurrent && currentToken?.access_token) return currentToken
 
@@ -38,10 +41,19 @@ async function resolveTokenForFile(file: IAliGetFileModel): Promise<ITokenInfo |
     || (driveId === 'drive115' && isDrive115User(token))
     || (driveId === 'baidu' && isBaiduUser(token))
     || (driveId === 'pikpak' && isPikPakUser(token))
-    || (!['cloud123', 'drive115', 'baidu', 'pikpak'].includes(driveId) && isAliyunUser(token))
+    || (driveId === 'dropbox' && isDropboxUser(token))
+    || (driveId === 'onedrive' && isOneDriveUser(token))
+    || (driveId === 'box' && isBoxUser(token))
+    || (!['cloud123', 'drive115', 'baidu', 'pikpak', 'dropbox', 'onedrive', 'box'].includes(driveId) && isAliyunUser(token))
   ))
   if (!matched?.user_id) return currentToken || undefined
   return await UserDAL.GetUserTokenFromDB(matched.user_id) || undefined
+}
+
+const TEXT_PREVIEW_EXTS = new Set(['txt', 'text', 'log', 'csv', 'tsv', 'nfo', 'srt', 'vtt', 'ass', 'ssa'])
+
+function TextPreviewExt(fileExt: string): string {
+  return TEXT_PREVIEW_EXTS.has((fileExt || '').toLowerCase().replace('.', '').trim()) ? 'plain' : ''
 }
 
 export async function menuOpenFile(
@@ -69,22 +81,27 @@ export async function menuOpenFile(
   }
 
   if (file.category.startsWith('doc')) {
+    const textExt = TextPreviewExt(file.ext)
+    if (textExt) {
+      await Code(file, textExt, password)
+      return
+    }
     if (file.description && file.description.includes('xbyEncrypt')) {
-      const codeExt = PrismExt(file.ext)
+      const codeExt = PrismExt(file.ext) || TextPreviewExt(file.ext)
       if (file.size < 512 * 1024 || (file.size < 5 * 1024 * 1024 && codeExt)) {
-        Code(drive_id, file_id, file.name, codeExt, file.size, file.description, password)
+        await Code(file, codeExt, password)
         return
       } else {
         message.error('不支持在线预览该格式的加密文件')
         return
       }
     }
-    Office(drive_id, file_id, file.name)
+    await Office(file)
     return
   }
 
   if (file.category == 'image' || file.category == 'image2') {
-    Image(drive_id, file_id, file.name, password)
+    await Image(file, password)
     return
   }
   if (file.category == 'image3') {
@@ -122,12 +139,12 @@ export async function menuOpenFile(
     return
   }
   if (file.category.startsWith('audio')) {
-    Audio(drive_id, file_id, file.name, file.icon == 'iconweifa', file.description, password)
+    await Audio(file, password)
     return
   }
-  const codeExt = PrismExt(file.ext)
+  const codeExt = PrismExt(file.ext) || TextPreviewExt(file.ext)
   if (file.size < 512 * 1024 || (file.size < 5 * 1024 * 1024 && codeExt)) {
-    Code(drive_id, file_id, file.name, codeExt, file.size, file.description, password)
+    await Code(file, codeExt, password)
     return
   }
   message.info('此格式暂不支持预览')
@@ -208,7 +225,7 @@ async function Video(
     uiVideoPlayer,
     uiVideoPlayerPath
   } = useSettingStore()
-  if (uiAutoColorVideo && !isPikPakUser(token) && file.drive_id !== 'pikpak' && (!desc || !desc.includes('ce74c3c'))) {
+  if (uiAutoColorVideo && !isPikPakUser(token) && !isDropboxUser(token) && !isOneDriveUser(token) && !isBoxUser(token) && file.drive_id !== 'pikpak' && file.drive_id !== 'dropbox' && file.drive_id !== 'onedrive' && file.drive_id !== 'box' && (!desc || !desc.includes('ce74c3c'))) {
     AliFileCmd.ApiFileColorBatch(token.user_id, file.drive_id, file.description, 'ce74c3c', [file.file_id])
   }
   if (uiVideoPlayer == 'web') {
@@ -286,9 +303,8 @@ async function Video(
   }
 }
 
-async function Image(drive_id: string, file_id: string, name: string, password: string = ''): Promise<void> {
-  const user_id = useUserStore().user_id
-  const token = await UserDAL.GetUserTokenFromDB(user_id)
+async function Image(file: IAliGetFileModel, password: string = ''): Promise<void> {
+  const token = await resolveTokenForFile(file)
   if (!token || !token.access_token) {
     message.error('在线预览失败 账号失效，操作取消')
     return
@@ -303,9 +319,9 @@ async function Image(drive_id: string, file_id: string, name: string, password: 
 
   const pageImage: IPageImage = {
     user_id: token.user_id,
-    drive_id,
-    file_id,
-    file_name: name,
+    drive_id: file.drive_id,
+    file_id: file.file_id,
+    file_name: file.name,
     mode: useSettingStore().uiImageMode,
     password: password,
     imageList: imageList
@@ -313,44 +329,54 @@ async function Image(drive_id: string, file_id: string, name: string, password: 
   window.WebOpenWindow({ page: 'PageImage', data: pageImage, theme: 'dark' })
 }
 
-async function Office(drive_id: string, file_id: string, name: string): Promise<void> {
-  const user_id = useUserStore().user_id
-  const token = await UserDAL.GetUserTokenFromDB(user_id)
+async function Office(file: IAliGetFileModel): Promise<void> {
+  const token = await resolveTokenForFile(file)
   if (!token || !token.access_token) {
     message.error('在线预览失败 账号失效，操作取消')
     return
   }
   message.loading('加载中...', 2)
-  const data = await AliFile.ApiOfficePreViewUrl(user_id, drive_id, file_id)
-  if (!data || !data.preview_url) {
+  let data = await AliFile.ApiOfficePreViewUrl(token.user_id, file.drive_id, file.file_id)
+  if (!data?.preview_url && !isAliyunUser(token)) {
+    const rawData = await getRawUrl(token.user_id, file.drive_id, file.file_id, getEncType(file), '', file.icon == 'iconweifa', 'other', 'Origin')
+    if (typeof rawData !== 'string' && rawData.url) {
+      data = {
+        drive_id: file.drive_id,
+        file_id: file.file_id,
+        preview_url: rawData.url,
+        access_token: ''
+      }
+    }
+  }
+  if (!data?.preview_url) {
     message.error('获取文件预览链接失败，操作取消')
     return
   }
   const pageOffice: IPageOffice = {
     user_id: token.user_id,
-    drive_id,
-    file_id,
-    file_name: name,
+    drive_id: file.drive_id,
+    file_id: file.file_id,
+    file_name: file.name,
     preview_url: data.preview_url,
     access_token: data.access_token
   }
   window.WebOpenWindow({ page: 'PageOffice', data: pageOffice })
 }
 
-async function Audio(drive_id: string, file_id: string, name: string, weifa: boolean, description: string, password: string = ''): Promise<void> {
+async function Audio(file: IAliGetFileModel, password: string = ''): Promise<void> {
+  const weifa = file.icon == 'iconweifa'
   if (weifa) {
     message.error('在线预览失败 无法预览违规文件')
     return
   }
 
   message.loading('加载中...', 2)
-  const user_id = useUserStore().user_id
-  const token = await UserDAL.GetUserTokenFromDB(user_id)
+  const token = await resolveTokenForFile(file)
   if (!token || !token.access_token) {
     message.error('在线预览失败 账号失效，操作取消')
     return
   }
-  const data = await getRawUrl(user_id, drive_id, file_id, getEncType({ description }), password, weifa, 'audio')
+  const data = await getRawUrl(token.user_id, file.drive_id, file.file_id, getEncType(file), password, weifa, 'audio')
   if (typeof data != 'string') {
     useFootStore().mSaveAudioUrl(data.url)
   } else {
@@ -358,9 +384,8 @@ async function Audio(drive_id: string, file_id: string, name: string, weifa: boo
   }
 }
 
-async function Code(drive_id: string, file_id: string, name: string, codeExt: string, fileSize: number, description: string, password: string = ''): Promise<void> {
-  const user_id = useUserStore().user_id
-  const token = await UserDAL.GetUserTokenFromDB(user_id)
+async function Code(file: IAliGetFileModel, codeExt: string, password: string = ''): Promise<void> {
+  const token = await resolveTokenForFile(file)
   if (!token || !token.access_token) {
     message.error('在线预览失败 账号失效，操作取消')
     return
@@ -368,12 +393,12 @@ async function Code(drive_id: string, file_id: string, name: string, codeExt: st
   message.loading('加载中...', 2)
   const pageCode: IPageCode = {
     user_id: token.user_id,
-    drive_id,
-    file_id,
-    file_name: name,
+    drive_id: file.drive_id,
+    file_id: file.file_id,
+    file_name: file.name,
     code_ext: codeExt,
-    file_size: fileSize,
-    encType: getEncType({ description }),
+    file_size: file.size,
+    encType: getEncType(file),
     password: password
   }
   window.WebOpenWindow({ page: 'PageCode', data: pageCode, theme: 'dark' })

@@ -11,6 +11,7 @@ import { isAliyunUser, isBaiduUser } from '../aliapi/utils'
 import { useMediaLibraryStore } from '../store/medialibrary'
 import { Modal } from '@arco-design/web-vue'
 import { showAlipanMemberPromotion, showAlipanMemberQrPromotion } from '../utils/alipanPromotion'
+import { getDriveProviderIcon, getDriveProviderLabel, getDriveProviderMeta } from '../utils/driveProvider'
 
 const userStore = useUserStore()
 const mediaLibraryStore = useMediaLibraryStore()
@@ -82,7 +83,7 @@ const handleLogin = () => {
   useUserStore().userShowLogin = true
 }
 
-const activeProvider = ref<'aliyun' | 'cloud123' | '115' | 'baidu' | 'pikpak'>('aliyun')
+const activeProvider = ref<'aliyun' | 'cloud123' | '115' | 'baidu' | 'pikpak' | 'dropbox' | 'onedrive' | 'box'>('aliyun')
 const userListState = ref<ITokenInfo[]>([])
 
 const refreshUserList = async () => {
@@ -109,6 +110,21 @@ const handlePikPakLogin = () => {
   useUserStore().userShowLogin = true
 }
 
+const handleDropboxLogin = () => {
+  localStorage.setItem('login_provider', 'dropbox')
+  useUserStore().userShowLogin = true
+}
+
+const handleOneDriveLogin = () => {
+  localStorage.setItem('login_provider', 'onedrive')
+  useUserStore().userShowLogin = true
+}
+
+const handleBoxLogin = () => {
+  localStorage.setItem('login_provider', 'box')
+  useUserStore().userShowLogin = true
+}
+
 const userList = computed(() => {
   return userListState.value
 })
@@ -131,22 +147,10 @@ const baiduQuotaText = computed(() => {
   return `可用 ${free} · 7天内到期 ${expire}`
 })
 
-const getProviderLabel = (tokenfrom: string) => {
-  switch (tokenfrom) {
-    case 'aliyun':
-      return '阿里云盘'
-    case 'cloud123':
-      return '123网盘'
-    case '115':
-      return '115网盘'
-    case 'baidu':
-      return '百度网盘'
-    case 'pikpak':
-      return 'PikPak'
-    default:
-      return '未知网盘'
-  }
-}
+const activeProviderMeta = computed(() => getDriveProviderMeta(userStore.GetUserToken.tokenfrom))
+const activeProviderIcon = computed(() => activeProviderMeta.value.icon)
+const getProviderLabel = (tokenfrom: string) => getDriveProviderLabel(tokenfrom)
+const getProviderIcon = (tokenfrom: string) => getDriveProviderIcon(tokenfrom)
 
 const getAvatarKey = (token: ITokenInfo) => `${token.user_id || token.user_name || 'current'}:${token.avatar || ''}`
 
@@ -188,14 +192,19 @@ watch(
 
 <template>
   <a-popover position='br' trigger='hover'>
-    <a-avatar v-if='userStore.userLogined' :size='28' style='margin-right: 12px' class='user-avatar-placeholder'>
-      <img
-        v-if='hasUsableAvatar(userStore.GetUserToken)'
-        :src='userStore.GetUserToken.avatar'
-        @error='handleAvatarError(userStore.GetUserToken)'
-      />
-      <span v-else>{{ getAvatarText(userStore.GetUserToken) }}</span>
-    </a-avatar>
+    <div v-if='userStore.userLogined' class='user-avatar-trigger' :title='activeProviderMeta.label'>
+      <a-avatar :size='28' class='user-avatar-placeholder'>
+        <img
+          v-if='hasUsableAvatar(userStore.GetUserToken)'
+          :src='userStore.GetUserToken.avatar'
+          @error='handleAvatarError(userStore.GetUserToken)'
+        />
+        <span v-else>{{ getAvatarText(userStore.GetUserToken) }}</span>
+      </a-avatar>
+      <span v-if='activeProviderIcon' class='user-drive-badge'>
+        <img :src='activeProviderIcon' :alt='activeProviderMeta.label' />
+      </span>
+    </div>
     <a-avatar v-else :size='28' style='margin-right: 12px' :style="{ backgroundColor: '#3370ff' }">登录</a-avatar>
 
     <template #content>
@@ -203,6 +212,12 @@ watch(
         <a-row class='userinfo-row' justify='space-between' align='center'>
           <a-col class='userinfo-left' flex='1'>
             <div class='username' :class="{ 'username-wide': !isAliyunAccount }">
+              <img
+                v-if='activeProviderIcon'
+                class='user-provider-heading-icon'
+                :src='activeProviderIcon'
+                :alt='activeProviderMeta.label'
+              />
               Hi {{ getUserName }}
               <span v-if='userStore.GetUserToken.vipIcon'>
                 <img width='65'
@@ -268,6 +283,10 @@ watch(
                 <div class='user-quota' :title='item.spaceinfo'>
                   <a-progress type='circle' size='mini' status='warning' :percent='getQuotaPercent(item)' />
                 </div>
+                <div class='user-drive-icon' :title='getProviderLabel(item.tokenfrom)'>
+                  <img v-if='getProviderIcon(item.tokenfrom)' :src='getProviderIcon(item.tokenfrom)' :alt='getProviderLabel(item.tokenfrom)' />
+                  <span v-else>{{ getProviderLabel(item.tokenfrom).substring(0, 1) }}</span>
+                </div>
                 <div class='user-list-main'>
                   <span class='user-list-name' :title='item.user_name'>{{ item.nick_name ? item.nick_name : item.user_name }}</span>
                   <span class='user-provider' :title='getProviderLabel(item.tokenfrom)'>{{ getProviderLabel(item.tokenfrom) }}</span>
@@ -307,6 +326,9 @@ watch(
           <a-tab-pane key='115' title='115网盘' />
           <a-tab-pane key='baidu' title='百度网盘' />
           <a-tab-pane key='pikpak' title='PikPak' />
+          <a-tab-pane key='dropbox' title='Dropbox' />
+          <a-tab-pane key='onedrive' title='OneDrive' />
+          <a-tab-pane key='box' title='Box' />
         </a-tabs>
         <a-row align='stretch'>
           <a-col flex='60px'>
@@ -374,6 +396,36 @@ watch(
           >
             登录 PikPak
           </a-button>
+          <a-button
+            v-else-if="activeProvider === 'dropbox'"
+            type='outline'
+            size='small'
+            tabindex='-1'
+            style='margin: 0 0 8px 0'
+            @click='handleDropboxLogin()'
+          >
+            登录 Dropbox
+          </a-button>
+          <a-button
+            v-else-if="activeProvider === 'onedrive'"
+            type='outline'
+            size='small'
+            tabindex='-1'
+            style='margin: 0 0 8px 0'
+            @click='handleOneDriveLogin()'
+          >
+            登录 OneDrive
+          </a-button>
+          <a-button
+            v-else-if="activeProvider === 'box'"
+            type='outline'
+            size='small'
+            tabindex='-1'
+            style='margin: 0 0 8px 0'
+            @click='handleBoxLogin()'
+          >
+            登录 Box
+          </a-button>
         </a-row>
       </div>
     </template>
@@ -381,7 +433,8 @@ watch(
 </template>
 <style>
 .username {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   width: 150px;
   overflow: hidden;
   font-size: 18px;
@@ -405,6 +458,47 @@ watch(
   flex: 0 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.user-avatar-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 32px;
+  margin-right: 4px;
+}
+
+.user-drive-badge {
+  position: absolute;
+  right: 2px;
+  bottom: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: var(--color-bg-2);
+  border: 1px solid var(--color-border-2);
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+}
+
+.user-drive-badge img,
+.user-drive-icon img,
+.user-provider-heading-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.user-provider-heading-icon {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  margin-right: 6px;
 }
 
 .user-avatar-placeholder {
@@ -468,6 +562,26 @@ watch(
 
 .user-quota {
   flex: 0 0 24px;
+}
+
+.user-drive-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  color: var(--color-text-2);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--color-fill-1);
+  border: 1px solid var(--color-border-2);
+  border-radius: 6px;
+}
+
+.user-drive-icon img {
+  width: 18px;
+  height: 18px;
 }
 
 .user-list-main {

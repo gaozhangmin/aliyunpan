@@ -837,7 +837,7 @@ import type { IPageVideoPlaylistEntry } from '../store/appstore'
 import { getMediaServerSearch, getMediaServerSuggestions } from '../media-server/contentGateway'
 import { resolveMediaServerImage } from '../media-server/imageSources'
 import { toMsCacheUrl } from '../media-server/imageCache'
-import { isCloud123User, isDrive115User, isBaiduUser, isPikPakUser } from '../aliapi/utils'
+import { isAliyunUser, isCloud123User, isDrive115User, isBaiduUser, isBoxUser, isPikPakUser, isOneDriveUser } from '../aliapi/utils'
 import AliDirFileList from '../aliapi/dirfilelist'
 import { apiBaiduFileList, mapBaiduFileToAliModel } from '../cloudbaidu/dirfilelist'
 import { getWebDavConnection, getWebDavConnectionId, isWebDavDrive, listWebDavDirectory } from '../utils/webdavClient'
@@ -1290,6 +1290,9 @@ const getFolderSourceLabel = (folder: any) => {
   if (folder.driveId === 'drive115' || folder.driveServerId === 'drive115') return '115 网盘'
   if (folder.driveId === 'baidu' || folder.driveServerId === 'baidu') return '百度网盘'
   if (folder.driveId === 'pikpak' || folder.driveServerId === 'pikpak') return 'PikPak'
+  if (folder.driveId === 'dropbox' || folder.driveServerId === 'dropbox') return 'Dropbox'
+  if (folder.driveId === 'onedrive' || folder.driveServerId === 'onedrive') return 'OneDrive'
+  if (folder.driveId === 'box' || folder.driveServerId === 'box') return 'Box'
   return '阿里云盘'
 }
 
@@ -2331,7 +2334,37 @@ const handleEnterFolder = async (file: any) => {
         return mapped
       })
       console.log('使用PikPak API获取子文件夹文件列表')
-    } else {
+    } else if (driveId === 'dropbox') {
+      const { apiDropboxFileList, mapDropboxFileToAliModel } = await import('../dropbox/dirfilelist')
+      const parentId = fileId === 'dropbox_root' ? 'dropbox_root' : fileId
+      const list = await apiDropboxFileList(userId, parentId, 500)
+      items = list.map((item) => {
+        const mapped = mapDropboxFileToAliModel(item, driveId, parentId)
+        ;(mapped as any).user_id = userId
+        return mapped
+      })
+      console.log('使用Dropbox API获取子文件夹文件列表')
+    } else if (isOneDriveUser(userId) || driveId === 'onedrive') {
+      const { apiOneDriveFileList, mapOneDriveItemToAliModel } = await import('../onedrive/dirfilelist')
+      const parentId = fileId === 'onedrive_root' ? 'onedrive_root' : fileId
+      const list = await apiOneDriveFileList(userId, parentId)
+      items = list.map((item) => {
+        const mapped = mapOneDriveItemToAliModel(item, driveId, parentId)
+        ;(mapped as any).user_id = userId
+        return mapped
+      })
+      console.log('使用OneDrive API获取子文件夹文件列表')
+    } else if (isBoxUser(userId) || driveId === 'box') {
+      const { apiBoxFileList, mapBoxItemToAliModel } = await import('../box/dirfilelist')
+      const parentId = fileId === 'box_root' ? 'box_root' : fileId
+      const list = await apiBoxFileList(userId, parentId, 500)
+      items = list.map((item) => {
+        const mapped = mapBoxItemToAliModel(item, driveId, parentId)
+        ;(mapped as any).user_id = userId
+        return mapped
+      })
+      console.log('使用Box API获取子文件夹文件列表')
+    } else if (isAliyunUser(userId)) {
       // 阿里云盘（默认）
       const result = await AliDirFileList.ApiDirFileList(
         userId,
@@ -2343,6 +2376,12 @@ const handleEnterFolder = async (file: any) => {
       )
       items = result.items || []
       console.log('使用阿里云盘API获取子文件夹文件列表')
+    } else {
+      console.warn('[MediaLibrary] skip Aliyun file list for non-Aliyun source', {
+        userId,
+        driveId,
+        fileId
+      })
     }
 
     if (items && items.length >= 0) {

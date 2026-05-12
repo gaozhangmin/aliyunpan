@@ -34,3 +34,5 @@ docs/
 jellyfin-sdk/
 plans/
 *.swift
+PikPakAPI/
+AGENT.md

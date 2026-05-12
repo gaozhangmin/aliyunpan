@@ -316,4 +316,5 @@ export default class launch extends EventEmitter {
       this.pendingOAuthUrl = url
     }
   }
+
 }

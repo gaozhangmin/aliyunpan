@@ -12,6 +12,7 @@ import { ArrayKeyList } from '../../utils/utils'
 import { copyToClipboard } from '../../utils/electronhelper'
 import { GetShareUrlFormate } from '../../utils/shareurl'
 import AliTransferShare from '../../aliapi/transfershare'
+import { isDropboxUser } from '../../aliapi/utils'
 
 const formRef = ref()
 const okLoading = ref(false)
@@ -95,6 +96,7 @@ const handleOK = async (multi: boolean) => {
   const share_pwd = form.share_pwd
   const user_id = pantreeStore.user_id
   const drive_id = pantreeStore.drive_id
+  const isDropbox = isDropboxUser(user_id) || drive_id === 'dropbox'
   const file_id_list = ArrayKeyList<string>('file_id', props.filelist)
   localStorage.setItem('share_pwd', share_pwd)
   if (!multi) {
@@ -109,11 +111,11 @@ const handleOK = async (multi: boolean) => {
         return
       }
       // 更新分享链接
-      if (result.share_name != share_name && shareType.value.type === 's') {
+      if (!isDropbox && result.share_name != share_name && shareType.value.type === 's') {
         await AliShare.ApiUpdateShareBatch(user_id, [result.share_id],
           [result.expiration], [result.share_pwd], [share_name])
       }
-      await ShareDAL.aReloadMyShareUntilShareID(user_id, result.share_id)
+      if (!isDropbox) await ShareDAL.aReloadMyShareUntilShareID(user_id, result.share_id)
       url = GetShareUrlFormate(result.share_name, result.share_url, result.share_pwd || '')
       message.success('创建分享链接成功，分享链接已复制到剪切板')
     } else {
@@ -148,7 +150,7 @@ const handleOK = async (multi: boolean) => {
       }
       sharedCount += 1
       // 更新分享链接
-      if (result.share_id && shareType.value.type === 's') {
+      if (!isDropbox && result.share_id && shareType.value.type === 's') {
         await ShareDAL.aReloadMyShareUntilShareID(user_id, result.share_id)
       }
       url += GetShareUrlFormate(result.share_name, result.share_url, result.share_pwd) + '\n'

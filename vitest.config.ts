@@ -10,6 +10,9 @@ export default defineConfig({
       'src/utils/__tests__/**/*.test.ts',
       'src/aliapi/__tests__/**/*.test.ts',
       'src/pikpak/__tests__/**/*.test.ts',
+      'src/dropbox/__tests__/**/*.test.ts',
+      'src/onedrive/__tests__/**/*.test.ts',
+      'src/box/__tests__/**/*.test.ts',
     ],
   },
 })

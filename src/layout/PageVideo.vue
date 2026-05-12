@@ -48,11 +48,14 @@ import { simpleToTradition, traditionToSimple } from 'chinese-simple2traditional
 import path from 'path'
 import UserDAL from '../user/userdal'
 import Config from '../config'
-import { isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../aliapi/utils'
+import { isAliyunUser, isBaiduUser, isBoxUser, isCloud123User, isDrive115User, isDropboxUser, isOneDriveUser, isPikPakUser } from '../aliapi/utils'
 import { apiCloud123FileList, mapCloud123FileToAliModel } from '../cloud123/dirfilelist'
 import { apiDrive115FileList, mapDrive115FileToAliModel } from '../cloud115/dirfilelist'
 import { apiBaiduFileList, mapBaiduFileToAliModel } from '../cloudbaidu/dirfilelist'
 import { apiPikPakFileList, mapPikPakFileToAliModel } from '../pikpak/dirfilelist'
+import { apiDropboxFileList, mapDropboxFileToAliModel } from '../dropbox/dirfilelist'
+import { apiOneDriveFileList, mapOneDriveItemToAliModel } from '../onedrive/dirfilelist'
+import { apiBoxFileList, mapBoxItemToAliModel } from '../box/dirfilelist'
 import { getWebDavConnection, getWebDavConnectionId, isWebDavDrive, listWebDavDirectory } from '../utils/webdavClient'
 import useMediaServerRegistryStore from '../store/mediaServerRegistry'
 import {
@@ -80,6 +83,8 @@ let pendingMediaServerSeekTime: number | null = null
 const mediaServerControlNames = new Set<string>()
 let danmakuAutoLoadingKey = ''
 let danmakuAutoLoadedKey = ''
+
+const canUseAliyunFileList = (userId: string) => isAliyunUser(userId)
 
 const updateWindowTitle = (name?: string) => {
   document.title = name || pageVideo.file_name || '视频在线预览'
@@ -1209,9 +1214,27 @@ const getDirFileList = async (dir_id: string, hasDir: boolean, category: string 
       const parentId = dir_id && !dir_id.includes('root') ? dir_id : 'pikpak_root'
       const list = await apiPikPakFileList(pageVideo.user_id, parentId, 500)
       items = list.items.map(item => mapPikPakFileToAliModel(item, pageVideo.drive_id, parentId))
-    } else {
+    } else if (isDropboxUser(pageVideo.user_id) || pageVideo.drive_id === 'dropbox') {
+      const parentId = dir_id && !dir_id.includes('root') ? dir_id : 'dropbox_root'
+      const list = await apiDropboxFileList(pageVideo.user_id, parentId, 500)
+      items = list.map(item => mapDropboxFileToAliModel(item, pageVideo.drive_id, parentId))
+    } else if (isOneDriveUser(pageVideo.user_id) || pageVideo.drive_id === 'onedrive') {
+      const parentId = dir_id && !dir_id.includes('root') ? dir_id : 'onedrive_root'
+      const list = await apiOneDriveFileList(pageVideo.user_id, parentId)
+      items = list.map(item => mapOneDriveItemToAliModel(item, pageVideo.drive_id, parentId))
+    } else if (isBoxUser(pageVideo.user_id) || pageVideo.drive_id === 'box') {
+      const parentId = dir_id && !dir_id.includes('root') ? dir_id : 'box_root'
+      const list = await apiBoxFileList(pageVideo.user_id, parentId, 500)
+      items = list.map(item => mapBoxItemToAliModel(item, pageVideo.drive_id, parentId))
+    } else if (canUseAliyunFileList(pageVideo.user_id)) {
       const dir = await AliDirFileList.ApiDirFileList(pageVideo.user_id, pageVideo.drive_id, dir_id, '', 'name asc', '')
       if (!dir.next_marker) items = dir.items
+    } else {
+      console.warn('[PageVideo] skip Aliyun file list for non-Aliyun source', {
+        user_id: pageVideo.user_id,
+        drive_id: pageVideo.drive_id,
+        dir_id
+      })
     }
     for (let item of items) {
       const fileInfo = {
@@ -1220,6 +1243,8 @@ const getDirFileList = async (dir_id: string, hasDir: boolean, category: string 
         description: item.description,
         name: item.name,
         file_id: item.file_id,
+        drive_id: item.drive_id || pageVideo.drive_id,
+        parent_file_id: item.parent_file_id || dir_id,
         ext: item.ext,
         isDir: item.isDir,
         encType: getEncType({ description: item.description || '' })
@@ -1258,7 +1283,7 @@ const refreshSetting = async (art: Artplayer, item: any) => {
   // 更新标记
   const settingStore = useSettingStore()
   const description = item.description
-  if (settingStore.uiAutoColorVideo && (!description || !description.includes('ce74c3c'))) {
+  if (settingStore.uiAutoColorVideo && !isDropboxUser(pageVideo.user_id) && !isOneDriveUser(pageVideo.user_id) && !isBoxUser(pageVideo.user_id) && pageVideo.drive_id !== 'dropbox' && pageVideo.drive_id !== 'onedrive' && pageVideo.drive_id !== 'box' && (!description || !description.includes('ce74c3c'))) {
     AliFileCmd.ApiFileColorBatch(pageVideo.user_id, pageVideo.drive_id, item.description, 'ce74c3c', [item.file_id])
   }
   if (onlineSubData.dataUrl) {
@@ -2077,6 +2102,9 @@ const refreshPlayList = async (art: Artplayer, file_id?: string) => {
           ext: fileExt,
           description: fileList[i].description,
           play_cursor: fileList[i].play_cursor,
+          user_id: pageVideo.user_id,
+          drive_id: fileList[i].drive_id || pageVideo.drive_id,
+          parent_file_id: fileList[i].parent_file_id || pageVideo.parent_file_id,
           default: fileList[i].file_id === pageVideo.file_id
         })
       }

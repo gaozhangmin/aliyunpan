@@ -2,7 +2,7 @@ import DebugLog from '../utils/debuglog'
 import AliHttp from './alihttp'
 import { IAliFileItem, IAliGetFileModel } from './alimodels'
 import AliDirFileList from './dirfilelist'
-import { ApiBatch, ApiBatchMaker, ApiBatchMaker2, ApiBatchSuccess, EncodeEncName, isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from './utils'
+import { ApiBatch, ApiBatchMaker, ApiBatchMaker2, ApiBatchSuccess, EncodeEncName, isBaiduUser, isBoxUser, isCloud123User, isDrive115User, isDropboxUser, isOneDriveUser, isPikPakUser } from './utils'
 import { IDownloadUrl } from './models'
 import AliFile from './file'
 import message from '../utils/message'
@@ -19,6 +19,9 @@ import { apiBaiduCopy, apiBaiduDelete, apiBaiduMove, apiBaiduRename } from '../c
 import { apiBaiduCreateDir, buildBaiduUploadPath } from '../cloudbaidu/upload'
 import { copyWebDavPath, createWebDavDirectory, deleteWebDavPath, getWebDavConnection, getWebDavConnectionId, isWebDavDrive, moveWebDavPath, normalizeWebDavPath, renameWebDavPath } from '../utils/webdavClient'
 import { apiPikPakCopyBatch, apiPikPakMkdir, apiPikPakMoveBatch, apiPikPakRename, apiPikPakTrashBatch, apiPikPakTrashDelete, apiPikPakTrashRestore } from '../pikpak/filecmd'
+import { apiDropboxCopyBatch, apiDropboxDeleteBatch, apiDropboxMkdir, apiDropboxMoveBatch, apiDropboxRename } from '../dropbox/filecmd'
+import { apiOneDriveCopyBatch, apiOneDriveDeleteBatch, apiOneDriveMkdir, apiOneDriveMoveBatch, apiOneDriveRename } from '../onedrive/filecmd'
+import { apiBoxCopyBatch, apiBoxDeleteBatch, apiBoxMkdir, apiBoxMoveBatch, apiBoxRename } from '../box/filecmd'
 
 export default class AliFileCmd {
   static ResolveBaiduPaths(file_idList: string[]): string[] {
@@ -92,6 +95,15 @@ export default class AliFileCmd {
     if (isPikPakUser(user_id) || drive_id === 'pikpak') {
       return apiPikPakMkdir(user_id, parent_file_id.includes('root') ? 'pikpak_root' : parent_file_id, creatDirName)
     }
+    if (isDropboxUser(user_id) || drive_id === 'dropbox') {
+      return apiDropboxMkdir(user_id, parent_file_id.includes('root') ? 'dropbox_root' : parent_file_id, creatDirName)
+    }
+    if (isOneDriveUser(user_id) || drive_id === 'onedrive') {
+      return apiOneDriveMkdir(user_id, parent_file_id.includes('root') ? 'onedrive_root' : parent_file_id, creatDirName)
+    }
+    if (isBoxUser(user_id) || drive_id === 'box') {
+      return apiBoxMkdir(user_id, parent_file_id.includes('root') ? 'box_root' : parent_file_id, creatDirName)
+    }
     if (parent_file_id.includes('root')) parent_file_id = 'root'
     const url = 'adrive/v2/file/createWithFolders'
     const name = EncodeEncName(user_id, creatDirName, true, encType)
@@ -133,6 +145,15 @@ export default class AliFileCmd {
     if (isPikPakUser(user_id) || drive_id === 'pikpak') {
       return apiPikPakTrashBatch(user_id, file_idList)
     }
+    if (isDropboxUser(user_id) || drive_id === 'dropbox') {
+      return apiDropboxDeleteBatch(user_id, file_idList)
+    }
+    if (isOneDriveUser(user_id) || drive_id === 'onedrive') {
+      return apiOneDriveDeleteBatch(user_id, file_idList)
+    }
+    if (isBoxUser(user_id) || drive_id === 'box') {
+      return apiBoxDeleteBatch(user_id, file_idList)
+    }
     const batchList = ApiBatchMaker('/recyclebin/trash', file_idList, (file_id: string) => {
       return { drive_id: drive_id, file_id: file_id }
     })
@@ -172,6 +193,15 @@ export default class AliFileCmd {
     }
     if (isPikPakUser(user_id) || drive_id === 'pikpak') {
       return apiPikPakTrashDelete(user_id, file_idList)
+    }
+    if (isDropboxUser(user_id) || drive_id === 'dropbox') {
+      return apiDropboxDeleteBatch(user_id, file_idList)
+    }
+    if (isOneDriveUser(user_id) || drive_id === 'onedrive') {
+      return apiOneDriveDeleteBatch(user_id, file_idList)
+    }
+    if (isBoxUser(user_id) || drive_id === 'box') {
+      return apiBoxDeleteBatch(user_id, file_idList, true)
     }
     const batchList = ApiBatchMaker('/file/delete', file_idList, (file_id: string) => {
       return { drive_id: drive_id, file_id: file_id }
@@ -244,6 +274,45 @@ export default class AliFileCmd {
       }
       return successList
     }
+    if (isDropboxUser(user_id) || drive_id === 'dropbox') {
+      const successList: { file_id: string; parent_file_id: string; name: string; isDir: boolean }[] = []
+      for (let i = 0, maxi = file_idList.length; i < maxi; i++) {
+        const file_id = file_idList[i]
+        const name = names[i] || ''
+        if (!file_id || !name) continue
+        const resp = await apiDropboxRename(user_id, file_id, name)
+        if (resp.success) {
+          successList.push({ file_id: resp.file_id, name: resp.name, parent_file_id: resp.parent_file_id, isDir: resp.isDir })
+        }
+      }
+      return successList
+    }
+    if (isOneDriveUser(user_id) || drive_id === 'onedrive') {
+      const successList: { file_id: string; parent_file_id: string; name: string; isDir: boolean }[] = []
+      for (let i = 0, maxi = file_idList.length; i < maxi; i++) {
+        const file_id = file_idList[i]
+        const name = names[i] || ''
+        if (!file_id || !name) continue
+        const resp = await apiOneDriveRename(user_id, file_id, name)
+        if (!resp.error) {
+          successList.push({ file_id: resp.file_id || file_id, name, parent_file_id: '', isDir: true })
+        }
+      }
+      return successList
+    }
+    if (isBoxUser(user_id) || drive_id === 'box') {
+      const successList: { file_id: string; parent_file_id: string; name: string; isDir: boolean }[] = []
+      for (let i = 0, maxi = file_idList.length; i < maxi; i++) {
+        const file_id = file_idList[i]
+        const name = names[i] || ''
+        if (!file_id || !name) continue
+        const resp = await apiBoxRename(user_id, file_id, name)
+        if (resp) {
+          successList.push({ file_id: resp.file_id || file_id, name, parent_file_id: resp.parent_file_id || '', isDir: resp.isDir })
+        }
+      }
+      return successList
+    }
     const batchList = ApiBatchMaker2('/file/update', file_idList, names, (file_id: string, name: string) => {
       return { drive_id: drive_id, file_id: file_id, name: name, check_name_mode: 'refuse' }
     })
@@ -262,6 +331,7 @@ export default class AliFileCmd {
 
 
   static async ApiFavorBatch(user_id: string, drive_id: string, isfavor: boolean, ismessage: boolean, file_idList: string[]): Promise<string[]> {
+    if (isDropboxUser(user_id) || drive_id === 'dropbox') return []
     const batchList = ApiBatchMaker('/file/update', file_idList, (file_id: string) => {
       return { drive_id: drive_id, file_id: file_id, custom_index_key: isfavor ? 'starred_yes' : '', starred: isfavor }
     })
@@ -280,6 +350,10 @@ export default class AliFileCmd {
     if (isPikPakUser(user_id) || drive_id === 'pikpak') {
       return apiPikPakTrashDelete(user_id, file_idList)
     }
+    if (isDropboxUser(user_id) || drive_id === 'dropbox') {
+      message.info('Dropbox 已删除文件请在官方客户端恢复或彻底删除')
+      return []
+    }
     const batchList = ApiBatchMaker('/file/delete', file_idList, (file_id: string) => {
       return { drive_id: drive_id, file_id: file_id }
     })
@@ -296,6 +370,10 @@ export default class AliFileCmd {
     }
     if (isPikPakUser(user_id) || drive_id === 'pikpak') {
       return apiPikPakTrashRestore(user_id, file_idList)
+    }
+    if (isDropboxUser(user_id) || drive_id === 'dropbox') {
+      message.info('Dropbox 已删除文件请在官方客户端恢复')
+      return []
     }
     const batchList = ApiBatchMaker('/recyclebin/restore', file_idList, (file_id: string) => {
       return { drive_id: drive_id, file_id: file_id }
@@ -326,6 +404,7 @@ export default class AliFileCmd {
     if (isDrive115User(user_id) || drive_id === 'drive115') return
     if (isBaiduUser(user_id) || drive_id === 'baidu') return
     if (isPikPakUser(user_id) || drive_id === 'pikpak') return
+    if (isDropboxUser(user_id) || drive_id === 'dropbox') return
     // 防止加密标记清空
     let parts = description.split(',') || []
     let encryptPart = parts.find((part: any) => part.includes('xbyEncrypt')) || ''
@@ -439,6 +518,15 @@ export default class AliFileCmd {
     if (isPikPakUser(user_id) || drive_id === 'pikpak') {
       return apiPikPakMoveBatch(user_id, file_idList, to_parent_file_id.includes('root') ? 'pikpak_root' : to_parent_file_id)
     }
+    if (isDropboxUser(user_id) || drive_id === 'dropbox') {
+      return apiDropboxMoveBatch(user_id, file_idList, to_parent_file_id.includes('root') ? 'dropbox_root' : to_parent_file_id, to_parent_description)
+    }
+    if (isOneDriveUser(user_id) || drive_id === 'onedrive') {
+      return apiOneDriveMoveBatch(user_id, to_parent_file_id.includes('root') ? 'onedrive_root' : to_parent_file_id, file_idList)
+    }
+    if (isBoxUser(user_id) || drive_id === 'box') {
+      return apiBoxMoveBatch(user_id, file_idList, to_parent_file_id.includes('root') ? 'box_root' : to_parent_file_id)
+    }
     if (to_parent_file_id.includes('root')) to_parent_file_id = 'root'
     const batchList = ApiBatchMaker('/file/move', file_idList, (file_id: string) => {
       if (drive_id == to_drive_id) return {
@@ -499,6 +587,16 @@ export default class AliFileCmd {
     }
     if (isPikPakUser(user_id) || drive_id === 'pikpak') {
       return apiPikPakCopyBatch(user_id, file_idList, to_parent_file_id.includes('root') ? 'pikpak_root' : to_parent_file_id)
+    }
+    if (isDropboxUser(user_id) || drive_id === 'dropbox') {
+      return apiDropboxCopyBatch(user_id, file_idList, to_parent_file_id.includes('root') ? 'dropbox_root' : to_parent_file_id, to_parent_description)
+    }
+    if (isOneDriveUser(user_id) || drive_id === 'onedrive') {
+      const list = usePanFileStore().GetSelected().filter((item) => file_idList.includes(item.file_id)).map((item) => ({ file_id: item.file_id, name: item.name }))
+      return apiOneDriveCopyBatch(user_id, to_parent_file_id.includes('root') ? 'onedrive_root' : to_parent_file_id, list.length ? list : file_idList.map((file_id) => ({ file_id, name: '' })))
+    }
+    if (isBoxUser(user_id) || drive_id === 'box') {
+      return apiBoxCopyBatch(user_id, file_idList, to_parent_file_id.includes('root') ? 'box_root' : to_parent_file_id)
     }
     if (to_parent_file_id.includes('root')) to_parent_file_id = 'root'
     const batchList = ApiBatchMaker('/file/copy', file_idList, (file_id: string) => {

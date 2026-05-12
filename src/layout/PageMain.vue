@@ -32,6 +32,8 @@ import MyModal from './MyModal.vue'
 import { B64decode } from '../utils/format'
 import { throttle } from '../utils/debounce'
 
+const wechatPayImage = '/images/wechat_pay.jpg'
+const alipayImage = '/images/alipay.jpg'
 const panVisible = ref(true)
 const mediaNavVisible = ref(true)
 const appStore = useAppStore()
@@ -235,6 +237,24 @@ onUnmounted(() => {
 
         <div class='flexauto'></div>
         <ShutDown />
+        <a-popover trigger='hover' position='bottom' class='sponsor-popover'>
+          <div class='top-sponsor-button' title='赞助 APP'>
+            <i class='iconfont iconbiaozhang' />
+            <span>赞助 APP</span>
+          </div>
+          <template #content>
+            <div class='sponsor-qrcode-panel'>
+              <div class='sponsor-qrcode-item'>
+                <img :src='wechatPayImage' alt='微信赞赏码' />
+                <span>微信</span>
+              </div>
+              <div class='sponsor-qrcode-item'>
+                <img :src='alipayImage' alt='支付宝赞赏码' />
+                <span>支付宝</span>
+              </div>
+            </div>
+          </template>
+        </a-popover>
         <UserInfo />
         <UserLogin />
         <a-button type='text' tabindex='-1' style="margin-right: 5px" :title='themeTitle' @click="handleThemeClick">
@@ -379,20 +399,6 @@ onUnmounted(() => {
               </div>
             </template>
           </a-popover>
-          <a-popover v-model:popup-visible='footStore.sponsorVisible'
-                     trigger='hover' position='top' class='asynclist'>
-            <div class='footerBar fix' style='cursor: pointer'>
-              <i class='iconfont iconbiaozhang' />
-              <span>赞赏一下</span>
-            </div>
-            <template #content>
-              <div style="display:flex;">
-                <div style="flex: 1;text-align: right;">
-                  <img style="width: 250px;height: 250px" src='/images/wexin_reward.jpg' alt='赞赏码'>
-                </div>
-              </div>
-            </template>
-          </a-popover>
           <div class='footerBar fix' style='margin: 0; cursor: pointer' @click='handleHelpPage'>
             <i class='iconfont iconrss' />
             项目地址
@@ -468,6 +474,64 @@ onUnmounted(() => {
 
 #xbyhead2 .iconfont {
   font-size: 24px;
+}
+
+.top-sponsor-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 82px;
+  height: 32px;
+  margin: 0 4px 0 2px;
+  gap: 5px;
+  color: var(--color-text-2);
+  font-size: 13px;
+  line-height: 32px;
+  white-space: nowrap;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.top-sponsor-button:hover {
+  color: rgb(var(--primary-6));
+  background: var(--color-fill-2);
+}
+
+.top-sponsor-button .iconfont {
+  font-size: 17px !important;
+  line-height: 32px;
+}
+
+.sponsor-popover .arco-popover-popup-content {
+  padding: 12px;
+}
+
+.sponsor-qrcode-panel {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 14px;
+}
+
+.sponsor-qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-2);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.sponsor-qrcode-item img {
+  display: block;
+  width: 220px;
+  height: 220px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid var(--color-border-2);
+  border-radius: 6px;
 }
 
 #xbyhead2 .arco-menu-horizontal {

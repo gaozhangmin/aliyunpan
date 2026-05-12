@@ -16,7 +16,9 @@ import fspromises from 'fs/promises'
 import Cloud123UploadDisk from '../cloud123/uploaddisk'
 import BaiduUploadDisk from '../cloudbaidu/uploaddisk'
 import Drive115UploadDisk from '../cloud115/uploaddisk'
-import { isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from '../aliapi/utils'
+import DropboxUploadDisk from '../dropbox/upload'
+import OneDriveUploadDisk from '../onedrive/upload'
+import { isBaiduUser, isCloud123User, isDrive115User, isDropboxUser, isOneDriveUser, isPikPakUser } from '../aliapi/utils'
 import { apiCloud123Mkdir } from '../cloud123/filecmd'
 
 export async function StartUpload(fileui: IUploadingUI): Promise<void> {
@@ -69,6 +71,34 @@ export async function StartUpload(fileui: IUploadingUI): Promise<void> {
   if (isDrive115User(fileui.user_id || '')) {
     await checkFileSize(fileui)
     const uploadResult = await Drive115UploadDisk.UploadOneFile(fileui)
+    if (uploadResult == 'success') {
+      fileui.Info.uploadState = 'success'
+    } else if (!fileui.IsRunning) {
+      fileui.Info.uploadState = '已暂停'
+    } else if (fileui.Info.uploadState == 'running' || fileui.Info.uploadState == 'hashing') {
+      fileui.Info.uploadState = 'error'
+      fileui.Info.failedCode = 505
+      fileui.Info.failedMessage = uploadResult
+    }
+    return
+  }
+  if (isDropboxUser(fileui.user_id || '')) {
+    await checkFileSize(fileui)
+    const uploadResult = await DropboxUploadDisk.UploadOneFile(fileui)
+    if (uploadResult == 'success') {
+      fileui.Info.uploadState = 'success'
+    } else if (!fileui.IsRunning) {
+      fileui.Info.uploadState = '已暂停'
+    } else if (fileui.Info.uploadState == 'running' || fileui.Info.uploadState == 'hashing') {
+      fileui.Info.uploadState = 'error'
+      fileui.Info.failedCode = 505
+      fileui.Info.failedMessage = uploadResult
+    }
+    return
+  }
+  if (isOneDriveUser(fileui.user_id || '')) {
+    await checkFileSize(fileui)
+    const uploadResult = await OneDriveUploadDisk.UploadOneFile(fileui)
     if (uploadResult == 'success') {
       fileui.Info.uploadState = 'success'
     } else if (!fileui.IsRunning) {

@@ -309,32 +309,45 @@ function handleWebView(win: BrowserWindow) {
   })
 }
 
+let hasWindowCommandHandler = false
+
 function handleWinCmd(win: BrowserWindow) {
+  if (hasWindowCommandHandler) return
+  hasWindowCommandHandler = true
   ipcMain.on('WebToWindow', (event, data) => {
+    const currentWin = BrowserWindow.fromWebContents(event.sender) || win
     if (data.cmd && data.cmd === 'close') {
-      if (win && !win.isDestroyed()) win.close()
+      event.returnValue = 'close'
+      if (currentWin && !currentWin.isDestroyed()) currentWin.close()
     } else if (data.cmd && data.cmd === 'minsize') {
-      if (win && !win.isDestroyed()) win.minimize()
+      event.returnValue = 'minsize'
+      if (currentWin && !currentWin.isDestroyed()) currentWin.minimize()
     } else if (data.cmd && data.cmd === 'top') {
-      if (win && !win.isDestroyed()) {
-        if (win.isAlwaysOnTop()) {
+      if (currentWin && !currentWin.isDestroyed()) {
+        if (currentWin.isAlwaysOnTop()) {
           event.returnValue = 'untop'
-          win.setAlwaysOnTop(false)
+          currentWin.setAlwaysOnTop(false)
         } else {
           event.returnValue = 'top'
-          win.setAlwaysOnTop(true, 'status')
+          currentWin.setAlwaysOnTop(true, 'status')
         }
+      } else {
+        event.returnValue = 'missing'
       }
     } else if (data.cmd && data.cmd === 'maxsize') {
-      if (win && !win.isDestroyed()) {
-        if (win.isMaximized()) {
+      if (currentWin && !currentWin.isDestroyed()) {
+        if (currentWin.isMaximized()) {
           event.returnValue = 'unmaximize'
-          win.unmaximize()
+          currentWin.unmaximize()
         } else {
           event.returnValue = 'maximize'
-          win.maximize()
+          currentWin.maximize()
         }
+      } else {
+        event.returnValue = 'missing'
       }
+    } else {
+      event.returnValue = 'unknown'
     }
   })
 }

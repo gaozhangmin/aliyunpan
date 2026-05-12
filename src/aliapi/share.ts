@@ -3,13 +3,16 @@ import { humanDateTime, humanDateTimeDateStr, humanExpiration, humanSize } from 
 import message from '../utils/message'
 import AliHttp, { IUrlRespData } from './alihttp'
 import ServerHttp from './server'
-import { ApiBatch, ApiBatchMaker, ApiBatchSuccess, isCloud123User, isPikPakUser } from './utils'
+import { ApiBatch, ApiBatchMaker, ApiBatchSuccess, isBoxUser, isCloud123User, isDropboxUser, isOneDriveUser, isPikPakUser } from './utils'
 import { useSettingStore, useMyShareStore } from '../store'
 import { IAliFileItem, IAliShareAnonymous, IAliShareBottleFish, IAliShareFileItem, IAliShareItem } from './alimodels'
 import getFileIcon from './fileicon'
 import { IAliBatchResult } from './models'
 import { apiCloud123ShareCreate, apiCloud123ShareUpdate } from '../cloud123/share'
 import { apiPikPakShareCreate } from '../pikpak/share'
+import { apiDropboxShareCreate } from '../dropbox/share'
+import { apiOneDriveShareCreate } from '../onedrive/share'
+import { apiBoxShareCreate } from '../box/share'
 
 export interface IAliShareFileResp {
   items: IAliShareFileItem[]
@@ -315,6 +318,23 @@ export default class AliShare {
       }
       return item
     }
+    if (isDropboxUser(user_id) || drive_id === 'dropbox') {
+      const result = await apiDropboxShareCreate(user_id, drive_id || 'dropbox', file_id_list, expiration, share_pwd, share_name)
+      if (result.error || !result.item) return result.error || '创建 Dropbox 分享链接失败'
+      return result.item
+    }
+    if (isOneDriveUser(user_id) || drive_id === 'onedrive') {
+      if (share_pwd || expiration) return 'OneDrive 分享暂不支持提取码或有效期，请清空后重试'
+      const result = await apiOneDriveShareCreate(user_id, drive_id || 'onedrive', file_id_list, share_name)
+      if (result.error || !result.item) return result.error || '创建 OneDrive 分享链接失败'
+      return result.item
+    }
+    if (isBoxUser(user_id) || drive_id === 'box') {
+      if (share_pwd || expiration) return 'Box 分享暂不支持提取码或有效期，请清空后重试'
+      const result = await apiBoxShareCreate(user_id, drive_id || 'box', file_id_list, share_name)
+      if (result.error || !result.item) return result.error || '创建 Box 分享链接失败'
+      return result.item
+    }
     const url = 'adrive/v2/share_link/create'
     const postData = { drive_id, expiration, share_pwd, share_name, file_id_list }
     const resp = await AliHttp.Post(url, postData, user_id, '')
@@ -363,7 +383,7 @@ export default class AliShare {
 
 
   static async ApiCancelShareBatch(user_id: string, share_idList: string[]): Promise<string[]> {
-    if (isCloud123User(user_id) || isPikPakUser(user_id)) {
+    if (isCloud123User(user_id) || isPikPakUser(user_id) || isDropboxUser(user_id) || isOneDriveUser(user_id) || isBoxUser(user_id)) {
       message.info('当前网盘类型不支持')
       return []
     }
@@ -377,6 +397,10 @@ export default class AliShare {
   static async ApiUpdateShareBatch(user_id: string, share_idList: string[], expirationList: string[], share_pwdList: string[], share_nameList: string[] | undefined): Promise<UpdateShareModel[]> {
     if (!share_idList || share_idList.length == 0) return []
     if (isPikPakUser(user_id)) {
+      message.info('当前网盘类型不支持')
+      return []
+    }
+    if (isDropboxUser(user_id)) {
       message.info('当前网盘类型不支持')
       return []
     }

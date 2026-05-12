@@ -7,7 +7,7 @@ import TreeStore from '../../store/treestore'
 import { MediaScanner } from '../../utils/mediaScanner'
 import message from '../../utils/message'
 import { computed } from 'vue'
-import { isAliyunUser as isAliyunAccountUser, isCloud123User } from '../../aliapi/utils'
+import { isAliyunUser as isAliyunAccountUser, isBoxUser, isCloud123User, isDropboxUser, isOneDriveUser } from '../../aliapi/utils'
 
 const istree = true
 const pantreeStore = usePanTreeStore()
@@ -15,6 +15,10 @@ const appStore = useAppStore()
 const mediaScanner = MediaScanner.getInstance()
 const isCloudUser = computed(() => isCloud123User(pantreeStore.user_id || '') || pantreeStore.drive_id === 'cloud123')
 const isAliyunAccount = computed(() => isAliyunAccountUser(pantreeStore.user_id || ''))
+const isDropbox = computed(() => isDropboxUser(pantreeStore.user_id || '') || pantreeStore.drive_id === 'dropbox')
+const isOneDrive = computed(() => isOneDriveUser(pantreeStore.user_id || '') || pantreeStore.drive_id === 'onedrive')
+const isBox = computed(() => isBoxUser(pantreeStore.user_id || '') || pantreeStore.drive_id === 'box')
+const isShareSupported = computed(() => props.inputselectType.includes('resource') || isDropbox.value || isOneDrive.value || isBox.value)
 
 const props = defineProps({
   inputselectType: {
@@ -125,7 +129,7 @@ const isSelectedFolder = computed(() => {
         <template #icon> <i class="iconfont icondownload" /> </template>
         <template #default>下载</template>
       </a-doption>
-      <a-doption v-show="inputselectType.includes('resource')"
+      <a-doption v-show="isShareSupported"
                  @click="() => menuCreatShare(istree, 'pan', 'resource_root')">
         <template #icon><i class='iconfont iconfenxiang' /></template>
         <template #default>分享</template>

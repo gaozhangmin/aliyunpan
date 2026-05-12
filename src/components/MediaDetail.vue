@@ -364,8 +364,9 @@ const buildAliFileModel = (driveFile: DriveFileItem): IAliGetFileModel => {
     media_duration: driveFile.videoDuration,
     media_play_cursor: '',
     media_time: '',
-    user_meta: ''
-  }
+    user_meta: '',
+    user_id: driveFile.userId || ''
+  } as IAliGetFileModel
 }
 
 const buildPlaylistEntry = (aliFile: IAliGetFileModel, title: string): IPageVideoPlaylistEntry => ({

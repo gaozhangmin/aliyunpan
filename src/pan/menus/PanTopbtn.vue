@@ -12,7 +12,7 @@ import AliShare from '../../aliapi/share'
 import { usePanTreeStore } from '../../store'
 import message from '../../utils/message'
 import PanDAL from '../pandal'
-import { isAliyunUser, isCloud123User } from '../../aliapi/utils'
+import { isAliyunUser, isBoxUser, isDropboxUser, isOneDriveUser } from '../../aliapi/utils'
 import { isWebDavDrive } from '../../utils/webdavClient'
 
 const props = defineProps({
@@ -37,6 +37,10 @@ const props = defineProps({
 const videoSelectType = ref('recent')
 const panTreeStore = usePanTreeStore()
 const isWebDav = computed(() => isWebDavDrive(panTreeStore.drive_id || panTreeStore.selectDir.drive_id))
+const isDropbox = computed(() => isDropboxUser(panTreeStore.user_id || '') || panTreeStore.drive_id === 'dropbox')
+const isOneDrive = computed(() => isOneDriveUser(panTreeStore.user_id || '') || panTreeStore.drive_id === 'onedrive')
+const isBox = computed(() => isBoxUser(panTreeStore.user_id || '') || panTreeStore.drive_id === 'box')
+const isThirdPartyDrive = computed(() => isDropbox.value || isOneDrive.value || isBox.value)
 
 const isShowBtn = computed(() => {
   return (props.dirtype === 'pic' && props.inputpicType != 'mypic')
@@ -95,7 +99,7 @@ const handleClickBottleFish = async () => {
     </a-space>
   </div>
   <div v-show="!isselected && ['pan', 'pic', 'mypic'].includes(dirtype)" class='toppanbtn'>
-    <a-button v-if="inputselectType.includes('resource')" type='text' size='small' tabindex='-1'
+    <a-button v-if="inputselectType.includes('resource') && isAliyunUser(panTreeStore.user_id || '')" type='text' size='small' tabindex='-1'
               @click="handleClickBottleFish">
       <i class='iconfont iconnotification' />好运瓶
     </a-button>
@@ -118,7 +122,7 @@ const handleClickBottleFish = async () => {
             <template #default>日期+序号</template>
           </a-doption>
         </a-dgroup>
-        <a-dgroup v-if='!isWebDav' title="加密新建">
+        <a-dgroup v-if='!isWebDav && !isThirdPartyDrive' title="加密新建">
           <a-doption value='newfile' @click='() => modalCreatNewFile("xbyEncrypt1")'>
             <template #icon><i class='iconfont iconwenjian' /></template>
             <template #default>新建文件（加密）</template>
@@ -132,7 +136,7 @@ const handleClickBottleFish = async () => {
             <template #default>日期+序号（加密）</template>
           </a-doption>
         </a-dgroup>
-        <a-dgroup v-if='!isWebDav' title="私密新建">
+        <a-dgroup v-if='!isWebDav && !isThirdPartyDrive' title="私密新建">
           <a-doption value='newfile' @click='() => modalCreatNewFile("xbyEncrypt2")'>
             <template #icon><i class='iconfont iconwenjian' /></template>
             <template #default>新建文件（私密）</template>
@@ -169,7 +173,7 @@ const handleClickBottleFish = async () => {
             <template #default>上传文件夹</template>
           </a-doption>
         </a-dgroup>
-        <a-dgroup v-if='!isWebDav' title="加密上传">
+        <a-dgroup v-if='!isWebDav && !isThirdPartyDrive' title="加密上传">
           <a-doption value='uploadfile' title='Ctrl+J'
                      @click="() => handleUpload('file', 'xbyEncrypt1')">
             <template #icon><i class='iconfont iconwenjian' /></template>
@@ -180,7 +184,7 @@ const handleClickBottleFish = async () => {
             <template #default>上传文件夹（加密）</template>
           </a-doption>
         </a-dgroup>
-        <a-dgroup v-if='!isWebDav' title="私密上传">
+        <a-dgroup v-if='!isWebDav && !isThirdPartyDrive' title="私密上传">
           <a-doption value='uploadfile' title='Ctrl+M'
                      @click="() => handleUpload('file', 'xbyEncrypt2')">
             <template #icon><i class='iconfont iconwenjian' /></template>

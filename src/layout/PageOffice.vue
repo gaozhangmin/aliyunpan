@@ -44,13 +44,13 @@ const appStore = useAppStore()
 
 onMounted(() => {
   window.addEventListener('keydown', onKeyDown, true)
-  const docOptions = aliyun.config({
-    mount: document.querySelector('#doc-preview')!,
-    url: appStore.pageOffice?.preview_url || ''
-  })
-  docOptions.setToken({ token: appStore.pageOffice?.access_token || '' })
-  const doc = document.getElementById('iframe-preview')
-  if (doc) doc.setAttribute('src', appStore.pageOffice?.preview_url || '')
+  if (appStore.pageOffice?.access_token) {
+    const docOptions = aliyun.config({
+      mount: document.querySelector('#doc-preview')!,
+      url: appStore.pageOffice?.preview_url || ''
+    })
+    docOptions.setToken({ token: appStore.pageOffice?.access_token || '' })
+  }
   const name = appStore.pageOffice?.file_name || '文档在线预览'
   setTimeout(() => {
     document.title = name
@@ -82,7 +82,14 @@ onMounted(() => {
       </div>
     </a-layout-header>
     <a-layout-content style="height: calc(100vh - 42px); padding-top: 8px; background: #f2f4f7">
-      <div id="doc-preview" class="doc-preview" style="width: 100%; height: 100%"></div>
+      <div id="doc-preview" class="doc-preview" style="width: 100%; height: 100%">
+        <iframe
+          v-if="!appStore.pageOffice?.access_token"
+          id="iframe-preview"
+          :src="appStore.pageOffice?.preview_url || ''"
+          style="width: 100%; height: 100%; border: none; background: #fff"
+        />
+      </div>
     </a-layout-content>
   </a-layout>
 </template>

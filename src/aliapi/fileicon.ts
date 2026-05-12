@@ -51,7 +51,11 @@ export default function getFileIcon(category: string | undefined, ext: string | 
   }
 
   
-  if (';.apng.avif.ico.webp.gif.'.indexOf(ext) > 0) {
+  if (';.jpg.jpeg.jfif.png.bmp.'.indexOf(ext) > 0) {
+    return ['image', 'iconfile-img']
+  }
+
+  if (';.apng.avif.ico.webp.gif.tif.tiff.heic.heif.'.indexOf(ext) > 0) {
     return ['image2', 'iconfile-img'] 
   }
 

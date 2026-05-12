@@ -77,7 +77,7 @@ const toAliModel = (config: WebDavConnectionConfig, stat: FileStat): IAliGetFile
   const updatedAt = stat.lastmod
   const time = updatedAt ? new Date(updatedAt).getTime() : Date.now()
   const driveId = `webdav:${config.id}`
-  const icon = isDir ? 'iconfile-folder' : getFileIcon(isDir ? 'folder' : (VIDEO_EXTENSIONS.has(`.${ext}`) ? 'video' : 'others'), ext, ext, mimeType, size)[1]
+  const iconInfo = isDir ? ['folder', 'iconfile-folder'] : getFileIcon(isDir ? 'folder' : (VIDEO_EXTENSIONS.has(`.${ext}`) ? 'video' : 'others'), ext, ext, mimeType, size)
 
   return {
     __v_skip: true,
@@ -90,8 +90,8 @@ const toAliModel = (config: WebDavConnectionConfig, stat: FileStat): IAliGetFile
     ext,
     mime_type: mimeType,
     mime_extension: ext,
-    category: isDir ? 'folder' : (VIDEO_EXTENSIONS.has(`.${ext}`) ? 'video' : 'others'),
-    icon,
+    category: iconInfo[0],
+    icon: iconInfo[1],
     size,
     sizeStr: '',
     time,

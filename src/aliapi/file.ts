@@ -6,7 +6,7 @@ import AliHttp from './alihttp'
 import { IAliFileItem, IAliGetDirModel, IAliGetFileModel, IAliGetForderSizeModel } from './alimodels'
 import AliDirFileList from './dirfilelist'
 import { ICompilationList, IDownloadUrl, IOfficePreViewUrl, IVideoPreviewUrl, IVideoXBTUrl } from './models'
-import { DecodeEncName, GetDriveType, isAliyunUser, isBaiduUser, isCloud123User, isDrive115User, isPikPakUser } from './utils'
+import { DecodeEncName, GetDriveType, isAliyunUser, isBaiduUser, isBoxUser, isCloud123User, isDrive115User, isDropboxUser, isOneDriveUser, isPikPakUser } from './utils'
 import { getRawUrl } from '../utils/proxyhelper'
 import { apiCloud123DownloadInfo, apiCloud123FileDetail } from '../cloud123/filecmd'
 import { mapCloud123InfoToAliModel } from '../cloud123/dirfilelist'
@@ -18,6 +18,9 @@ import { apiDrive115VideoHistoryUpdate, apiDrive115VideoPlay, getDrive115PickCod
 import { apiBaiduFileList } from '../cloudbaidu/dirfilelist'
 import { apiBaiduFileMetas, mapBaiduMetaToAliFileItem } from '../cloudbaidu/filecmd'
 import { apiPikPakDownloadInfo, apiPikPakFileDetail, mapPikPakFileToAliModel } from '../pikpak/dirfilelist'
+import { apiDropboxFileDetail, apiDropboxTemporaryLink, mapDropboxFileToAliModel, resolveDropboxParentIdFromPath } from '../dropbox/dirfilelist'
+import { apiOneDriveFileDetail, mapOneDriveItemToAliModel } from '../onedrive/dirfilelist'
+import { apiBoxFileDetail, buildBoxDownloadUrl, getBoxToken, mapBoxItemToAliModel } from '../box/dirfilelist'
 import TreeStore from '../store/treestore'
 import UserDAL from '../user/userdal'
 import { getWebDavConnection, getWebDavConnectionId, getWebDavDownloadUrl, isWebDavDrive } from '../utils/webdavClient'
@@ -116,6 +119,58 @@ export default class AliFile {
       const detail = await apiPikPakFileDetail(user_id, file_id)
       if (!detail) return undefined
       const mapped = mapPikPakFileToAliModel(detail, drive_id, detail.parent_id || 'pikpak_root') as any
+      mapped.type = mapped.isDir ? 'folder' : 'file'
+      return mapped
+    }
+    if (isDropboxUser(user_id) || drive_id === 'dropbox') {
+      if (file_id === 'dropbox_root') {
+        return {
+          drive_id,
+          file_id,
+          parent_file_id: '',
+          name: '网盘文件',
+          type: 'folder',
+          isDir: true
+        }
+      }
+      const detail = await apiDropboxFileDetail(user_id, file_id)
+      if (!detail) return undefined
+      const parentId = resolveDropboxParentIdFromPath(detail.path_display || detail.path_lower)
+      const mapped = mapDropboxFileToAliModel(detail, drive_id, parentId) as any
+      mapped.type = mapped.isDir ? 'folder' : 'file'
+      return mapped
+    }
+    if (isOneDriveUser(user_id) || drive_id === 'onedrive') {
+      if (file_id === 'onedrive_root') {
+        return {
+          drive_id,
+          file_id,
+          parent_file_id: '',
+          name: '网盘文件',
+          type: 'folder',
+          isDir: true
+        }
+      }
+      const detail = await apiOneDriveFileDetail(user_id, file_id)
+      if (!detail) return undefined
+      const mapped = mapOneDriveItemToAliModel(detail, drive_id, detail.parentReference?.id || 'onedrive_root') as any
+      mapped.type = mapped.isDir ? 'folder' : 'file'
+      return mapped
+    }
+    if (isBoxUser(user_id) || drive_id === 'box') {
+      if (file_id === 'box_root') {
+        return {
+          drive_id,
+          file_id,
+          parent_file_id: '',
+          name: '网盘文件',
+          type: 'folder',
+          isDir: true
+        }
+      }
+      const detail = await apiBoxFileDetail(user_id, file_id, false)
+      if (!detail) return undefined
+      const mapped = mapBoxItemToAliModel(detail, drive_id, detail.parent?.id || 'box_root') as any
       mapped.type = mapped.isDir ? 'folder' : 'file'
       return mapped
     }
@@ -261,6 +316,42 @@ export default class AliFile {
         size: Number(detail?.size || 0)
       }
     }
+    if (isDropboxUser(user_id) || drive_id === 'dropbox') {
+      const info = await apiDropboxTemporaryLink(user_id, file_id)
+      if (info.error) return info.error
+      return {
+        drive_id: drive_id,
+        file_id: file_id,
+        expire_time: GetExpiresTime(info.url),
+        url: info.url,
+        size: Number(info.metadata?.size || 0)
+      }
+    }
+    if (isOneDriveUser(user_id) || drive_id === 'onedrive') {
+      const info = await apiOneDriveFileDetail(user_id, file_id)
+      const url = info?.['@content.downloadUrl'] || ''
+      if (!url) return '获取 OneDrive 下载地址失败'
+      return {
+        drive_id: drive_id,
+        file_id: file_id,
+        expire_time: GetExpiresTime(url),
+        url,
+        size: Number(info?.size || 0)
+      }
+    }
+    if (isBoxUser(user_id) || drive_id === 'box') {
+      const token = await getBoxToken(user_id)
+      if (!token?.access_token) return '未登录 Box'
+      const detail = await apiBoxFileDetail(user_id, file_id, false)
+      const url = buildBoxDownloadUrl(file_id, token.access_token)
+      return {
+        drive_id: drive_id,
+        file_id: file_id,
+        expire_time: GetExpiresTime(url),
+        url,
+        size: Number(detail?.size || 0)
+      }
+    }
     const data: IDownloadUrl = {
       drive_id: drive_id,
       file_id: file_id,
@@ -316,6 +407,15 @@ export default class AliFile {
       return '暂无转码信息'
     }
     if (isPikPakUser(user_id) || drive_id === 'pikpak') {
+      return '暂无转码信息'
+    }
+    if (isDropboxUser(user_id) || drive_id === 'dropbox') {
+      return '暂无转码信息'
+    }
+    if (isOneDriveUser(user_id) || drive_id === 'onedrive') {
+      return '暂无转码信息'
+    }
+    if (isBoxUser(user_id) || drive_id === 'box') {
       return '暂无转码信息'
     }
     if (isCloud123User(user_id) || drive_id === 'cloud123') {
@@ -540,7 +640,7 @@ export default class AliFile {
 
   static async ApiAudioPreviewUrl(user_id: string, drive_id: string, file_id: string): Promise<IDownloadUrl | string> {
     if (!user_id || !drive_id || !file_id) return '参数错误'
-    if (isCloud123User(user_id) || drive_id === 'cloud123' || isPikPakUser(user_id) || drive_id === 'pikpak') return '暂无转码信息'
+    if (isCloud123User(user_id) || drive_id === 'cloud123' || isPikPakUser(user_id) || drive_id === 'pikpak' || isDropboxUser(user_id) || drive_id === 'dropbox' || isOneDriveUser(user_id) || drive_id === 'onedrive' || isBoxUser(user_id) || drive_id === 'box') return '暂无转码信息'
 
     const url = 'v2/file/get_audio_play_info'
 
@@ -588,7 +688,7 @@ export default class AliFile {
 
   static async ApiOfficePreViewUrl(user_id: string, drive_id: string, file_id: string): Promise<IOfficePreViewUrl | undefined> {
     if (!user_id || !drive_id || !file_id) return undefined
-    if (isCloud123User(user_id) || drive_id === 'cloud123' || isPikPakUser(user_id) || drive_id === 'pikpak') return undefined
+    if (isCloud123User(user_id) || drive_id === 'cloud123' || isPikPakUser(user_id) || drive_id === 'pikpak' || isDropboxUser(user_id) || drive_id === 'dropbox' || isOneDriveUser(user_id) || drive_id === 'onedrive' || isBoxUser(user_id) || drive_id === 'box') return undefined
     const url = 'v2/file/get_office_preview_url'
     const postData = { drive_id: drive_id, file_id: file_id, url_expire_sec: 14400 }
     const resp = await AliHttp.Post(url, postData, user_id, '')
@@ -615,6 +715,7 @@ export default class AliFile {
       if (!detail) return undefined
       return mapPikPakFileToAliModel(detail, drive_id, detail.parent_id || 'pikpak_root')
     }
+    if (isDropboxUser(user_id) || drive_id === 'dropbox' || isOneDriveUser(user_id) || drive_id === 'onedrive' || isBoxUser(user_id) || drive_id === 'box') return undefined
     const url = 'v2/file/get'
     const postData = {
       drive_id: drive_id,
@@ -638,7 +739,7 @@ export default class AliFile {
 
   static async ApiFileGetPath(user_id: string, drive_id: string, file_id: string): Promise<IAliGetDirModel[]> {
     if (!user_id || !drive_id || !file_id) return []
-    if (isPikPakUser(user_id) || drive_id === 'pikpak') {
+    if (isPikPakUser(user_id) || drive_id === 'pikpak' || isDropboxUser(user_id) || drive_id === 'dropbox' || isOneDriveUser(user_id) || drive_id === 'onedrive' || isBoxUser(user_id) || drive_id === 'box') {
       return TreeStore.GetDirPath(drive_id, file_id) as IAliGetDirModel[]
     }
     const url = 'adrive/v1/file/get_path'
@@ -691,7 +792,7 @@ export default class AliFile {
 
   static async ApiFileGetPathString(user_id: string, drive_id: string, file_id: string, dirsplit: string): Promise<string> {
     if (!user_id || !drive_id || !file_id) return ''
-    if (isCloud123User(user_id) || drive_id === 'cloud123' || isPikPakUser(user_id) || drive_id === 'pikpak') {
+    if (isCloud123User(user_id) || drive_id === 'cloud123' || isPikPakUser(user_id) || drive_id === 'pikpak' || isDropboxUser(user_id) || drive_id === 'dropbox' || isOneDriveUser(user_id) || drive_id === 'onedrive' || isBoxUser(user_id) || drive_id === 'box') {
       const pathList = TreeStore.GetDirPath(drive_id, file_id)
       const pathNames = pathList.map((item) => item.name).filter((name) => name)
       return pathNames.join(dirsplit)
@@ -728,7 +829,7 @@ export default class AliFile {
 
   static async ApiFileGetFolderSize(user_id: string, drive_id: string, file_id: string): Promise<IAliGetForderSizeModel | undefined> {
     if (!user_id || !drive_id || !file_id) return undefined
-    if (isCloud123User(user_id) || drive_id === 'cloud123' || isPikPakUser(user_id) || drive_id === 'pikpak') {
+    if (isCloud123User(user_id) || drive_id === 'cloud123' || isPikPakUser(user_id) || drive_id === 'pikpak' || isDropboxUser(user_id) || drive_id === 'dropbox' || isOneDriveUser(user_id) || drive_id === 'onedrive' || isBoxUser(user_id) || drive_id === 'box') {
       return { size: 0, folder_count: 0, file_count: 0, reach_limit: undefined }
     }
     const url = 'adrive/v1/file/get_folder_size_info'
@@ -842,6 +943,7 @@ export default class AliFile {
     if (isCloud123User(user_id) || drive_id === 'cloud123') return undefined
     if (isBaiduUser(user_id) || drive_id === 'baidu') return undefined
     if (isPikPakUser(user_id) || drive_id === 'pikpak') return undefined
+    if (isDropboxUser(user_id) || drive_id === 'dropbox' || isOneDriveUser(user_id) || drive_id === 'onedrive' || isBoxUser(user_id) || drive_id === 'box') return undefined
     if (isDrive115User(user_id) || drive_id === 'drive115') {
       const meta = await getDrive115PickCode(user_id, file_id)
       if (!meta?.pick_code) return undefined
