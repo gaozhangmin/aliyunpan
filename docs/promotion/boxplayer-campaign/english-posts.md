@@ -26,7 +26,7 @@ Current features include:
 - MPV/IINA external player support
 - Aria2c downloads and remote Aria2 downloads
 - Windows, macOS, and Linux builds
-- Linux packages: AppImage, deb, pacman, zip, x64, ARM64, and ARMv7
+- Linux packages: AppImage, deb, Arch/pacman package, zip, x64, ARM64, and ARMv7
 
 Links:
 
@@ -46,6 +46,8 @@ Body:
 
 Hi HN, I am working on BoxPlayer, a free open-source cross-platform media player for cloud drives, local folders, and media servers.
 
+The repository is still named `aliyunpan`, but the public product name is BoxPlayer.
+
 It supports Aliyun Drive, Baidu Netdisk, 123Pan, 115 Drive, PikPak, OneDrive, Box, Dropbox, WebDAV, local media libraries, and Emby/Jellyfin/Plex. It is MIT-licensed and built with Electron, Vue, and TypeScript.
 
 The motivation is to make scattered media files easier to browse and play, especially for users who keep videos across several cloud drives or use Linux/NAS setups where native clients are limited.
@@ -59,7 +61,7 @@ Features:
 - Online playback with subtitles, audio tracks, and quality switching
 - External player support
 - Aria2c downloads
-- Windows/macOS/Linux packages, including AppImage/deb/pacman
+- Windows/macOS/Linux packages, including AppImage/deb/Arch packages
 
 Source and releases:
 
@@ -72,15 +74,17 @@ Feedback is welcome, especially around Linux packaging, NAS usage, and self-host
 
 Title:
 
-BoxPlayer: free open-source cross-platform media player for cloud drives
+BoxPlayer: open-source media player for cloud drives and media servers
 
 Body:
 
 I am sharing BoxPlayer, a free open-source project for managing and playing media across cloud drives, local folders, and media servers. It is MIT-licensed.
 
+The repository is still named `aliyunpan`, but the public product name is BoxPlayer.
+
 Supported sources include Aliyun Drive, Baidu Netdisk, 123Pan, 115 Drive, PikPak, OneDrive, Box, Dropbox, WebDAV, local folders, Emby, Jellyfin, and Plex.
 
-The app is built with Electron, Vue, and TypeScript, and provides Windows, macOS, and Linux builds. Linux packages include AppImage, deb, pacman, and zip.
+The app is built with Electron, Vue, and TypeScript, and provides Windows, macOS, and Linux builds. Linux packages include AppImage, deb, Arch/pacman package, and zip.
 
 Repository:
 
