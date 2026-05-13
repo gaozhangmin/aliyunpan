@@ -63,7 +63,8 @@ Features:
 
 Source and releases:
 
-https://github.com/gaozhangmin/aliyunpan
+- Source: https://github.com/gaozhangmin/aliyunpan
+- Releases: https://github.com/gaozhangmin/aliyunpan/releases
 
 Feedback is welcome, especially around Linux packaging, NAS usage, and self-hosted media workflows.
 
