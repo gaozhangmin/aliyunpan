@@ -128,6 +128,14 @@ window.Electron.ipcRenderer.on('setPage', (_event: any, args: any) => {
     appStore.pageCode = args.data
   } else if (args.page == 'PageOffice') {
     appStore.pageOffice = args.data
+  } else if (args.page == 'PagePdf') {
+    appStore.pagePdf = args.data
+  } else if (args.page == 'PageEpub') {
+    appStore.pageEpub = args.data
+  } else if (args.page == 'PageDocx') {
+    appStore.pageDocx = args.data
+  } else if (args.page == 'PageSheet') {
+    appStore.pageSheet = args.data
   } else if (args.page == 'PageImage') {
     appStore.pageImage = args.data
   } else if (args.page == 'PageVideoXBT') {
@@ -150,8 +158,4 @@ window.Electron.ipcRenderer.on('cloud123-oauth-callback', (_event: any, url: str
 try {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 } catch {}
-
-
-
-
 

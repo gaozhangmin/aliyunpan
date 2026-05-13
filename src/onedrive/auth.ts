@@ -9,6 +9,7 @@ const ONEDRIVE_DRIVE_URL = 'https://graph.microsoft.com/v1.0/me/drive'
 const ONEDRIVE_REDIRECT_URL = 'boxplayer-onedriveoauth://callback'
 export const ONEDRIVE_SCOPE = 'offline_access Files.ReadWrite User.Read'
 export const ONEDRIVE_CLIENT_ID = ''
+// OneDrive desktop OAuth uses the PKCE public-client flow; token requests must not send client_secret.
 export const ONEDRIVE_CLIENT_SECRET = ''
 
 const hashString = (value: string): string => {
@@ -156,7 +157,6 @@ export const exchangeOneDriveCodeForToken = async (code: string, clientId: strin
     grant_type: 'authorization_code',
     code_verifier: verifier
   })
-  if (ONEDRIVE_CLIENT_SECRET.trim()) body.set('client_secret', ONEDRIVE_CLIENT_SECRET.trim())
   const data = await graphJson<any>(ONEDRIVE_TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -180,7 +180,6 @@ export const refreshOneDriveAccessToken = async (token: ITokenInfo): Promise<ITo
     refresh_token: token.refresh_token,
     grant_type: 'refresh_token'
   })
-  if (ONEDRIVE_CLIENT_SECRET.trim()) body.set('client_secret', ONEDRIVE_CLIENT_SECRET.trim())
   const data = await graphJson<any>(ONEDRIVE_TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildOneDriveChildrenPath, mapOneDriveItemToAliModel } from '../dirfilelist'
+import { buildOneDriveChildrenPath, getOneDriveDownloadUrl, mapOneDriveItemToAliModel } from '../dirfilelist'
 
 (globalThis as any).pinyinlite = (input: string) => input.split('').map((char) => [char])
 
@@ -38,7 +38,7 @@ describe('OneDrive dirfilelist helpers', () => {
       file: { hashes: { sha1Hash: 'sha1' } },
       video: { width: 1920, height: 1080, duration: 120000 },
       thumbnails: [{ medium: { url: 'https://thumb' } }],
-      '@content.downloadUrl': 'https://download',
+      '@microsoft.graph.downloadUrl': 'https://download',
       createdDateTime: '2026-05-10T01:00:00Z',
       lastModifiedDateTime: '2026-05-10T02:00:00Z'
     }, 'onedrive', 'folder-id')
@@ -53,5 +53,18 @@ describe('OneDrive dirfilelist helpers', () => {
     expect((model as any).content_hash).toBe('sha1')
     expect((model as any).updated_at).toBe('2026-05-10T02:00:00Z')
     expect(model.description).toContain('onedrive_download:')
+    expect(getOneDriveDownloadUrl({
+      id: 'file-id',
+      name: 'clip.mp4',
+      '@microsoft.graph.downloadUrl': 'https://download'
+    })).toBe('https://download')
+  })
+
+  it('keeps compatibility with legacy content download url fields', () => {
+    expect(getOneDriveDownloadUrl({
+      id: 'file-id',
+      name: 'clip.mp4',
+      '@content.downloadUrl': 'https://legacy-download'
+    })).toBe('https://legacy-download')
   })
 })

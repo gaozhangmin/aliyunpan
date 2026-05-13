@@ -19,7 +19,7 @@ import { apiBaiduFileList } from '../cloudbaidu/dirfilelist'
 import { apiBaiduFileMetas, mapBaiduMetaToAliFileItem } from '../cloudbaidu/filecmd'
 import { apiPikPakDownloadInfo, apiPikPakFileDetail, mapPikPakFileToAliModel } from '../pikpak/dirfilelist'
 import { apiDropboxFileDetail, apiDropboxTemporaryLink, mapDropboxFileToAliModel, resolveDropboxParentIdFromPath } from '../dropbox/dirfilelist'
-import { apiOneDriveFileDetail, mapOneDriveItemToAliModel } from '../onedrive/dirfilelist'
+import { apiOneDriveFileDetail, getOneDriveDownloadUrl, mapOneDriveItemToAliModel } from '../onedrive/dirfilelist'
 import { apiBoxFileDetail, buildBoxDownloadUrl, getBoxToken, mapBoxItemToAliModel } from '../box/dirfilelist'
 import TreeStore from '../store/treestore'
 import UserDAL from '../user/userdal'
@@ -329,7 +329,7 @@ export default class AliFile {
     }
     if (isOneDriveUser(user_id) || drive_id === 'onedrive') {
       const info = await apiOneDriveFileDetail(user_id, file_id)
-      const url = info?.['@content.downloadUrl'] || ''
+      const url = getOneDriveDownloadUrl(info)
       if (!url) return '获取 OneDrive 下载地址失败'
       return {
         drive_id: drive_id,

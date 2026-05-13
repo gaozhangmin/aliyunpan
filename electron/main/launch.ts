@@ -10,6 +10,8 @@ import { EventEmitter } from 'node:events'
 import exception from './core/exception'
 import ipcEvent from './core/ipcEvent'
 
+const OAUTH_PROTOCOLS = ['xbyboxplayer-oauth', 'boxplayer-onedriveoauth']
+
 type UserToken = {
   access_token: string;
   open_api_access_token: string;
@@ -285,11 +287,12 @@ export default class launch extends EventEmitter {
   }
 
   private registerProtocol() {
-    const protocol = 'xbyboxplayer-oauth'
-    if (is.windows() && process.defaultApp && process.argv.length >= 2) {
-      app.setAsDefaultProtocolClient(protocol, process.execPath, [process.argv[1]])
-    } else {
-      app.setAsDefaultProtocolClient(protocol)
+    for (const protocol of OAUTH_PROTOCOLS) {
+      if (is.windows() && process.defaultApp && process.argv.length >= 2) {
+        app.setAsDefaultProtocolClient(protocol, process.execPath, [process.argv[1]])
+      } else {
+        app.setAsDefaultProtocolClient(protocol)
+      }
     }
   }
 
@@ -302,8 +305,7 @@ export default class launch extends EventEmitter {
 
   private extractOAuthUrl(commandLine?: string[]) {
     if (!commandLine) return ''
-    const prefix = 'xbyboxplayer-oauth://'
-    return commandLine.find(arg => arg.startsWith(prefix)) || ''
+    return commandLine.find(arg => OAUTH_PROTOCOLS.some(protocol => arg.startsWith(`${protocol}://`))) || ''
   }
 
   private dispatchOAuthUrl(url: string) {

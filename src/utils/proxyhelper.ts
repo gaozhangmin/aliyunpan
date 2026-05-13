@@ -221,7 +221,7 @@ export async function createProxyServer(port: number) {
   const url = require('url')
   const proxyServer: Server = http.createServer(async (clientReq: IncomingMessage, clientRes: ServerResponse) => {
     const { pathname, query } = url.parse(clientReq.url, true)
-    const { user_id, drive_id, file_id, file_size, encType, password, weifa, quality, proxy_url, proxy_headers } = query
+    const { user_id, drive_id, file_id, file_size, encType, password, weifa, quality, proxy_url, proxy_headers, content_disposition, file_name } = query
     console.info('proxy query: ', query)
     if (pathname === '/proxy') {
       const driveId = String(drive_id || '')
@@ -308,6 +308,10 @@ export async function createProxyServer(port: number) {
           clientRes.statusCode = httpResp.statusCode
           for (const key in httpResp.headers) {
             clientRes.setHeader(key, httpResp.headers[key])
+          }
+          if (content_disposition === 'inline') {
+            const inlineFileName = String(file_name || getUrlFileName(proxyUrl) || 'preview')
+            clientRes.setHeader('content-disposition', `inline; filename*=UTF-8''${encodeURIComponent(inlineFileName)};`)
           }
           if (clientRes.statusCode % 300 < 5) {
             // 可能出现304，redirectUrl = undefined

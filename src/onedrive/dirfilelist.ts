@@ -39,6 +39,7 @@ export type OneDriveItem = {
     medium?: { url?: string }
     large?: { url?: string }
   }>
+  '@microsoft.graph.downloadUrl'?: string
   '@content.downloadUrl'?: string
 }
 
@@ -86,6 +87,9 @@ export const buildOneDriveChildrenPath = (parentId: string): string => {
   return `/me/drive/items/${encodeURIComponent(parentId)}/children?${expand}`
 }
 
+export const getOneDriveDownloadUrl = (item?: OneDriveItem | null): string =>
+  item?.['@microsoft.graph.downloadUrl'] || item?.['@content.downloadUrl'] || ''
+
 export const apiOneDriveFileList = async (user_id: string, parentId: string): Promise<OneDriveItem[]> => {
   let data = await graphRequest<OneDriveChildrenResp>(user_id, buildOneDriveChildrenPath(parentId), '获取 OneDrive 文件列表失败')
   const items = Array.isArray(data?.value) ? [...data.value] : []
@@ -109,7 +113,8 @@ const encodeDescription = (item: OneDriveItem) => {
   if (item.parentReference?.id) parts.push(`onedrive_parent:${item.parentReference.id}`)
   if (item.parentReference?.path) parts.push(`onedrive_path:${encodeURIComponent(item.parentReference.path)}`)
   if (item.parentReference?.driveId) parts.push(`onedrive_drive:${item.parentReference.driveId}`)
-  if (item['@content.downloadUrl']) parts.push(`onedrive_download:${encodeURIComponent(item['@content.downloadUrl'])}`)
+  const downloadUrl = getOneDriveDownloadUrl(item)
+  if (downloadUrl) parts.push(`onedrive_download:${encodeURIComponent(downloadUrl)}`)
   return parts.join(';')
 }
 

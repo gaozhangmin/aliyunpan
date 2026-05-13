@@ -12,6 +12,38 @@ export interface IPageOffice {
   access_token: string
 }
 
+export interface IPagePdf {
+  user_id: string
+  drive_id: string
+  file_id: string
+  file_name: string
+  preview_url: string
+}
+
+export interface IPageEpub {
+  user_id: string
+  drive_id: string
+  file_id: string
+  file_name: string
+  preview_url: string
+}
+
+export interface IPageDocx {
+  user_id: string
+  drive_id: string
+  file_id: string
+  file_name: string
+  preview_url: string
+}
+
+export interface IPageSheet {
+  user_id: string
+  drive_id: string
+  file_id: string
+  file_name: string
+  preview_url: string
+}
+
 export interface IPageCode {
   user_id: string
   drive_id: string
@@ -101,6 +133,10 @@ export interface AppState {
 
 
   pageOffice?: IPageOffice
+  pagePdf?: IPagePdf
+  pageEpub?: IPageEpub
+  pageDocx?: IPageDocx
+  pageSheet?: IPageSheet
   pageCode?: IPageCode
   pageImage?: IPageImage
   pageVideoXBT?: IPageVideoXBT

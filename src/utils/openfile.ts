@@ -4,14 +4,14 @@ import AliFile from '../aliapi/file'
 import AliFileCmd from '../aliapi/filecmd'
 import ServerHttp from '../aliapi/server'
 import { ITokenInfo, useFootStore, usePanFileStore, useSettingStore, useUserStore } from '../store'
-import { IPageCode, IPageImage, IPageOffice, IPageVideo, IPageVideoPlaylistEntry } from '../store/appstore'
+import { IPageCode, IPageDocx, IPageEpub, IPageImage, IPageOffice, IPagePdf, IPageSheet, IPageVideo, IPageVideoPlaylistEntry } from '../store/appstore'
 import UserDAL from '../user/userdal'
 import { clickWait } from './debounce'
 import DebugLog from './debuglog'
 import message from './message'
 import { modalArchive, modalArchivePassword, modalSelectPanDir, modalSelectVideoQuality } from './modal'
 import PlayerUtils from './playerhelper'
-import { getEncType, getRawUrl } from './proxyhelper'
+import { getEncType, getProxyUrl, getRawUrl } from './proxyhelper'
 import { isAliyunUser, isBaiduUser, isBoxUser, isCloud123User, isDrive115User, isDropboxUser, isOneDriveUser, isPikPakUser } from '../aliapi/utils'
 
 async function resolveTokenForFile(file: IAliGetFileModel): Promise<ITokenInfo | undefined> {
@@ -51,6 +51,13 @@ async function resolveTokenForFile(file: IAliGetFileModel): Promise<ITokenInfo |
 }
 
 const TEXT_PREVIEW_EXTS = new Set(['txt', 'text', 'log', 'csv', 'tsv', 'nfo', 'srt', 'vtt', 'ass', 'ssa'])
+const PDF_PREVIEW_DRIVES = new Set(['cloud123', 'drive115', 'baidu', 'pikpak', 'dropbox', 'onedrive', 'box'])
+const EPUB_PREVIEW_DRIVES = PDF_PREVIEW_DRIVES
+const DOCX_PREVIEW_DRIVES = PDF_PREVIEW_DRIVES
+const OFFICE_TO_PDF_DRIVES = PDF_PREVIEW_DRIVES
+const SHEET_PREVIEW_DRIVES = PDF_PREVIEW_DRIVES
+const SHEET_PREVIEW_EXTS = new Set(['xls', 'xlsx', 'xlsm', 'xlsb', 'csv', 'tsv'])
+const OFFICE_TO_PDF_EXTS = new Set(['doc', 'docm', 'dot', 'dotm', 'dotx', 'rtf', 'odt', 'ott', 'wps', 'wpt', 'xls', 'xlsx', 'xlsm', 'xlsb', 'xlt', 'xltx', 'ods', 'ots', 'ppt', 'pptx', 'pptm', 'pps', 'ppsx', 'pot', 'potx', 'odp', 'dps', 'dpt'])
 
 function TextPreviewExt(fileExt: string): string {
   return TEXT_PREVIEW_EXTS.has((fileExt || '').toLowerCase().replace('.', '').trim()) ? 'plain' : ''
@@ -77,13 +84,33 @@ export async function menuOpenFile(
     Archive(file.drive_id, file.file_id, file.name, file.parent_file_id, file.icon == 'iconweifa')
     return
   }
-  if (file.ext == 'djvu' || file.ext == 'epub' || file.ext == 'azw3' || file.ext == 'mobi' || file.ext == 'cbr' || file.ext == 'cbz' || file.ext == 'cbt' || file.ext == 'fb2') {
+  if ((file.ext || '').toLowerCase() === 'epub' && EPUB_PREVIEW_DRIVES.has(file.drive_id || '')) {
+    await Epub(file, password)
+    return
+  }
+  if (file.ext == 'djvu' || file.ext == 'azw3' || file.ext == 'mobi' || file.ext == 'cbr' || file.ext == 'cbz' || file.ext == 'cbt' || file.ext == 'fb2') {
   }
 
   if (file.category.startsWith('doc')) {
     const textExt = TextPreviewExt(file.ext)
     if (textExt) {
       await Code(file, textExt, password)
+      return
+    }
+    if ((file.ext || '').toLowerCase() === 'pdf' && PDF_PREVIEW_DRIVES.has(file.drive_id || '')) {
+      await Pdf(file, password)
+      return
+    }
+    if ((file.ext || '').toLowerCase() === 'docx' && DOCX_PREVIEW_DRIVES.has(file.drive_id || '')) {
+      await Docx(file, password)
+      return
+    }
+    if (SHEET_PREVIEW_EXTS.has((file.ext || '').toLowerCase()) && SHEET_PREVIEW_DRIVES.has(file.drive_id || '')) {
+      await Sheet(file, password)
+      return
+    }
+    if (OFFICE_TO_PDF_EXTS.has((file.ext || '').toLowerCase()) && OFFICE_TO_PDF_DRIVES.has(file.drive_id || '')) {
+      await OfficePdf(file, password)
       return
     }
     if (file.description && file.description.includes('xbyEncrypt')) {
@@ -327,6 +354,165 @@ async function Image(file: IAliGetFileModel, password: string = ''): Promise<voi
     imageList: imageList
   }
   window.WebOpenWindow({ page: 'PageImage', data: pageImage, theme: 'dark' })
+}
+
+async function Pdf(file: IAliGetFileModel, password: string = ''): Promise<void> {
+  const token = await resolveTokenForFile(file)
+  if (!token || !token.access_token) {
+    message.error('在线预览失败 账号失效，操作取消')
+    return
+  }
+  message.loading('加载中...', 2)
+  const rawData = await getRawUrl(token.user_id, file.drive_id, file.file_id, getEncType(file), password, file.icon == 'iconweifa', 'other', 'Origin')
+  if (typeof rawData === 'string' || !rawData.url) {
+    message.error(typeof rawData === 'string' ? rawData : '获取 PDF 预览链接失败，操作取消')
+    return
+  }
+  const pagePdf: IPagePdf = {
+    user_id: token.user_id,
+    drive_id: file.drive_id,
+    file_id: file.file_id,
+    file_name: file.name,
+    preview_url: getProxyUrl({
+      user_id: token.user_id,
+      drive_id: file.drive_id,
+      file_id: file.file_id,
+      file_size: rawData.size || file.size,
+      proxy_url: rawData.url,
+      content_disposition: 'inline',
+      file_name: file.name
+    })
+  }
+  window.WebOpenWindow({ page: 'PagePdf', data: pagePdf, theme: 'dark' })
+}
+
+async function Epub(file: IAliGetFileModel, password: string = ''): Promise<void> {
+  const token = await resolveTokenForFile(file)
+  if (!token || !token.access_token) {
+    message.error('在线预览失败 账号失效，操作取消')
+    return
+  }
+  message.loading('加载中...', 2)
+  const rawData = await getRawUrl(token.user_id, file.drive_id, file.file_id, getEncType(file), password, file.icon == 'iconweifa', 'other', 'Origin')
+  if (typeof rawData === 'string' || !rawData.url) {
+    message.error(typeof rawData === 'string' ? rawData : '获取 EPUB 预览链接失败，操作取消')
+    return
+  }
+  const pageEpub: IPageEpub = {
+    user_id: token.user_id,
+    drive_id: file.drive_id,
+    file_id: file.file_id,
+    file_name: file.name,
+    preview_url: getProxyUrl({
+      user_id: token.user_id,
+      drive_id: file.drive_id,
+      file_id: file.file_id,
+      file_size: rawData.size || file.size,
+      proxy_url: rawData.url,
+      content_disposition: 'inline',
+      file_name: file.name
+    })
+  }
+  window.WebOpenWindow({ page: 'PageEpub', data: pageEpub, theme: 'dark' })
+}
+
+async function Docx(file: IAliGetFileModel, password: string = ''): Promise<void> {
+  const token = await resolveTokenForFile(file)
+  if (!token || !token.access_token) {
+    message.error('在线预览失败 账号失效，操作取消')
+    return
+  }
+  message.loading('加载中...', 2)
+  const rawData = await getRawUrl(token.user_id, file.drive_id, file.file_id, getEncType(file), password, file.icon == 'iconweifa', 'other', 'Origin')
+  if (typeof rawData === 'string' || !rawData.url) {
+    message.error(typeof rawData === 'string' ? rawData : '获取 Word 预览链接失败，操作取消')
+    return
+  }
+  const pageDocx: IPageDocx = {
+    user_id: token.user_id,
+    drive_id: file.drive_id,
+    file_id: file.file_id,
+    file_name: file.name,
+    preview_url: getProxyUrl({
+      user_id: token.user_id,
+      drive_id: file.drive_id,
+      file_id: file.file_id,
+      file_size: rawData.size || file.size,
+      proxy_url: rawData.url,
+      content_disposition: 'inline',
+      file_name: file.name
+    })
+  }
+  window.WebOpenWindow({ page: 'PageDocx', data: pageDocx, theme: 'dark' })
+}
+
+async function OfficePdf(file: IAliGetFileModel, password: string = ''): Promise<void> {
+  const token = await resolveTokenForFile(file)
+  if (!token || !token.access_token) {
+    message.error('在线预览失败 账号失效，操作取消')
+    return
+  }
+  message.loading('正在转换文档...', 2)
+  const rawData = await getRawUrl(token.user_id, file.drive_id, file.file_id, getEncType(file), password, file.icon == 'iconweifa', 'other', 'Origin')
+  if (typeof rawData === 'string' || !rawData.url) {
+    message.error(typeof rawData === 'string' ? rawData : '获取文档预览链接失败，操作取消')
+    return
+  }
+  const sourceUrl = getProxyUrl({
+    user_id: token.user_id,
+    drive_id: file.drive_id,
+    file_id: file.file_id,
+    file_size: rawData.size || file.size,
+    proxy_url: rawData.url,
+    content_disposition: 'inline',
+    file_name: file.name
+  })
+  const converted = await window.TvBoxInvoke('OfficePreview:convertToPdf', {
+    sourceUrl,
+    fileName: file.name
+  }) as { ok: boolean; pdfUrl?: string; error?: string }
+  if (!converted?.ok || !converted.pdfUrl) {
+    message.error(converted?.error || '文档转换 PDF 失败，操作取消')
+    return
+  }
+  const pagePdf: IPagePdf = {
+    user_id: token.user_id,
+    drive_id: file.drive_id,
+    file_id: file.file_id,
+    file_name: file.name + '.pdf',
+    preview_url: converted.pdfUrl
+  }
+  window.WebOpenWindow({ page: 'PagePdf', data: pagePdf, theme: 'dark' })
+}
+
+async function Sheet(file: IAliGetFileModel, password: string = ''): Promise<void> {
+  const token = await resolveTokenForFile(file)
+  if (!token || !token.access_token) {
+    message.error('在线预览失败 账号失效，操作取消')
+    return
+  }
+  message.loading('加载中...', 2)
+  const rawData = await getRawUrl(token.user_id, file.drive_id, file.file_id, getEncType(file), password, file.icon == 'iconweifa', 'other', 'Origin')
+  if (typeof rawData === 'string' || !rawData.url) {
+    message.error(typeof rawData === 'string' ? rawData : '获取表格预览链接失败，操作取消')
+    return
+  }
+  const pageSheet: IPageSheet = {
+    user_id: token.user_id,
+    drive_id: file.drive_id,
+    file_id: file.file_id,
+    file_name: file.name,
+    preview_url: getProxyUrl({
+      user_id: token.user_id,
+      drive_id: file.drive_id,
+      file_id: file.file_id,
+      file_size: rawData.size || file.size,
+      proxy_url: rawData.url,
+      content_disposition: 'inline',
+      file_name: file.name
+    })
+  }
+  window.WebOpenWindow({ page: 'PageSheet', data: pageSheet, theme: 'dark' })
 }
 
 async function Office(file: IAliGetFileModel): Promise<void> {

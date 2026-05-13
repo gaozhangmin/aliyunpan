@@ -56,5 +56,6 @@ declare type DownloadStates =
 
 declare module 'Go'
 declare module 'dom-to-image'
+declare module 'epubjs'
 declare module 'jschardet'
 declare function pinyinlite(text: string, config: any): any

@@ -1,7 +1,7 @@
 {
   "name": "BoxPlayer",
   "description": "BoxPlayer",
-  "version": "4.0.9-beta",
+  "version": "4.0.10-beta",
   "main": "dist/electron/main/index.js",
   "author": {
     "name": "gaozhangmin",
@@ -65,10 +65,12 @@
     "dashjs": "^5.1.1",
     "dayjs": "^1.11.10",
     "dexie": "^4.0.1",
+    "docx-preview": "^0.3.7",
     "dom-to-image": "^2.6.0",
     "electron": "21.4.4",
     "electron-builder": "^24.13.3",
     "electron-is": "^3.0.0",
+    "epubjs": "^0.3.93",
     "fast-levenshtein": "^3.0.0",
     "fast-xml-parser": "^4.3.6",
     "fix-path": "^4.0.0",
@@ -85,6 +87,7 @@
     "node-ssdp": "^4.0.1",
     "pako": "^2.1.0",
     "path-to-regexp": "^6.2.2",
+    "pdfjs-dist": "^3.11.174",
     "perf_hooks": "^0.0.1",
     "pinia": "^2.1.7",
     "secp256k1": "^5.0.0",
@@ -106,7 +109,8 @@
     "vue-tsc": "^2.0.10",
     "webdav": "5.9.0",
     "webdav-server": "^2.6.2",
-    "whacko": "^0.19.1"
+    "whacko": "^0.19.1",
+    "xlsx": "^0.18.5"
   },
   "debug": {
     "env": {
