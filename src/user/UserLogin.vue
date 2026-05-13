@@ -934,7 +934,7 @@ const loginSuccess = (token: ITokenInfo) => {
               <p style="margin: 32px 0 8px; font-size: 15px;">已在系统浏览器中打开 OneDrive 授权页面</p>
               <p style="color: var(--color-text-3); font-size: 13px;">请在浏览器中完成登录，授权后将自动跳转回应用</p>
               <p style="color: var(--color-text-3); font-size: 13px; margin: 8px 0 0;">
-                回调地址：xbyboxplayer-oauth://callback
+                回调地址：boxplayer-onedriveoauth://callback
               </p>
               <a-button style="margin-top: 16px;" :loading="onedriveLoading" @click="handleReopenOneDrive">重新打开浏览器</a-button>
             </div>
