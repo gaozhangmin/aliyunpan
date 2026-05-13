@@ -62,7 +62,7 @@ BoxPlayer：一个免费开源的跨平台多网盘播放器，Linux 有 AppImag
 
 标题：
 
-[开源] BoxPlayer 免费多网盘聚合播放器，支持阿里/百度/115/123/PikPak/OneDrive/Dropbox/Box/WebDAV
+[开源] BoxPlayer 免费多网盘聚合播放器，支持国内外主流网盘和 WebDAV
 
 正文：
 
@@ -77,7 +77,7 @@ BoxPlayer：一个免费开源的跨平台多网盘播放器，Linux 有 AppImag
 - 媒体库扫描和 TMDB 元数据
 - 在线播放、字幕、多音轨、清晰度切换
 - MPV/IINA 第三方播放器
-- Aria2c 高速下载和远程下载
+- Aria2c 下载和远程下载
 - Windows/macOS/Linux
 
 下载：
@@ -100,15 +100,17 @@ BoxPlayer：免费开源的多网盘聚合播放器
 
 做了一个免费开源的多网盘聚合播放器 BoxPlayer，仓库名叫 `aliyunpan`。
 
+目前主要是 Windows/macOS/Linux 桌面端软件，不是 Android 客户端。
+
 支持阿里云盘、百度网盘、123 网盘、115 网盘、PikPak、OneDrive、Box、Dropbox、WebDAV，也支持本地媒体库和 Emby/Jellyfin/Plex。
 
 它更像是“网盘 + 媒体库 + 播放器”：
 
 - 多账号、多网盘统一管理
-- 自动整理电影/剧集/动漫媒体库
+- 媒体库扫描、刮削和整理
 - 海报墙、详情页、聚合搜索
 - 在线播放、字幕、多音轨、清晰度切换
-- Windows/macOS/Linux 都有包
+- Windows/macOS/Linux 桌面端都有包
 
 下载地址：
 
