@@ -24,7 +24,8 @@
 ### Linux.do
 
 - [ ] 使用 `forum-short-zh.md` 的 Linux.do 版本。
-- [ ] 强调 Linux 包、NAS、WebDAV、媒体服务器。
+- [ ] 强调 Linux 桌面、迷你主机、连接 NAS 媒体库、WebDAV、媒体服务器。
+- [ ] 附 Release 页面链接，并说明 AppImage/deb/Arch-pacman/zip 包。
 - [ ] 发布后记录链接：
 - [ ] 24 小时后记录反馈：
 
@@ -39,6 +40,7 @@
 ### 酷安
 
 - [ ] 使用 `forum-short-zh.md` 的酷安版本。
+- [ ] 明确目前是 Windows/macOS/Linux 桌面端软件，不是 Android 客户端。
 - [ ] 图片优先使用视觉效果强的海报墙和详情页。
 - [ ] 发布后记录链接：
 - [ ] 24 小时后记录反馈：
@@ -64,7 +66,7 @@
 
 - [ ] 使用 `english-posts.md` 的 Reddit 版本。
 - [ ] 检查 subreddit self-promotion rules。
-- [ ] 首段说明 open-source、cross-platform、Linux builds。
+- [ ] 首段说明 open-source、MIT License、cross-platform、Linux builds。
 - [ ] 发布后记录链接：
 - [ ] 24 小时后记录反馈：
 
@@ -72,7 +74,7 @@
 
 - [ ] 使用 `english-posts.md` 的 Show HN 版本。
 - [ ] 标题以 `Show HN:` 开头。
-- [ ] 正文简洁，避免营销味。
+- [ ] 以项目链接/文字为主，正文简洁，避免营销味。
 - [ ] 发布后记录链接：
 - [ ] 24 小时后记录反馈：
 
