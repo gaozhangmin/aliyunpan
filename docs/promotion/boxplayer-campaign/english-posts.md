@@ -34,7 +34,7 @@ Links:
 - Latest release: https://github.com/gaozhangmin/aliyunpan/releases/latest
 - Source code: https://github.com/gaozhangmin/aliyunpan
 
-I would especially appreciate feedback from Linux, NAS, and home media users. The project is free and open source. Please use it responsibly and follow the terms of the services you connect to.
+I would especially appreciate feedback from Linux, NAS, and home media users. The project is free, open source, and MIT-licensed. Please use it responsibly and follow the terms of the services you connect to.
 
 ## Hacker News Show HN
 
@@ -46,7 +46,7 @@ Body:
 
 Hi HN, I am working on BoxPlayer, a free open-source cross-platform media player for cloud drives, local folders, and media servers.
 
-It supports Aliyun Drive, Baidu Netdisk, 123Pan, 115 Drive, PikPak, OneDrive, Box, Dropbox, WebDAV, local media libraries, and Emby/Jellyfin/Plex. The app is built with Electron, Vue, and TypeScript.
+It supports Aliyun Drive, Baidu Netdisk, 123Pan, 115 Drive, PikPak, OneDrive, Box, Dropbox, WebDAV, local media libraries, and Emby/Jellyfin/Plex. It is MIT-licensed and built with Electron, Vue, and TypeScript.
 
 The motivation is to make scattered media files easier to browse and play, especially for users who keep videos across several cloud drives or use Linux/NAS setups where native clients are limited.
 
@@ -76,7 +76,7 @@ BoxPlayer: free open-source cross-platform media player for cloud drives
 
 Body:
 
-I am sharing BoxPlayer, a free open-source project for managing and playing media across cloud drives, local folders, and media servers.
+I am sharing BoxPlayer, a free open-source project for managing and playing media across cloud drives, local folders, and media servers. It is MIT-licensed.
 
 Supported sources include Aliyun Drive, Baidu Netdisk, 123Pan, 115 Drive, PikPak, OneDrive, Box, Dropbox, WebDAV, local folders, Emby, Jellyfin, and Plex.
 
