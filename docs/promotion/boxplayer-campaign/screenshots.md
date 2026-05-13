@@ -77,7 +77,7 @@
 ## 平台建议
 
 - V2EX: 2-3 张截图即可，优先媒体库、聚合搜索、文件管理。
-- Linux.do: 媒体库截图 + Release 页面链接，正文里说明 AppImage/deb/Arch-pacman/zip。
+- Linux.do: 媒体库截图 + Release 页面链接，正文里说明 AppImage/deb/Arch/pacman 包/zip。
 - 吾爱破解: 文件管理、多账号、播放器能力截图。
 - 酷安: 海报墙、详情页、多账号，视觉优先。
 - Zhihu/掘金长文: 每个能力模块各放 1-2 张图。

@@ -23,7 +23,7 @@ Current features include:
 - Aggregated search
 - Online playback
 - External subtitles, multiple audio tracks, quality switching, and playlists
-- MPV/IINA external player support
+- MPV and other external player support
 - Aria2c downloads and remote Aria2 downloads
 - Windows, macOS, and Linux builds
 - Linux packages: AppImage, deb, Arch/pacman package, zip, x64, ARM64, and ARMv7

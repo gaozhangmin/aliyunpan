@@ -22,7 +22,7 @@
 - 原画在线播放、字幕、多音轨、清晰度切换
 - MPV/IINA 等第三方播放器
 - Aria2c 下载和远程下载
-- Windows/macOS/Linux，Linux 有 AppImage/deb/pacman/zip
+- Windows/macOS/Linux，Linux 有 AppImage/deb/Arch/pacman 包/zip
 
 下载：
 
@@ -36,7 +36,7 @@
 
 标题：
 
-BoxPlayer：一个免费开源的跨平台多网盘播放器，Linux 有 AppImage/deb/pacman
+BoxPlayer：一个免费开源的跨平台多网盘播放器，Linux 有 AppImage/deb/Arch/pacman 包
 
 正文：
 
@@ -46,9 +46,9 @@ BoxPlayer：一个免费开源的跨平台多网盘播放器，Linux 有 AppImag
 
 比较想重点听 Linux/NAS 用户反馈：
 
-- AppImage/deb/pacman/zip 哪种安装方式更常用？
+- AppImage/deb/Arch/pacman 包/zip 哪种安装方式更常用？
 - x64、ARM64、ARMv7 包是否够用？
-- NAS/迷你主机上更需要 WebDAV、远程 Aria2，还是媒体库？
+- 迷你主机或连接 NAS 媒体库时更需要 WebDAV、远程 Aria2，还是媒体库？
 - 多网盘聚合搜索和在线播放是否符合你的工作流？
 
 下载和源码：

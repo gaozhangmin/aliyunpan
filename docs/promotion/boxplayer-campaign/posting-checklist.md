@@ -25,7 +25,7 @@
 
 - [ ] 使用 `forum-short-zh.md` 的 Linux.do 版本。
 - [ ] 强调 Linux 桌面、迷你主机、连接 NAS 媒体库、WebDAV、媒体服务器。
-- [ ] 附 Release 页面链接，并说明 AppImage/deb/Arch-pacman/zip 包。
+- [ ] 附 Release 页面链接，并说明 AppImage/deb/Arch/pacman 包/zip。
 - [ ] 发布后记录链接：
 - [ ] 24 小时后记录反馈：
 
