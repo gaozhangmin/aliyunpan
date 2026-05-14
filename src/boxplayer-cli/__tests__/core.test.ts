@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { createAuthStore } from '../core/authStore.mjs'
+import { createOperationLogStore, createUndoRenamePlan } from '../core/operationLog.mjs'
 import { createProviderRegistry } from '../core/providerRegistry.mjs'
 import { dryRunRenamePlan, validateRenamePlan } from '../core/renamePlan.mjs'
 import { createAliyunProvider } from '../providers/aliyun.mjs'
@@ -175,6 +176,92 @@ describe('rename plan validation', () => {
         },
       ],
       errors: [],
+    })
+  })
+})
+
+describe('operation logs', () => {
+  it('saves, lists, and shows operation logs', async () => {
+    const configDir = await makeTempDir()
+    const store = createOperationLogStore({ configDir })
+
+    await store.save({
+      id: 'op_test',
+      type: 'rename',
+      provider: 'aliyun',
+      account_id: 'aliyun_demo',
+      started_at: '2026-05-14T00:00:00.000Z',
+      finished_at: '2026-05-14T00:00:01.000Z',
+      items: [
+        {
+          drive_id: 'drive',
+          file_id: 'file-1',
+          parent_file_id: 'parent',
+          before_name: 'A.mkv',
+          after_name: 'B.mkv',
+          status: 'success',
+        },
+      ],
+    })
+
+    expect(await store.list()).toEqual([
+      {
+        id: 'op_test',
+        type: 'rename',
+        provider: 'aliyun',
+        account_id: 'aliyun_demo',
+        started_at: '2026-05-14T00:00:00.000Z',
+        finished_at: '2026-05-14T00:00:01.000Z',
+        successCount: 1,
+        failureCount: 0,
+      },
+    ])
+    expect(await store.get('op_test')).toMatchObject({
+      id: 'op_test',
+      items: [{ file_id: 'file-1', status: 'success' }],
+    })
+  })
+
+  it('creates an inverse rename plan from successful log items', () => {
+    expect(createUndoRenamePlan({
+      id: 'op_test',
+      type: 'rename',
+      provider: 'aliyun',
+      account_id: 'aliyun_demo',
+      items: [
+        {
+          drive_id: 'drive',
+          file_id: 'file-1',
+          parent_file_id: 'parent',
+          before_name: 'A.mkv',
+          after_name: 'B.mkv',
+          status: 'success',
+        },
+        {
+          drive_id: 'drive',
+          file_id: 'file-2',
+          parent_file_id: 'parent',
+          before_name: 'C.mkv',
+          after_name: 'D.mkv',
+          status: 'failed',
+        },
+      ],
+    })).toMatchObject({
+      version: 1,
+      operation: 'rename',
+      provider: 'aliyun',
+      account_id: 'aliyun_demo',
+      source_operation_id: 'op_test',
+      items: [
+        {
+          drive_id: 'drive',
+          file_id: 'file-1',
+          parent_file_id: 'parent',
+          old_name: 'B.mkv',
+          new_name: 'A.mkv',
+          reason: 'Undo rename from operation op_test',
+        },
+      ],
     })
   })
 })
