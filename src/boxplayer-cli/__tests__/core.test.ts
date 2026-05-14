@@ -76,7 +76,7 @@ describe('provider registry', () => {
       pathAddressable: false,
       fileIdAddressable: true,
     })
-    expect(registry.list().map((item) => item.id)).toEqual(['aliyun'])
+    expect(registry.list().map((item: { id: string }) => item.id)).toEqual(['aliyun'])
     expect(() => registry.get('missing')).toThrow('Unknown provider: missing')
   })
 })
