@@ -9,6 +9,9 @@
   },
   "homepage": "https://github.com/gaozhangmin/aliyunpan",
   "license": "GPL-3.0",
+  "bin": {
+    "boxplayer-cli": "scripts/boxplayer-cli.mjs"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
@@ -22,7 +25,8 @@
     "build:all": "pnpm run build && CSC_IDENTITY_AUTO_DISCOVERY=true  electron-builder --linux --win --mac",
     "config:clean": "node scripts/clean-config.js",
     "config:restore": "node scripts/restore-config.js",
-    "test": "vitest run electron/main/download/__tests__"
+    "test": "vitest run electron/main/download/__tests__",
+    "test:boxplayer-cli": "vitest run src/boxplayer-cli/__tests__"
   },
   "engines": {
     "node": ">=18.0.0"
