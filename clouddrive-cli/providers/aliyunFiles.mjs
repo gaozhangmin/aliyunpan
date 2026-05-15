@@ -124,7 +124,7 @@ export async function aliRenameBatch(token, driveId, renames) {
 
 export async function aliGetFile(token, driveId, fileId) {
   const accountId = token.user_id
-  const data = await aliPost('adrive/v3/file/get', { drive_id: driveId, file_id: fileId, fields: '*' }, token)
+  const data = await aliPost('v2/file/get', { drive_id: driveId, file_id: fileId, fields: '*' }, token)
   return mapFileItem(data, driveId, accountId)
 }
 

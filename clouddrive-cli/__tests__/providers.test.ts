@@ -3,14 +3,16 @@ import { pikpakRefreshToken, pikpakListDir, pikpakRenameBatch } from '../provide
 import { dropboxRefreshToken, dropboxListDir, dropboxRenameBatch } from '../providers/dropbox.mjs'
 import { onedriveRefreshToken, onedriveListDir, onedriveRenameBatch } from '../providers/onedrive.mjs'
 import { boxRefreshToken, boxListDir, boxRenameBatch } from '../providers/box.mjs'
-import { baiduRefreshToken, baiduListDir, baiduRenameBatch } from '../providers/baidu.mjs'
+import { baiduRefreshToken, baiduListDir, baiduRenameBatch, baiduGetFile } from '../providers/baidu.mjs'
 import { drive115RefreshToken, drive115ListDir, drive115RenameBatch } from '../providers/drive115.mjs'
+import { cloud123ListDir, cloud123RenameBatch } from '../providers/cloud123.mjs'
 import { createPikpakProvider } from '../providers/pikpakProvider.mjs'
 import { createDropboxProvider } from '../providers/dropboxProvider.mjs'
 import { createOnedriveProvider } from '../providers/onedriveProvider.mjs'
 import { createBoxProvider } from '../providers/boxProvider.mjs'
 import { createBaiduProvider } from '../providers/baiduProvider.mjs'
 import { createDrive115Provider } from '../providers/drive115Provider.mjs'
+import { createCloud123Provider } from '../providers/cloud123Provider.mjs'
 
 function mockFetch(data: unknown, status = 200) {
   return vi.fn().mockResolvedValue({
@@ -181,6 +183,23 @@ describe('OneDrive - list dir', () => {
   })
 })
 
+describe('OneDrive - search', () => {
+  it('deduplicates repeated items by id', async () => {
+    vi.stubGlobal('fetch', mockFetch({
+      value: [
+        { id: 'dup', name: 'test.mp4', file: { mimeType: 'video/mp4' } },
+        { id: 'dup', name: 'test.mp4', file: { mimeType: 'video/mp4' } },
+        { id: 'unique', name: 'test2.mp4', file: { mimeType: 'video/mp4' } },
+      ],
+    }))
+
+    const { onedriveSearch } = await import('../providers/onedrive.mjs')
+    const items = await onedriveSearch(TOKEN, 'test', { limit: 5 })
+
+    expect(items.map((item) => item.fileId)).toEqual(['dup', 'unique'])
+  })
+})
+
 describe('OneDrive - rename batch', () => {
   it('sends PATCH with name field', async () => {
     const fetchMock = mockFetch({ id: 'od1', name: 'New.mkv' })
@@ -300,6 +319,19 @@ describe('Baidu - list dir', () => {
   })
 })
 
+describe('Baidu - file info', () => {
+  it('maps filemetas info response to FileItem', async () => {
+    vi.stubGlobal('fetch', mockFetch({
+      errno: 0,
+      info: [{ fs_id: 12345, filename: 'Movie.mkv', path: '/Movies/Movie.mkv', isdir: 0, size: 2048, server_mtime: 1700000000 }],
+    }))
+
+    const item = await baiduGetFile(TOKEN, '12345')
+
+    expect(item).toMatchObject({ provider: 'baidu', fileId: '12345', type: 'file', name: 'Movie.mkv', size: 2048 })
+  })
+})
+
 describe('Baidu - rename batch', () => {
   it('sends filemanager rename POST', async () => {
     const fetchMock = mockFetch({ errno: 0, info: [{ errno: 0 }] })
@@ -373,5 +405,48 @@ describe('createDrive115Provider', () => {
     expect(p.id).toBe('115')
     expect(p.capabilities.batchRename).toBe(true)
     expect(p.capabilities.fileIdAddressable).toBe(true)
+  })
+})
+
+// ─── 123网盘 ────────────────────────────────────────────────────────────────
+describe('123网盘 - list dir', () => {
+  it('maps fileList to FileItem[]', async () => {
+    vi.stubGlobal('fetch', mockFetch({
+      code: 0,
+      data: {
+        fileList: [
+          { fileId: 1, parentFileId: 0, filename: 'Movies', type: 1, size: 0 },
+          { fileId: 2, parentFileId: 0, filename: 'Movie.mkv', type: 0, size: 1024 },
+        ],
+      },
+    }))
+
+    const items = await cloud123ListDir(TOKEN, '0')
+
+    expect(items[0]).toMatchObject({ provider: 'cloud123', fileId: '1', type: 'folder', name: 'Movies' })
+    expect(items[1]).toMatchObject({ provider: 'cloud123', fileId: '2', type: 'file', size: 1024 })
+  })
+})
+
+describe('123网盘 - rename batch', () => {
+  it('sends renameList and returns success', async () => {
+    const fetchMock = mockFetch({ code: 0, data: {} })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const results = await cloud123RenameBatch(TOKEN, [{ fileId: '2', newName: 'New.mkv' }])
+    const [, opts] = fetchMock.mock.calls[0]
+
+    expect(JSON.parse(opts.body).renameList).toEqual(['2|New.mkv'])
+    expect(results[0]).toMatchObject({ fileId: '2', status: 'success', newName: 'New.mkv' })
+  })
+})
+
+describe('createCloud123Provider', () => {
+  it('has correct capabilities', () => {
+    const p = createCloud123Provider()
+    expect(p.id).toBe('cloud123')
+    expect(p.capabilities.batchRename).toBe(true)
+    expect(p.capabilities.fileIdAddressable).toBe(true)
+    expect(p.capabilities.mkdir).toBe(true)
   })
 })

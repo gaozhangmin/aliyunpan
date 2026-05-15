@@ -25,7 +25,8 @@ If missing, tell the user to install it from the Electron app account settings o
 - Before any write operation, run the dry-run form first and show the planned changes.
 - Check `clouddrive-cli providers capabilities --json` before mkdir, move, rename, trash, upload, or organize apply.
 - Never invent file IDs. Get them from `files list`, `files walk`, `files search`, `files tree`, or `files info`.
-- Keep large outputs bounded: use `files tree`, `files stats`, `files search`, narrower `--path`, or `docs read --max-chars`.
+- Keep large outputs bounded: use `files stats`, `files search`, narrower `--path`, or `docs read --max-chars`.
+- Avoid raw `--json` output for large `files tree`, `organize analyze`, `organize plan`, and `organize apply --dry-run` results. Use `--summary` for organize commands when possible, or save to `--output` and summarize the file with a local parser.
 
 ## Auth
 
@@ -63,14 +64,24 @@ clouddrive-cli providers capabilities --json
 ```bash
 clouddrive-cli files list --provider aliyun --account default --path root --json
 clouddrive-cli files walk --provider aliyun --account default --path <folder-id> --json
-clouddrive-cli files tree --provider aliyun --path root --depth 3 --json
+clouddrive-cli files tree --provider aliyun --path root --depth 1
 clouddrive-cli files stats --provider aliyun --path root --depth 10 --json
-clouddrive-cli files info --provider aliyun --file-id <id> --json
-clouddrive-cli files search --provider aliyun --name "movie.mkv" --limit 50 --json
+clouddrive-cli files info --provider aliyun --file-id <id> --drive-id <drive-id> --json
+clouddrive-cli files search --provider aliyun --name "movie" --limit 50 --json
 clouddrive-cli files search --provider aliyun --query 'name match "movie"' --drive-id <drive-id> --json
 ```
 
-Use `tree` or `stats` before `walk` when the directory may be large. Use `search` for known names. Aliyun accepts raw `--query`; other providers generally use `--name`.
+**JSON field names**: `files list`, `files walk`, `files search`, and `files info` return objects with camelCase fields: `fileId`, `parentFileId`, `driveId`, `accountId`, `name`, `type`, `updatedAt`, `createdAt`.
+
+**`files tree` verbosity warning**: even in text mode, `files tree --depth 2` on a large root will list all files inside every depth-2 subfolder, producing hundreds of lines. Use `--depth 1` for root overview, and only increase depth for known small subtrees. Never use `files tree --json` on large directories.
+
+**`files info` requires `--drive-id`** on aliyun: always pass `--drive-id <drive-id>` (get it from `settings show` or from the `driveId` field of any `files list` result).
+
+**`files search --name` on aliyun** uses `name match` (partial fuzzy match) — pass a keyword, not the full filename. On other providers it uses exact full-filename match. To use aliyun's full query syntax directly, use `--query 'name match "..."'` or `--query 'name = "..."'`.
+
+Use `stats` before `walk` when the directory may be large. Use `tree` only with a small depth for a quick visual overview. Use `search` for known name keywords.
+
+Default root paths are provider-specific when `--path` is omitted: `aliyun=root`, `cloud123=0`, `115=0`, `baidu=/`, `pikpak=*`, `dropbox=` (empty string), `onedrive=onedrive_root`, and `box=box_root`. Prefer omitting `--path` for root operations unless you intentionally target a known folder id/path.
 
 ## File Write Operations
 
@@ -115,6 +126,10 @@ clouddrive-cli media rename-plan --input files.json --provider aliyun --account 
 clouddrive-cli media organize-plan --input files.json --root <root-folder-id> --provider aliyun --style jellyfin --output media-organize-plan.json --json
 ```
 
+**`media match` output structure**: each item is `{ fileId, name, match: { type, title, year, season, episode, confidence, jellyfin_name } }`. The media fields are nested under `match`, not at the top level.
+
+**`media scan` output structure**: `{ summary: {...}, movies: [...], series: { "<key>": { title, year, folderFileId, seasons, episode_count, episodes: [{ fileId, name, season, episode }] } }, season_folders, subtitles, suspected_duplicates, unrecognized }`.
+
 Recommended rename sequence:
 
 ```bash
@@ -147,14 +162,16 @@ Only run non-dry-run upload if `providers capabilities` reports `uploadFile: tru
 Cloud directory organization:
 
 ```bash
-clouddrive-cli organize analyze --provider aliyun --account default --path <folder-id> --depth 5 --output analysis.json --json
+clouddrive-cli organize analyze --provider aliyun --account default --path <folder-id> --depth 5 --output analysis.json --summary --json
 clouddrive-cli organize analyze --input files.json --provider aliyun --account default --path <folder-id> --output analysis.json --json
-clouddrive-cli organize plan --analysis analysis.json --rules ./organize-rules.md --output organize-plan.json --json
-clouddrive-cli organize apply organize-plan.json --dry-run --json
+clouddrive-cli organize plan --analysis analysis.json --rules ./organize-rules.md --output organize-plan.json --summary --json
+clouddrive-cli organize apply organize-plan.json --dry-run --summary --json
 clouddrive-cli organize apply organize-plan.json --json
 ```
 
-Organization plans are conservative and should not delete files. Before non-dry-run apply, confirm every action is supported by the provider.
+For full-drive or root-level organization, do not apply the generated plan just because the dry-run succeeds. First summarize action counts by type and destination, sample suspicious moves, and check whether existing folders would be flattened into broad categories such as `Movies` or `TV Shows`. If many episode-like names (`S01E02`, `第7季`, `第12集`, `Ep03`, children's series names, etc.) are planned for `Movies`, treat the plan as unsafe and narrow the scope or add stricter rules.
+
+Organization plans should not delete files, but broad root-level plans can still damage useful structure by moving thousands of files out of meaningful folders. Prefer applying organization in smaller batches: one existing folder, one media series, or one category at a time. Before non-dry-run apply, confirm every action is supported by the provider and that the sampled moves match the user's intent.
 
 ## Operation History And Rollback
 
@@ -185,4 +202,11 @@ Use CLI commands directly when the user asks for upload or organize flows not ex
 - No account found: run `auth list`, `auth login`, `auth import-token`, or `auth default`.
 - Exit code `2`: missing/invalid account or auth failure.
 - Exit code `5`: provider does not support the requested capability.
-- Large output: narrow `--path`, lower `--depth`, use `tree`/`stats`, or request JSON and summarize.
+- Large output: narrow `--path`, lower `--depth`, use `stats`, save plans to files, and summarize locally instead of returning raw JSON.
+
+## Known Provider Limitations
+
+- OneDrive `files search` may intermittently fail with Microsoft Graph `generalException` / HTTP 500. Treat this as provider-side search instability and fall back to `files walk` plus local filtering.
+- PikPak `files search --name` is not reliable: the API may ignore the name query and return root items. Use `files walk` plus local filtering for PikPak search tasks.
+- Baidu `files info` now handles `filemetas` responses whose metadata appears under either `list` or `info`. If Baidu returns `errno=12`, treat it as an API/token limitation and fall back to `files walk` or `files search` for metadata.
+- 115 Open API folder type fields may not map cleanly; some folders can appear as `type: file`, which makes recursive walk/stat counts under-report folders. Confirm folder-ness by trying `files list --path <fileId>` before planning folder operations.

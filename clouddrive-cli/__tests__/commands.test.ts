@@ -287,6 +287,16 @@ describe('BoxPlayer CLI commands', () => {
         move: true,
       },
     })
+    expect(body.find((provider: { id: string }) => provider.id === 'cloud123')).toMatchObject({
+      id: 'cloud123',
+      displayName: '123网盘',
+      capabilities: {
+        recursiveWalk: true,
+        serverSideSearch: true,
+        mkdir: true,
+        move: true,
+      },
+    })
   })
 
   it('creates and dry-runs an upload plan from a local directory', async () => {
@@ -321,6 +331,38 @@ describe('BoxPlayer CLI commands', () => {
       ok: true,
       fileCount: 1,
       folderCount: 1,
+      totalBytes: 5,
+      errors: [],
+    })
+  })
+
+  it('creates and dry-runs an upload plan from a single local file', async () => {
+    const configDir = await makeTempDir()
+    const localDir = await makeTempDir()
+    const filePath = join(localDir, 'README.md')
+    const outputPath = join(configDir, 'upload-file-plan.json')
+    await writeFile(filePath, 'hello', 'utf8')
+
+    const planned = await runBoxPlayerCli([
+      'upload', 'plan',
+      '--local', filePath,
+      '--provider', 'cloud123',
+      '--account', 'default',
+      '--remote-parent', '0',
+      '--output', outputPath,
+      '--json',
+    ], { configDir })
+
+    expect(planned.exitCode).toBe(0)
+    expect(JSON.parse(planned.stdout).items[0]).toMatchObject({ type: 'file', relative_path: '', target_name: 'README.md' })
+
+    const dryRun = await runBoxPlayerCli(['upload', 'apply', outputPath, '--dry-run', '--json'], { configDir })
+
+    expect(dryRun.exitCode).toBe(0)
+    expect(JSON.parse(dryRun.stdout)).toMatchObject({
+      ok: true,
+      fileCount: 1,
+      folderCount: 0,
       totalBytes: 5,
       errors: [],
     })
@@ -368,5 +410,25 @@ describe('BoxPlayer CLI commands', () => {
       actionCount: 3,
       counts: { mkdir: 1, move: 2, rename: 0, copy: 0, trash: 0 },
     })
+
+    const summarized = await runBoxPlayerCli(['organize', 'apply', planPath, '--dry-run', '--summary', '--json'], { configDir })
+
+    expect(summarized.exitCode).toBe(0)
+    expect(JSON.parse(summarized.stdout)).toMatchObject({
+      ok: true,
+      actionCount: 3,
+      counts: { mkdir: 1, move: 2, rename: 0, copy: 0, trash: 0 },
+      moveTargets: { 'folder:Movies': 1, 'folder:TV Shows': 1 },
+    })
+    expect(JSON.parse(summarized.stdout).actions).toBeUndefined()
+  })
+
+  it('prints help for positional plan commands without reading --help as a file', async () => {
+    const configDir = await makeTempDir()
+    const result = await runBoxPlayerCli(['files', 'move-apply', '--help'], { configDir })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toContain('Usage: clouddrive-cli files move-apply')
+    expect(result.stderr).toBe('')
   })
 })

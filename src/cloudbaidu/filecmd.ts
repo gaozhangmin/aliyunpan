@@ -48,6 +48,7 @@ export type BaiduFileMetaItem = {
 type BaiduFileMetaResp = {
   errno: number
   list?: BaiduFileMetaItem[]
+  info?: BaiduFileMetaItem[]
 }
 
 const API_URL = 'https://pan.baidu.com/rest/2.0/xpan/multimedia'
@@ -106,8 +107,10 @@ export const apiBaiduFileMetas = async (
   })
   if (!resp.ok) return null
   const data = (await resp.json()) as BaiduFileMetaResp
-  if (data?.errno !== 0 || !Array.isArray(data.list)) return null
-  return data.list
+  if (data?.errno !== 0) return null
+  if (Array.isArray(data.list)) return data.list
+  if (Array.isArray(data.info)) return data.info
+  return null
 }
 
 export const mapBaiduMetaToAliFileItem = (item: BaiduFileMetaItem, drive_id: string, file_id: string): IAliFileItem => {

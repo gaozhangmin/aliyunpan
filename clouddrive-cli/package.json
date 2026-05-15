@@ -1,6 +1,6 @@
 {
   "name": "clouddrive-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Multi-cloud storage CLI with AI-driven media organization. Supports 阿里云盘, OneDrive, Dropbox, Box, 百度网盘, 115网盘, PikPak.",
   "type": "module",
   "license": "MIT",

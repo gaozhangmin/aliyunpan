@@ -9,6 +9,10 @@ function hasText(value) {
   return typeof value === 'string' && value.trim().length > 0
 }
 
+function hasString(value) {
+  return typeof value === 'string'
+}
+
 async function scanLocalPath(root, current = root) {
   const info = await stat(current)
   if (info.isDirectory()) {
@@ -80,7 +84,7 @@ export function validateUploadPlan(plan) {
   } else {
     plan.items.forEach((item, index) => {
       if (item?.type !== 'file' && item?.type !== 'folder') errors.push(`items[${index}].type must be file or folder`)
-      if (!hasText(item?.relative_path)) errors.push(`items[${index}].relative_path is required`)
+      if (!hasString(item?.relative_path)) errors.push(`items[${index}].relative_path is required`)
       if (!hasText(item?.target_name)) errors.push(`items[${index}].target_name is required`)
       if (item?.type === 'file' && !hasText(item?.local_path)) errors.push(`items[${index}].local_path is required`)
     })

@@ -21,6 +21,7 @@ import { createOnedriveProvider } from '../providers/onedriveProvider.mjs'
 import { createBoxProvider } from '../providers/boxProvider.mjs'
 import { createBaiduProvider } from '../providers/baiduProvider.mjs'
 import { createDrive115Provider } from '../providers/drive115Provider.mjs'
+import { createCloud123Provider } from '../providers/cloud123Provider.mjs'
 
 const PROVIDERS = {
   aliyun: createAliyunProvider(),
@@ -30,6 +31,7 @@ const PROVIDERS = {
   box: createBoxProvider(),
   baidu: createBaiduProvider(),
   '115': createDrive115Provider(),
+  cloud123: createCloud123Provider(),
 }
 
 function defaultConfigDir() {
@@ -46,6 +48,22 @@ function readOption(argv, flag) {
   return argv[index + 1] || ''
 }
 
+function readOptionWithDefault(argv, flag, fallback) {
+  const index = argv.indexOf(flag)
+  if (index < 0) return fallback
+  return argv[index + 1] ?? ''
+}
+
+function defaultRootForProvider(providerName) {
+  if (providerName === '115' || providerName === 'cloud123') return '0'
+  if (providerName === 'baidu') return '/'
+  if (providerName === 'dropbox') return ''
+  if (providerName === 'pikpak') return '*'
+  if (providerName === 'onedrive') return 'onedrive_root'
+  if (providerName === 'box') return 'box_root'
+  return 'root'
+}
+
 function jsonOut(value) {
   return `${JSON.stringify(value, null, 2)}\n`
 }
@@ -59,8 +77,47 @@ function ok(value, json = true) {
   return { exitCode: EXIT_CODES.SUCCESS, stdout: jsonOut(value), stderr: '' }
 }
 
+function usage(message) {
+  return { exitCode: EXIT_CODES.SUCCESS, stdout: `${message}\n`, stderr: '' }
+}
+
 function fail(message, exitCode = EXIT_CODES.VALIDATION_ERROR) {
   return { exitCode, stdout: '', stderr: `${message}\n` }
+}
+
+function countBy(values) {
+  const counts = {}
+  for (const value of values) counts[value || 'unknown'] = (counts[value || 'unknown'] || 0) + 1
+  return Object.fromEntries(Object.entries(counts).sort(([, a], [, b]) => b - a))
+}
+
+function summarizeOrganizeAnalysis(analysis) {
+  return {
+    version: analysis?.version,
+    provider: analysis?.provider,
+    account_id: analysis?.account_id,
+    root_file_id: analysis?.root_file_id,
+    stats: analysis?.stats || {},
+    folderCount: Array.isArray(analysis?.folders) ? analysis.folders.length : 0,
+    fileCount: Array.isArray(analysis?.files) ? analysis.files.length : 0,
+    mediaKinds: countBy((analysis?.files || []).map((file) => file.media_kind).filter(Boolean)),
+  }
+}
+
+function summarizeOrganizePlan(planOrDryRun) {
+  const actions = Array.isArray(planOrDryRun?.actions) ? planOrDryRun.actions : []
+  return {
+    version: planOrDryRun?.version,
+    operation: planOrDryRun?.operation,
+    ok: planOrDryRun?.ok,
+    provider: planOrDryRun?.provider,
+    account_id: planOrDryRun?.account_id,
+    root_file_id: planOrDryRun?.root_file_id,
+    actionCount: planOrDryRun?.actionCount ?? actions.length,
+    counts: planOrDryRun?.counts || countBy(actions.map((action) => action.type)),
+    moveTargets: countBy(actions.filter((action) => action.type === 'move').map((action) => action.to_parent_ref || action.to_parent_file_id)),
+    errors: planOrDryRun?.errors || [],
+  }
 }
 
 async function readJsonFile(path) {
@@ -255,10 +312,12 @@ function buildTree(rootId, allItems) {
     return node
   }
 
-  const rootChildren = byParent.get(rootId) || []
+  const rootLookupKey = rootId === '' ? (byParent.has('/') ? '/' : '') : rootId
+  const rootChildren = byParent.get(rootLookupKey) || []
+  const rootDisplayName = rootId === 'root' ? 'My Drive' : rootId === '' || rootId === '/' || rootId === '0' || rootId === '*' ? '/' : rootId
   return {
     fileId: rootId,
-    name: rootId === 'root' ? 'My Drive' : rootId,
+    name: rootDisplayName,
     type: 'folder',
     children: rootChildren.map(makeNode),
     totalFiles: allItems.filter((i) => i.type === 'file').length,
@@ -302,11 +361,14 @@ function buildStats(allItems) {
 
 async function handleFiles(argv, env) {
   const subcommand = argv[1]
+  if (!subcommand || subcommand === 'help' || subcommand === '--help' || subcommand === '-h') {
+    return usage('Usage: clouddrive-cli files <list|walk|tree|stats|info|search|mkdir|rename-apply|move-apply|trash-apply> [options]')
+  }
 
   if (subcommand === 'list' || subcommand === 'walk') {
     const providerName = readOption(argv, '--provider') || 'aliyun'
     const accountArg = readOption(argv, '--account') || 'default'
-    const path = readOption(argv, '--path') || 'root'
+    const path = readOptionWithDefault(argv, '--path', defaultRootForProvider(providerName))
     const driveId = readOption(argv, '--drive-id') || ''
     const isJson = hasFlag(argv, '--json')
 
@@ -332,7 +394,7 @@ async function handleFiles(argv, env) {
     const providerName = readOption(argv, '--provider') || 'aliyun'
     const accountArg = readOption(argv, '--account') || 'default'
     const name = readOption(argv, '--name')
-    const query = readOption(argv, '--query') || (name ? `name = "${name}"` : '')
+    const query = readOption(argv, '--query') || (name ? (providerName === 'aliyun' ? `name match "${name}"` : `name = "${name}"`) : '')
     const limit = readPositiveIntegerOption(argv, '--limit', 100)
     const isJson = hasFlag(argv, '--json')
 
@@ -351,7 +413,7 @@ async function handleFiles(argv, env) {
   if (subcommand === 'tree') {
     const providerName = readOption(argv, '--provider') || 'aliyun'
     const accountArg = readOption(argv, '--account') || 'default'
-    const path = readOption(argv, '--path') || 'root'
+    const path = readOptionWithDefault(argv, '--path', defaultRootForProvider(providerName))
     const depth = readPositiveIntegerOption(argv, '--depth', 3)
     const isJson = hasFlag(argv, '--json')
 
@@ -360,7 +422,7 @@ async function handleFiles(argv, env) {
 
     const token = await resolveToken(env, providerName, accountArg)
     const driveId = readOption(argv, '--drive-id') || token.default_drive_id || token.backup_drive_id
-    const effectivePath = path === 'root' ? (providerName === 'onedrive' ? 'onedrive_root' : providerName === 'box' ? 'box_root' : path) : path
+    const effectivePath = path
 
     const allItems = []
     for await (const item of provider.files.walk({ token, driveId, parentFileId: effectivePath, maxDepth: depth })) {
@@ -370,7 +432,8 @@ async function handleFiles(argv, env) {
     const node = buildTree(effectivePath, allItems)
     if (isJson) return ok({ provider: providerName, driveId, rootId: effectivePath, depth, node }, true)
 
-    const lines = [`${node.name}/  (${node.totalFiles} files, ${node.totalFolders} folders)`]
+    const rootLabel = node.name === '/' ? '/' : `${node.name}/`
+    const lines = [`${rootLabel}  (${node.totalFiles} files, ${node.totalFolders} folders)`]
     node.children.forEach((child, i) => {
       lines.push(...renderTreeText(child, '', i === node.children.length - 1))
     })
@@ -380,7 +443,7 @@ async function handleFiles(argv, env) {
   if (subcommand === 'stats') {
     const providerName = readOption(argv, '--provider') || 'aliyun'
     const accountArg = readOption(argv, '--account') || 'default'
-    const path = readOption(argv, '--path') || 'root'
+    const path = readOptionWithDefault(argv, '--path', defaultRootForProvider(providerName))
     const depth = readPositiveIntegerOption(argv, '--depth', 10)
     const isJson = hasFlag(argv, '--json')
 
@@ -444,13 +507,14 @@ async function handleFiles(argv, env) {
     const token = await resolveToken(env, providerName, accountArg)
     const driveId = readOption(argv, '--drive-id') || token.default_drive_id || token.backup_drive_id
 
-    const effectiveParent = parentPath || parentId || (providerName === 'aliyun' ? 'root' : providerName === 'onedrive' ? 'onedrive_root' : providerName === 'box' ? 'box_root' : providerName === '115' ? '0' : '/')
+    const effectiveParent = parentPath || parentId || defaultRootForProvider(providerName)
     const folder = await provider.files.mkdir({ token, driveId, parentId: effectiveParent, parentPath: effectiveParent, name })
     return ok(folder, isJson)
   }
 
   if (subcommand === 'move-apply') {
     const planPath = argv[2]
+    if (planPath === '--help' || planPath === '-h') return usage('Usage: clouddrive-cli files move-apply <plan.json> [--dry-run] [--json]')
     if (!planPath) return fail('Usage: clouddrive-cli files move-apply <plan.json> [--dry-run] [--json]')
     const plan = await readJsonFile(planPath)
 
@@ -904,14 +968,18 @@ async function handleUpload(argv) {
 
 async function handleOrganize(argv, env) {
   const subcommand = argv[1]
+  if (!subcommand || subcommand === 'help' || subcommand === '--help' || subcommand === '-h') {
+    return usage('Usage: clouddrive-cli organize <analyze|plan|apply> [--summary] [--json]')
+  }
 
   if (subcommand === 'analyze') {
     const inputPath = readOption(argv, '--input')
     const providerName = readOption(argv, '--provider') || 'aliyun'
     const accountId = readOption(argv, '--account') || 'default'
-    const rootFileId = readOption(argv, '--path') || 'root'
+    const rootFileId = readOptionWithDefault(argv, '--path', defaultRootForProvider(providerName))
     const outputPath = readOption(argv, '--output')
     const maxDepth = readPositiveIntegerOption(argv, '--depth', 5)
+    const summaryOnly = hasFlag(argv, '--summary')
 
     let items
     if (inputPath) {
@@ -930,29 +998,32 @@ async function handleOrganize(argv, env) {
     if (!Array.isArray(items)) return fail('--input file must contain a JSON array of file items')
     const analysis = analyzeDriveItems({ provider: providerName, accountId, rootFileId, items })
     if (outputPath) await writeFile(outputPath, `${JSON.stringify(analysis, null, 2)}\n`, 'utf8')
-    return ok(analysis, hasFlag(argv, '--json') || !outputPath)
+    return ok(summaryOnly ? summarizeOrganizeAnalysis(analysis) : analysis, hasFlag(argv, '--json') || !outputPath)
   }
 
   if (subcommand === 'plan') {
     const analysisPath = readOption(argv, '--analysis')
     const outputPath = readOption(argv, '--output')
     const rulesPath = readOption(argv, '--rules')
+    const summaryOnly = hasFlag(argv, '--summary')
     if (!analysisPath) return fail('Usage: clouddrive-cli organize plan --analysis <analysis.json> [--rules <doc>] [--output <plan.json>] [--json]')
 
     const analysis = await readJsonFile(analysisPath)
     const rulesText = rulesPath ? await readFile(resolve(rulesPath), 'utf8') : ''
     const plan = createOrganizePlan({ analysis, rulesText })
     if (outputPath) await writeFile(outputPath, `${JSON.stringify(plan, null, 2)}\n`, 'utf8')
-    return ok(plan, hasFlag(argv, '--json') || !outputPath)
+    return ok(summaryOnly ? summarizeOrganizePlan(plan) : plan, hasFlag(argv, '--json') || !outputPath)
   }
 
   if (subcommand === 'apply') {
     const planPath = argv[2]
+    if (planPath === '--help' || planPath === '-h') return usage('Usage: clouddrive-cli organize apply <plan.json> [--dry-run] [--summary] [--json]')
     if (!planPath) return fail('Usage: clouddrive-cli organize apply <plan.json> [--dry-run] [--json]')
     const plan = await readJsonFile(planPath)
     const dryRun = dryRunOrganizePlan(plan)
-    if (hasFlag(argv, '--dry-run')) return ok(dryRun, hasFlag(argv, '--json'))
-    if (!dryRun.ok) return ok(dryRun, hasFlag(argv, '--json'))
+    const summaryOnly = hasFlag(argv, '--summary')
+    if (hasFlag(argv, '--dry-run')) return ok(summaryOnly ? summarizeOrganizePlan(dryRun) : dryRun, hasFlag(argv, '--json'))
+    if (!dryRun.ok) return ok(summaryOnly ? summarizeOrganizePlan(dryRun) : dryRun, hasFlag(argv, '--json'))
 
     const provider = PROVIDERS[plan.provider]
     if (!provider) return fail(`Unknown provider: ${plan.provider}`, EXIT_CODES.UNSUPPORTED_CAPABILITY)

@@ -422,6 +422,8 @@ clouddrive-cli files walk \
 
 `files walk` 适合给 AI 做全目录分析，但输出可能很大。处理大型目录时，建议先从较小目录开始。
 
+省略 `--path` 时，CLI 会按 provider 自动选择根目录：`aliyun=root`、`cloud123=0`、`115=0`、`baidu=/`、`pikpak=*`、`dropbox=` 空字符串、`onedrive=onedrive_root`、`box=box_root`。
+
 ### files rename-apply
 
 校验或执行重命名计划。
@@ -627,8 +629,11 @@ clouddrive-cli organize analyze \
   --path <folder-id> \
   --depth 5 \
   --output analysis.json \
+  --summary \
   --json
 ```
+
+`--summary` 会把完整分析写入 `--output`，终端只输出适合 AI 快速判断的统计摘要。
 
 ### organize plan
 
@@ -639,6 +644,7 @@ clouddrive-cli organize plan \
   --analysis analysis.json \
   --rules ./organize-rules.md \
   --output organize-plan.json \
+  --summary \
   --json
 ```
 
@@ -655,7 +661,7 @@ clouddrive-cli organize plan \
 校验整理计划。
 
 ```bash
-clouddrive-cli organize apply organize-plan.json --dry-run --json
+clouddrive-cli organize apply organize-plan.json --dry-run --summary --json
 ```
 
 dry-run 输出会统计动作数量：
@@ -673,6 +679,8 @@ dry-run 输出会统计动作数量：
   }
 }
 ```
+
+不带 `--summary` 时会输出完整动作列表，适合小计划或需要人工逐项审查的场景。全盘整理时建议始终先用 `--summary`，再抽样检查完整计划文件。
 
 非 dry-run 只有在 provider 明确支持计划中的所有动作时才会继续。当前 provider 的 `mkdir` / `move` 能力尚未开启，因此默认只适合生成计划和 dry-run。
 
@@ -1256,6 +1264,8 @@ clouddrive-cli files walk \
 
 `files walk` is suitable for AI full-directory analysis, but output can be large. For large directories, start with a smaller subdirectory.
 
+When `--path` is omitted, the CLI chooses provider-specific roots automatically: `aliyun=root`, `cloud123=0`, `115=0`, `baidu=/`, `pikpak=*`, `dropbox=` empty string, `onedrive=onedrive_root`, and `box=box_root`.
+
 ### files rename-apply
 
 Validate or execute a rename plan.
@@ -1387,6 +1397,7 @@ clouddrive-cli organize analyze \
   --account default \
   --path root \
   --output analysis.json \
+  --summary \
   --json
 ```
 
@@ -1399,6 +1410,7 @@ clouddrive-cli organize plan \
   --analysis analysis.json \
   --rules ./organize-rules.md \
   --output organize-plan.json \
+  --summary \
   --json
 ```
 
@@ -1409,8 +1421,10 @@ Built-in conservative rules: classify video files as movies or episodes by filen
 Validate an organization plan.
 
 ```bash
-clouddrive-cli organize apply organize-plan.json --dry-run --json
+clouddrive-cli organize apply organize-plan.json --dry-run --summary --json
 ```
+
+Use `--summary` for large plans so stdout contains counts and destination distribution rather than the full action list. Inspect the saved plan file before applying broad root-level organization.
 
 ## ops
 
@@ -1484,12 +1498,12 @@ clouddrive-cli upload apply upload-plan.json --json
 
 ```bash
 clouddrive-cli files walk --provider aliyun --account default --path <folder-id> --json > files.json
-clouddrive-cli organize analyze --input files.json --provider aliyun --account default --path <folder-id> --output analysis.json --json
-clouddrive-cli organize plan --analysis analysis.json --rules ./organize-rules.md --output organize-plan.json --json
-clouddrive-cli organize apply organize-plan.json --dry-run --json
+clouddrive-cli organize analyze --input files.json --provider aliyun --account default --path <folder-id> --output analysis.json --summary --json
+clouddrive-cli organize plan --analysis analysis.json --rules ./organize-rules.md --output organize-plan.json --summary --json
+clouddrive-cli organize apply organize-plan.json --dry-run --summary --json
 ```
 
-Organization plans never delete files. Before non-dry-run execution, confirm the provider capability matrix supports all actions in the plan.
+Organization plans never delete files. Before non-dry-run execution, confirm the provider capability matrix supports all actions in the plan and inspect sampled moves from the saved plan file.
 
 ### Roll back a rename operation
 

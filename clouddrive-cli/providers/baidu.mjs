@@ -153,8 +153,17 @@ export async function baiduRenameBatch(token, renames) {
 
 export async function baiduGetFile(token, fsId) {
   const accountId = token.user_id
-  const data = await baiduGet('/file', { method: 'filemetas', fsids: JSON.stringify([Number(fsId)]), dlink: '1', web: '1' }, token)
-  const item = (data.list || [])[0]
+  const data = await baiduGet('/multimedia', {
+    method: 'filemetas',
+    fsids: JSON.stringify([Number(fsId)]),
+    dlink: '1',
+    thumb: '1',
+    extra: '1',
+    needmedia: '1',
+    detail: '1',
+  }, token)
+  const metas = Array.isArray(data.list) ? data.list : Array.isArray(data.info) ? data.info : []
+  const item = metas[0]
   if (!item) {
     const err = new Error(`File not found: ${fsId}`)
     err.code = 'ERR_BAIDU_NOT_FOUND'

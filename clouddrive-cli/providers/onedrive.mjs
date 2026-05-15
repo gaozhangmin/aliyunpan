@@ -124,11 +124,16 @@ export async function* onedriveWalk(token, parentFileId = 'onedrive_root', maxDe
 export async function onedriveSearch(token, keyword, { limit = 100 } = {}) {
   const accountId = token.user_id
   const allItems = []
+  const seen = new Set()
   const q = encodeURIComponent(keyword)
   let url = `${BASE}/me/drive/root/search(q='${q}')?$top=${Math.min(limit, 200)}`
   while (url && allItems.length < limit) {
     const data = await odGet(url, token)
-    for (const item of data.value || []) allItems.push(mapFileItem(item, accountId))
+    for (const item of data.value || []) {
+      if (!item?.id || seen.has(item.id)) continue
+      seen.add(item.id)
+      allItems.push(mapFileItem(item, accountId))
+    }
     url = data['@odata.nextLink'] || ''
   }
   return allItems.slice(0, limit)

@@ -393,6 +393,8 @@ clouddrive-cli files walk \
 
 `files walk` is suitable for AI full-directory analysis, but output can be large. For large directories, start with a smaller subdirectory.
 
+When `--path` is omitted, the CLI chooses provider-specific roots automatically: `aliyun=root`, `cloud123=0`, `115=0`, `baidu=/`, `pikpak=*`, `dropbox=` empty string, `onedrive=onedrive_root`, and `box=box_root`.
+
 ### files rename-apply
 
 Validate or execute a rename plan.
@@ -524,6 +526,7 @@ clouddrive-cli organize analyze \
   --account default \
   --path root \
   --output analysis.json \
+  --summary \
   --json
 ```
 
@@ -536,6 +539,7 @@ clouddrive-cli organize plan \
   --analysis analysis.json \
   --rules ./organize-rules.md \
   --output organize-plan.json \
+  --summary \
   --json
 ```
 
@@ -546,8 +550,10 @@ Built-in conservative rules: classify video files as movies or episodes by filen
 Validate an organization plan.
 
 ```bash
-clouddrive-cli organize apply organize-plan.json --dry-run --json
+clouddrive-cli organize apply organize-plan.json --dry-run --summary --json
 ```
+
+Use `--summary` for large plans so stdout contains counts and destination distribution rather than the full action list. Inspect the saved plan file before applying broad root-level organization.
 
 ## ops
 
