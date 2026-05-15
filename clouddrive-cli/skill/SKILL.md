@@ -1,217 +1,188 @@
 ---
 name: clouddrive-cli
-description: |
-  Run clouddrive-cli commands to manage cloud storage accounts and files.
-  Use when the user asks to list accounts, login to a cloud drive, list files,
-  rename media files, or run any clouddrive-cli subcommand.
-  Triggered by: "run clouddrive-cli", "list accounts", "cli auth list",
-  "login aliyun", "list files", "/clouddrive-cli", "/bpcli".
+description: Use when the user asks an AI agent to operate cloud-drive accounts, inspect files, search/list/walk cloud directories, plan or apply media renames, upload planning, directory organization, operation rollback, MCP exposure, or any clouddrive-cli/clouddrive-mcp command.
 allowed-tools:
   - Bash
   - Read
 ---
 
-# Skill: clouddrive-cli
+# clouddrive-cli
 
-A CLI tool for managing multiple cloud storage accounts (阿里云盘, OneDrive, Dropbox, Box, 123网盘, 115网盘, 百度网盘, PikPak).
+Use `clouddrive-cli` as the stable command boundary for AI-driven cloud-drive automation. It supports 阿里云盘, OneDrive, Dropbox, Box, 123网盘, 115网盘, 百度网盘, and PikPak.
 
-## CLI Location
+## Locate CLI
 
 ```bash
 which clouddrive-cli 2>/dev/null || echo ~/.local/bin/clouddrive-cli
+clouddrive-cli --help
 ```
 
-If not found, remind the user to install via the app's "账户设置 → 安装命令行工具".
+If missing, tell the user to install it from the Electron app account settings or with `npm install -g clouddrive-cli`.
 
-## Common Workflows
+## Safety Rules
 
-### 1. List all accounts
+- Prefer `--json` for agent workflows. Parse and summarize JSON unless the user asks for raw output.
+- Before any write operation, run the dry-run form first and show the planned changes.
+- Check `clouddrive-cli providers capabilities --json` before mkdir, move, rename, trash, upload, or organize apply.
+- Never invent file IDs. Get them from `files list`, `files walk`, `files search`, `files tree`, or `files info`.
+- Keep large outputs bounded: use `files tree`, `files stats`, `files search`, narrower `--path`, or `docs read --max-chars`.
+
+## Auth
+
 ```bash
-clouddrive-cli auth list
-```
-
-### 2. Login to a cloud drive
-```bash
-clouddrive-cli auth login aliyun
-clouddrive-cli auth login onedrive
-clouddrive-cli auth login dropbox
-clouddrive-cli auth login box
-```
-- `aliyun` and `115` use QR code in terminal
-- Others open browser OAuth flow
-
-### 3. List files
-```bash
-clouddrive-cli files list --provider aliyun --json
-clouddrive-cli files walk --provider aliyun --path root --json
-```
-
-### 4. Generate media rename plan
-```bash
-clouddrive-cli media rename-plan --input files.json --output plan.json
-```
-
-### 5. Apply rename plan
-```bash
-clouddrive-cli files rename-apply plan.json --dry-run
-clouddrive-cli files rename-apply plan.json
-```
-
-### 6. Show operation history
-```bash
-clouddrive-cli ops list
-clouddrive-cli ops show <op-id>
-clouddrive-cli ops undo <op-id> --dry-run
-```
-
-### 7. Search files by name
-```bash
-# Search across any provider by filename keyword
-clouddrive-cli files search --name "高章敏 1.pdf" --provider aliyun --json
-clouddrive-cli files search --name "movie.mkv" --provider onedrive --json
-clouddrive-cli files search --name "report" --provider baidu --limit 50 --json
-
-# Aliyun: use raw query syntax (exact match vs partial match)
-clouddrive-cli files search --query 'name = "高章敏1.pdf"' --provider aliyun --json
-clouddrive-cli files search --query 'name match "高章敏"' --provider aliyun --json
-
-# Aliyun: search a specific drive (default_drive_id or backup_drive_id)
-clouddrive-cli files search --name "foo.pdf" --provider aliyun --drive-id 1822729720 --json
-```
-
-All 7 providers support server-side search:
-- `aliyun` — `adrive/v3/file/search` with query syntax; supports `--drive-id`
-- `onedrive` — Microsoft Graph `/me/drive/root/search`
-- `dropbox` — `/files/search_v2`
-- `box` — `/2.0/search?content_types=name`
-- `baidu` — `/xpan/file?method=search` recursive
-- `115` — `/open/ufile/search`
-- `pikpak` — files list API with `name contains` filter
-
-### 8. Capabilities
-```bash
-clouddrive-cli providers capabilities --json
-```
-
-### 9. Directory tree (token-efficient alternative to walk)
-```bash
-# ASCII tree with folder/file counts
-clouddrive-cli files tree --provider aliyun --path root --depth 3
-clouddrive-cli files tree --provider aliyun --path <folder-id> --depth 5 --json
-```
-Returns hierarchical node with `totalFiles`, `totalFolders`, `totalSize`, `children`.
-
-### 10. Directory statistics
-```bash
-clouddrive-cli files stats --provider aliyun --path root --json
-clouddrive-cli files stats --provider onedrive --depth 5 --json
-```
-Returns: total_files, total_dirs, total_size, by_category (video/subtitle/image/audio/archive/other), top_extensions.
-
-### 11. File metadata
-```bash
-clouddrive-cli files info --file-id <id> --provider aliyun --json
-clouddrive-cli files info --file-id <id> --provider aliyun --drive-id <d> --json
-```
-Returns full FileItem metadata for a single file or folder.
-
-### 12. Create folder
-```bash
-clouddrive-cli files mkdir --name "Movies" --provider aliyun --json
-clouddrive-cli files mkdir --name "Archive" --parent <parent-id> --provider aliyun --json
-```
-
-### 13. Move files (plan + apply)
-```bash
-# Create a move plan JSON (version:1, operation:"move", provider, account_id, items:[...])
-# Each item needs: file_id, name, from_parent_file_id, to_parent_file_id
-# Dropbox/Baidu also need: from_path, to_folder_path
-
-# Dry-run first
-clouddrive-cli files move-apply plan.json --dry-run --json
-
-# Apply
-clouddrive-cli files move-apply plan.json --json
-
-# Undo a move operation
-clouddrive-cli ops undo <op-id> --dry-run
-clouddrive-cli ops undo <op-id>
-```
-
-### 14. Trash files (plan + apply)
-```bash
-# Trash plan JSON (version:1, operation:"trash", provider, account_id, items:[...])
-# Each item needs: file_id, name (and path for baidu/dropbox)
-
-# Dry-run (default — safe to run without --apply)
-clouddrive-cli files trash-apply plan.json --json
-
-# Actually trash (requires --apply)
-clouddrive-cli files trash-apply plan.json --apply --json
-```
-Note: No undo available for trash operations from CLI.
-
-### 15. Auth check (token validity)
-```bash
+clouddrive-cli auth
+clouddrive-cli auth list --json
+clouddrive-cli auth default <provider> <account-id>
+clouddrive-cli auth import-token --provider <p> --account <id> --token <token.json> --default --json
+clouddrive-cli auth login aliyun --json
+clouddrive-cli auth login 115 --json
+clouddrive-cli auth login dropbox --browser chrome --json
+clouddrive-cli auth login box --browser chrome --json
+clouddrive-cli auth login 123 --browser chrome --json
 clouddrive-cli auth check --json
 clouddrive-cli auth check --provider aliyun --json
 ```
-Checks token expiry, auto-refreshes if possible. Returns status per account: `valid`, `expired_refreshed`, `expired_unrefreshable`, or `error`.
 
-### 17. Media scan (media recognition report)
+Login behavior:
+- `aliyun` and `115` show QR codes in the terminal.
+- `dropbox`, `box`, `123`, and `onedrive` use browser OAuth loopback; if callback URIs are restricted, pass `--redirect-uri http://127.0.0.1:<port>/callback`.
+
+Account IDs normally look like `aliyun_<id>`, `onedrive_<id>`, `dropbox_<id>`, `box_<id>`, `cloud123_<uid>`, `115_<hash>`, `baidu_<uk>`, or `pikpak_<id>`.
+
+## Settings And Capabilities
+
+```bash
+clouddrive-cli settings show --json
+clouddrive-cli providers capabilities --json
+```
+
+`settings show` summarizes config directory, accounts by provider, defaults, and supported providers. `providers capabilities` is the source of truth for whether a provider supports search, mkdir, move, rename, trash/delete, upload, recursive walk, path addressing, or file-id addressing.
+
+## File Read Operations
+
+```bash
+clouddrive-cli files list --provider aliyun --account default --path root --json
+clouddrive-cli files walk --provider aliyun --account default --path <folder-id> --json
+clouddrive-cli files tree --provider aliyun --path root --depth 3 --json
+clouddrive-cli files stats --provider aliyun --path root --depth 10 --json
+clouddrive-cli files info --provider aliyun --file-id <id> --json
+clouddrive-cli files search --provider aliyun --name "movie.mkv" --limit 50 --json
+clouddrive-cli files search --provider aliyun --query 'name match "movie"' --drive-id <drive-id> --json
+```
+
+Use `tree` or `stats` before `walk` when the directory may be large. Use `search` for known names. Aliyun accepts raw `--query`; other providers generally use `--name`.
+
+## File Write Operations
+
+Create folders:
+
+```bash
+clouddrive-cli files mkdir --provider aliyun --parent <parent-id> --name "Movies" --json
+```
+
+Apply rename plans:
+
+```bash
+clouddrive-cli files rename-apply rename-plan.json --current files.json --dry-run --json
+clouddrive-cli files rename-apply rename-plan.json --current files.json --json
+```
+
+Apply move plans:
+
+```bash
+clouddrive-cli files move-apply move-plan.json --dry-run --json
+clouddrive-cli files move-apply move-plan.json --json
+```
+
+Apply trash plans:
+
+```bash
+clouddrive-cli files trash-apply trash-plan.json --json
+clouddrive-cli files trash-apply trash-plan.json --apply --json
+```
+
+Notes:
+- `trash-apply` defaults to dry-run; execution requires `--apply`.
+- `ops undo` supports rename and move operations. Trash operations do not have CLI undo.
+- Dropbox/Baidu move/trash plans may require path fields in addition to file IDs.
+
+## Media Workflows
+
 ```bash
 clouddrive-cli media scan --input files.json --json
-```
-Returns: movies, series (grouped by title), episodes per series, subtitles, season folders, suspected duplicates (same title+season+episode), unrecognized items.
-
-### 18. Media match (per-item TMDB/Jellyfin naming)
-```bash
 clouddrive-cli media match --input files.json --json
+clouddrive-cli media rename-plan --input files.json --provider aliyun --account default --style jellyfin --output rename-plan.json
+clouddrive-cli media organize-plan --input files.json --root <root-folder-id> --provider aliyun --style jellyfin --output media-organize-plan.json --json
 ```
-For each item: type (movie/episode/subtitle/folder), title, year, season, episode, confidence (high/medium/low/none), jellyfin_name (target filename).
 
-### 19. Media organize plan (rename + move + mkdir in one step)
+Recommended rename sequence:
+
 ```bash
-clouddrive-cli media organize-plan --input files.json --style jellyfin --output organize-plan.json
-clouddrive-cli media organize-plan --input files.json --root <root-folder-id> --provider aliyun --json
+clouddrive-cli files walk --provider aliyun --account default --path <folder-id> --json > files.json
+clouddrive-cli media rename-plan --input files.json --provider aliyun --account default --output rename-plan.json
+clouddrive-cli files rename-apply rename-plan.json --current files.json --dry-run --json
+clouddrive-cli files rename-apply rename-plan.json --current files.json --json
 ```
-Returns a combined plan:
-- `mkdirs`: ordered list of directories to create (step 1=top-level, step 2=series, step 3=season)
-- `renames`: normalized filename changes
-- `moves`: files to move with `to_path` (path relative to root)
 
-**AI workflow for apply:**
-1. Create each mkdir in step order → collect file_ids
-2. Apply renames via `files rename-apply`
-3. Apply moves via `files move-apply` (resolve to_path → to_parent_file_id after step 1)
+`media organize-plan` returns mkdir, rename, and move actions. Apply it in stages: create folders, apply rename plan, resolve destination IDs, then apply move plan.
 
-## Execution
+## Docs, Upload, And Directory Organization
 
-When the user asks to run a clouddrive-cli command, execute it with Bash and present the output clearly.
+Read local context documents:
 
-For `auth list`, format the table output for readability.
+```bash
+clouddrive-cli docs read ./rules.md --max-chars 50000 --json
+```
 
-For JSON output (`--json`), parse and summarize the key information rather than dumping raw JSON — unless the user explicitly wants the raw JSON.
+Upload planning:
 
-For login commands:
-- Inform the user that a QR code will appear in the terminal (aliyun/115)
-- Or that a browser will open (other providers)
-- Show the command output as-is since it's interactive
+```bash
+clouddrive-cli upload plan --local ./Media --provider aliyun --account default --remote-parent <folder-id> --output upload-plan.json --json
+clouddrive-cli upload apply upload-plan.json --dry-run --json
+clouddrive-cli upload apply upload-plan.json --json
+```
 
-## AccountId Format
+Only run non-dry-run upload if `providers capabilities` reports `uploadFile: true`; otherwise expect exit code `5`.
 
-Provider accountId format (consistent across app and CLI):
-- `aliyun_<user_id>` — e.g., `aliyun_25fd55383d5a4bb5a7319ad66c4c7e75`
-- `onedrive_<id>`
-- `dropbox_<account_id>`
-- `box_<id>`
-- `cloud123_<uid>`
-- `115_<hash>`
-- `baidu_<uk>`
-- `pikpak_<id>`
+Cloud directory organization:
+
+```bash
+clouddrive-cli organize analyze --provider aliyun --account default --path <folder-id> --depth 5 --output analysis.json --json
+clouddrive-cli organize analyze --input files.json --provider aliyun --account default --path <folder-id> --output analysis.json --json
+clouddrive-cli organize plan --analysis analysis.json --rules ./organize-rules.md --output organize-plan.json --json
+clouddrive-cli organize apply organize-plan.json --dry-run --json
+clouddrive-cli organize apply organize-plan.json --json
+```
+
+Organization plans are conservative and should not delete files. Before non-dry-run apply, confirm every action is supported by the provider.
+
+## Operation History And Rollback
+
+```bash
+clouddrive-cli ops list --json
+clouddrive-cli ops show <operation-id> --json
+clouddrive-cli ops undo <operation-id> --dry-run --json
+clouddrive-cli ops undo <operation-id> --json
+```
+
+Use `ops undo --dry-run` before rollback. Operation logs are stored under the CLI config directory.
+
+## MCP
+
+`clouddrive-mcp` exposes a subset of CLI actions as MCP tools:
+
+```bash
+clouddrive-mcp
+```
+
+Available MCP tools include: `auth_list`, `files_list`, `files_walk`, `files_search`, `files_tree`, `files_stats`, `files_info`, `files_mkdir`, `files_rename_apply`, `files_move_apply`, `files_trash_apply`, `media_rename_plan`, `media_scan`, `media_match`, `media_organize_plan`, `ops_list`, `ops_show`, and `ops_undo`.
+
+Use CLI commands directly when the user asks for upload or organize flows not exposed by MCP.
 
 ## Error Handling
 
-- **"Command not found"**: CLI not installed → `~/.local/bin/clouddrive-cli` path issue or not installed
-- **"No account found"**: Need to login or export from app first
-- **"Permission denied"**: Check `~/.local/bin/clouddrive-cli` has execute permission
+- Command not found: verify install path with `which clouddrive-cli`.
+- No account found: run `auth list`, `auth login`, `auth import-token`, or `auth default`.
+- Exit code `2`: missing/invalid account or auth failure.
+- Exit code `5`: provider does not support the requested capability.
+- Large output: narrow `--path`, lower `--depth`, use `tree`/`stats`, or request JSON and summarize.
