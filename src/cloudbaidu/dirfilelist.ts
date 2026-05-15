@@ -33,7 +33,8 @@ export const apiBaiduFileList = async (
   dir: string,
   order = 'name',
   start = 0,
-  limit = 1000
+  limit = 1000,
+  desc = 0
 ): Promise<BaiduFileItem[]> => {
   let token = UserDAL.GetUserToken(user_id)
   if (!token?.access_token) {
@@ -58,7 +59,7 @@ export const apiBaiduFileList = async (
     limit: String(limit),
     web: '1',
     folder: '0',
-    desc: '0'
+    desc: String(desc)
   })
   const url = `${API_URL}?${params.toString()}`
   const resp = await fetch(url, {

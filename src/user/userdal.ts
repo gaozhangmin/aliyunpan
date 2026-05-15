@@ -26,6 +26,63 @@ import { isBaiduUser, isBoxUser, isCloud123User, isDrive115User, isDropboxUser, 
 export const UserTokenMap = new Map<string, ITokenInfo>()
 
 export default class UserDAL {
+  private static cliSyncTimer: ReturnType<typeof setTimeout> | undefined
+
+  private static toCliProvider(token: ITokenInfo): string {
+    return token.tokenfrom === 'aliyun' || token.tokenfrom === 'unknown' ? 'aliyun' : token.tokenfrom
+  }
+
+  private static toCliAccount(token: ITokenInfo) {
+    const provider = this.toCliProvider(token)
+    const accountId = provider === 'aliyun' ? `aliyun_${token.user_id}` : token.user_id
+    return {
+      provider,
+      accountId,
+      displayName: token.nick_name || token.user_name || token.name || token.user_id,
+      token: {
+        access_token: token.access_token,
+        refresh_token: token.refresh_token,
+        token_type: token.token_type || 'Bearer',
+        expires_in: token.expires_in,
+        expire_time: token.expire_time,
+        device_id: token.device_id,
+        signature: token.signature,
+        user_id: token.user_id,
+        user_name: token.user_name,
+        nick_name: token.nick_name,
+        default_drive_id: token.default_drive_id,
+        default_sbox_drive_id: token.default_sbox_drive_id,
+        resource_drive_id: token.resource_drive_id,
+        backup_drive_id: token.backup_drive_id,
+        sbox_drive_id: token.sbox_drive_id,
+        pic_drive_id: token.pic_drive_id,
+        open_api_access_token: token.open_api_access_token,
+        open_api_refresh_token: token.open_api_refresh_token,
+        open_api_token_type: token.open_api_token_type,
+      },
+    }
+  }
+
+  static async SyncCliAccountsToCli(): Promise<{ ok?: boolean; exported?: number; path?: string; error?: string } | null> {
+    if (!window.TvBoxInvoke) return null
+    const userList = await DB.getUserAll()
+    const accounts = userList
+      .filter((token) => token.user_id)
+      .map((token) => this.toCliAccount(token))
+    return await window.TvBoxInvoke('ExportCliTokens', { accounts }) as { ok?: boolean; exported?: number; path?: string; error?: string } | null
+  }
+
+  private static scheduleCliAccountSync() {
+    if (!window.TvBoxInvoke) return
+    if (this.cliSyncTimer) clearTimeout(this.cliSyncTimer)
+    this.cliSyncTimer = setTimeout(() => {
+      this.cliSyncTimer = undefined
+      this.SyncCliAccountsToCli().catch((err: any) => {
+        DebugLog.mSaveWarning('SyncCliAccountsToCli', err?.message || err)
+      })
+    }, 1000)
+  }
+
   private static async ensureTokenReady(token: ITokenInfo): Promise<ITokenInfo | null> {
     try {
       if (isCloud123User(token)) {
@@ -150,6 +207,7 @@ export default class UserDAL {
     if (!defaultUserAdd && !hasLogin) {
       useUserStore().userShowLogin = true
     }
+    this.scheduleCliAccountSync()
   }
 
 
@@ -336,6 +394,7 @@ export default class UserDAL {
         .then(() => {
           window.WinMsgToUpload({ cmd: 'ClearUserToken' })
           window.WinMsgToDownload({ cmd: 'ClearUserToken' })
+          UserDAL.scheduleCliAccountSync()
         })
         .catch(() => {
         })

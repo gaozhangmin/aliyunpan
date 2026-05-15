@@ -125,7 +125,7 @@ export const apiDropboxListSharedLinks = async (user_id: string, path: string): 
   const links: DropboxSharedLinkMetadata[] = []
   let cursor = ''
   do {
-    const body = cursor ? { cursor } : { path, direct_only: true }
+    const body = cursor ? { cursor } : (path ? { path, direct_only: true } : {})
     const resp = await dropboxShareRpc<DropboxListSharedLinksResp>(user_id, '/sharing/list_shared_links', body, '获取 Dropbox 分享链接失败')
     if (resp.error) {
       message.error(resp.error)

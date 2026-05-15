@@ -2,7 +2,7 @@
 
 ## Summary
 
-BoxPlayer should expose its cloud-drive capabilities through an independent `boxplayer-cli` that AI agents and humans can call from a shell. The CLI will not depend on a running Electron process. It will own its own configuration and auth store, call cloud provider APIs directly, and share a headless core with future non-UI integrations.
+BoxPlayer should expose its cloud-drive capabilities through an independent `clouddrive-cli` that AI agents and humans can call from a shell. The CLI will not depend on a running Electron process. It will own its own configuration and auth store, call cloud provider APIs directly, and share a headless core with future non-UI integrations.
 
 The architecture should be multi-provider from the beginning, while the first production-ready implementation should focus on Aliyun Drive. Other providers can be added behind the same interfaces after the command model and safety rules are stable.
 
@@ -52,7 +52,7 @@ packages/boxplayer-core
   media/
     rename-plan
 
-packages/boxplayer-cli
+packages/clouddrive-cli
   commands/
     auth
     files
@@ -60,7 +60,7 @@ packages/boxplayer-cli
     ops
 ```
 
-`boxplayer-core` owns provider-neutral models, auth abstractions, validation, operation logging, and safety rules. `boxplayer-cli` owns command parsing, terminal output, JSON output, exit codes, and user-facing help.
+`boxplayer-core` owns provider-neutral models, auth abstractions, validation, operation logging, and safety rules. `clouddrive-cli` owns command parsing, terminal output, JSON output, exit codes, and user-facing help.
 
 The existing Electron app may later consume the same core, but that should be a follow-up refactor. The first implementation should avoid destabilizing the current UI app.
 
@@ -138,9 +138,9 @@ The common model should preserve enough provider-native data to perform follow-u
 The CLI should use its own config directory:
 
 ```text
-~/.boxplayer-cli/config.json
-~/.boxplayer-cli/tokens.json
-~/.boxplayer-cli/operations/*.json
+~/.clouddrive-cli/config.json
+~/.clouddrive-cli/tokens.json
+~/.clouddrive-cli/operations/*.json
 ```
 
 Token files should be created with owner-only permissions where the platform supports it. A later hardening pass can add OS keychain support.
@@ -148,10 +148,10 @@ Token files should be created with owner-only permissions where the platform sup
 The CLI should support:
 
 ```bash
-boxplayer-cli auth login aliyun
-boxplayer-cli auth list
-boxplayer-cli auth default aliyun <account-id>
-boxplayer-cli auth import-electron
+clouddrive-cli auth login aliyun
+clouddrive-cli auth list
+clouddrive-cli auth default aliyun <account-id>
+clouddrive-cli auth import-electron
 ```
 
 `auth import-electron` is optional for the MVP. If implemented, it should import or export token data through a deliberate compatibility path instead of relying on fragile Chromium IndexedDB internals. A later Electron UI action could export selected accounts to the CLI auth store.
@@ -161,23 +161,23 @@ boxplayer-cli auth import-electron
 The first command surface should be small and composable:
 
 ```bash
-boxplayer-cli auth login <provider>
-boxplayer-cli auth list
+clouddrive-cli auth login <provider>
+clouddrive-cli auth list
 
-boxplayer-cli files list --provider aliyun --account default --path "/影视" --json
-boxplayer-cli files walk --provider aliyun --account default --path "/影视" --json
+clouddrive-cli files list --provider aliyun --account default --path "/影视" --json
+clouddrive-cli files walk --provider aliyun --account default --path "/影视" --json
 
-boxplayer-cli media rename-plan \
+clouddrive-cli media rename-plan \
   --input files.json \
   --style jellyfin \
   --output rename-plan.json
 
-boxplayer-cli files rename-apply rename-plan.json --dry-run
-boxplayer-cli files rename-apply rename-plan.json
+clouddrive-cli files rename-apply rename-plan.json --dry-run
+clouddrive-cli files rename-apply rename-plan.json
 
-boxplayer-cli ops list
-boxplayer-cli ops show <operation-id>
-boxplayer-cli ops undo <operation-id>
+clouddrive-cli ops list
+clouddrive-cli ops show <operation-id>
+clouddrive-cli ops undo <operation-id>
 ```
 
 JSON output must be stable by default so AI agents can parse it reliably. Human-readable output can be the default for interactive commands, but every automation-relevant command should support `--json`.
@@ -295,7 +295,7 @@ Provider adapters should have tests around request construction, response mappin
 
 ### Phase 1: Headless Core And Aliyun Rename MVP
 
-- Create package structure for `boxplayer-core` and `boxplayer-cli`.
+- Create package structure for `boxplayer-core` and `clouddrive-cli`.
 - Define provider-neutral models and `DriveProvider`.
 - Add CLI auth store.
 - Implement Aliyun auth, list, walk, and rename.

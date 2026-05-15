@@ -34,7 +34,7 @@
   </a>
 </p>
 
-[![](https://img.shields.io/badge/-Features-blue)](#features-) [![](https://img.shields.io/badge/-Screenshots-blue)](#screenshots-) [![](https://img.shields.io/badge/-Installation-blue)](#installation-) [![](https://img.shields.io/badge/-WeChat-blue)](#wechat-official-account-) [![](https://img.shields.io/badge/-Community-blue)](#community-) [![](https://img.shields.io/badge/-Credits-blue)](#credits-) [![](https://img.shields.io/badge/-Disclaimer-blue)](#disclaimer-)
+[![](https://img.shields.io/badge/-Features-blue)](#features-) [![](https://img.shields.io/badge/-Screenshots-blue)](#screenshots-) [![](https://img.shields.io/badge/-Installation-blue)](#installation-) [![](https://img.shields.io/badge/-CLI-blue)](#clouddrive-cli-) [![](https://img.shields.io/badge/-WeChat-blue)](#wechat-official-account-) [![](https://img.shields.io/badge/-Community-blue)](#community-) [![](https://img.shields.io/badge/-Credits-blue)](#credits-) [![](https://img.shields.io/badge/-Disclaimer-blue)](#disclaimer-)
 
 # Features [![](https://img.shields.io/badge/-Features-blue)](#features-)
 
@@ -179,6 +179,34 @@ sudo xattr -d com.apple.quarantine /Applications/xbyboxplayer.app
 - `.AppImage`: `chmod +x <file>.AppImage && ./<file>.AppImage`
 - `.pacman`: `sudo pacman -U <file>.pacman`
 - `.zip`: extract and run the executable inside the folder
+
+---
+
+# clouddrive-cli [![](https://img.shields.io/badge/-CLI-blue)](#clouddrive-cli-)
+
+`clouddrive-cli` is the terminal and AI Agent automation interface for BoxPlayer. It supports Aliyun Drive, OneDrive, Dropbox, Box, Baidu Netdisk, 115 Drive, and PikPak.
+
+Key capabilities:
+
+- List and recursively walk cloud drive files
+- Generate media rename plans compatible with Jellyfin / Emby / Plex
+- Dry-run validation before executing trackable, reversible batch renames
+- Upload plans with dry-run and cloud drive organization plans
+- Expose the same capabilities to MCP-compatible AI clients (Claude Desktop, Cursor, etc.) via `clouddrive-mcp`
+
+**Install (with App):** open BoxPlayer → **Account Settings → Install CLI**
+
+**Standalone install:**
+
+```bash
+npm install -g clouddrive-cli
+```
+
+Full documentation: [clouddrive-cli/README.en.md](./clouddrive-cli/README.en.md) | [中文](./clouddrive-cli/README.md)
+
+<a href="#readme">
+    <img src="https://img.shields.io/badge/-Back%20to%20top-orange.svg" alt="#" align="right">
+</a>
 
 ---
 

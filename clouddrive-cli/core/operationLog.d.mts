@@ -34,5 +34,24 @@ export interface OperationLogStore {
   get(id: string): Promise<OperationLog | null>
 }
 
+export interface UndoRenamePlanItem {
+  drive_id: string
+  file_id: string
+  parent_file_id: string
+  old_name: string
+  new_name: string
+  reason: string
+}
+
+export interface UndoRenamePlan {
+  version: number
+  operation: string
+  provider: string
+  account_id: string
+  created_at: string
+  source_operation_id: string
+  items: UndoRenamePlanItem[]
+}
+
 export function createOperationLogStore(input: { configDir: string }): OperationLogStore
-export function createUndoRenamePlan(operation: OperationLog): unknown
+export function createUndoRenamePlan(operation: OperationLog): UndoRenamePlan

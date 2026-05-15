@@ -165,6 +165,36 @@ export function createTray() {
       }
     },
     {
+      label: '安装命令行工具',
+      click: async function() {
+        const { ipcMain, dialog } = await import('electron')
+        const win = AppWindow.mainWindow
+        try {
+          const result = await win?.webContents.executeJavaScript(
+            `window.TvBoxInvoke('InstallCli', {})`
+          )
+          if (result?.ok) {
+            dialog.showMessageBox({
+              type: 'info',
+              title: '安装成功',
+              message: result.message || '命令行工具已安装',
+              detail: (result.paths || []).join('\n'),
+            })
+          } else if (result?.needsElevation) {
+            dialog.showMessageBox({
+              type: 'warning',
+              title: '权限不足',
+              message: result.error,
+            })
+          } else {
+            dialog.showErrorBox('安装失败', result?.error || '未知错误')
+          }
+        } catch (e: any) {
+          dialog.showErrorBox('安装失败', e?.message || '未知错误')
+        }
+      }
+    },
+    {
       label: '彻底退出并停止下载',
       click: function() {
         if (AppWindow.mainWindow) {

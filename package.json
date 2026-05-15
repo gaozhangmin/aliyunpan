@@ -1,7 +1,7 @@
 {
   "name": "BoxPlayer",
   "description": "BoxPlayer",
-  "version": "4.0.10-beta",
+  "version": "4.0.11-beta",
   "main": "dist/electron/main/index.js",
   "author": {
     "name": "gaozhangmin",
@@ -10,7 +10,8 @@
   "homepage": "https://github.com/gaozhangmin/aliyunpan",
   "license": "GPL-3.0",
   "bin": {
-    "boxplayer-cli": "scripts/boxplayer-cli.mjs"
+    "clouddrive-cli": "scripts/clouddrive-cli.mjs",
+    "clouddrive-mcp": "scripts/clouddrive-mcp.mjs"
   },
   "scripts": {
     "dev": "vite",
@@ -23,10 +24,11 @@
     "build:linux": "pnpm run build && electron-builder --linux",
     "build:windows": "pnpm run build && electron-builder --win",
     "build:all": "pnpm run build && CSC_IDENTITY_AUTO_DISCOVERY=true  electron-builder --linux --win --mac",
+    "build:clouddrive-cli": "node scripts/build-clouddrive-cli-package.mjs",
     "config:clean": "node scripts/clean-config.js",
     "config:restore": "node scripts/restore-config.js",
     "test": "vitest run electron/main/download/__tests__",
-    "test:boxplayer-cli": "vitest run src/boxplayer-cli/__tests__"
+    "test:clouddrive-cli": "vitest run src/clouddrive-cli/__tests__"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -130,5 +132,8 @@
     "vite",
     "vue3",
     "vue"
-  ]
+  ],
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0"
+  }
 }

@@ -64,8 +64,102 @@
 </p>
 
 
-[![](https://img.shields.io/badge/-%E5%8A%9F%E8%83%BD-blue)](#功能-) [![](https://img.shields.io/badge/-%E7%95%8C%E9%9D%A2-blue)](#界面-) [![](https://img.shields.io/badge/-%E5%AE%89%E8%A3%85-blue)](#安装-) [![](https://img.shields.io/badge/-%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7-blue)](#小白羊公众号-) [![](https://img.shields.io/badge/-%E8%B5%9E%E5%8A%A9-blue)](#赞助-app-) [![](https://img.shields.io/badge/-%E4%BA%A4%E6%B5%81%E7%A4%BE%E5%8C%BA-blue)](#交流社区-) [![](https://img.shields.io/badge/-%E9%B8%A3%E8%B0%A2-blue)](#鸣谢-) [![](https://img.shields.io/badge/-%E5%A3%B0%E6%98%8E-blue)](#免责声明-)
+[![](https://img.shields.io/badge/-%E5%8A%9F%E8%83%BD-blue)](#功能-) [![](https://img.shields.io/badge/-%E7%95%8C%E9%9D%A2-blue)](#界面-) [![](https://img.shields.io/badge/-%E5%AE%89%E8%A3%85-blue)](#安装-) [![](https://img.shields.io/badge/-CLI-blue)](#clouddrive-cli-) [![](https://img.shields.io/badge/-%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7-blue)](#小白羊公众号-) [![](https://img.shields.io/badge/-%E8%B5%9E%E5%8A%A9-blue)](#赞助-app-) [![](https://img.shields.io/badge/-%E4%BA%A4%E6%B5%81%E7%A4%BE%E5%8C%BA-blue)](#交流社区-) [![](https://img.shields.io/badge/-%E9%B8%A3%E8%B0%A2-blue)](#鸣谢-) [![](https://img.shields.io/badge/-%E5%A3%B0%E6%98%8E-blue)](#免责声明-)
 
+
+# clouddrive-cli [![](https://img.shields.io/badge/-CLI-blue)](#clouddrive-cli-)
+
+`clouddrive-cli` 是 BoxPlayer 面向终端和 AI Agent 的自动化入口，支持阿里云盘、OneDrive、Dropbox、Box、百度网盘、115网盘、PikPak 等多种网盘。
+
+主要能力：
+
+- 列出、递归遍历、搜索网盘文件
+- 生成媒体重命名计划（兼容 Jellyfin / Emby / Plex）
+- 先 dry-run 校验，再执行可追踪、可撤销的批量重命名 / 移动 / 整理
+- 上传计划与 dry-run、网盘目录统计分析
+- 通过 `clouddrive-mcp` 向支持 MCP 的 AI 客户端（Claude Desktop、Cursor 等）暴露同一套能力
+
+安装（跟随 App）：打开 BoxPlayer → **账户设置 → 安装命令行工具**
+
+独立安装：
+
+```bash
+npm install -g clouddrive-cli
+```
+
+### 典型用法
+
+**让 AI 整理网盘媒体文件名（Jellyfin/Emby/Plex 兼容）**
+
+> "帮我把阿里云盘 /Media 目录里的电影和剧集按 Jellyfin 规范重命名，电视剧用 `Shameless.S03E02.mkv`，电影用 `The.Irishman.1080p.x264.mp4`。"
+
+```bash
+clouddrive-cli files walk --provider aliyun --path <folder-id> --json > files.json
+clouddrive-cli media rename-plan --input files.json --style jellyfin --output plan.json
+clouddrive-cli files rename-apply plan.json --dry-run --json   # 预览差异
+clouddrive-cli files rename-apply plan.json --json              # 确认后执行
+```
+
+**让 AI 把混乱目录自动分类到 Movies / TV Shows**
+
+> "我的网盘根目录堆满了文件，帮我整理成 Movies 和 TV Shows 两个分类目录。"
+
+```bash
+clouddrive-cli media organize-plan --input files.json --root <root-id> --provider aliyun --json
+# AI 按计划依次执行 mkdir → rename → move，所有步骤均先 dry-run 确认
+```
+
+**搜索文件**
+
+```bash
+clouddrive-cli files search --name "Inception.mkv" --provider aliyun --json
+clouddrive-cli files search --name "report" --provider onedrive --json
+```
+
+**查看目录大小与文件分类统计**
+
+```bash
+clouddrive-cli files stats --provider aliyun --path root --json
+clouddrive-cli files tree --provider aliyun --path root --depth 3
+```
+
+**撤销上一次操作**
+
+```bash
+clouddrive-cli ops list --json
+clouddrive-cli ops undo <operation-id> --dry-run --json   # 预览撤销计划
+clouddrive-cli ops undo <operation-id> --json             # 执行撤销
+```
+
+详细文档：[clouddrive-cli/README.md](./clouddrive-cli/README.md)
+
+### AI Agent 集成
+
+**Claude Code Skill**（让 Claude 知道如何安全调用 CLI）：
+
+```bash
+npx skills add boxplayer/clouddrive-cli -g
+```
+
+**MCP Server**（供 Claude Desktop、Cursor、Windsurf 等 MCP 客户端使用）：
+
+```bash
+clouddrive-mcp
+```
+
+在 MCP 客户端配置文件中添加：
+
+```json
+{
+  "mcpServers": {
+    "clouddrive": {
+      "command": "clouddrive-mcp"
+    }
+  }
+}
+```
+
+---
 
 # 功能 [![](https://img.shields.io/badge/-%E5%8A%9F%E8%83%BD-blue)](#功能-)
 

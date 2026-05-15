@@ -5,8 +5,9 @@ import AliHttp, { IUrlRespData } from './alihttp'
 import { IAliShareBottleFishItem, IAliShareItem, IAliShareRecentItem } from './alimodels'
 import AliDirFileList from './dirfilelist'
 import { useSettingStore } from '../store'
-import { isCloud123User } from './utils'
+import { isAliyunUser, isCloud123User, isDropboxUser } from './utils'
 import { apiCloud123ShareList } from '../cloud123/share'
+import { apiDropboxListSharedLinks, mapDropboxSharedLinkToAliShareItem } from '../dropbox/share'
 
 export interface IAliShareResp {
   items: IAliShareItem[]
@@ -42,6 +43,12 @@ export default class AliShareList {
     if (isCloud123User(user_id)) {
       return await AliShareList.ApiCloud123ShareListAll(user_id)
     }
+    if (isDropboxUser(user_id)) {
+      return await AliShareList.ApiDropboxShareListAll(user_id)
+    }
+    if (!isAliyunUser(user_id)) {
+      return AliShareList.EmptyShareResp(user_id)
+    }
     const dir: IAliShareResp = {
       items: [],
       itemsKey: new Set(),
@@ -62,6 +69,10 @@ export default class AliShareList {
   static async ApiShareListOnePage(dir: IAliShareResp): Promise<boolean> {
     if (isCloud123User(dir.m_user_id)) {
       return await AliShareList.ApiCloud123ShareListOnePage(dir)
+    }
+    if (!isAliyunUser(dir.m_user_id)) {
+      dir.next_marker = ''
+      return false
     }
     const url = 'adrive/v3/share_link/list'
     const postData = {
@@ -284,6 +295,11 @@ export default class AliShareList {
       } while (true)
       return false
     }
+    if (isDropboxUser(user_id)) {
+      const links = await apiDropboxListSharedLinks(user_id, '')
+      return links.some((link) => (link.id || link.url) === share_id)
+    }
+    if (!isAliyunUser(user_id)) return false
     const url = 'adrive/v3/share_link/list'
     const postData = {
       marker: '',
@@ -312,6 +328,32 @@ export default class AliShareList {
       const isGet = await AliShareList.ApiCloud123ShareListOnePage(dir)
       if (!isGet) break
     } while (dir.next_marker)
+    return dir
+  }
+
+  private static EmptyShareResp(user_id: string): IAliShareResp {
+    return {
+      items: [],
+      itemsKey: new Set(),
+      next_marker: '',
+      m_time: 0,
+      m_user_id: user_id
+    }
+  }
+
+  private static async ApiDropboxShareListAll(user_id: string): Promise<IAliShareResp> {
+    const dir = AliShareList.EmptyShareResp(user_id)
+    const links = await apiDropboxListSharedLinks(user_id, '')
+    const timeNow = new Date().getTime()
+    for (let i = 0, maxi = links.length; i < maxi; i++) {
+      const link = links[i]
+      const add = mapDropboxSharedLinkToAliShareItem(link, 'dropbox', link.path_lower ? [link.path_lower] : [], link.name || '', '')
+      add.created_at = ''
+      add.share_msg = humanExpiration(add.expiration, timeNow)
+      if (dir.itemsKey.has(add.share_id)) continue
+      dir.items.push(add)
+      dir.itemsKey.add(add.share_id)
+    }
     return dir
   }
 

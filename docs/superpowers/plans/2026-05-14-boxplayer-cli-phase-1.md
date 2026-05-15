@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a first usable `boxplayer-cli` foundation with multi-provider abstractions, local auth/config storage, safe rename plans, dry-run validation, operation logging, undo planning, and a stubbed Aliyun provider boundary.
+**Goal:** Build a first usable `clouddrive-cli` foundation with multi-provider abstractions, local auth/config storage, safe rename plans, dry-run validation, operation logging, undo planning, and a stubbed Aliyun provider boundary.
 
-**Architecture:** Implement a provider-neutral CLI core under `src/boxplayer-cli/` using small Node-compatible ES modules, plus an executable `scripts/boxplayer-cli.mjs` entrypoint. The first phase proves the command/data contracts and safety model without wiring live Aliyun network calls yet; the Aliyun adapter exposes capabilities and returns explicit unsupported/auth errors for operations that require live API credentials.
+**Architecture:** Implement a provider-neutral CLI core under `src/clouddrive-cli/` using small Node-compatible ES modules, plus an executable `scripts/clouddrive-cli.mjs` entrypoint. The first phase proves the command/data contracts and safety model without wiring live Aliyun network calls yet; the Aliyun adapter exposes capabilities and returns explicit unsupported/auth errors for operations that require live API credentials.
 
 **Tech Stack:** Node.js ES modules, Vitest, existing `pnpm` scripts, JSON files with owner-only token permissions where supported.
 
@@ -12,26 +12,26 @@
 
 ## File Structure
 
-- Create `src/boxplayer-cli/core/models.mjs`: shared provider-neutral type documentation and constructors.
-- Create `src/boxplayer-cli/core/authStore.mjs`: CLI config directory and JSON auth store.
-- Create `src/boxplayer-cli/core/providerRegistry.mjs`: provider registration and lookup.
-- Create `src/boxplayer-cli/providers/aliyun.mjs`: Aliyun provider capabilities and explicit MVP errors for unimplemented live calls.
-- Create `src/boxplayer-cli/core/renamePlan.mjs`: rename plan validation and dry-run conflict checks.
-- Create `src/boxplayer-cli/core/operationLog.mjs`: operation log persistence and undo plan generation.
-- Create `src/boxplayer-cli/core/commands.mjs`: command handlers usable from tests and the CLI entrypoint.
-- Create `scripts/boxplayer-cli.mjs`: executable CLI wrapper.
-- Create `src/boxplayer-cli/__tests__/core.test.ts`: auth store, provider registry, rename plan, operation log tests.
-- Create `src/boxplayer-cli/__tests__/commands.test.ts`: command behavior tests.
+- Create `src/clouddrive-cli/core/models.mjs`: shared provider-neutral type documentation and constructors.
+- Create `src/clouddrive-cli/core/authStore.mjs`: CLI config directory and JSON auth store.
+- Create `src/clouddrive-cli/core/providerRegistry.mjs`: provider registration and lookup.
+- Create `src/clouddrive-cli/providers/aliyun.mjs`: Aliyun provider capabilities and explicit MVP errors for unimplemented live calls.
+- Create `src/clouddrive-cli/core/renamePlan.mjs`: rename plan validation and dry-run conflict checks.
+- Create `src/clouddrive-cli/core/operationLog.mjs`: operation log persistence and undo plan generation.
+- Create `src/clouddrive-cli/core/commands.mjs`: command handlers usable from tests and the CLI entrypoint.
+- Create `scripts/clouddrive-cli.mjs`: executable CLI wrapper.
+- Create `src/clouddrive-cli/__tests__/core.test.ts`: auth store, provider registry, rename plan, operation log tests.
+- Create `src/clouddrive-cli/__tests__/commands.test.ts`: command behavior tests.
 - Modify `vitest.config.ts`: include BoxPlayer CLI tests.
-- Modify `package.json`: add `boxplayer-cli` bin and focused test script.
+- Modify `package.json`: add `clouddrive-cli` bin and focused test script.
 
 ## Task 1: Auth Store And Provider Registry
 
 **Files:**
-- Create: `src/boxplayer-cli/core/authStore.mjs`
-- Create: `src/boxplayer-cli/core/providerRegistry.mjs`
-- Create: `src/boxplayer-cli/providers/aliyun.mjs`
-- Test: `src/boxplayer-cli/__tests__/core.test.ts`
+- Create: `src/clouddrive-cli/core/authStore.mjs`
+- Create: `src/clouddrive-cli/core/providerRegistry.mjs`
+- Create: `src/clouddrive-cli/providers/aliyun.mjs`
+- Test: `src/clouddrive-cli/__tests__/core.test.ts`
 - Modify: `vitest.config.ts`
 
 - [ ] **Step 1: Write failing tests for auth store and provider registry**
@@ -40,7 +40,7 @@ Add tests that create a temporary auth store, save an account, list it, mark it 
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `pnpm exec vitest run src/boxplayer-cli/__tests__/core.test.ts`
+Run: `pnpm exec vitest run src/clouddrive-cli/__tests__/core.test.ts`
 
 Expected: FAIL because the modules do not exist yet.
 
@@ -50,7 +50,7 @@ Implement JSON read/write helpers, `createAuthStore({ configDir })`, `createProv
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `pnpm exec vitest run src/boxplayer-cli/__tests__/core.test.ts`
+Run: `pnpm exec vitest run src/clouddrive-cli/__tests__/core.test.ts`
 
 Expected: PASS for auth store and registry tests.
 
@@ -59,15 +59,15 @@ Expected: PASS for auth store and registry tests.
 Run:
 
 ```bash
-git add -f src/boxplayer-cli/core/authStore.mjs src/boxplayer-cli/core/providerRegistry.mjs src/boxplayer-cli/providers/aliyun.mjs src/boxplayer-cli/__tests__/core.test.ts vitest.config.ts
+git add -f src/clouddrive-cli/core/authStore.mjs src/clouddrive-cli/core/providerRegistry.mjs src/clouddrive-cli/providers/aliyun.mjs src/clouddrive-cli/__tests__/core.test.ts vitest.config.ts
 git commit -m "feat: add BoxPlayer CLI auth store"
 ```
 
 ## Task 2: Rename Plan Validation And Dry Run
 
 **Files:**
-- Create: `src/boxplayer-cli/core/renamePlan.mjs`
-- Modify: `src/boxplayer-cli/__tests__/core.test.ts`
+- Create: `src/clouddrive-cli/core/renamePlan.mjs`
+- Modify: `src/clouddrive-cli/__tests__/core.test.ts`
 
 - [ ] **Step 1: Write failing tests for rename plan validation**
 
@@ -75,7 +75,7 @@ Add tests for rejecting malformed plans, detecting duplicate target names in one
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `pnpm exec vitest run src/boxplayer-cli/__tests__/core.test.ts`
+Run: `pnpm exec vitest run src/clouddrive-cli/__tests__/core.test.ts`
 
 Expected: FAIL because `renamePlan.mjs` does not exist or exports are missing.
 
@@ -85,7 +85,7 @@ Implement `validateRenamePlan(plan)` and `dryRunRenamePlan(plan, currentItems)`.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `pnpm exec vitest run src/boxplayer-cli/__tests__/core.test.ts`
+Run: `pnpm exec vitest run src/clouddrive-cli/__tests__/core.test.ts`
 
 Expected: PASS.
 
@@ -94,15 +94,15 @@ Expected: PASS.
 Run:
 
 ```bash
-git add -f src/boxplayer-cli/core/renamePlan.mjs src/boxplayer-cli/__tests__/core.test.ts
+git add -f src/clouddrive-cli/core/renamePlan.mjs src/clouddrive-cli/__tests__/core.test.ts
 git commit -m "feat: validate BoxPlayer CLI rename plans"
 ```
 
 ## Task 3: Operation Log And Undo Planning
 
 **Files:**
-- Create: `src/boxplayer-cli/core/operationLog.mjs`
-- Modify: `src/boxplayer-cli/__tests__/core.test.ts`
+- Create: `src/clouddrive-cli/core/operationLog.mjs`
+- Modify: `src/clouddrive-cli/__tests__/core.test.ts`
 
 - [ ] **Step 1: Write failing tests for operation logging and undo plans**
 
@@ -110,7 +110,7 @@ Add tests that save an operation log, list/show it, and generate an inverse rena
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `pnpm exec vitest run src/boxplayer-cli/__tests__/core.test.ts`
+Run: `pnpm exec vitest run src/clouddrive-cli/__tests__/core.test.ts`
 
 Expected: FAIL because operation log exports are missing.
 
@@ -120,7 +120,7 @@ Implement `createOperationLogStore({ configDir })` and `createUndoRenamePlan(ope
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `pnpm exec vitest run src/boxplayer-cli/__tests__/core.test.ts`
+Run: `pnpm exec vitest run src/clouddrive-cli/__tests__/core.test.ts`
 
 Expected: PASS.
 
@@ -129,16 +129,16 @@ Expected: PASS.
 Run:
 
 ```bash
-git add -f src/boxplayer-cli/core/operationLog.mjs src/boxplayer-cli/__tests__/core.test.ts
+git add -f src/clouddrive-cli/core/operationLog.mjs src/clouddrive-cli/__tests__/core.test.ts
 git commit -m "feat: add BoxPlayer CLI operation logs"
 ```
 
 ## Task 4: Command Handlers And CLI Entrypoint
 
 **Files:**
-- Create: `src/boxplayer-cli/core/commands.mjs`
-- Create: `scripts/boxplayer-cli.mjs`
-- Create: `src/boxplayer-cli/__tests__/commands.test.ts`
+- Create: `src/clouddrive-cli/core/commands.mjs`
+- Create: `scripts/clouddrive-cli.mjs`
+- Create: `src/clouddrive-cli/__tests__/commands.test.ts`
 - Modify: `package.json`
 - Modify: `vitest.config.ts`
 
@@ -148,7 +148,7 @@ Add tests for `auth list --json`, `auth default`, `files rename-apply --dry-run`
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `pnpm exec vitest run src/boxplayer-cli/__tests__/commands.test.ts`
+Run: `pnpm exec vitest run src/clouddrive-cli/__tests__/commands.test.ts`
 
 Expected: FAIL because command modules do not exist.
 
@@ -158,7 +158,7 @@ Implement `runBoxPlayerCli(argv, env)` returning `{ exitCode, stdout, stderr }`,
 
 - [ ] **Step 4: Run command tests**
 
-Run: `pnpm exec vitest run src/boxplayer-cli/__tests__/commands.test.ts`
+Run: `pnpm exec vitest run src/clouddrive-cli/__tests__/commands.test.ts`
 
 Expected: PASS.
 
@@ -167,8 +167,8 @@ Expected: PASS.
 Run:
 
 ```bash
-node scripts/boxplayer-cli.mjs auth list --json
-node scripts/boxplayer-cli.mjs ops list --json
+node scripts/clouddrive-cli.mjs auth list --json
+node scripts/clouddrive-cli.mjs ops list --json
 ```
 
 Expected: both commands exit 0 and print JSON.
@@ -178,7 +178,7 @@ Expected: both commands exit 0 and print JSON.
 Run:
 
 ```bash
-git add -f src/boxplayer-cli/core/commands.mjs scripts/boxplayer-cli.mjs src/boxplayer-cli/__tests__/commands.test.ts package.json vitest.config.ts
+git add -f src/clouddrive-cli/core/commands.mjs scripts/clouddrive-cli.mjs src/clouddrive-cli/__tests__/commands.test.ts package.json vitest.config.ts
 git commit -m "feat: add BoxPlayer CLI commands"
 ```
 
@@ -189,7 +189,7 @@ git commit -m "feat: add BoxPlayer CLI commands"
 
 - [ ] **Step 1: Run focused CLI tests**
 
-Run: `pnpm exec vitest run src/boxplayer-cli/__tests__`
+Run: `pnpm exec vitest run src/clouddrive-cli/__tests__`
 
 Expected: all BoxPlayer CLI tests pass.
 

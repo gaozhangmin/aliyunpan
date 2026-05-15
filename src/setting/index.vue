@@ -156,12 +156,12 @@ onUnmounted(() => {
           </div>
           <SettingUI />
         </section>
-<!--        <div id="SettingAccount">-->
-<!--          <div>-->
-<!--            <a-divider :size="2" orientation="center" class="settinghr">账户设置</a-divider>-->
-<!--          </div>-->
-<!--          <SettingAccount />-->
-<!--        </div>-->
+        <section id="SettingAccount" class="settings-section">
+          <div>
+            <a-divider :size="2" orientation="center" class="settinghr">账户设置</a-divider>
+          </div>
+          <SettingAccount />
+        </section>
         <section id="SettingSecurity" class="settings-section">
           <div>
             <a-divider :size="2" orientation="center" class="settinghr">安全设置</a-divider>

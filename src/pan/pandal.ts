@@ -622,9 +622,13 @@ export default class PanDAL {
         const isSearch = dirID.startsWith('search')
         const dirPath = resolveBaiduDirPath(drive_id, dirID)
         const parentPath = isSearch ? '/' : dirPath
+        const orderKey = TreeStore.GetDirOrder(drive_id, dirID)
+        const orderParts = orderKey.split(' ')
+        const baiduOrder = orderParts[0] === 'updated_at' ? 'time' : orderParts[0] === 'size' ? 'size' : 'name'
+        const baiduDesc = orderParts[1] === 'desc' ? 1 : 0
         const request = isSearch
           ? apiBaiduSearch(user_id, dirID.substring('search'.length).trim(), '/', true)
-          : apiBaiduFileList(user_id, dirPath, 'name', 0, 1000)
+          : apiBaiduFileList(user_id, dirPath, baiduOrder, 0, 1000, baiduDesc)
         request
           .then((list) => {
             const allItems = list.map((item) => mapBaiduFileToAliModel(item, drive_id, parentPath))
@@ -665,6 +669,9 @@ export default class PanDAL {
           .then(({ items: list }) => {
             const allItems = list.map((item) => mapPikPakFileToAliModel(item, drive_id, parentId))
             const items = hasFiles ? allItems : allItems.filter((item) => item.isDir)
+            const order = TreeStore.GetDirOrder(drive_id, dirID).replace('ext ', 'updated_at ')
+            const orders = order.split(' ')
+            OrderDir(orders[0], orders[1], items)
             const dir = NewIAliFileResp(user_id, drive_id, dirID, dirName)
             dir.items = items
             dir.itemsKey = new Set(items.map((item) => item.file_id))
@@ -731,6 +738,9 @@ export default class PanDAL {
           .then(async (list) => {
             const allItems = list.map((item) => mapDropboxFileToAliModel(item, drive_id, parentId))
             const items = await hydrateDropboxThumbnails(user_id, hasFiles ? allItems : allItems.filter((item) => item.isDir))
+            const order = TreeStore.GetDirOrder(drive_id, dirID).replace('ext ', 'updated_at ')
+            const orders = order.split(' ')
+            OrderDir(orders[0], orders[1], items)
             const dir = NewIAliFileResp(user_id, drive_id, dirID, dirName)
             dir.items = items
             dir.itemsKey = new Set(items.map((item) => item.file_id))
@@ -794,6 +804,9 @@ export default class PanDAL {
           .then((list) => {
             const allItems = list.map((item) => mapOneDriveItemToAliModel(item, drive_id, parentId))
             const items = hasFiles ? allItems : allItems.filter((item) => item.isDir)
+            const order = TreeStore.GetDirOrder(drive_id, dirID).replace('ext ', 'updated_at ')
+            const orders = order.split(' ')
+            OrderDir(orders[0], orders[1], items)
             const dir = NewIAliFileResp(user_id, drive_id, dirID, dirName)
             dir.items = items
             dir.itemsKey = new Set(items.map((item) => item.file_id))
@@ -856,6 +869,9 @@ export default class PanDAL {
           .then((list) => {
             const allItems = list.map((item) => mapBoxItemToAliModel(item, drive_id, parentId))
             const items = hasFiles ? allItems : allItems.filter((item) => item.isDir)
+            const order = TreeStore.GetDirOrder(drive_id, dirID).replace('ext ', 'updated_at ')
+            const orders = order.split(' ')
+            OrderDir(orders[0], orders[1], items)
             const dir = NewIAliFileResp(user_id, drive_id, dirID, dirName)
             dir.items = items
             dir.itemsKey = new Set(items.map((item) => item.file_id))

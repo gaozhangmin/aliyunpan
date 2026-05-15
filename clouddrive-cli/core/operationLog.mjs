@@ -83,3 +83,30 @@ export function createUndoRenamePlan(operation) {
     items,
   }
 }
+
+export function createUndoMovePlan(operation) {
+  if (!operation || operation.type !== 'move') throw new Error('Only move operations can be undone with createUndoMovePlan')
+  const items = (operation.items || [])
+    .filter((item) => item.status === 'success')
+    .map((item) => ({
+      drive_id: item.drive_id,
+      file_id: item.file_id,
+      name: item.name,
+      type: item.type,
+      from_parent_file_id: item.to_parent_file_id,
+      to_parent_file_id: item.from_parent_file_id,
+      from_path: item.to_path,
+      to_folder_path: item.from_folder_path,
+      reason: `Undo move from operation ${operation.id}`,
+    }))
+
+  return {
+    version: 1,
+    operation: 'move',
+    provider: operation.provider,
+    account_id: operation.account_id,
+    created_at: new Date().toISOString(),
+    source_operation_id: operation.id,
+    items,
+  }
+}

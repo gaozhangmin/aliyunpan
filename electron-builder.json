@@ -14,7 +14,10 @@
   "files": [ "dist" ],
   "extraResources": [
     { "from": "./static/engine/aria2.conf", "to": "./engine/aria2.conf"},
-    { "from": "./static/crx", "to": "./crx"}
+    { "from": "./static/crx", "to": "./crx"},
+    { "from": "./scripts/clouddrive-cli.mjs", "to": "./cli/clouddrive-cli.mjs"},
+    { "from": "./scripts/clouddrive-mcp.mjs", "to": "./cli/clouddrive-mcp.mjs"},
+    { "from": "./clouddrive-cli", "to": "./clouddrive-cli"}
   ],
   "mac": {
     "icon": "./static/images/icon.icns",

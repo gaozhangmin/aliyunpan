@@ -123,6 +123,27 @@ const handlerAccountExport = () => {
   }
 }
 
+const handlerExportCliTokens = async () => {
+  const result = await UserDAL.SyncCliAccountsToCli()
+  if (result?.ok) {
+    message.success(`已导出 ${result.exported} 个账号到 ${result.path}`)
+  } else {
+    message.error(`导出失败：${result?.error || '未知错误'}`)
+  }
+}
+
+const handlerInstallCli = async () => {
+  const result = await window.TvBoxInvoke('InstallCli', {}) as { ok?: boolean; message?: string; needsElevation?: boolean; error?: string } | null
+  if (result?.ok) {
+    message.success(result.message || '命令行工具安装成功')
+  } else if (result?.needsElevation) {
+    message.warning(result.error ?? '需要提升权限')
+  } else {
+    message.error(`安装失败：${result?.error || '未知错误'}`)
+  }
+}
+
+
 const refreshStatus = () => {
   qrCodeLoading.value = false
   qrCodeUrl.value = ''
@@ -221,80 +242,106 @@ const closeQrCode = () => {
       <a-button type='outline' size='small' status="success" tabindex='-1' @click='handlerAccountImport'>
         导入账号
       </a-button>
+      <a-button type='outline' style='margin-left: 12px' size='small' tabindex='-1'
+                @click='handlerExportCliTokens'>
+        导出到 CLI
+      </a-button>
     </div>
-    <div class='settingspace'></div>
-    <div class='settinghead'>阿里云盘开放平台</div>
-    <a-popover position='bottom'>
-      <i class='iconfont iconbulb' />
-      <template #content>
-        <div style='min-width: 400px'>
-          <span class='opblue'>OpenApi</span>：阿里云盘开放平台API<br />
-          说明：获取AccessToken后填入即可，仅用于加速视频播放和文件下载<br />
-          官方文档：<span class='opblue' @click="openWebUrl('developer')">开发者门户</span>
-          <br />
-          <div class='hrspace'></div>
-          <span class='opred'>注意</span>：需要申请OpenApi开发者账户
-          <div class='hrspace'></div>
-        </div>
-      </template>
-    </a-popover>
-    <div class='settingrow'>
-      <a-radio-group
-        type='button' tabindex='-1'
-        :model-value='settingStore.uiEnableOpenApiType'
-        @update:model-value='cb({ uiEnableOpenApiType: $event })'>
-        <a-radio tabindex='-1' value='inline'>内置方式</a-radio>
-        <a-radio tabindex='-1' value='custom'>自定义方式</a-radio>
-      </a-radio-group>
-      <template v-if="settingStore.uiEnableOpenApiType === 'custom'">
-        <div class='settingspace'></div>
-        <div class='settinghead'>客户端ID(ClientId)</div>
-        <div class='settingrow'>
-          <a-input
-            v-model.trim='settingStore.uiOpenApiClientId'
-            :style="{ width: '340px' }"
-            placeholder='客户端ID（该项必填）'
-            @update:model-value='cb({ uiOpenApiClientId: $event })' />
-        </div>
-        <div class='settingspace'></div>
-        <div class='settinghead'>客户端密钥(ClientSecret)</div>
-        <div class='settingrow'>
-          <a-input
-            v-model.trim='settingStore.uiOpenApiClientSecret'
-            :style="{ width: '340px' }"
-            placeholder='客户端密钥（该项必填）'
-            @update:model-value='cb({ uiOpenApiClientSecret: $event })' />
-        </div>
-      </template>
-      <div class='settingspace'></div>
-      <div class='settinghead'>二维码(手机扫码)</div>
-      <div class='settingrow' style='display:flex;'>
-        <a-button type='outline' size='small' tabindex='-1' :loading='qrCodeLoading' @click='refreshQrCode()'>
-          <template #icon>
-            <i class='iconfont iconreload-1-icon' />
-          </template>
-          刷新二维码
-        </a-button>
-        <a-button style='margin-left: 10px' status='success' type='outline' v-if='qrCodeUrl' size='small'
-                  tabindex='-1' @click='closeQrCode()'>
-          <template #icon>
-            <i class='iconfont iconclose' />
-          </template>
-          关闭二维码
-        </a-button>
-      </div>
-      <div class='settingrow' v-if='qrCodeUrl'>
-        <div class='settingspace'></div>
-        <a-alert :type='qrCodeStatusType'> {{ qrCodeStatusTips }}</a-alert>
-        <a-image
-          width='200'
-          height='200'
-          :hide-footer='true'
-          :preview='false'
-          :show-loader="true"
-          :src="qrCodeUrl" />
-      </div>
-    </div>
+<!--    <div class='settingspace'></div>-->
+<!--    <div class='settinghead'>命令行工具</div>-->
+<!--    <a-popover position="bottom">-->
+<!--      <i class="iconfont iconbulb" />-->
+<!--      <template #content>-->
+<!--        <div style='min-width: 380px'>-->
+<!--          安装后可在终端使用 <span class='opblue'>clouddrive-cli</span> 命令<br />-->
+<!--          <hr /><div class="hrspace"></div>-->
+<!--          <span class='opblue'>clouddrive-cli auth list</span>　列出账号<br />-->
+<!--          <span class='opblue'>clouddrive-cli files list &#45;&#45;provider aliyun</span>　列出文件<br />-->
+<!--          <span class='opblue'>clouddrive-cli media rename-plan &#45;&#45;input files.json</span>　生成重命名计划<br />-->
+<!--          <div class="hrspace"></div>-->
+<!--          <span class='opred'>注意</span>：需要系统已安装 Node.js（≥18）<br />-->
+<!--          安装后会自动注册；macOS/Linux 安装到 ~/.local/bin，Windows 安装到 %LOCALAPPDATA%\BoxPlayer\bin-->
+<!--        </div>-->
+<!--      </template>-->
+<!--    </a-popover>-->
+<!--    <div class="settingrow">-->
+<!--      <a-button type='outline' size='small' tabindex='-1' @click='handlerInstallCli'>-->
+<!--        安装命令行工具-->
+<!--      </a-button>-->
+<!--    </div>-->
+<!--    <div class='settingspace'></div>-->
+<!--    <div class='settinghead'>阿里云盘开放平台</div>-->
+<!--    <a-popover position='bottom'>-->
+<!--      <i class='iconfont iconbulb' />-->
+<!--      <template #content>-->
+<!--        <div style='min-width: 400px'>-->
+<!--          <span class='opblue'>OpenApi</span>：阿里云盘开放平台API<br />-->
+<!--          说明：获取AccessToken后填入即可，仅用于加速视频播放和文件下载<br />-->
+<!--          官方文档：<span class='opblue' @click="openWebUrl('developer')">开发者门户</span>-->
+<!--          <br />-->
+<!--          <div class='hrspace'></div>-->
+<!--          <span class='opred'>注意</span>：需要申请OpenApi开发者账户-->
+<!--          <div class='hrspace'></div>-->
+<!--        </div>-->
+<!--      </template>-->
+<!--    </a-popover>-->
+<!--    <div class='settingrow'>-->
+<!--      <a-radio-group-->
+<!--        type='button' tabindex='-1'-->
+<!--        :model-value='settingStore.uiEnableOpenApiType'-->
+<!--        @update:model-value='cb({ uiEnableOpenApiType: $event })'>-->
+<!--        <a-radio tabindex='-1' value='inline'>内置方式</a-radio>-->
+<!--        <a-radio tabindex='-1' value='custom'>自定义方式</a-radio>-->
+<!--      </a-radio-group>-->
+<!--      <template v-if="settingStore.uiEnableOpenApiType === 'custom'">-->
+<!--        <div class='settingspace'></div>-->
+<!--        <div class='settinghead'>客户端ID(ClientId)</div>-->
+<!--        <div class='settingrow'>-->
+<!--          <a-input-->
+<!--            v-model.trim='settingStore.uiOpenApiClientId'-->
+<!--            :style="{ width: '340px' }"-->
+<!--            placeholder='客户端ID（该项必填）'-->
+<!--            @update:model-value='cb({ uiOpenApiClientId: $event })' />-->
+<!--        </div>-->
+<!--        <div class='settingspace'></div>-->
+<!--        <div class='settinghead'>客户端密钥(ClientSecret)</div>-->
+<!--        <div class='settingrow'>-->
+<!--          <a-input-->
+<!--            v-model.trim='settingStore.uiOpenApiClientSecret'-->
+<!--            :style="{ width: '340px' }"-->
+<!--            placeholder='客户端密钥（该项必填）'-->
+<!--            @update:model-value='cb({ uiOpenApiClientSecret: $event })' />-->
+<!--        </div>-->
+<!--      </template>-->
+<!--      <div class='settingspace'></div>-->
+<!--      <div class='settinghead'>二维码(手机扫码)</div>-->
+<!--      <div class='settingrow' style='display:flex;'>-->
+<!--        <a-button type='outline' size='small' tabindex='-1' :loading='qrCodeLoading' @click='refreshQrCode()'>-->
+<!--          <template #icon>-->
+<!--            <i class='iconfont iconreload-1-icon' />-->
+<!--          </template>-->
+<!--          刷新二维码-->
+<!--        </a-button>-->
+<!--        <a-button style='margin-left: 10px' status='success' type='outline' v-if='qrCodeUrl' size='small'-->
+<!--                  tabindex='-1' @click='closeQrCode()'>-->
+<!--          <template #icon>-->
+<!--            <i class='iconfont iconclose' />-->
+<!--          </template>-->
+<!--          关闭二维码-->
+<!--        </a-button>-->
+<!--      </div>-->
+<!--      <div class='settingrow' v-if='qrCodeUrl'>-->
+<!--        <div class='settingspace'></div>-->
+<!--        <a-alert :type='qrCodeStatusType'> {{ qrCodeStatusTips }}</a-alert>-->
+<!--        <a-image-->
+<!--          width='200'-->
+<!--          height='200'-->
+<!--          :hide-footer='true'-->
+<!--          :preview='false'-->
+<!--          :show-loader="true"-->
+<!--          :src="qrCodeUrl" />-->
+<!--      </div>-->
+<!--    </div>-->
   </div>
 </template>
 

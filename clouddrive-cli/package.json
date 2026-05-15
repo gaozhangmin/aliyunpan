@@ -1,0 +1,47 @@
+{
+  "name": "clouddrive-cli",
+  "version": "1.0.1",
+  "description": "Multi-cloud storage CLI with AI-driven media organization. Supports 阿里云盘, OneDrive, Dropbox, Box, 百度网盘, 115网盘, PikPak.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "bin": {
+    "clouddrive-cli": "./bin/cli.mjs",
+    "clouddrive-mcp": "./bin/mcp.mjs"
+  },
+  "exports": {
+    ".": "./core/commands.mjs",
+    "./mcp": "./core/mcpServer.mjs"
+  },
+  "files": [
+    "bin/",
+    "core/",
+    "media/",
+    "providers/",
+    "skill/",
+    "README.md"
+  ],
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0"
+  },
+  "keywords": [
+    "clouddrive-cli",
+    "cloud-drive",
+    "aliyun",
+    "onedrive",
+    "dropbox",
+    "jellyfin",
+    "media-organizer",
+    "ai-agent",
+    "mcp",
+    "claude-skill",
+    "cli"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gaozhangmin/aliyunpan.git",
+    "directory": "clouddrive-cli"
+  }
+}
