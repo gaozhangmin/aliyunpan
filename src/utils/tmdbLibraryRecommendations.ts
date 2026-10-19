@@ -11,6 +11,21 @@ export function matchLibraryRanking(items: MediaLibraryItem[], ranking: TmdbRank
   const seen = new Set<string>()
   return matched.flatMap(({item}) => { if (seen.has(item.id)) return []; seen.add(item.id); return [item] })
 }
+
+export function matchDailyLibraryRanking(items: MediaLibraryItem[], ranking: TmdbRankedEntry[], now = new Date()): MediaLibraryItem[] {
+  const matched = matchLibraryRanking(items, ranking)
+  const seen = new Set(matched.map(item => item.id))
+  const local = items.filter(item => (item.type === 'movie' || item.type === 'tv') && Number(item.tmdbId) > 0)
+    .sort((a, b) => `${a.type}:${a.tmdbId}:${a.id}`.localeCompare(`${b.type}:${b.tmdbId}:${b.id}`))
+  if (!local.length || matched.length >= 24) return matched.slice(0, 24)
+  const day = Math.floor(now.getTime() / 86_400_000)
+  const result = [...matched]
+  for (let index = 0; index < local.length && result.length < 24; index++) {
+    const item = local[(day + index) % local.length]
+    if (!seen.has(item.id)) { seen.add(item.id); result.push(item) }
+  }
+  return result
+}
 export async function fetchRankingPages(base: string, endpoint: string, type: 'movie' | 'tv', request: (url: string) => Promise<Response>, maxPages = 5): Promise<TmdbRankedEntry[]> {
   const results: TmdbRankedEntry[] = []
   const seen = new Set<number>()

@@ -1,92 +1,5 @@
 <template>
   <div class="media-library" :class="{ 'unified-category': props.unifiedBrowse, 'unified-folder': props.unifiedFiles }">
-    <!-- 顶部导航 - 详情页面时隐藏 -->
-    <div v-if="!props.unifiedBrowse && !showingDetail && !props.selectedFolder" class="library-header">
-      <div class="library-tabs">
-        <a-tabs v-model:activeKey="activeTab" type="text" class="hidetabs">
-          <a-tab-pane key="continue" :tab="t('mediaLibrary.continue')" />
-          <a-tab-pane key="recent" :tab="t('mediaLibrary.recent')" />
-          <a-tab-pane key="movies" :tab="t('mediaLibrary.movies')" />
-          <a-tab-pane key="tv" :tab="t('mediaLibrary.tv')" />
-          <a-tab-pane key="unmatched" :tab="t('mediaLibrary.unmatched')" />
-        </a-tabs>
-      </div>
-
-      <!-- 控件行：返回按钮 + 快捷搜索 + 结果计数 + 视图切换 — 同一行 -->
-      <div v-if="!props.selectedFolder || folderFileList.length === 0" class="library-controls">
-        <div class="library-controls-left">
-          <button
-            v-if="showHeaderBackButton || showTopBar"
-            type="button"
-            class="library-arrow-back library-header-back-button"
-            :title="resultBarTitle"
-            @click="handleResultBack"
-          >
-            <IconFont name="iconarrow-left-2-icon" />
-            <span class="library-arrow-back-title">{{ resultBarTitle }}</span>
-          </button>
-        </div>
-        <div class="library-controls-center" />
-        <div class="library-filters-right">
-          <template v-if="showQuickSearch">
-            <button
-              v-if="!searchExpanded"
-              class="view-toggle-seg"
-              :title="t('mediaLibrary.searchFilter')"
-              @click="searchExpanded = true"
-            >
-              <IconFont name="iconsearch" />
-            </button>
-            <a-input-search
-              v-else
-              ref="quickSearchInputRef"
-              v-model="localSearchQuery"
-              allow-clear
-              :placeholder="t('mediaLibrary.filterPlaceholder')"
-              size="small"
-              class="library-quick-search"
-              @blur="onQuickSearchBlur"
-            >
-              <template #prefix>
-                <IconFont name="iconsearch" />
-              </template>
-            </a-input-search>
-          </template>
-          <div v-if="showResultCount" class="library-result-count">{{ t('mediaLibrary.resultCount', { count: pagedTotal }) }}</div>
-
-          <!-- 视图切换 — 毛玻璃分段胶囊 -->
-          <div v-if="showBrowseModeToggle" class="view-toggle-pill">
-            <button
-              class="view-toggle-seg"
-              :class="{ active: viewMode === 'grid' }"
-              :title="t('mediaServer.gridView')"
-              @click="viewMode = 'grid'"
-            >
-              <IconFont name="iconfangkuang" />
-            </button>
-            <button
-              class="view-toggle-seg"
-              :class="{ active: viewMode === 'list' }"
-              :title="t('mediaServer.listView')"
-              @click="viewMode = 'list'"
-            >
-              <IconFont name="iconlist" />
-            </button>
-            <span v-if="showPosterTypeToggle" class="view-toggle-divider" />
-            <button
-              v-if="showPosterTypeToggle"
-              class="view-toggle-seg view-toggle-seg--label"
-              :class="{ active: posterType === 'landscape' }"
-              :title="posterType === 'portrait' ? t('mediaLibrary.switchLandscape') : t('mediaLibrary.switchPortrait')"
-              @click="posterType = posterType === 'portrait' ? 'landscape' : 'portrait'"
-            >
-              <span class="view-toggle-seg-label">{{ posterType === 'portrait' ? t('mediaLibrary.portrait') : t('mediaLibrary.landscape') }}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- 内容区域 -->
     <div class="library-content">
       <div v-if="mediaStore.isScanning && !showingDetail" class="library-scan-status">
@@ -113,7 +26,8 @@
         v-show="showingDetail"
         :media-item="currentMediaItem"
         :active-playlist-name="selectedPlaylist"
-        :playlist-items="selectedPlaylist ? pagedItems : []"
+        :playlist-items="activePlaylistItems"
+        @open-playlist-item="openMedia"
         @ai-rescrape="handleManualAIScrape"
         @back="handleDetailBack"
         @metadata-updated="handleMetadataUpdated"
@@ -170,7 +84,7 @@
                   <div class="media-info">
                     <h3 class="media-title" :title="item.name">
                       {{ item.name }}
-                      <span v-if="getEpisodeTitleSuffix(item)" class="episode-suffix">
+                      <span v-if="!selectedPlaylist && getEpisodeTitleSuffix(item)" class="episode-suffix">
                         {{ getEpisodeTitleSuffix(item) }}
                       </span>
                     </h3>
@@ -385,21 +299,7 @@
 
       <!-- 分类聚合视图 -->
       <div v-else-if="showCategoryView" class="category-view">
-        <!-- 网格视图 -->
-        <div v-if="!props.unifiedBrowse && viewMode === 'grid'" class="category-grid">
-          <CategoryCard
-            v-for="item in categoryItems"
-            :key="`${item.type}-${item.name}`"
-            :name="item.name"
-            :count="item.count"
-            :type="item.type"
-            :cover-images="getDeterministicCoverImages(item)"
-            @click="handleCategoryClick"
-          />
-        </div>
-
-        <!-- 列表视图 - 横向卡片布局 -->
-        <div v-else-if="props.unifiedBrowse || viewMode === 'list'" class="category-list">
+        <div class="category-list">
           <div
             v-for="item in categoryItems"
             :key="`${item.type}-${item.name}`"
@@ -544,8 +444,8 @@
                   {{ getEpisodeTitleSuffix(item) }}
                 </span>
               </h3>
-              <div v-if="item.year" class="media-meta media-meta--minimal">
-                <span class="media-meta-year">{{ item.year }}</span>
+              <div v-if="playlistEpisodeLabel(item) || item.year" class="media-meta media-meta--minimal">
+                <span class="media-meta-year">{{ playlistEpisodeLabel(item) || item.year }}</span>
               </div>
               <p v-if="item.type === 'unmatched' && getUnmatchedPath(item)" class="media-path" :title="getUnmatchedPath(item)">
                 {{ getUnmatchedPath(item) }}
@@ -568,7 +468,11 @@
             :data-selected="selectedBrowseIds.includes(item.id)"
             @click="handleBrowseClick(item)"
             @contextmenu.prevent="openContextMenu($event, item)"
+            @dragover.prevent="selectedPlaylist && ($event.dataTransfer!.dropEffect = 'move')"
+            @drop.stop.prevent="dropPlaylistItem($event, item.id)"
           >
+            <button v-if="selectedPlaylist" type="button" class="playlist-drag-handle" draggable="true"
+              aria-label="排序" @click.stop @dragstart.stop="startPlaylistDrag($event, item.id)">☰</button>
             <div
               class="list-poster"
               :class="{ 'has-image': !!getItemDisplayImage(item) }"
@@ -604,8 +508,8 @@
               <div class="list-head">
                 <div class="list-title-wrap">
                   <h3 class="list-title">
-                    {{ item.name }}
-                    <span v-if="getEpisodeTitleSuffix(item)" class="episode-suffix">
+                    {{ selectedPlaylist ? playlistListTitle(item) : item.name }}
+                    <span v-if="!selectedPlaylist && getEpisodeTitleSuffix(item)" class="episode-suffix">
                       {{ getEpisodeTitleSuffix(item) }}
                     </span>
                   </h3>
@@ -680,7 +584,7 @@
     >
       <div :style="contextMenuStyle" style="width: 1px; height: 1px; visibility: hidden;" />
       <template #content>
-        <MediaPosterMenu :tv="contextMenuItem?.type === 'tv'" :continuing="contextMenuInContinueWatching" :watched="contextMenuIsWatched" :disabled="contextMenuItem && downloadableMediaFiles(contextMenuItem).length ? [] : ['download']" @action="handlePosterAction" />
+        <MediaPosterMenu :tv="contextMenuItem?.type === 'tv'" :playlist-item="!!selectedPlaylist" :continuing="contextMenuInContinueWatching" :watched="contextMenuIsWatched" :disabled="contextMenuItem && downloadableMediaFiles(contextMenuItem).length ? [] : ['download']" @action="handlePosterAction" />
       </template>
     </a-trigger>
     <MediaCollectionPicker
@@ -742,7 +646,8 @@ import CategoryCard from './CategoryCard.vue'
 import MediaDetail from './MediaDetail.vue'
 import MediaCollectionPicker from './MediaCollectionPicker.vue'
 import { isContinueWatchingMember, toggleContinueWatching } from '../utils/continueWatchingAction'
-import { playlistSelection, applyPlaylistSelection } from '../utils/detailCollections'
+import { applyPlaylistSelection, playlistEntryIds } from '../utils/detailCollections'
+import { tmdbImageUrl } from '../utils/tmdb'
 import { matchesMediaPerson } from '../utils/mediaPersonFilter'
 import MediaMetadataEditorModal from './MediaMetadataEditorModal.vue'
 import type { MediaLibraryItem } from '../types/media'
@@ -761,6 +666,7 @@ import { menuOpenFile } from '../utils/openfile'
 import message from '../utils/message'
 import DownDAL from '../down/DownDAL'
 import useSettingStore from '../setting/settingstore'
+import { refreshMediaMetadata } from '../utils/mediaMetadataRefresh'
 import { manualAIScrapeItems } from '../utils/mediaAIScrape'
 import { getMediaCoverage } from '../utils/mediaCoverage'
 import { t } from '../i18n'
@@ -791,6 +697,7 @@ const localSelection = ref(false)
 const effectiveBrowseSelection = computed(() => props.browseSelection || localSelection.value)
 const playlistVisible = ref(false)
 const playlistTargetId = ref('')
+const playlistTargetIds = ref<string[]>([])
 const playlistTargetTitle = ref('')
 const playlistTitle = ref('')
 const playlistError = ref('')
@@ -801,7 +708,8 @@ function showPlaylistPicker() {
   if (!contextMenuItem.value) return
   playlistTargetId.value = contextMenuItem.value.id
   playlistTargetTitle.value = contextMenuItem.value.name
-  selectedPlaylists.value = playlistSelection(mediaStore.playlists, playlistTargetId.value)
+  playlistTargetIds.value = playlistEntryIds(contextMenuItem.value)
+  selectedPlaylists.value = Object.keys(mediaStore.playlists).filter(name => playlistTargetIds.value.length > 0 && playlistTargetIds.value.every(id => mediaStore.playlists[name].includes(id)))
   playlistEditing.value = null
   playlistTitle.value = ''
   playlistError.value = ''
@@ -809,7 +717,8 @@ function showPlaylistPicker() {
   handleContextMenuClose()
 }
 function savePlaylistSelection() {
-  mediaStore.playlists = applyPlaylistSelection(mediaStore.playlists, playlistTargetId.value, selectedPlaylists.value)
+  mediaStore.playlists = applyPlaylistSelection(mediaStore.playlists, playlistTargetId.value, selectedPlaylists.value,
+    playlistTargetIds.value)
   playlistVisible.value = false
 }
 function startPlaylistName(name = '') {
@@ -981,6 +890,13 @@ const getMediaPageQuery = () => {
   const selectedGenreValue = selectedGenre.value
   const selectedYearValue = selectedYear.value
   const selectedRatingValue = selectedRating.value
+  const topRatedIds = selectedRatingValue === 'top30'
+    ? new Set(currentCategorySourceItems.value
+        .filter(item => Number(item.rating) > 0 && Number(item.rating) <= 10)
+        .sort((a, b) => Number(b.rating) - Number(a.rating))
+        .slice(0, 30)
+        .map(item => item.id))
+    : undefined
   const query = (localSearchQuery.value || '').trim().toLowerCase()
   const watchedIds = mediaStore.watchedItems
   const type: MediaLibraryItem['type'] | undefined = category === 'movies' ? 'movie' : ['tv', 'tv-shows'].includes(category) ? 'tv' : category === 'unmatched' ? 'unmatched' : undefined
@@ -996,8 +912,12 @@ const getMediaPageQuery = () => {
       if (decade ? year < Number(decade[1]) || year > Number(decade[1]) + 9 : year !== Number(selectedYearValue)) return false
     }
     if (selectedRatingValue) {
-      const [min, max] = selectedRatingValue.split('-').map(Number)
-      if (!item.rating || item.rating < min || item.rating > max) return false
+      if (topRatedIds) {
+        if (!topRatedIds.has(item.id)) return false
+      } else {
+        const [min, max] = selectedRatingValue.split('-').map(Number)
+        if (!item.rating || item.rating < min || item.rating > max) return false
+      }
     }
     if (selectedCast.value && !matchesMediaPerson(item, selectedCast.value, selectedPersonId.value)) return false
     if (selectedCountry.value && !(item.productionCountries || []).some(country => country.toLowerCase().includes(selectedCountry.value.toLowerCase()))) return false
@@ -1021,7 +941,7 @@ const loadMediaPage = async (reset = false) => {
           : undefined
   if (localItems) {
     const matched = localItems.filter(predicate)
-    if (props.browseSort) matched.sort(compareBrowseItems)
+    if (props.browseSort && !(category === 'playlist' && selectedPlaylist.value && props.browseSort === 'addedAt')) matched.sort(compareBrowseItems)
     pagedTotal.value = matched.length
     pagedItems.value = reset ? matched.slice(0, MEDIA_PAGE_SIZE) : [...pagedItems.value, ...matched.slice(pagedItems.value.length, pagedItems.value.length + MEDIA_PAGE_SIZE)]
     return
@@ -1094,33 +1014,7 @@ const showHomeBackBar = computed(() => {
   if (isSearchView.value || props.selectedFolder) return false
   return true
 })
-const showHeaderBackButton = computed(() => showHomeBackBar.value)
 const showResultBackBar = computed(() => showDrillDownBackBar.value || showPlaylistBackBar.value)
-
-// 顶部操作栏：返回按钮 + 快捷搜索 + 结果计数
-const showTopBar = computed(() => {
-  if (showDrillDownBackBar.value || showPlaylistBackBar.value) return true
-  if (showHomeBackBar.value) return true
-  return false
-})
-const quickSearchCategories = new Set([
-  'continue', 'continue-watching', 'recent', 'recently-added', 'movies', 'tv', 'tv-shows',
-  'documentary', 'animation', 'unmatched', 'unwatched', 'favorites'
-])
-const showQuickSearch = computed(() => {
-  if (isSearchView.value || props.selectedFolder) return false
-  const category = props.activeCategory || activeTab.value
-  return quickSearchCategories.has(category) || showDrillDownBackBar.value || showPlaylistBackBar.value
-})
-const showResultCount = computed(() => showQuickSearch.value)
-const searchExpanded = ref(false)
-const quickSearchInputRef = ref<InstanceType<typeof HTMLInputElement>>()
-
-const onQuickSearchBlur = () => {
-  if (!localSearchQuery.value.trim()) {
-    searchExpanded.value = false
-  }
-}
 const homeNavigationTitleMap: Record<string, string> = {
   'continue-watching': t('mediaLibrary.continue'),
   'recently-added': t('mediaLibrary.recent'),
@@ -1168,16 +1062,6 @@ watch(isSearchView, (value) => {
 const showCategoryView = computed(() => {
   const category = props.activeCategory || activeTab.value
   return ['genres', 'ratings', 'years'].includes(category) && !props.selectedFolder
-})
-
-const showBrowseModeToggle = computed(() => {
-  if (isSearchView.value) return false
-  return !showingDetail.value
-})
-
-const showPosterTypeToggle = computed(() => {
-  if (!showBrowseModeToggle.value) return false
-  return !showCategoryView.value
 })
 
 const showPlaylistView = computed(() => {
@@ -1254,13 +1138,16 @@ const getCategoryGroups = (category: string): CategoryGroup[] => {
         .sort((a, b) => b.count - a.count)
     }
     case 'ratings': {
+      const topRated = sourceItems
+        .filter(item => Number(item.rating) > 0 && Number(item.rating) <= 10)
+        .sort((a, b) => Number(b.rating) - Number(a.rating))
+        .slice(0, 30)
       const categories = [
-        { range: [1, 5.99], label: '1-5分', items: [] as MediaLibraryItem[] },
-        { range: [6, 6.99], label: '6分', items: [] as MediaLibraryItem[] },
-        { range: [7, 7.99], label: '7分', items: [] as MediaLibraryItem[] },
-        { range: [8, 8.99], label: '8分', items: [] as MediaLibraryItem[] },
-        { range: [9, 9.99], label: '9分', items: [] as MediaLibraryItem[] },
-        { range: [10, 10], label: '10分', items: [] as MediaLibraryItem[] }
+        { range: [8, 10], label: t('aggregation.rating8To10'), items: [] as MediaLibraryItem[] },
+        { range: [7, 7.99], label: t('home.ratingStars', { count: 7 }), items: [] as MediaLibraryItem[] },
+        { range: [6, 6.99], label: t('home.ratingStars', { count: 6 }), items: [] as MediaLibraryItem[] },
+        { range: [5, 5.99], label: t('home.ratingStars', { count: 5 }), items: [] as MediaLibraryItem[] },
+        { range: [1, 4.99], label: t('aggregation.rating1To4'), items: [] as MediaLibraryItem[] }
       ]
       sourceItems.forEach(item => {
         const rating = item.rating == null ? NaN : Number(item.rating)
@@ -1268,7 +1155,12 @@ const getCategoryGroups = (category: string): CategoryGroup[] => {
         const group = categories.find(c => rating >= c.range[0] && rating <= c.range[1])
         if (group) group.items.push(item)
       })
-      return categories
+      return [{
+        name: t('aggregation.top30'),
+        count: topRated.length,
+        type: 'rating' as const,
+        items: topRated
+      }, ...categories
         .filter(c => c.items.length > 0)
         .map(c => ({
           name: c.label,
@@ -1276,7 +1168,7 @@ const getCategoryGroups = (category: string): CategoryGroup[] => {
           type: 'rating' as const,
           range: c.range,
           items: c.items
-        }))
+        }))]
     }
     case 'years': {
       const groups: Record<string, MediaLibraryItem[]> = {}
@@ -1350,8 +1242,10 @@ const playlistItems = computed(() => {
 const favoriteIdToMediaItem = (favoriteId: string): MediaLibraryItem | null => {
   const favoriteKey = String(favoriteId)
   const direct = mediaStore.mediaItems.find(item => item.id === favoriteKey)
-  if (direct) {
-    return direct
+  if (direct) return direct
+  for (const collection of mediaStore.mediaItems) {
+    const member = collection.collectionMovies?.find(movie => movie.id === favoriteKey)
+    if (member) return { ...collection, ...member, type: 'movie', collectionMovies: undefined }
   }
 
   const tvBase = mediaStore.tvShows.find(item => favoriteKey.startsWith(`${item.id}_`))
@@ -1368,6 +1262,7 @@ const favoriteIdToMediaItem = (favoriteId: string): MediaLibraryItem | null => {
   if (!episodeNumber) {
     return {
       ...tvBase,
+      id: favoriteKey,
       name: `${tvBase.name} S${seasonNumber}`,
       seasons: season ? [season] : tvBase.seasons
     }
@@ -1378,7 +1273,13 @@ const favoriteIdToMediaItem = (favoriteId: string): MediaLibraryItem | null => {
 
   return {
     ...tvBase,
-    name: `${tvBase.name} S${seasonNumber}E${episodeNumber}`,
+    id: favoriteKey,
+    parentId: tvBase.id,
+    name: tvBase.name,
+    posterUrl: season?.posterPath ? tmdbImageUrl(season.posterPath) : tvBase.posterUrl,
+    releaseDate: episode?.airDate || tvBase.releaseDate,
+    rating: episode?.rating ?? tvBase.rating,
+    overview: episode?.overview || tvBase.overview,
     seasons: season ? [{
       ...season,
       episodes: episode ? [episode] : season.episodes
@@ -1386,6 +1287,37 @@ const favoriteIdToMediaItem = (favoriteId: string): MediaLibraryItem | null => {
     driveFiles
   }
 }
+
+const playlistEpisodeLabel = (item: MediaLibraryItem): string => {
+  if (!selectedPlaylist.value || item.type !== 'tv') return ''
+  const match = item.id.match(/_(\d+)_(\d+)$/)
+  return match ? `第 ${Number(match[1])} 季 · 第 ${Number(match[2])} 集` : ''
+}
+const playlistListTitle = (item: MediaLibraryItem): string => {
+  const episode = item.seasons?.[0]?.episodes?.[0]
+  return [item.name, playlistEpisodeLabel(item), episode?.name].filter(Boolean).join(' - ')
+}
+const startPlaylistDrag = (event: DragEvent, id: string) => {
+  event.dataTransfer?.setData('text/plain', id)
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
+}
+const dropPlaylistItem = (event: DragEvent, targetId: string) => {
+  const name = selectedPlaylist.value
+  const sourceId = event.dataTransfer?.getData('text/plain')
+  if (!name || !sourceId || sourceId === targetId) return
+  const ids = [...(mediaStore.playlists[name] || [])]
+  const source = ids.indexOf(sourceId), target = ids.indexOf(targetId)
+  if (source < 0 || target < 0) return
+  ids.splice(source, 1)
+  ids.splice(target, 0, sourceId)
+  mediaStore.playlists = { ...mediaStore.playlists, [name]: ids }
+  pagedItems.value = ids.map(favoriteIdToMediaItem).filter((item): item is MediaLibraryItem => !!item)
+}
+
+const activePlaylistItems = computed(() => selectedPlaylist.value
+  ? (mediaStore.playlists[selectedPlaylist.value] || []).map(favoriteIdToMediaItem)
+      .filter((item): item is MediaLibraryItem => !!item)
+  : [])
 
 const parseEpisodeId = (id: string) => {
   const parts = String(id).split('_')
@@ -1545,7 +1477,7 @@ const openMedia = (item: MediaLibraryItem) => {
 
 const handleBrowserFileAction = async (action: string, file: IAliGetFileModel) => {
   const target = mediaStore.mediaItems.find(item => [...(item.driveFiles || []), ...(item.seasons || []).flatMap(season => (season.episodes || []).flatMap(episode => episode.driveFiles || []))].some(candidate => candidate.id === file.file_id || candidate.path === file.file_id))
-  if (file.isDir && action === 'favorite') { mediaStore.addFolder({ id: file.drive_id + '_' + file.file_id, fileId: file.file_id, name: file.name, path: file.file_id, userId: mediaPanTreeStore.user_id, driveId: file.drive_id, driveServerId: file.drive_id, scanDate: new Date(), itemCount: 0 }); return }
+  if (file.isDir && action === 'favorite') { mediaStore.addFolder({ id: file.drive_id + '_' + file.file_id, fileId: file.file_id, name: file.name, path: file.file_id, userId: mediaPanTreeStore.user_id, driveId: file.drive_id, driveServerId: file.drive_id, scanDate: new Date(), itemCount: 0, isFavorite: true }); return }
   if (['play', 'loop', 'shuffle'].includes(action)) {
     if (file.isDir) { const folder = mediaStore.folders.find(folder => folder.fileId === file.file_id); if (folder) await playBrowse(action as 'play' | 'loop' | 'shuffle', folder.id); else message.warning(t('mediaLibrary.noPlayableVideo')); }
     else await menuOpenFile(file, '', { playlistLoop: action === 'loop' })
@@ -1566,6 +1498,14 @@ const openContextMenu = (event: MouseEvent, item: MediaLibraryItem) => {
 }
 
 const handlePosterAction = (action: PosterAction) => {
+ if (action === 'removePlaylistItem' && contextMenuItem.value && selectedPlaylist.value) {
+   const ids = mediaStore.playlists[selectedPlaylist.value] || []
+   mediaStore.playlists = { ...mediaStore.playlists,
+     [selectedPlaylist.value]: ids.filter(id => id !== contextMenuItem.value!.id) }
+   pagedItems.value = (mediaStore.playlists[selectedPlaylist.value] || []).map(favoriteIdToMediaItem).filter((item): item is MediaLibraryItem => !!item)
+   handleContextMenuClose()
+   return
+ }
  if (action === 'share' && contextMenuItem.value) { const item = contextMenuItem.value; openMediaShare({ id: item.id, title: item.name, year: item.year, overview: item.overview, files: item.driveFiles }); handleContextMenuClose(); return }
  if (action === 'rating' && contextMenuItem.value) { openPersonalRating(contextMenuItem.value); handleContextMenuClose(); return }
  if (action === 'play' || action === 'loop' || action === 'shuffle') { void playFromMenu(action === 'loop', action === 'shuffle'); return }
@@ -1831,10 +1771,11 @@ const handleCategoryClick = (data: { name: string; type: string; count: number }
       selectedGenre.value = data.name
       break
     case 'rating':
-      if (data.name === '1-5分') {
-        selectedRating.value = '1-5.99'
-      } else {
-        const rating = Number.parseInt(data.name.replace('分', ''), 10)
+      if (data.name === t('aggregation.top30')) selectedRating.value = 'top30'
+      else if (data.name === t('aggregation.rating8To10')) selectedRating.value = '8-10'
+      else if (data.name === t('aggregation.rating1To4')) selectedRating.value = '1-4.99'
+      else {
+        const rating = Number.parseInt(data.name, 10)
         selectedRating.value = Number.isFinite(rating) ? `${rating}-${rating + 0.99}` : ''
       }
       break
@@ -2047,7 +1988,18 @@ const playFromMenu = async (loop = false, shuffle = false) => {
   if (!contextMenuItem.value) return
 
   if (selectedPlaylist.value) {
-    await playPlaylist(selectedPlaylist.value, loop, shuffle)
+    const ids = mediaStore.playlists[selectedPlaylist.value] || []
+    const selectedIndex = ids.indexOf(contextMenuItem.value.id)
+    const ordered = selectedIndex < 0 ? ids : [...ids.slice(selectedIndex), ...ids.slice(0, selectedIndex)]
+    const playable = ordered.map(resolvePlayablePlaylistItem)
+      .filter((item): item is NonNullable<ReturnType<typeof resolvePlayablePlaylistItem>> => !!item)
+    if (shuffle) shuffleInPlace(playable)
+    if (!playable.length) message.warning(t('mediaLibrary.noPlayablePlaylist'))
+    else await menuOpenFile(playable[0].aliFile, '', {
+      playlistLoop: loop,
+      customPlaylistLabel: selectedPlaylist.value,
+      customPlaylist: playable.map(item => item.entry)
+    })
     handleContextMenuClose()
     return
   }
@@ -2221,6 +2173,22 @@ const handleEnterFolder = async (file: any) => {
         return mapped
       })
       console.log('使用PikPak API获取子文件夹文件列表')
+    } else if (driveId === 'quark') {
+      const { apiQuarkFileList, mapQuarkFileToAliModel } = await import('../quark/dirfilelist')
+      const { items: list } = await apiQuarkFileList(userId, fileId, 200)
+      items = list.map(item => ({ ...mapQuarkFileToAliModel(item, driveId, fileId), user_id: userId }))
+    } else if (driveId === 'cloud139') {
+      const { apiCloud139FileList, mapCloud139FileToAliModel } = await import('../cloud139/dirfilelist')
+      const list = await apiCloud139FileList(userId, fileId, 200)
+      items = list.map(item => ({ ...mapCloud139FileToAliModel(item, driveId, fileId), user_id: userId }))
+    } else if (driveId === 'cloud189') {
+      const { apiCloud189FileList, mapCloud189FileToAliModel } = await import('../cloud189/dirfilelist')
+      const list = await apiCloud189FileList(userId, fileId, 200)
+      items = list.map(item => ({ ...mapCloud189FileToAliModel(item, driveId, fileId), user_id: userId }))
+    } else if (driveId === 'guangya') {
+      const { apiGuangyaFileList, mapGuangyaFileToAliModel } = await import('../guangya/dirfilelist')
+      const list = await apiGuangyaFileList(userId, fileId, 200)
+      items = list.map(item => ({ ...mapGuangyaFileToAliModel(item, driveId, fileId), user_id: userId }))
     } else if (driveId === 'dropbox') {
       const { apiDropboxFileList, mapDropboxFileToAliModel } = await import('../dropbox/dirfilelist')
       const parentId = fileId === 'dropbox_root' ? 'dropbox_root' : fileId
@@ -2324,12 +2292,23 @@ const handleGoBack = () => {
   }
 }
 
-const refreshMetadata = () => new Promise<void>(resolve => {
- Modal.confirm({ title: t('librarySettings.refreshMetadata'), content: t('librarySettings.metadataConfirm', { count: mediaStore.mediaItems.length }), onCancel: () => resolve(), onBeforeOk: async () => {
-  try { for (const item of [...mediaStore.mediaItems]) await handleManualAIScrape(item); await mediaStore.hydrate(); resolve(); return true }
-  catch (error) { message.error(error instanceof Error ? error.message : String(error)); return false }
- } })
-})
+const refreshMetadata = async () => {
+ await mediaStore.flushPersistence()
+ const { items } = await DB.getMediaLibrary()
+ const targets = items.filter(item => item.tmdbId || item.collectionMovies?.some(movie => movie.tmdbId))
+ return new Promise<void>(resolve => {
+  Modal.confirm({ title: t('librarySettings.refreshMetadata'), content: t('librarySettings.metadataConfirm', { count: targets.length }), onCancel: () => resolve(), onBeforeOk: async () => {
+   const failures: string[] = []
+   for (const item of targets) {
+    try { await DB.upsertMediaLibraryItems([await refreshMediaMetadata(item)], false) }
+    catch (error) { failures.push(`${item.name}: ${String(error)}`) }
+   }
+   try { await mediaStore.hydrate() } finally { resolve() }
+   if (failures.length) message.error(failures.join('\n'))
+   return true
+  } })
+ })
+}
 const refreshLibrary = () => {
   // 清除导航堆栈
   folderNavigationStack.value = []
@@ -2382,19 +2361,6 @@ const handleDrillDownBack = () => {
 
 const handlePlaylistBack = () => {
   selectedPlaylist.value = ''
-}
-
-const handleResultBack = () => {
-  if (returnToTagDetail()) return
-  if (showHomeBackBar.value) {
-    emit('homeNavigationBack')
-    return
-  }
-  if (showPlaylistBackBar.value) {
-    handlePlaylistBack()
-    return
-  }
-  handleDrillDownBack()
 }
 
 async function runMediaServerSearch(rawQuery: string) {
@@ -2523,6 +2489,7 @@ defineExpose({
   openMedia,
   showAddFolder,
   showFolderFiles,
+  showRootFolderFiles: (files: any[], folder: any) => { folderNavigationStack.value = []; showFolderFiles(files, folder) },
   folderTitle: computed(() => currentFolderInfo.value?.name || props.selectedFolder?.name || ''),
   goFolderBack: () => { if (!folderNavigationStack.value.length) return false; handleGoBack(); return true },
   refreshLibrary,
@@ -2531,6 +2498,8 @@ defineExpose({
 </script>
 
 <style scoped>
+.playlist-drag-handle { flex: 0 0 30px; align-self: center; border: 0; background: none; color: #999; font-size: 24px; cursor: grab; }
+.playlist-drag-handle:active { cursor: grabbing; }
 .poster-playlist-picker{display:flex;flex-direction:column;gap:14px}.poster-playlist-picker label{display:flex;align-items:center;gap:10px;padding:10px;background:var(--color-fill-2);border-radius:8px}.poster-playlist-picker form{display:flex;gap:8px}.poster-selection-bar{display:flex;align-items:center;gap:16px;margin-bottom:12px}.poster-selection-bar button{border:0;background:var(--color-fill-2);padding:6px 12px;color:var(--color-text-1);border-radius:6px;cursor:pointer}
 .local-file-collection{display:grid;grid-template-columns:repeat(auto-fill,174px);gap:24px 20px;padding:20px;align-content:start}.local-file-collection-list{display:flex;flex-direction:column;gap:0;padding:0 16px}
 

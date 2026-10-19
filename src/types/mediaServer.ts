@@ -5,6 +5,8 @@ export type MediaServerSortBy = 'name' | 'createdAt' | 'updatedAt' | 'lastUsedAt
 export type MediaServerSortOrder = 'asc' | 'desc'
 
 export interface MediaServerConfig {
+  /** Transient request scope; never persisted in the server registry. */
+  requestSignal?: AbortSignal
   id: string
   type: MediaServerType
   name: string
@@ -33,6 +35,7 @@ export interface MediaServerConfig {
   createdAt: number
   updatedAt: number
   lastUsedAt?: number
+  lastPlayedAt?: number
 }
 
 export interface MediaServerPreferences {
@@ -42,6 +45,10 @@ export interface MediaServerPreferences {
   serverSortOrder: MediaServerSortOrder
   serverSearchText: string
   pinnedServerIds?: string[]
+  showAddress: boolean
+  showMediaStatistics: boolean
+  showConnectionStatus: boolean
+  showWatchTime: boolean
 }
 
 export type MediaServerPrimaryTab = 'home' | 'search' | 'library'

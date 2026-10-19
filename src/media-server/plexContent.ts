@@ -1,3 +1,6 @@
+import { MergedCatalogPager } from '../utils/mergedCatalogPager'
+import { compareMediaServerItems, type MediaServerBrowseSort } from '../utils/mediaServerBrowseSort'
+import { plexPageOrder, type MediaServerPageSort } from '../utils/mediaServerPageSort'
 import type { MediaServerConfig } from '../types/mediaServer'
 import type {
   MediaServerCardItem,
@@ -127,6 +130,7 @@ interface PlexMetadata {
   duration?: number
   rating?: number
   audienceRating?: number
+  Rating?: Array<{ type?: string; value?: number }>
   userRating?: number
   viewCount?: number
   viewOffset?: number
@@ -264,6 +268,14 @@ const toProgress = (item: PlexMetadata) => {
 
 const isTruthyFlag = (value: unknown) => value === true || value === 1 || value === '1'
 
+const plexRating = (item: PlexMetadata, type: 'audience' | 'critic'): number | undefined =>
+  item.Rating?.find(entry => entry.type?.toLowerCase() === type)?.value
+
+const criticPercent = (value?: number): number | undefined => {
+  if (!Number.isFinite(value) || (value || 0) <= 0) return undefined
+  return (value || 0) <= 10 ? (value || 0) * 10 : value
+}
+
 const mapPlexItem = (config: MediaServerConfig, item: PlexMetadata): MediaServerCardItem => {
   const kind = plexKind(item.type)
   const id = String(item.ratingKey || item.key || '')
@@ -296,7 +308,7 @@ const mapPlexItem = (config: MediaServerConfig, item: PlexMetadata): MediaServer
     },
     sortName: item.titleSort,
     createdAt: item.addedAt ? item.addedAt * 1000 : undefined,
-    criticRating: item.rating,
+    criticRating: criticPercent(plexRating(item, 'critic') ?? item.rating),
     playCount: item.viewCount,
     videoBitrate: ((item.Media?.[0]?.Part?.[0]?.Stream?.find(stream => stream.streamType === 1)?.bitrate || item.Media?.[0]?.bitrate || 0) * 1000) || undefined,
     studio: item.Studio?.map(studio => studio.tag).filter(Boolean).join(', '),
@@ -308,12 +320,13 @@ const mapPlexItem = (config: MediaServerConfig, item: PlexMetadata): MediaServer
     premiereDate: item.originallyAvailableAt,
     year: item.year || (item.originallyAvailableAt ? new Date(item.originallyAvailableAt).getFullYear() : undefined),
     genres: (item.Genre || []).map(genre => genre.tag || '').filter(Boolean),
-    rating: item.rating || item.audienceRating,
+    rating: plexRating(item, 'audience') ?? item.audienceRating ?? item.rating,
     tmdbId: Number([item.guid, ...(item.Guid || []).map(entry => entry.id)].find(id => id?.startsWith('tmdb://'))?.split('://')[1]) || undefined,
     imdbId: [item.guid, ...(item.Guid || []).map(entry => entry.id)].find(id => id?.startsWith('imdb://'))?.split('://')[1],
     runtimeMinutes: toRuntimeMinutes(item.duration),
     progress: toProgress(item),
     parentTitle: item.grandparentTitle || item.parentTitle,
+    seasonCount: item.type === 'show' ? item.childCount : undefined,
     seasonNumber: item.parentIndex,
     episodeNumber: item.index,
     isPlayed: (item.viewCount || 0) > 0,
@@ -422,6 +435,7 @@ const createSourceOptions = (item: PlexMetadata): MediaServerSourceOption[] => {
       id: String(part.id || part.key || `${mediaIndex}:${partIndex}`),
       title: part.file?.split(/[\\/]/).filter(Boolean).pop() || `版本 ${mediaIndex + 1}.${partIndex + 1}`,
       fileLabel: part.file?.split(/[\\/]/).filter(Boolean).pop(),
+      filePath: part.file,
       fileSubLabel: formatSize(part.size),
       mediaInfoCards: createMediaInfoCardsForPart(part, media)
     }))
@@ -443,6 +457,7 @@ const mapPlexDetail = (config: MediaServerConfig, item: PlexMetadata): MediaServ
   mediaInfoCards: createMediaInfoCardsForPart(firstPart(item), firstMedia(item)),
   sourceOptions: createSourceOptions(item),
   fileLabel: firstPart(item)?.file?.split(/[\\/]/).filter(Boolean).pop(),
+  filePath: firstPart(item)?.file,
   fileSubLabel: [formatDateLabel(item.originallyAvailableAt), formatSize(firstPart(item)?.size)].filter(Boolean).join('  '),
   playbackPositionTicks: item.viewOffset ? item.viewOffset * 10_000 : undefined,
   seasonCount: item.childCount,
@@ -515,30 +530,29 @@ const resolvePlexSectionFilterKey = async (
   }
 }
 
+const mergedPlexCatalogs = new Map<string, { created: number; pager: Promise<MergedCatalogPager<PlexMetadata>> }>()
 const fetchPlexAllSectionsPage = async (
-  config: MediaServerConfig,
-  page: number,
-  options: {
-    sort?: string
-    genre?: string
-    studio?: string
-  } = {}
+  config: MediaServerConfig, page: number,
+  options: { sort?: string; genre?: string; studio?: string } = {}
 ) => {
-  const sections = await fetchPlexSections(config)
-  const pages = await Promise.all(sections.map((section) => fetchPlexSectionItems(config, String(section.key || ''), page, options).catch(() => ({ items: [], total: 0 }))))
-  const merged = pages.flatMap((entry) => entry.items)
-  const seen = new Set<string>()
-  const unique = merged.filter((item) => {
-    const id = item.ratingKey || ''
-    if (!id || seen.has(id)) return false
-    seen.add(id)
-    return true
-  })
-  if (options.sort === 'addedAt:desc') unique.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0))
-  return {
-    items: unique.slice(0, PLEX_PAGE_SIZE),
-    total: pages.reduce((sum, entry) => sum + entry.total, 0)
+  const key = JSON.stringify([config.id, config.baseUrl, config.accessToken, options])
+  let cached = mergedPlexCatalogs.get(key)
+  if (page === 0 || !cached || Date.now() - cached.created > 300_000) {
+    const pager = fetchPlexSections(config).then(sections => {
+      const [field, direction] = (options.sort || 'titleSort:asc').split(':')
+      const fields: Record<string, MediaServerBrowseSort> = { titleSort: 'sortName', addedAt: 'addedAt', originallyAvailableAt: 'premiereDate',
+        rating: 'rating', audienceRating: 'criticRating', duration: 'runtimeMinutes', year: 'year', viewCount: 'playCount',
+        'studio.titleSort': 'studio', contentRating: 'officialRating', lastViewedAt: 'seriesDatePlayed' }
+      return new MergedCatalogPager(sections.map(section => String(section.key || '')), PLEX_PAGE_SIZE,
+        (id, index) => fetchPlexSectionItems(config, id, index, options),
+        (a, b) => compareMediaServerItems(mapPlexLibraryNode(config, a), mapPlexLibraryNode(config, b), fields[field] || 'sortName', direction === 'desc' ? 'descending' : 'ascending'),
+        item => String(item.ratingKey || ''))
+    })
+    cached = { created: Date.now(), pager }
+    mergedPlexCatalogs.set(key, cached)
+    if (mergedPlexCatalogs.size > 16) mergedPlexCatalogs.delete(mergedPlexCatalogs.keys().next().value!)
   }
+  return (await cached.pager).page(page)
 }
 
 const mapHubMetadata = (payload: PlexMediaContainer) => {
@@ -622,18 +636,18 @@ export const getPlexMediaServerHomeLatest = async (config: MediaServerConfig): P
   }
 }
 
-export const getPlexMediaServerHomeNextUp = async (config: MediaServerConfig): Promise<{ items: MediaServerCardItem[]; total: number }> => {
+export const getPlexMediaServerHomeNextUp = async (config: MediaServerConfig, page = 0): Promise<{ items: MediaServerCardItem[]; total: number }> => {
   ensurePlexContext(config)
-  const hubItems = await fetchHub(config, `/hubs/home?${new URLSearchParams({
+  const hubPayload = await mediaServerFetch<PlexMediaContainer>(config, `/hubs/home?${new URLSearchParams({
     type: '4',
-    'X-Plex-Container-Start': '0',
+    'X-Plex-Container-Start': String(page * PLEX_PAGE_SIZE),
     'X-Plex-Container-Size': '50',
     includeMeta: '1'
   }).toString()}`)
-  const episodes = hubItems.filter((item) => plexKind(item.type) === 'episode')
+  const episodes = mapHubMetadata(hubPayload).filter((item) => plexKind(item.type) === 'episode')
   return {
     items: episodes.map((item) => mapPlexItem(config, item)),
-    total: episodes.length
+    total: page * PLEX_PAGE_SIZE + episodes.length
   }
 }
 
@@ -712,13 +726,14 @@ export const getPlexMediaServerLibraryPagedItems = async (
   options?: {
     recursiveMedia?: boolean
     collectionType?: string
+    order?: MediaServerPageSort
   }
 ): Promise<MediaServerPagedLibraryPage> => {
   ensurePlexContext(config)
   const recursiveMedia = options?.recursiveMedia !== false
   let result: { items: PlexMetadata[]; total: number }
   if (/^\d+$/.test(parentId) && recursiveMedia) {
-    result = await fetchPlexSectionItems(config, parentId, page)
+    result = await fetchPlexSectionItems(config, parentId, page, { sort: plexPageOrder(options?.order) })
   } else {
     const query = new URLSearchParams({
       'X-Plex-Container-Start': String(page * PLEX_PAGE_SIZE),
@@ -864,27 +879,28 @@ export const getPlexMediaServerSimilarItems = async (
 export const getPlexMediaServerCollectionPage = async (
   config: MediaServerConfig,
   kind: 'latest' | 'nextup',
-  page: number
+  page: number,
+  order: MediaServerPageSort = {}
 ): Promise<MediaServerPagedCollection> => {
   ensurePlexContext(config)
   if (kind === 'nextup') {
-    const all = await getPlexMediaServerHomeNextUp(config)
-    const items = all.items.slice(page * PLEX_PAGE_SIZE, (page + 1) * PLEX_PAGE_SIZE).map((item) => ({ ...item, childCount: undefined, collectionType: item.kind }))
+    const all = await getPlexMediaServerHomeNextUp(config, page)
+    const items = all.items.map((item) => ({ ...item, childCount: undefined, collectionType: item.kind }))
     return {
       key: kind,
       items,
       total: all.total,
       currentPage: page,
-      hasNextPage: (page + 1) * PLEX_PAGE_SIZE < all.total
+      hasNextPage: items.length >= PLEX_PAGE_SIZE
     }
   }
-  const latest = await fetchPlexAllSectionsPage(config, page, { sort: 'addedAt:desc' })
+  const latest = await fetchPlexAllSectionsPage(config, page, { sort: plexPageOrder(order, 'addedAt:desc') })
   return {
     key: kind,
     items: latest.items.map((item) => mapPlexLibraryNode(config, item)),
     total: latest.total,
     currentPage: page,
-    hasNextPage: latest.items.length >= PLEX_PAGE_SIZE
+    hasNextPage: latest.hasNextPage
   }
 }
 
@@ -915,10 +931,12 @@ export const getPlexMediaServerFilteredPagedItems = async (
   options: {
     genre?: string
     studio?: string
+    order?: MediaServerPageSort
   }
 ): Promise<MediaServerPagedLibraryPage> => {
   ensurePlexContext(config)
   const pageData = await fetchPlexAllSectionsPage(config, page, {
+    sort: plexPageOrder(options.order),
     genre: options.genre,
     studio: options.studio
   })
@@ -930,7 +948,7 @@ export const getPlexMediaServerFilteredPagedItems = async (
     items: pageData.items.map((item) => mapPlexLibraryNode(config, item)),
     total: pageData.total,
     currentPage: page,
-    hasNextPage: pageData.items.length >= PLEX_PAGE_SIZE
+    hasNextPage: pageData.hasNextPage
   }
 }
 

@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import type { MediaLibraryItem } from '../../types/media'
-import { LIBRARY_CATEGORY_IDS, MOVIE_CATEGORY_IDS, TV_CATEGORY_IDS, filterLibraryCategory, libraryCategoryGroups, libraryMovieSeries, libraryResolution, libraryPlaylistMembers } from '../unifiedLibraryCategories'
+import { t } from '../../i18n'
+import { LIBRARY_SIDEBAR_ROUTES, LIBRARY_CATEGORY_IDS, MOVIE_CATEGORY_IDS, TV_CATEGORY_IDS, filterLibraryCategory, libraryCategoryGroups, libraryMovieSeries, libraryResolution, libraryPlaylistMembers } from '../unifiedLibraryCategories'
 const movie = (id: string, extra: Partial<MediaLibraryItem> = {}): MediaLibraryItem => ({ id, parentId: '', type: 'movie', name: id, genres: ['Drama'], driveFiles: [], addedAt: new Date('2026-01-01'), ...extra })
 describe('unified library category navigation', () => {
   it('keeps eight video categories plus music and books in order', () => {
     expect(LIBRARY_CATEGORY_IDS).toEqual(['playlist', 'series', 'recent', 'unwatched', 'daily', 'movies', 'tv', 'other', 'music', 'books'])
     expect(MOVIE_CATEGORY_IDS).toHaveLength(10)
-    expect(TV_CATEGORY_IDS).toHaveLength(6)
+    expect(MOVIE_CATEGORY_IDS).not.toContain('networks')
+    expect(TV_CATEGORY_IDS).toContain('networks')
+    expect(TV_CATEGORY_IDS).toHaveLength(10)
   })
   it('never leaks TV shows into movie subcategories', () => {
     const items = [movie('film'), movie('show', { type: 'tv' })]
@@ -20,6 +23,27 @@ describe('unified library category navigation', () => {
     const items = [movie('a', { rating: 7.6, year: '2022', certification: 'PG-13' }), movie('b')]
     for (const route of ['movies/ratings/7', 'movies/years/2022', 'movies/certification/PG-13']) expect(filterLibraryCategory(items, route, () => false).map(item => item.id)).toEqual(['a'])
     expect(libraryCategoryGroups(items, 'certification').map(group => group.name)).toEqual(['PG-13'])
+  })
+  it('uses the requested rating card names and order', () => {
+    const items = [
+      movie('ten', { rating: 9.2 }), movie('seven', { rating: 7.4 }),
+      movie('six', { rating: 6.2 }), movie('five', { rating: 5.1 }), movie('four', { rating: 4.8 })
+    ]
+    expect(libraryCategoryGroups(items, 'ratings').map(group => group.name)).toEqual([
+      t('aggregation.top30'), t('aggregation.rating8To10'), t('home.ratingStars', { count: 7 }),
+      t('home.ratingStars', { count: 6 }), t('home.ratingStars', { count: 5 }), t('aggregation.rating1To4')
+    ])
+  })
+  it('groups only actual streaming network metadata', () => {
+    const items = [movie('show', { type: 'tv', networks: [{ id: 213, name: 'Netflix' }] }), movie('film', { networks: [{ id: 213, name: 'Netflix' }] })]
+    expect(libraryCategoryGroups(items, 'networks').map(group => group.name)).toEqual(['Netflix'])
+    expect(filterLibraryCategory(items, 'tv/networks/Netflix', () => false).map(item => item.id)).toEqual(['show'])
+    expect(libraryCategoryGroups(items, 'networks')[0].members.map(item => item.id)).toEqual(['show'])
+    expect(filterLibraryCategory(items, 'tv/networks', () => false).map(item => item.id)).toEqual(['show'])
+    expect(filterLibraryCategory(items, 'movies/networks/Netflix', () => false).map(item => item.id)).toEqual(['show'])
+    const independent = movie('independent', { type: 'tv', networks: [{ id: 99999, name: 'Independent' }] })
+    expect(libraryCategoryGroups([independent], 'networks').map(group => group.name)).toEqual([t('unified.other')])
+    expect(filterLibraryCategory([independent], 'tv/networks/' + encodeURIComponent(t('unified.other')), () => false)).toEqual([independent])
   })
   it('does not infer a miniseries or concert from its title', () => {
     expect(filterLibraryCategory([movie('Concert')], 'movies/concerts', () => false)).toEqual([])
@@ -39,4 +63,9 @@ describe('unified library category navigation', () => {
     expect(members.map(item => item.id)).toEqual(['show_1_2', 'film'])
     expect(members[0].name).toContain('S1E2')
   })
+})
+
+it('keeps network browsing in the sidebar even without metadata', () => {
+  expect(LIBRARY_SIDEBAR_ROUTES).toContain('tv/networks')
+  expect(libraryCategoryGroups([], 'networks')).toEqual([])
 })

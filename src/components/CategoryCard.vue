@@ -1,327 +1,54 @@
 <template>
-  <div
-    class="category-card"
-    :class="[`category-card--${type}`, { 'category-card--has-collage': collageUrls.length > 0 }]"
+  <div class="category-card" :style="categoryBannerStyle(name)" role="button" tabindex="0"
     @click="$emit('click', { name, type, count })"
-    @contextmenu.prevent="$emit('contextmenu', $event, { name, type, count })"
-  >
-    <!-- 封面拼贴图层：2×2 迷你海报 -->
-    <div v-if="collageUrls.length > 0" class="category-card__collage">
-      <div
-        v-for="(url, idx) in collageUrls"
-        :key="idx"
-        class="category-card__collage-cell"
-      >
-        <img :src="url" :alt="`${name} poster ${idx + 1}`" loading="lazy" />
-      </div>
-      <div class="category-card__collage-overlay" />
+    @keydown.enter.self.prevent="$emit('click', { name, type, count })"
+    @keydown.space.self.prevent="$emit('click', { name, type, count })"
+    @contextmenu.prevent="$emit('contextmenu', $event, { name, type, count })">
+    <div class="category-card__art" aria-hidden="true">
+      <img v-for="url in artwork" :key="url" :src="detailBackdropUrl(url)" alt="" loading="lazy" @error="failed.add(url)" />
     </div>
-
-    <!-- 无海报时的渐变背景 -->
-    <div v-else class="category-card__gradient-bg">
-      <div class="category-card__gradient-icon">
-        <IconFont :name="typeIcon" />
-      </div>
-    </div>
-
-    <!-- 底部信息区 -->
-    <div class="category-card__info">
-      <div class="category-card__label">
-        <IconFont :name="typeIcon" class="category-card__label-icon" />
-        <span class="category-card__name">{{ name }}</span>
-      </div>
-      <div class="category-card__count-badge">
-        <span class="category-card__count-num">{{ count }}</span>
-        <span class="category-card__count-unit">项</span>
-      </div>
-    </div>
-
-    <!-- 类型标记 -->
-    <div class="category-card__type-chip">
-      {{ typeLabel }}
-    </div>
+    <div class="category-card__shade" />
+    <div class="category-card__copy"><img v-if="type === 'network' && categoryNetworkLogo(name) && !failed.has(categoryNetworkLogo(name)!)" class="network-logo" :class="{ 'network-logo-original': name.trim().toLowerCase() === 'netflix' }" :src="categoryNetworkLogo(name)" :alt="name" @error="failed.add(categoryNetworkLogo(name)!)" /><strong v-else>{{ name }}</strong><span>{{ t('customSeries.memberCount', { count }) }}</span></div>
+    <span class="category-card__arrow" aria-hidden="true"><ChevronRight :size="22" /></span>
   </div>
 </template>
-
 <script setup lang="ts">
-import { computed } from 'vue'
-
-interface Props {
-  name: string
-  count: number
-  type: 'genre' | 'rating' | 'year' | 'playlist'
-  gradient?: string
-  coverImage?: string
-  coverImages?: string[]
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  gradient: undefined,
-  coverImage: undefined,
-  coverImages: () => []
-})
-
+import { computed, reactive } from 'vue'
+import { ChevronRight } from 'lucide-vue-next'
+import { t } from '../i18n'
+import { categoryBannerStyle, categoryNetworkLogo } from '../utils/categoryBannerTheme'
+import { detailBackdropUrl } from '../utils/mediaArtwork'
+const props = withDefaults(defineProps<{ name: string; count: number; type: 'genre' | 'rating' | 'year' | 'network' | 'playlist'; gradient?: string; coverImage?: string; coverImages?: string[] }>(), { coverImages: () => [] })
 defineEmits<{
   (e: 'click', data: { name: string; type: string; count: number }): void
   (e: 'contextmenu', event: MouseEvent, data: { name: string; type: string; count: number }): void
 }>()
-
-const collageUrls = computed(() => {
-  if (props.coverImages && props.coverImages.length > 0) {
-    return props.coverImages.slice(0, 4)
-  }
-  if (props.coverImage) {
-    return [props.coverImage]
-  }
-  return []
-})
-
-const typeIcon = computed(() => {
-  switch (props.type) {
-    case 'genre': return 'iconwbiaoqian'
-    case 'rating': return 'iconcrown2'
-    case 'year': return 'iconcalendar'
-    case 'playlist': return 'iconlist'
-    default: return 'iconwbiaoqian'
-  }
-})
-
-const typeLabel = computed(() => {
-  switch (props.type) {
-    case 'genre': return '类型'
-    case 'rating': return '评分'
-    case 'year': return '年份'
-    case 'playlist': return '列表'
-    default: return ''
-  }
-})
+const failed = reactive(new Set<string>())
+const artwork = computed(() => (props.coverImages.length ? props.coverImages : props.coverImage ? [props.coverImage] : []).filter(url => !failed.has(url)).slice(0, 3))
 </script>
+<style scoped>
+.category-card { position: relative; width: 100%; min-height: 132px; aspect-ratio: 5.5 / 1; border-radius: 18px; overflow: hidden; cursor: pointer; color: white; background: linear-gradient(110deg, var(--banner-start), var(--banner-end)); border: 1px solid #ffffff35; transition: box-shadow .18s ease; }
+.category-card__art { position: absolute; inset: 0 0 0 26%; display: flex; mask-image: linear-gradient(90deg, transparent, #000 45%); }
+.category-card__art img { min-width: 0; flex: 1; width: 0; height: 100%; object-fit: cover; object-position: 70% center; }
+.category-card__shade { position: absolute; inset: 0; background: linear-gradient(90deg, var(--banner-start), transparent 85%); }
+.category-card__copy { position: absolute; left: 24px; right: 72px; top: 50%; transform: translateY(-50%); }
+.category-card__copy strong { display: block; font-size: 28px; line-height: 1.2; font-weight: 750; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.category-card__copy span { display: block; margin-top: 8px; font-size: 13px; color: #ffffffd9; }
+.category-card__arrow { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #ffffff26; border: 1px solid #ffffff35; }
+.category-card:hover { box-shadow: 0 8px 22px #0003; }
+.category-card:focus-visible { outline: 3px solid #88baff; outline-offset: 3px; }
+</style>
 
 <style scoped>
-.category-card {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  min-height: 160px;
-  border-radius: 18px;
-  cursor: pointer;
-  overflow: hidden;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
-  box-shadow: 0 12px 32px rgba(12, 14, 18, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: #14171c;
-}
+.network-logo { display: block; max-width: 100%; width: 230px; height: 64px; object-fit: contain; object-position: left center; filter: brightness(0) invert(1); }
+</style>
 
-.category-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 20px 44px rgba(12, 14, 18, 0.22);
-}
+<style scoped>
+.network-logo-original { filter: none !important; }
+</style>
 
-/* ---- 拼贴图层 ---- */
-.category-card__collage {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 1px;
-}
-
-.category-card__collage-cell {
-  overflow: hidden;
-  background: #1a1d24;
-}
-
-.category-card__collage-cell img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.category-card:hover .category-card__collage-cell img {
-  transform: scale(1.06);
-}
-
-.category-card__collage-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    0deg,
-    rgba(12, 14, 18, 0.78) 0%,
-    rgba(12, 14, 18, 0.32) 48%,
-    rgba(12, 14, 18, 0.1) 100%
-  );
-  pointer-events: none;
-}
-
-/* ---- 渐变背景（无海报回退） ---- */
-.category-card__gradient-bg {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.category-card--genre .category-card__gradient-bg {
-  background: linear-gradient(135deg, #0d3b2e 0%, #142b1f 50%, #0f2020 100%);
-}
-
-.category-card--rating .category-card__gradient-bg {
-  background: linear-gradient(135deg, #3d2910 0%, #2b200c 50%, #1a1a0f 100%);
-}
-
-.category-card--year .category-card__gradient-bg {
-  background: linear-gradient(135deg, #1c2028 0%, #181c24 50%, #14161c 100%);
-}
-
-.category-card--playlist .category-card__gradient-bg {
-  background: linear-gradient(135deg, #1a1728 0%, #1f1a2e 50%, #181420 100%);
-}
-
-.category-card__gradient-icon {
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.32);
-  font-size: 28px;
-}
-
-/* ---- 底部信息区 ---- */
-.category-card__info {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 56px 16px 14px 16px;
-  z-index: 2;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.category-card__label {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-width: 0;
-  flex: 1;
-}
-
-.category-card__label-icon {
-  flex-shrink: 0;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.52);
-}
-
-.category-card__name {
-  font-size: 15px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.94);
-  line-height: 1.25;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* ---- 数量徽章 ---- */
-.category-card__count-badge {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.category-card__count-num {
-  font-size: 13px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
-  line-height: 1;
-}
-
-.category-card__count-unit {
-  font-size: 11px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.48);
-}
-
-/* ---- 类型标记 ---- */
-.category-card__type-chip {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 3;
-  padding: 3px 9px;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.42);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.56);
-  letter-spacing: 0.3px;
-  transition: color 0.25s ease, background-color 0.25s ease;
-}
-
-.category-card--genre .category-card__type-chip {
-  color: rgba(74, 222, 128, 0.72);
-}
-
-.category-card--rating .category-card__type-chip {
-  color: rgba(251, 191, 36, 0.72);
-}
-
-.category-card--year .category-card__type-chip {
-  color: rgba(148, 163, 184, 0.72);
-}
-
-.category-card--playlist .category-card__type-chip {
-  color: rgba(167, 139, 250, 0.72);
-}
-
-/* ---- 深色模式 ---- */
-[arco-theme='dark'] .category-card {
-  border-color: rgba(255, 255, 255, 0.06);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
-}
-
-[arco-theme='dark'] .category-card:hover {
-  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.42);
-}
-
-/* ---- 响应式 ---- */
-@media (max-width: 768px) {
-  .category-card {
-    min-height: 140px;
-    border-radius: 16px;
-  }
-
-  .category-card__info {
-    padding: 48px 12px 12px 12px;
-  }
-
-  .category-card__name {
-    font-size: 14px;
-  }
-
-  .category-card__gradient-icon {
-    width: 44px;
-    height: 44px;
-    font-size: 22px;
-  }
+<style scoped>
+@media (max-width: 600px) {
+  .network-logo { width: 120px; height: 40px; }
 }
 </style>

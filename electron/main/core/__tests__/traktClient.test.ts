@@ -154,3 +154,22 @@ describe('Trakt watchlist and personal rating sync', () => {
     expect(store.clear).toHaveBeenCalledOnce(); expect((await client.status()).connected).toBe(false)
   })
 })
+describe('Trakt playback progress import', () => {
+  it('reads movie and episode progress with stable TMDB identities', async () => {
+    const { client, request } = setup(token)
+    request.mockResolvedValueOnce(response(200, [
+      { movie: { ids: { tmdb: 123 } }, progress: 42, paused_at: '2026-10-15T10:00:00Z' },
+      { movie: { ids: {} }, progress: 50, paused_at: '2026-10-15T10:00:00Z' }
+    ])).mockResolvedValueOnce(response(200, [
+      { show: { ids: { tmdb: 456 } }, episode: { season: 2, number: 3 }, progress: 65, paused_at: '2026-10-15T11:00:00Z' }
+    ]))
+    expect(await client.playbackProgress()).toEqual([
+      { type: 'movie', tmdbId: 123, progress: 42, pausedAt: '2026-10-15T10:00:00Z' },
+      { type: 'episode', tmdbId: 456, season: 2, episode: 3, progress: 65, pausedAt: '2026-10-15T11:00:00Z' }
+    ])
+    expect(request.mock.calls.map(([url]) => url)).toEqual([
+      'https://api.trakt.tv/sync/playback/movies',
+      'https://api.trakt.tv/sync/playback/episodes'
+    ])
+  })
+})

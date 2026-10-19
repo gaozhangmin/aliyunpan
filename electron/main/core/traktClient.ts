@@ -190,6 +190,32 @@ export class TraktClient {
     if (!result.data || typeof result.data !== 'object' || !('not_found' in result.data)) throw new Error('TRAKT_REQUEST')
     if (Object.values(result.data.not_found || {}).some(value => Array.isArray(value) && value.length)) throw new Error('TRAKT_NOT_FOUND')
   }
+  async playbackProgress(): Promise<Array<{ type: 'movie' | 'episode'; tmdbId: number; season?: number; episode?: number; progress: number; pausedAt: string }>> {
+    this.requireConfigured(); await this.load()
+    const generation = this.generation
+    if (!this.tokens) throw new Error('TRAKT_LOGIN')
+    if ((this.tokens.created_at + this.tokens.expires_in) * 1000 <= this.now() + 60000) await this.refresh()
+    const records: Array<{ type: 'movie' | 'episode'; tmdbId: number; season?: number; episode?: number; progress: number; pausedAt: string }> = []
+    for (const type of ['movies', 'episodes'] as const) {
+      let result = await this.send('/sync/playback/' + type, undefined, this.tokens?.access_token)
+      if (result.response.status === 401) { await this.refresh(); result = await this.send('/sync/playback/' + type, undefined, this.tokens?.access_token) }
+      if (generation !== this.generation) throw new Error('TRAKT_CANCELLED')
+      if (!result.response.ok) this.failure(result.response.status)
+      if (!Array.isArray(result.data)) throw new Error('TRAKT_RESPONSE')
+      for (const entry of result.data) {
+        const tmdbId = Number(type === 'movies' ? entry.movie?.ids?.tmdb : entry.show?.ids?.tmdb)
+        const progress = Number(entry.progress)
+        const season = Number(entry.episode?.season)
+        const episode = Number(entry.episode?.number)
+        const pausedAt = String(entry.paused_at || '')
+        if (!Number.isSafeInteger(tmdbId) || tmdbId <= 0 || !Number.isFinite(progress) || progress <= 0 || progress >= 100 || !Number.isFinite(Date.parse(pausedAt))) continue
+        if (type === 'episodes' && (!Number.isSafeInteger(season) || !Number.isSafeInteger(episode))) continue
+        records.push({ type: type === 'movies' ? 'movie' : 'episode', tmdbId, ...(type === 'episodes' ? { season, episode } : {}), progress, pausedAt })
+      }
+    }
+    return records
+  }
+
   async logout() {
     this.cancelLogin(); ++this.generation; await this.load()
     const token = this.tokens?.access_token

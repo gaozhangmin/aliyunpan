@@ -11,7 +11,7 @@ export function detailResumeState(positionSeconds: number | undefined, durationS
   const minutes = Math.floor(seconds / 60) % 60
   const time = hours > 0 ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}` : `${minutes}:${String(seconds % 60).padStart(2, '0')}`
   const percent = Number.isFinite(duration) && duration > 0 ? position / duration * 100 : Number(progressPercent)
-  return { label: `继续：${time}`, percent: Number.isFinite(percent) ? Math.max(0, Math.min(100, percent)) : 0 }
+  return { label: `继续播放：${time}`, percent: Number.isFinite(percent) ? Math.max(0, Math.min(100, percent)) : 0 }
 }
 
 export function videoDurationSeconds(value?: string): number {

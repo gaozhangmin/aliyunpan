@@ -94,6 +94,15 @@ describe('unified media library navigation', () => {
     expect(source).toContain('button:focus-visible')
   })
 
+  it('cannot fall back to the legacy library header or segmented view switcher', () => {
+    const shell = readFileSync(resolve(process.cwd(), 'src/views/UnifiedMediaLibraryView.vue'), 'utf8')
+    const browser = readFileSync(resolve(process.cwd(), 'src/components/MediaLibrary.vue'), 'utf8')
+    expect(shell).toContain(':unified-browse="true"')
+    expect(shell).not.toMatch(/<VideoLibrary[^>]*:unified-browse="isCategoryPage"/)
+    expect(browser).not.toContain('class="library-header"')
+    expect(browser).not.toContain('class="view-toggle-pill"')
+  })
+
   it('provides matching Chinese and English strings for the new library UI', () => {
     const source = readFileSync(resolve(process.cwd(), 'src/i18n/index.ts'), 'utf8')
     const keys = [...readFileSync(resolve(process.cwd(), 'src/views/UnifiedMediaLibraryView.vue'), 'utf8').matchAll(/t\('(unified\.[^']+)'/g)].map(match => match[1])

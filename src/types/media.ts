@@ -8,6 +8,7 @@ export interface MediaLibraryItem {
   name: string
   posterUrl?: string
   backdropUrl?: string
+  logoUrl?: string
   year?: string
   releaseDate?: string
   rating?: number
@@ -15,6 +16,7 @@ export interface MediaLibraryItem {
   mediaSubtype?: 'movie' | 'concert' | 'short'
   isMiniseries?: boolean
   genres: string[]
+  networks?: Network[]
   productionCountries?: string[]
   overview?: string
   driveFiles: DriveFileItem[]
@@ -51,6 +53,7 @@ export interface MediaCollectionMovie {
   name: string
   posterUrl?: string
   backdropUrl?: string
+  logoUrl?: string
   year?: string
   releaseDate?: string
   rating?: number
@@ -150,6 +153,7 @@ export interface MovieItem {
   id: number
   imdb_id?: string
   backdrop_path?: string
+  logo_path?: string
   selfBackdropPath?: string
   backdropFile?: DriveFileItem
   genres?: Genre[]
@@ -188,6 +192,7 @@ export interface TvSeriesItem {
   origin_country?: string[]
   first_air_date?: string
   backdrop_path?: string
+  logo_path?: string
   selfBackdropPath?: string
   backdropFile?: DriveFileItem
   poster_path?: string
@@ -315,6 +320,8 @@ export interface TmdbGenre {
 }
 
 export interface MediaLibraryFolder {
+  isDriveRootFavorite?: boolean
+  isFavorite?: boolean
   id: string // 复合ID: ${driveServerId}_${fileId}
   fileId: string // 真正的阿里云盘文件ID
   name: string

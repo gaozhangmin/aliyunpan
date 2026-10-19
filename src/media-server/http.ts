@@ -49,6 +49,7 @@ export const mediaServerFetch = async <T = any>(config: MediaServerConfig, reque
   }
   const response = await fetch(url, {
     ...init,
+    signal: init?.signal || config.requestSignal,
     headers
   })
   if (!response.ok) {
@@ -67,6 +68,7 @@ export const mediaServerFetchVoid = async (config: MediaServerConfig, requestPat
   }
   const response = await fetch(url, {
     ...init,
+    signal: init?.signal || config.requestSignal,
     headers
   })
   if (!response.ok) {

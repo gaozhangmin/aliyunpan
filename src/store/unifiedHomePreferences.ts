@@ -1,8 +1,10 @@
 import { defineStore } from 'pinia'
-import { defaultHomeSettings, type UnifiedHomeSettings } from '../utils/unifiedHomeManagement'
+import { defaultHomeSettings } from '../utils/unifiedHomeManagement'
 
 export const UNIFIED_HOME_PREFERENCES_KEY = 'unified-media-home-preferences'
 
+// Compatibility projection for existing renderers. Mutation authority belongs
+// to categoryPlacement; loading here is only for the legacy migration.
 export default defineStore('unified-media-home-preferences', {
   state: defaultHomeSettings,
   actions: {
@@ -15,17 +17,6 @@ export default defineStore('unified-media-home-preferences', {
           titles: Object.fromEntries(Object.entries(data.titles || {}).filter(([, value]) => typeof value === 'string')) as Record<string, string>
         })
       } catch { this.$patch(defaultHomeSettings()) }
-    },
-    apply(settings: UnifiedHomeSettings) {
-      this.$patch({ order: [...settings.order], hidden: [...settings.hidden], titles: { ...settings.titles } })
-      localStorage.setItem(UNIFIED_HOME_PREFERENCES_KEY, JSON.stringify(settings))
-    },
-    restoreOrder() {
-      this.apply({ order: [], hidden: [], titles: { ...this.titles } })
-    },
-    rename(id: string, title: string) {
-      const name = title.trim()
-      if (name) this.apply({ order: [...this.order], hidden: [...this.hidden], titles: { ...this.titles, [id]: name } })
     }
   }
 })

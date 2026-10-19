@@ -114,17 +114,54 @@ export function tmdbImageUrl(path?: string | null, size: string = 'w500'): strin
 
 export { TMDB_BASE_URL }
 
-export async function getLibraryRankings() {
-    const [movies, tv, topMovies] = await Promise.all([
-      fetchRankingPages(TMDB_BASE_URL_PROXY, '/trending/movie/day', 'movie', fetchWithRetry),
-      fetchRankingPages(TMDB_BASE_URL_PROXY, '/trending/tv/day', 'tv', fetchWithRetry),
-      fetchRankingPages(TMDB_BASE_URL_PROXY, '/movie/top_rated', 'movie', fetchWithRetry)
-    ])
-    return { daily: [...movies, ...tv], topMovies }
-  }
+type LibraryRankings = { daily: import('./tmdbLibraryRecommendations').TmdbRankedEntry[]; topMovies: import('./tmdbLibraryRecommendations').TmdbRankedEntry[] }
+let libraryRankingsCache: { day: string; value: LibraryRankings } | undefined
+let libraryRankingsRequest: Promise<LibraryRankings> | undefined
+export function getLibraryRankings(): Promise<LibraryRankings> {
+  const day = new Date().toISOString().slice(0, 10)
+  if (libraryRankingsCache?.day === day) return Promise.resolve(libraryRankingsCache.value)
+  if (libraryRankingsRequest) return libraryRankingsRequest
+  libraryRankingsRequest = Promise.all([
+    fetchRankingPages(TMDB_BASE_URL_PROXY, '/trending/movie/day', 'movie', fetchWithRetry),
+    fetchRankingPages(TMDB_BASE_URL_PROXY, '/trending/tv/day', 'tv', fetchWithRetry),
+    fetchRankingPages(TMDB_BASE_URL_PROXY, '/movie/top_rated', 'movie', fetchWithRetry)
+  ]).then(([movies, tv, topMovies]) => {
+    const value = { daily: [...movies, ...tv], topMovies }
+    libraryRankingsCache = { day, value }
+    return value
+  }).finally(() => { libraryRankingsRequest = undefined })
+  return libraryRankingsRequest
+}
 
 
 export class TmdbService {
+  private readonly networkRequests = new Map<number, Promise<import('../types/media').Network[] | undefined>>()
+
+  private async supplementNetworks(item: MediaLibraryTvSeriesItem | null): Promise<void> {
+    const tv = item?.tv
+    if (!tv?.id || tv.networks?.length) return
+    let request = this.networkRequests.get(tv.id)
+    if (!request) {
+      request = (async () => {
+        try {
+          const response = await fetchWithRetry(`${TMDB_BASE_URL_PROXY}/tv/${tv.id}`, 0, 0, 10000)
+          const payload = await response.json()
+          const details = payload.data ?? payload
+          if (Number(details.id) !== Number(tv.id) || !Array.isArray(details.networks)) return undefined
+          return details.networks.filter((network: import('../types/media').Network) => typeof network?.name === 'string' && network.name.trim())
+        } catch { return undefined }
+      })()
+      this.networkRequests.set(tv.id, request)
+      // Share concurrent episode lookups; bound cached successful series details.
+      void request.then(networks => {
+        if (!networks) this.networkRequests.delete(tv.id)
+        else if (this.networkRequests.size > 256) this.networkRequests.delete(this.networkRequests.keys().next().value!)
+      })
+    }
+    const networks = await request
+    if (networks) tv.networks = networks
+  }
+
   private async supplementCertification(item: MovieItem | MediaLibraryTvSeriesItem | null, tv: boolean): Promise<void> {
     if (!item) return
     const metadata = tv ? (item as MediaLibraryTvSeriesItem).tv : item as MovieItem
@@ -205,7 +242,7 @@ export class TmdbService {
       const response = await fetchWithRetry(`${TMDB_BASE_URL}/tv/id?${params}`)
       const data: TvSeriesItemResponse = await response.json()
       const item = data.data || null
-      await this.supplementCertification(item, true)
+      await Promise.all([this.supplementCertification(item, true), this.supplementNetworks(item)])
       return item
     } catch (error) {
       console.error('Error loading TV metadata:', error)
@@ -246,7 +283,7 @@ export class TmdbService {
 
       const data: TvSeriesItemResponse = await response.json()
       const item = unwrapTmdbResponse(data)
-      await this.supplementCertification(item, true)
+      await Promise.all([this.supplementCertification(item, true), this.supplementNetworks(item)])
       return item
     } catch (error) {
       console.error('Error searching TV show:', error)
@@ -302,10 +339,12 @@ export class TmdbService {
           overview: tvResult.tv.overview,
           posterUrl: tvResult.tv.poster_path ? tmdbImageUrl(tvResult.tv.poster_path) : undefined,
           backdropUrl: tvResult.tv.backdrop_path ? tmdbImageUrl(tvResult.tv.backdrop_path, 'original') : undefined,
+          logoUrl: tvResult.tv.logo_path ? tmdbImageUrl(tvResult.tv.logo_path, 'original') : undefined,
           year: tvResult.tv.first_air_date?.substring(0, 4),
           certification: tvResult.tv.certification,
           rating: tvResult.tv.vote_average,
           genres: tvResult.tv.genres?.map(g => g.name) || [],
+          networks: tvResult.tv.networks || [],
           credits: tvResult.tv.credits || tvResult.current_season?.credits,
           productionCountries: tvResult.tv.production_countries?.map(c => c.name) || [],
           tmdbId: tvResult.tv.id,
@@ -336,6 +375,7 @@ export class TmdbService {
           overview: movieResult.overview,
           posterUrl: movieResult.poster_path ? tmdbImageUrl(movieResult.poster_path) : undefined,
           backdropUrl: movieResult.backdrop_path ? tmdbImageUrl(movieResult.backdrop_path, 'original') : undefined,
+          logoUrl: movieResult.logo_path ? tmdbImageUrl(movieResult.logo_path, 'original') : undefined,
           year: movieResult.release_date?.substring(0, 4),
           certification: movieResult.certification,
           rating: movieResult.vote_average,

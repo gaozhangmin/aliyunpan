@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { t } from '../i18n'
 import { readPersonalRatings, savePersonalRating } from '../utils/mediaPersonalRating'
-import { loadTraktStatus, syncTrakt, traktStatus, traktError } from '../services/trakt/client'
+import { loadTraktStatus, syncTrakt, traktError } from '../services/trakt/client'
 import type { TraktIdentity } from '@shared/trakt'
 const target = ref<({ id: string; name: string } & Partial<TraktIdentity>) | null>(null)
 const busy = ref(false)
@@ -30,5 +30,25 @@ async function save() {
 onMounted(() => window.addEventListener('boxplayer:personal-rating', open))
 onUnmounted(() => window.removeEventListener('boxplayer:personal-rating', open))
 </script>
-<template><a-modal :visible="!!target" :title="t('posterMenu.personalRating')" :footer="false" :width="420" :mask-closable="!busy" :esc-to-close="!busy" @cancel="close"><div class="personal-rating"><strong>{{ target?.name }}</strong><a-rate v-model="rating" :count="10" :allow-half="false" :disabled="busy" /><small>{{ t(traktStatus.connected ? 'trakt.ratingNote' : 'posterMenu.personalRatingNote') }}</small><p v-if="error" role="alert">{{ error }}</p><div><a-button :disabled="busy" @click="close">{{ t('common.cancel') }}</a-button><a-button type="primary" :loading="busy" :disabled="rating < 1" @click="save">{{ t('posterMenu.rating') }}</a-button></div></div></a-modal></template>
-<style scoped>.personal-rating{display:flex;flex-direction:column;gap:20px}.personal-rating small{color:var(--color-text-3)}.personal-rating>div{display:flex;justify-content:flex-end;gap:12px}.personal-rating :deep(.arco-rate){color:#ff8800}</style>
+<template>
+  <a-modal class="personal-rating-modal" :visible="!!target" :footer="false" :width="372" :mask-closable="!busy" :esc-to-close="!busy" @cancel="close">
+    <div class="personal-rating">
+      <div aria-hidden="true" class="personal-rating__icon">🍿</div>
+      <div class="personal-rating__heading">
+        <strong>{{ t('posterMenu.ratingPrompt') }}</strong>
+        <span>《{{ target?.name }}》</span>
+      </div>
+      <a-rate v-model="rating" :count="10" :allow-half="false" :disabled="busy" />
+      <p v-if="error" role="alert">{{ error }}</p>
+      <div class="personal-rating__actions">
+        <a-button :disabled="busy" @click="close">{{ t('common.cancel') }}</a-button>
+        <a-button type="primary" :loading="busy" :disabled="rating < 1" @click="save">{{ t('posterMenu.rating') }}</a-button>
+      </div>
+    </div>
+  </a-modal>
+</template>
+
+<style scoped>
+.personal-rating{display:flex;flex-direction:column;align-items:center;color:#fff;padding:10px 8px 8px}.personal-rating__icon{display:grid;width:102px;height:102px;place-items:center;border-radius:50%;background:#fff4ec;font-size:44px}.personal-rating__heading{display:flex;max-width:100%;flex-direction:column;align-items:center;gap:3px;margin-top:16px;text-align:center}.personal-rating__heading strong{font-size:18px}.personal-rating__heading span{overflow:hidden;max-width:100%;font-size:16px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}.personal-rating :deep(.arco-rate){display:flex;width:100%;justify-content:center;gap:2px;margin-top:14px;color:#ff8800}.personal-rating :deep(.arco-rate-character){margin:0;font-size:27px}.personal-rating__actions{display:grid;width:100%;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}.personal-rating__actions :deep(.arco-btn){height:52px;border:2px solid #ff8800;border-radius:9px;background:transparent;color:#ff8800;font-size:16px;font-weight:700}.personal-rating__actions :deep(.arco-btn-primary){background:#ff8800;color:#fff}.personal-rating__actions :deep(.arco-btn-disabled){opacity:.45}.personal-rating p{width:100%;margin:12px 0 0;color:var(--color-danger-light-4);text-align:center}
+:global(.personal-rating-modal .arco-modal){max-width:calc(100vw - 32px);border:1px solid rgb(255 255 255 / 20%);border-radius:24px;background:#1b1b1c;box-shadow:0 24px 60px rgb(0 0 0 / 48%)}:global(.personal-rating-modal .arco-modal-header){display:none}:global(.personal-rating-modal .arco-modal-body){padding:22px 24px 24px}@media (max-width:420px){.personal-rating__icon{width:88px;height:88px}.personal-rating :deep(.arco-rate-character){font-size:23px}.personal-rating__actions{gap:10px}:global(.personal-rating-modal .arco-modal-body){padding:18px 16px 20px}}
+</style>

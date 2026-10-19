@@ -1,5 +1,5 @@
 export type MediaBrowseSort = 'fileName' | 'addedAt' | 'premiereDate' | 'title'
-export const mediaBrowseSortOrder: MediaBrowseSort[] = ['fileName', 'addedAt', 'premiereDate', 'title']
+export const mediaBrowseSortOrder: MediaBrowseSort[] = ['title', 'fileName', 'addedAt', 'premiereDate']
 export function nextMediaBrowseSort(sort: MediaBrowseSort): MediaBrowseSort {
   return mediaBrowseSortOrder[(mediaBrowseSortOrder.indexOf(sort) + 1) % mediaBrowseSortOrder.length]
 }

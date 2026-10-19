@@ -10,7 +10,7 @@ describe('poster action routing regressions', () => {
     expect(server).not.toContain('showServer(')
     expect(home).toContain('@custom-series="showCustomSeries"')
   })
-  it.each(['src/components/MediaPersonalRatingModal.vue', 'src/components/media-server/home/MediaServerPosterRow.vue'])('compiles updated menu surfaces: %s', file => {
+  it.each(['src/components/MediaPersonalRatingModal.vue', 'src/components/media-server/home/MediaServerPosterRow.vue', 'src/components/LibraryObjectActions.vue', 'src/components/UnifiedLibraryBrowser.vue', 'src/components/MediaPosterMenu.vue', 'src/components/UnifiedMediaRow.vue', 'src/views/UnifiedMediaLibraryView.vue'])('compiles updated menu surfaces: %s', file => {
     const { descriptor, errors } = parse(readFileSync(file, 'utf8'))
     expect(errors).toEqual([])
     const script = compileScript(descriptor, { id: file })

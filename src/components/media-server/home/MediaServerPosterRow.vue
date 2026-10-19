@@ -167,6 +167,9 @@ const resolveHeading = (item: MediaServerLibraryNode) => {
 }
 
 const resolveSubtitle = (item: MediaServerLibraryNode) => {
+  if (item.kind === 'series') return [item.year ? String(item.year) : '',
+    item.seasonCount && item.seasonCount > 0 ? t('mediaLibrary.seasonsCount', { count: item.seasonCount }) : ''
+  ].filter(Boolean).join(' · ')
   switch (props.subtitleMode) {
     case 'title':
       return item.title

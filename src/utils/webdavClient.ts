@@ -146,6 +146,7 @@ export const saveWebDavConnection = (config: WebDavConnectionConfig) => {
     list.unshift(config)
   }
   saveWebDavConnections(list)
+  aListTokenCache.delete(config.id)
 }
 
 export const removeWebDavConnection = (id: string) => {

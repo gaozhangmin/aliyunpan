@@ -1,3 +1,4 @@
+import useCategoryPlacement from './categoryPlacement'
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import type { MediaLibraryItem, MediaLibraryFolder, MediaFilter, FavoriteId, PlaylistMap } from '../types/media'
@@ -6,6 +7,7 @@ import DB from '../utils/db'
 import { mergeDriveFileSources, reconcileMediaItemSource } from '../utils/mediaSourceMembership'
 import { MediaPersistenceError, mediaPersistenceSnapshot } from '../utils/mediaPersistenceSnapshot'
 import { mergeScrapedMedia, scrapedMediaId } from '../utils/mediaScrapeMerge'
+import { t } from '../i18n'
 
 // 本地存储的键名
 const STORAGE_KEYS = {
@@ -113,6 +115,7 @@ export const syncMediaLibraryStoreFromStorage = (store: {
 
 export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
   // 状态 - 从localStorage加载初始数据
+  const catalogRevision = ref(0)
   const mediaItems = ref<MediaLibraryItem[]>(shouldLoadLegacyMediaLibrary() ? loadFromStorage(STORAGE_KEYS.MEDIA_ITEMS, []) : [])
   const folders = ref<MediaLibraryFolder[]>(shouldLoadLegacyMediaLibrary() ? normalizeFolders(loadFromStorage(STORAGE_KEYS.FOLDERS, [])) : [])
   const isScanning = ref(false)
@@ -221,6 +224,7 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
         // Store snapshots are complete; replacements must allow edits and removals.
         await DB.upsertMediaLibraryItems(itemUpserts, false)
         mediaWriteError = undefined
+        catalogRevision.value++
         void refreshMediaCounts()
         mediaChannel?.postMessage({ type: 'changed' })
       })
@@ -263,6 +267,7 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
     await mediaWriteChain
     if (typeof indexedDB === 'undefined') {
       hydrated.value = true
+      catalogRevision.value++
       return
     }
     try {
@@ -350,17 +355,16 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
     mediaItems.value
       .filter(item => item.rating && item.rating > 0)
       .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-      .slice(0, 20)
+      .slice(0, 30)
   )
 
   const ratingCategories = computed(() => {
     const categories = [
-      { range: [1, 5.99], label: '1-5分', items: [] as MediaLibraryItem[] },
-      { range: [6, 6.99], label: '6分', items: [] as MediaLibraryItem[] },
-      { range: [7, 7.99], label: '7分', items: [] as MediaLibraryItem[] },
-      { range: [8, 8.99], label: '8分', items: [] as MediaLibraryItem[] },
-      { range: [9, 9.99], label: '9分', items: [] as MediaLibraryItem[] },
-      { range: [10, 10], label: '10分', items: [] as MediaLibraryItem[] }
+      { range: [8, 10], label: t('aggregation.rating8To10'), items: [] as MediaLibraryItem[] },
+      { range: [7, 7.99], label: t('home.ratingStars', { count: 7 }), items: [] as MediaLibraryItem[] },
+      { range: [6, 6.99], label: t('home.ratingStars', { count: 6 }), items: [] as MediaLibraryItem[] },
+      { range: [5, 5.99], label: t('home.ratingStars', { count: 5 }), items: [] as MediaLibraryItem[] },
+      { range: [1, 4.99], label: t('aggregation.rating1To4'), items: [] as MediaLibraryItem[] }
     ]
 
     mediaItems.value.forEach(item => {
@@ -383,7 +387,10 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
       }
     })
 
-    return categories
+    return [{
+      name: t('aggregation.top30'), count: topRated.value.length, type: 'rating' as const,
+      range: [1, 10], items: topRated.value
+    }, ...categories
       .filter(c => c.items.length > 0)
       .map(c => ({
         name: c.label,
@@ -391,29 +398,32 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
         type: 'rating' as const,
         range: c.range,
         items: c.items
-      }))
+      }))].filter(c => c.items.length > 0)
   })
 
   const yearGroups = computed(() => {
     const groups: { [key: string]: MediaLibraryItem[] } = {}
+    const dated = mediaItems.value.filter(item => item.year && Number.isFinite(parseInt(item.year)))
 
     mediaItems.value.forEach(item => {
       if (item.year) {
         const year = parseInt(item.year)
-        const decade = Math.floor(year / 10) * 10
-        const key = `${decade}s`
+        if (!Number.isFinite(year) || year <= 0) return
+        const key = year >= 2020 ? '2020+' : year < 1940 ? t('aggregation.earlier') : `${Math.floor(year / 10) * 10}s`
         if (!groups[key]) groups[key] = []
         groups[key].push(item)
       }
     })
 
-    return Object.entries(groups)
-      .sort(([a], [b]) => parseInt(b) - parseInt(a))
-      .map(([year, items]) => ({
-        name: year,
-        count: items.length,
+    const newest = [...dated].sort((a, b) => String(b.releaseDate || b.year || '').localeCompare(String(a.releaseDate || a.year || ''))).slice(0, 30)
+    const order = ['2020+', '2010s', '2000s', '1990s', '1980s', '1970s', '1960s', '1950s', '1940s', t('aggregation.earlier')]
+    return [{ name: t('aggregation.newest'), items: newest }, ...order.filter(key => groups[key]?.length).map(key => ({ name: key, items: groups[key] }))]
+      .filter(group => group.items.length > 0)
+      .map(group => ({
+        name: group.name,
+        count: group.items.length,
         type: 'year' as const,
-        items
+        items: group.items
       }))
   })
 
@@ -595,6 +605,13 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
     const targetSourceKey = sourceKey(target)
     const removedFolders = folders.value.filter(folder => folder.id === id || sourceKey(folder) === targetSourceKey)
     const removedFolderIds = new Set(removedFolders.map(folder => folder.id))
+    if (target.isDriveRootFavorite) {
+      // Removing a root clears its media, not separately saved child favorites.
+      for (const folder of folders.value) {
+        if (folder.userId === target.userId && folder.driveId === target.driveId
+            && folder.driveServerId === target.driveServerId) reconcileFolderSource(folder.id, [])
+      }
+    }
     reconcileFolderSource(id, [])
     const originalItems = mediaItems.value
     // 删除文件夹
@@ -852,6 +869,7 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
     const items = playlists.value[oldName]
     const { [oldName]: _removed, ...rest } = playlists.value
     playlists.value = { ...rest, [trimmed]: items }
+    useCategoryPlacement().renameRoute('playlist/' + encodeURIComponent(oldName), 'playlist/' + encodeURIComponent(trimmed))
   }
 
   const isInPlaylist = (name: string, itemId: string) => {
@@ -908,6 +926,7 @@ export const useMediaLibraryStore = defineStore('mediaLibrary', () => {
   return {
     // 状态
     mediaItems,
+    catalogRevision,
     folders,
     hydrated,
     mediaItemCount,

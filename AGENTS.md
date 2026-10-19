@@ -1,5 +1,11 @@
 # AGENTS.md — BoxPlayer (aliyunpan)
 
+## “All Platforms” Scope
+
+- When the user says “all platforms” (`所有平台`), treat it as one request spanning all three repositories: `~/aliyunpan`, `~/BoxPlayer_Android`, and `~/XbyVideoHub`.
+- Implement the Electron/aliyunpan surface in `~/aliyunpan`; implement Android phone, tablet, and Android TV in `~/BoxPlayer_Android`; implement macOS, iOS/iPadOS, and tvOS in `~/XbyVideoHub`.
+- Inspect and modify each repository independently. Do not assume a change in one repository propagates to the other two.
+
 ## Quick reference
 
 ```bash
@@ -9,6 +15,13 @@ pnpm run build        # typecheck + bundle (vue-tsc --noEmit && vite build)
 pnpm run test         # focused Vitest suite (not full repo)
 pnpm run test:clouddrive-cli  # clouddrive-cli tests only
 ```
+
+## Home Category Context Menus
+
+- Categories and independently placeable subcategories, including series, playlists, movie/TV child categories, genre, rating, score, and release-date values, use the same placement context-menu state machine.
+- An unplaced item shows “Add to Home” and “Add to Favorites”; both actions prompt for a user-defined display name.
+- After either add action succeeds, or when the item is initially visible on Home, the menu immediately switches to “Remove from Home” and “Rename Favorite.” The menu must not allow simultaneous Home and Favorites placement.
+- “Remove from Home” clears whichever placement contains the item. Renaming a favorite changes only its Favorites card title and does not rename the Home or sidebar title.
 
 ## Package manager: pnpm only
 

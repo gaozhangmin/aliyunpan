@@ -8,8 +8,8 @@ describe('detail resume button', () => {
     expect(detailSeriesId('custom_series_name_1_2')).toBe('custom_series_name')
   })
   it('shows the last position, not duration or percent', () => {
-    expect(detailResumeState(932.9, 2400)).toEqual({ label: '继续：15:32', percent: 932.9 / 2400 * 100 })
-    expect(detailResumeState(3731, 7200)?.label).toBe('继续：1:02:11')
+    expect(detailResumeState(932.9, 2400)).toEqual({ label: '继续播放：15:32', percent: 932.9 / 2400 * 100 })
+    expect(detailResumeState(3731, 7200)?.label).toBe('继续播放：1:02:11')
   })
   it('keeps server progress when duration is unavailable and clamps the fill', () => {
     expect(detailResumeState(100, undefined, 24)?.percent).toBe(24)

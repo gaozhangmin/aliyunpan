@@ -2,7 +2,7 @@
 import { ref, onUnmounted, watch } from 'vue'
 import { t } from '../i18n'
 import MediaLoadingIndicator from './MediaLoadingIndicator.vue'
-import { traktStatus, traktAccount, loadTraktStatus, loadTraktAccount, traktSyncEnabled, setTraktSyncEnabled, startTraktLogin, openTraktVip, cancelTraktLogin, logoutTrakt, traktError } from '../services/trakt/client'
+import { traktStatus, traktAccount, loadTraktStatus, loadTraktAccount, traktSyncEnabled, setTraktSyncEnabled, traktSyncRange, setTraktSyncRange, syncTraktPlaybackProgress, startTraktLogin, openTraktVip, cancelTraktLogin, logoutTrakt, traktError } from '../services/trakt/client'
 import TraktAvatar from './TraktAvatar.vue'
 import { IconExport, IconClose } from '@arco-design/web-vue/es/icon'
 const props = defineProps<{ visible: boolean }>()
@@ -24,6 +24,7 @@ async function begin() {
     traktStatus.value = status
     stop()
     await refreshAccount()
+    setTraktSyncEnabled(true)
   } catch (e) { if (attempt === generation) { stop(); error.value = traktError(e) } }
 }
 async function disconnect() { busy.value = true; error.value = ''; try { await logoutTrakt() } catch (e) { error.value = traktError(e) } finally { busy.value = false } }
@@ -31,7 +32,7 @@ async function refreshAccount() { busy.value = true; try { await loadTraktAccoun
 watch(() => props.visible, async visible => {
   if (!visible) { stop(); void cancelTraktLogin().catch(() => undefined); return }
   error.value = ''; busy.value = true
-  try { await loadTraktStatus(); if (props.visible && traktStatus.value.connected) await refreshAccount() } catch (e) { error.value = traktError(e) } finally { busy.value = false }
+  try { await loadTraktStatus(); if (props.visible && traktStatus.value.connected) { await refreshAccount(); if (traktSyncEnabled.value) void syncTraktPlaybackProgress().catch(e => error.value = traktError(e)) } } catch (e) { error.value = traktError(e) } finally { busy.value = false }
 })
 onUnmounted(() => { stop(); void cancelTraktLogin().catch(() => undefined) })
 </script>
@@ -49,6 +50,7 @@ onUnmounted(() => { stop(); void cancelTraktLogin().catch(() => undefined) })
         </div>
         <MediaLoadingIndicator v-if="busy" class="profile-loading" :size="24" />
         <label class="profile-sync" :title="t('trakt.syncNote')"><span>{{ t('trakt.syncRecords') }}</span><input type="checkbox" :checked="traktSyncEnabled" @change="setTraktSyncEnabled(($event.target as HTMLInputElement).checked)" /></label>
+        <label class="profile-sync"><span>{{ t('trakt.syncRange') }}</span><select :value="traktSyncRange" @change="setTraktSyncRange(Number(($event.target as HTMLSelectElement).value))"><option :value="-1">{{ t('trakt.rangeAll') }}</option><option :value="7">{{ t('trakt.rangeWeek') }}</option><option :value="30">{{ t('trakt.rangeMonth') }}</option><option :value="180">{{ t('trakt.rangeHalfYear') }}</option><option :value="365">{{ t('trakt.rangeYear') }}</option></select></label>
         <div class="profile-footer"><a-button size="small" :loading="busy" @click="disconnect"><IconExport />{{ t('trakt.disconnect') }}</a-button></div>
       </template>
       <template v-else-if="login">

@@ -1,4 +1,4 @@
-export type FileSourceOverrides = Record<string, { cover?: string; order?: number }>
+export type FileSourceOverrides = Record<string, { name?: string; cover?: string; order?: number; hiddenOnHome?: boolean }>
 
 export function reorderFileSourceIds(ids: string[], dragged: string, target: string): string[] {
   const from = ids.indexOf(dragged)

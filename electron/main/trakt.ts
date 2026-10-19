@@ -80,7 +80,8 @@ export function registerTraktIpc() {
     start: webLogin,
     cancel: () => { cancelWebLogin?.(); client.cancelLogin() },
     logout: () => { cancelWebLogin?.(); return client.logout() },
-    sync: (identity, action, rating) => client.sync(identity, action, rating)
+    sync: (identity, action, rating) => client.sync(identity, action, rating),
+    playbackProgress: () => client.playbackProgress()
   }
   for (const [name, handler] of Object.entries(handlers)) ipcMain.handle('trakt:' + name, async (event, ...args) => {
     // Reject subframes and external web/player windows. Credentials never cross IPC.

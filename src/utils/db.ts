@@ -1,3 +1,4 @@
+import { readHomeCatalogPages } from './homeCatalogPages'
 import Dexie from 'dexie'
 import { ITokenInfo } from '../user/userstore'
 import { IOtherShareLinkModel } from '../share/share/OtherShareStore'
@@ -385,6 +386,14 @@ class XBYDB3 extends Dexie {
     if (!this.isOpen()) await this.open()
     const [items, folders] = await Promise.all([this.imedia_item.toArray(), this.imedia_folder.toArray()])
     return { items, folders }
+  }
+
+  /** Complete Home catalog without putting the whole library in Vue's deep-reactive page cache.
+   * Keyset batches yield between IndexedDB reads, including for very large libraries. */
+  async getHomeMediaLibrary(): Promise<MediaLibraryItem[]> {
+    if (!this.isOpen()) await this.open()
+    return readHomeCatalogPages<MediaLibraryItem>((after, limit) =>
+      (after === undefined ? this.imedia_item.orderBy('id') : this.imedia_item.where('id').above(after)).limit(limit).toArray())
   }
 
   async getMediaLibraryPage(options: { offset?: number; limit?: number; folderId?: string; type?: MediaLibraryItem['type']; predicate?: (item: MediaLibraryItem) => boolean; sort?: (a: MediaLibraryItem, b: MediaLibraryItem) => number } = {}): Promise<MediaLibraryItem[]> {

@@ -1,27 +1,32 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { Star, ListVideo, Play, RefreshCw, Shuffle, House, Folder } from 'lucide-vue-next'
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { Star, ListVideo, Play, RefreshCw, Shuffle, House, Folder, Pencil } from 'lucide-vue-next'
 import { t } from '../i18n'
+import { libraryCategoryIcon } from '../utils/libraryCategoryIcon'
 import DB from '../utils/db'
 import type { MediaLibraryItem } from '../types/media'
 import type { UnifiedLibraryCard, UnifiedLibraryRow } from '../types/unifiedMediaLibrary'
-import { LIBRARY_CATEGORY_IDS, MOVIE_CATEGORY_IDS, TV_CATEGORY_IDS, filterLibraryCategory, libraryCategoryGroups, libraryMovieSeries, libraryPlaylistMembers } from '../utils/unifiedLibraryCategories'
+import { LIBRARY_CATEGORY_IDS, MOVIE_CATEGORY_IDS, TV_CATEGORY_IDS, libraryHomeId, libraryGroupRoute, libraryGroupLabel, filterLibraryCategory, libraryCategoryGroups, libraryMovieSeries, libraryPlaylistMembers } from '../utils/unifiedLibraryCategories'
 import { isMediaWatched } from '../utils/localWatchedState'
 import { hasLocalMedia } from '../utils/unifiedMediaScope'
 import { loadCustomSeries } from '../utils/customMediaSeries'
+import { compareMediaBrowseValues, type MediaBrowseSort } from '../utils/mediaBrowseSort'
 import { useMediaLibraryStore } from '../store/medialibrary'
-import useBookmarks from '../store/unifiedLibraryBookmarks'
 import useHomePreferences from '../store/unifiedHomePreferences'
 import UnifiedMediaRow from './UnifiedMediaRow.vue'
+import { libraryObjectCover } from '../utils/libraryObjectCover'
+import LibraryObjectActions from './LibraryObjectActions.vue'
 import MediaLoadingIndicator from './MediaLoadingIndicator.vue'
 
-const props = defineProps<{ route: string; mode: 'grid' | 'list'; localOnly: boolean; dailyItems: MediaLibraryItem[]; homeRoutes: string[]; card: (item: MediaLibraryItem) => UnifiedLibraryCard }>()
-const emit = defineEmits<{ navigate: [route: string]; play: [items: MediaLibraryItem[], mode: 'play' | 'loop' | 'shuffle', title: string]; title: [title: string]; customSeries: [id: string]; toggleHome: [route: string] }>()
+const props = defineProps<{ route: string; mode: 'grid' | 'list'; sort: MediaBrowseSort; localOnly: boolean; dailyItems: MediaLibraryItem[]; selection?: string[]; card: (item: MediaLibraryItem, landscape?: boolean, playlistName?: string, seriesID?: string) => UnifiedLibraryCard }>()
+const emit = defineEmits<{ navigate: [route: string]; play: [items: MediaLibraryItem[], mode: 'play' | 'loop' | 'shuffle', title: string]; title: [title: string]; customSeries: [id: string]; toggleHome: [route: string]; placement: [route: string, action: 'home' | 'favorite' | 'rename' | 'remove' | 'removeFavorite'] }>()
 const media = useMediaLibraryStore()
-const bookmarks = useBookmarks()
 const home = useHomePreferences()
-bookmarks.ensureLoaded()
-const library = ref<MediaLibraryItem[]>([])
+const library = shallowRef<MediaLibraryItem[]>([])
+const coverRevision = ref(0)
+const updateCovers = () => { coverRevision.value++ }
+onMounted(() => window.addEventListener('boxplayer:library-cover-changed', updateCovers))
+onUnmounted(() => window.removeEventListener('boxplayer:library-cover-changed', updateCovers))
 const loading = ref(false)
 const error = ref('')
 let generation = 0
@@ -29,22 +34,24 @@ async function reload() {
   const current = ++generation
   loading.value = true
   error.value = ''
-  try { const data = await DB.getMediaLibrary(); if (current === generation) library.value = data.items }
+  try { const items = await DB.getHomeMediaLibrary(); if (current === generation) library.value = items }
   catch (reason) { if (current === generation) error.value = String(reason) }
   finally { if (current === generation) loading.value = false }
 }
 onMounted(reload)
-watch(() => props.route, reload)
+watch(() => media.catalogRevision, reload)
 const items = computed(() => props.localOnly ? library.value.filter(hasLocalMedia) : library.value)
 const parts = computed(() => props.route.split('/'))
 const root = computed(() => parts.value[0])
 const category = computed(() => parts.value[1] || '')
 function label(route: string): string {
-  if (home.titles['catalog:' + route]) return home.titles['catalog:' + route]
+  const savedTitle = home.titles[libraryHomeId(route)]
+  if (savedTitle && !(route === 'tv/genres' && savedTitle === t('unified.movieGenres'))) return savedTitle
   const [root, sub, value] = route.split('/')
-  if (value) return decodeURIComponent(value)
+  if (value) return libraryGroupLabel(sub, decodeURIComponent(value))
   if (root === 'playlist' && sub) return decodeURIComponent(sub)
   if (root === 'series' && sub) return libraryMovieSeries(items.value).find(group => group.id === sub)?.title || t('unified.series')
+  if (root === 'custom-series' && sub) return loadCustomSeries().find(group => group.id === sub)?.title || t('unified.series')
   if (sub === 'all') return root === 'movies' ? t('unified.allMovies') : t('unified.allTv')
   if (sub === 'recent') return t('media.recentlyAdded')
   if (sub === 'unwatched') return t('media.unwatched')
@@ -68,24 +75,51 @@ const selectedMembers = computed(() => {
 const tiles = computed(() => {
   if (props.route === 'library') return LIBRARY_CATEGORY_IDS.map(id => ({ key: id, title: label(id) }))
   if (props.route === 'movies' || props.route === 'tv') return (root.value === 'movies' ? MOVIE_CATEGORY_IDS : TV_CATEGORY_IDS).map(id => ({ key: root.value + '/' + id, title: label(root.value + '/' + id) }))
-  if (['genres', 'ratings', 'years', 'resolution', 'certification'].includes(category.value) && parts.value.length === 2) return libraryCategoryGroups(filtered.value, category.value).map(group => ({ key: props.route + '/' + encodeURIComponent(group.name), title: group.name }))
+  if (['genres', 'ratings', 'years', 'resolution', 'certification', 'networks'].includes(category.value) && parts.value.length === 2) return libraryCategoryGroups(filtered.value, category.value).map(group => ({ key: libraryGroupRoute(props.route, group.name), title: group.name }))
   return []
 })
-const tilePage = computed(() => ['library', 'movies', 'tv'].includes(props.route) || (['genres', 'ratings', 'years', 'resolution', 'certification'].includes(category.value) && parts.value.length === 2))
-const facetPage = computed(() => ['genres', 'ratings', 'years', 'resolution', 'certification'].includes(category.value) && parts.value.length === 2)
+const tilePage = computed(() => ['library', 'movies', 'tv'].includes(props.route) || (['genres', 'ratings', 'years', 'resolution', 'certification', 'networks'].includes(category.value) && parts.value.length === 2))
+const facetPage = computed(() => ['genres', 'ratings', 'years', 'resolution', 'certification', 'networks'].includes(category.value) && parts.value.length === 2)
 const groupCards = computed<UnifiedLibraryCard[]>(() => {
-  if (facetPage.value) return libraryCategoryGroups(filtered.value, category.value).map(group => ({ key: props.route + '/' + encodeURIComponent(group.name), title: group.name, image: group.members.find(item => item.backdropUrl)?.backdropUrl || group.members[0]?.posterUrl, contextMenu: event => openMenu(event, props.route + '/' + encodeURIComponent(group.name)), action: () => emit('navigate', props.route + '/' + encodeURIComponent(group.name)) }))
-  if (props.route === 'playlist') return playlists.value.map(group => ({ key: 'playlist/' + encodeURIComponent(group.name), title: group.name, image: group.members.find(item => item.backdropUrl)?.backdropUrl || group.members[0]?.posterUrl, subtitle: t('customSeries.memberCount', { count: group.members.length }), contextMenu: event => openMenu(event, 'playlist/' + encodeURIComponent(group.name)), action: () => emit('navigate', 'playlist/' + encodeURIComponent(group.name)) }))
+  void coverRevision.value
+  if (facetPage.value) return libraryCategoryGroups(filtered.value, category.value).map(group => ({ key: libraryGroupRoute(props.route, group.name), title: group.name, image: libraryObjectCover(libraryGroupRoute(props.route, group.name), group.members), subtitle: t('customSeries.memberCount', { count: group.members.length }), contextMenu: event => openMenu(event, libraryGroupRoute(props.route, group.name)), action: () => emit('navigate', libraryGroupRoute(props.route, group.name)) }))
+  if (props.route === 'playlist') return playlists.value.map(group => ({ key: 'playlist/' + encodeURIComponent(group.name), title: group.name, image: libraryObjectCover('playlist/' + encodeURIComponent(group.name), group.members), subtitle: t('customSeries.memberCount', { count: group.members.length }), contextMenu: event => openMenu(event, 'playlist/' + encodeURIComponent(group.name)), action: () => emit('navigate', 'playlist/' + encodeURIComponent(group.name)) }))
   if (props.route === 'series') return [
     ...series.value.map(group => ({ key: 'series/' + group.id, title: group.title, image: group.members[0]?.posterUrl, subtitle: t('customSeries.memberCount', { count: group.members.length }), contextMenu: (event: MouseEvent) => openMenu(event, 'series/' + group.id), action: () => emit('navigate', 'series/' + group.id) })),
     ...loadCustomSeries().map(group => {
       const members = libraryPlaylistMembers(items.value, group.members.filter(member => !member.serverId).map(member => member.id))
-      return { key: 'custom-series/' + group.id, title: group.title, image: members.find(item => item.posterUrl)?.posterUrl, subtitle: t('customSeries.memberCount', { count: group.members.length }), action: () => emit('customSeries', group.id) }
+      return { key: 'custom-series/' + group.id, title: group.title, image: members.find(item => item.posterUrl)?.posterUrl, subtitle: t('customSeries.memberCount', { count: group.members.length }), contextMenu: (event: MouseEvent) => openMenu(event, 'custom-series/' + group.id), action: () => emit('customSeries', group.id) }
     })
   ]
-  return selectedMembers.value.map(props.card)
+  return []
 })
-const row = computed<UnifiedLibraryRow>(() => ({ key: props.route, title: title.value, cards: groupCards.value, grouped: facetPage.value || props.route === 'playlist', landscape: facetPage.value || props.route === 'playlist', more: () => {} }))
+const sortedMembers = computed(() => {
+  return root.value === 'playlist' && props.sort === 'addedAt' ? selectedMembers.value
+    : [...selectedMembers.value].sort((a, b) => compareMediaBrowseValues(
+      { title: a.name, fileName: a.driveFiles[0]?.name, addedAt: a.addedAt, premiereDate: a.releaseDate },
+      { title: b.name, fileName: b.driveFiles[0]?.name, addedAt: b.addedAt, premiereDate: b.releaseDate },
+      props.sort))
+})
+const row = computed<UnifiedLibraryRow>(() => {
+  const grouped = facetPage.value || props.route === 'playlist'
+  const cards = groupCards.value
+  const memberPage = !tilePage.value && !['playlist', 'series'].includes(props.route)
+  const members = memberPage ? sortedMembers.value : []
+  void coverRevision.value
+  return { key: props.route, title: title.value, cards, grouped, landscape: grouped,
+    count: cards.length || members.length,
+    cardAt: !memberPage ? undefined : index => props.card(members[index], false, root.value === 'playlist' ? decodeURIComponent(category.value) : undefined),
+    more: () => {} }
+})
+const reordering = ref(false)
+function beginReorder() { reordering.value = true }
+function reorder(source: string, target: string) {
+  if (root.value !== 'playlist') return
+  const name = decodeURIComponent(category.value), ids = [...(media.playlists[name] || [])]
+  const from = ids.indexOf(source.replace(/^local:/, '')), to = ids.indexOf(target.replace(/^local:/, ''))
+  if (from < 0 || to < 0 || from === to) return
+  ids.splice(to, 0, ...ids.splice(from, 1)); media.playlists = { ...media.playlists, [name]: ids }
+}
 const menu = ref<{ route: string; x: number; y: number }>()
 function closeMenuOnEscape(event: KeyboardEvent) { if (event.key === 'Escape') menu.value = undefined }
 onMounted(() => document.addEventListener('keydown', closeMenuOnEscape))
@@ -93,11 +127,11 @@ onUnmounted(() => { generation++; document.removeEventListener('keydown', closeM
 function openMenu(event: MouseEvent, route: string) { event.preventDefault(); menu.value = { route, x: Math.max(8, Math.min(event.clientX, window.innerWidth - 240)), y: Math.max(8, Math.min(event.clientY, window.innerHeight - 280)) } }
 function play(mode: 'play' | 'loop' | 'shuffle') {
   const route = menu.value?.route || props.route
-  const members = route === 'daily' ? props.dailyItems.filter(item => !props.localOnly || hasLocalMedia(item)) : route.startsWith('playlist/') ? playlists.value.find(group => group.name === decodeURIComponent(route.slice(9)))?.members || [] : route.startsWith('series/') ? series.value.find(group => group.id === route.slice(7))?.members || [] : filterLibraryCategory(items.value, route, item => isMediaWatched(item, media.watchedItems))
+  const members = route === 'daily' ? props.dailyItems.filter(item => !props.localOnly || hasLocalMedia(item)) : route.startsWith('playlist/') ? playlists.value.find(group => group.name === decodeURIComponent(route.slice(9)))?.members || [] : route.startsWith('series/') ? series.value.find(group => group.id === route.slice(7))?.members || [] : route.startsWith('custom-series/') ? libraryPlaylistMembers(items.value, loadCustomSeries().find(group => group.id === route.slice('custom-series/'.length))?.members.filter(member => !member.serverId).map(member => member.id) || []) : filterLibraryCategory(items.value, route, item => isMediaWatched(item, media.watchedItems))
   emit('play', members, mode, label(route))
   menu.value = undefined
 }
-defineExpose({ openMenu, play })
+defineExpose({ openMenu, play, beginReorder, finishReorder: () => { reordering.value = false } })
 </script>
 
 <template>
@@ -105,19 +139,13 @@ defineExpose({ openMenu, play })
     <div v-if="loading" class="loading"><MediaLoadingIndicator /></div>
     <div v-else-if="error" role="alert">{{ error }} <button @click="reload">{{ t('common.retry') }}</button></div>
     <div v-else-if="tilePage && !facetPage && tiles.length" class="category-grid" :class="{ 'category-list': mode === 'list' }">
-      <button v-for="tile in tiles" :key="tile.key" class="category-tile" :data-category="tile.key" @click="emit('navigate', tile.key)" @contextmenu="openMenu($event, tile.key)"><div class="category-art"><Star :size="60" :stroke-width="1.6" /></div><strong>{{ tile.title }}</strong></button>
+      <button v-for="tile in tiles" :key="tile.key" class="category-tile" :data-category="tile.key" @click="emit('navigate', tile.key)" @contextmenu="openMenu($event, tile.key)"><div class="category-art"><component :is="libraryCategoryIcon(tile.key)" :size="60" :stroke-width="1.6" /></div><strong>{{ tile.title }}</strong></button>
     </div>
     <div v-else-if="route === 'playlist' && !groupCards.length" class="empty-state"><ListVideo :size="100" /><h2>{{ t('media.playlist') }}</h2><p>{{ t('libraryBrowse.playlistHelp') }}</p></div>
-    <UnifiedMediaRow v-else-if="groupCards.length && (!tilePage || facetPage)" :row="row" :mode="facetPage || route === 'playlist' ? 'list' : mode" :show-more="false" />
+    <UnifiedMediaRow v-else-if="row.count && (!tilePage || facetPage)" :row="row" :mode="facetPage || route === 'playlist' ? 'list' : mode" :show-more="false" :selection="selection" :reordering="reordering" @reorder="reorder" />
     <div v-else class="empty-state"><Folder :size="72" /><h2>{{ title }}</h2><p>{{ category === 'certification' ? t('libraryBrowse.unknown') : t('libraryBrowse.empty') }}</p></div>
     <Teleport to="body"><div v-if="menu" class="category-menu-dismiss" @pointerdown="menu = undefined" @contextmenu.prevent="menu = undefined" @keydown.esc="menu = undefined"><div class="category-menu" role="menu" :style="{ left: menu.x + 'px', top: menu.y + 'px' }" @pointerdown.stop>
-      <template v-if="!['music', 'books'].includes(menu.route)">
-        <button role="menuitem" @click="play('play')"><Play :size="18" />{{ t('unified.play') }}</button>
-        <button role="menuitem" @click="play('loop')"><RefreshCw :size="18" />{{ t('unified.loopPlay') }}</button>
-        <button role="menuitem" @click="play('shuffle')"><Shuffle :size="18" />{{ t('unified.shufflePlay') }}</button>
-      </template>
-      <button role="menuitem" @click="bookmarks.toggle('favorites', menu.route); menu = undefined"><Star :size="18" />{{ bookmarks.favorites.includes(menu.route) ? t('unified.removeFavoriteFolder') : t('unified.addToFavorites') }}</button>
-      <button role="menuitem" @click="emit('toggleHome', menu.route); menu = undefined"><House :size="18" />{{ homeRoutes.includes(menu.route) ? t('unified.removeHome') : t('libraryBrowse.addHome') }}</button>
+      <LibraryObjectActions :route="menu.route" @action="menu = undefined" />
     </div></div></Teleport>
   </div>
 </template>

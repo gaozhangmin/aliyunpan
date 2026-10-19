@@ -6,8 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import UnifiedHomeManagement from '../../components/UnifiedHomeManagement.vue'
+import useCategoryPlacement from '../../store/categoryPlacement'
 import useUnifiedHomePreferences, { UNIFIED_HOME_PREFERENCES_KEY } from '../../store/unifiedHomePreferences'
-import { defaultHomeSettings, FIXED_HOME_MENU_IDS, withFixedHomeMenus, homeMenuTitle, mergeHomeOrder, moveHomeItem, visibleHomeItems, visibleHomeSections, type HomeManagementItem } from '../unifiedHomeManagement'
+import { undiscoveredHomeIDs, newlyVisibleServerFavoriteIDs, defaultHomeSettings, FIXED_HOME_MENU_IDS, withFixedHomeMenus, homeMenuTitle, isHomeItemEnabled, mergeHomeOrder, moveHomeItem, visibleHomeItems, visibleHomeSections, type HomeManagementItem } from '../unifiedHomeManagement'
 
 const items: HomeManagementItem[] = [
   { id: 'sources', title: '收藏夹', sourceId: 'local', available: true },
@@ -28,6 +29,40 @@ it('deduplicates series and keeps shortcut favorites separate from favorite medi
 })
 
 describe('unified home management settings', () => {
+  it.each([
+    ['custom-series', 'custom-series:selected', 'custom-series:new'],
+    ['custom-series', 'catalog:series/selected', 'catalog:series/new'],
+    ['local:genres', 'local:genres:group:selected', 'local:genres:group:new']
+  ])('keeps selected children of hidden %s visible without opting in new children', (parentId, childId, newChildId) => {
+    const parent = { id: parentId, title: 'Parent', sourceId: 'local', available: true }
+    const selected = { ...parent, id: childId, title: 'Selected', child: childId.includes(':group:'), optIn: true }
+    const discovered = { ...selected, id: newChildId, title: 'New' }
+    const catalog = [parent, selected, discovered]
+    const settings = { ...defaultHomeSettings(), order: [childId, parentId], hidden: [parentId] }
+    const reloaded = JSON.parse(JSON.stringify({ ...settings, order: mergeHomeOrder(settings.order, catalog) }))
+
+    expect(isHomeItemEnabled(parent, reloaded)).toBe(false)
+    expect(isHomeItemEnabled(selected, reloaded)).toBe(true)
+    expect(isHomeItemEnabled(discovered, reloaded)).toBe(false)
+    expect(visibleHomeItems(catalog, reloaded)).toEqual([selected])
+    expect(visibleHomeSections(catalog, reloaded)).toEqual([selected])
+    expect(reloaded.order).not.toContain(newChildId)
+    expect(visibleHomeItems(catalog, { ...reloaded, hidden: [...reloaded.hidden, childId] })).toEqual([])
+  })
+
+  it('uses one default and saved order before and after opening management', () => {
+    const catalog = withFixedHomeMenus([
+      { id: 'music', title: 'Music', sourceId: 'local', available: true },
+      ...items
+    ])
+    for (const order of [[], ['b:42', 'music', 'a:42']]) {
+      const settings = { ...defaultHomeSettings(), order }
+      const draft = { ...settings, order: mergeHomeOrder(order, catalog) }
+      expect(visibleHomeSections(catalog, settings)).toEqual(visibleHomeItems(catalog, settings))
+      expect(visibleHomeItems(catalog, draft)).toEqual(visibleHomeItems(catalog, settings))
+    }
+  })
+
   it('enables catalog categories and leaf groups only when explicitly selected', () => {
     const catalog: HomeManagementItem[] = [
       { id: 'catalog:tv/recent', title: 'Recent TV', sourceId: 'local', available: true, optIn: true },
@@ -57,7 +92,7 @@ describe('unified home management settings', () => {
   it('keeps all eight default menus visible without content and respects management hiding', () => {
     const empty = FIXED_HOME_MENU_IDS.map(id => ({ id, title: id, sourceId: 'local', available: false }))
     const menus = withFixedHomeMenus([...items, ...empty.reverse()])
-    expect(visibleHomeItems(menus, defaultHomeSettings()).slice(0, FIXED_HOME_MENU_IDS.length).map(item => item.id)).toEqual(FIXED_HOME_MENU_IDS)
+    expect(visibleHomeItems(menus, defaultHomeSettings()).filter(item => item.id !== 'sources').slice(0, FIXED_HOME_MENU_IDS.length).map(item => item.id)).toEqual(FIXED_HOME_MENU_IDS)
     const settings = { ...defaultHomeSettings(), hidden: ['local:movies', 'local:daily'] }
     expect(visibleHomeItems(menus, settings).map(item => item.id)).not.toContain('local:movies')
     expect(visibleHomeItems(menus, settings).map(item => item.id)).not.toContain('local:daily')
@@ -94,18 +129,22 @@ describe('unified home management settings', () => {
     expect(mergeHomeOrder(['b:42', 'offline:42'], items)).toEqual(['b:42', 'offline:42', 'sources', 'a:42', 'a:next'])
   })
 
-  it('persists order, visibility and aliases, and resets only ordering and visibility', () => {
+  it('persists order, visibility and aliases through the placement authority', async () => {
     const preferences = useUnifiedHomePreferences()
-    preferences.apply({ order: ['b:42', 'sources'], hidden: ['a:42'], titles: { 'b:42': '自定义名称' } })
+    await useCategoryPlacement().applyHome({ order: ['b:42', 'sources'], hidden: ['a:42'], titles: { 'b:42': '自定义名称' } })
     expect(JSON.parse(localStorage.getItem(UNIFIED_HOME_PREFERENCES_KEY)!)).toEqual({ order: ['b:42', 'sources'], hidden: ['a:42'], titles: { 'b:42': '自定义名称' } })
     setActivePinia(createPinia())
     const reloaded = useUnifiedHomePreferences()
-    reloaded.ensureLoaded()
+    const placement = useCategoryPlacement()
+    placement.ensureLoaded()
+    expect(reloaded).not.toHaveProperty('apply')
+    expect(reloaded).not.toHaveProperty('rename')
+    expect(reloaded).not.toHaveProperty('restoreOrder')
     expect(reloaded.hidden).toEqual(['a:42'])
-    reloaded.rename('a:42', '  新名称  ')
+    await placement.renameHome('a:42', '  新名称  ')
     expect(reloaded.hidden).toEqual(['a:42'])
     expect(reloaded.order).toEqual(['b:42', 'sources'])
-    reloaded.restoreOrder()
+    await placement.restoreOrder()
     expect(reloaded.order).toEqual([])
     expect(reloaded.hidden).toEqual([])
     expect(reloaded.titles).toEqual({ 'b:42': '自定义名称', 'a:42': '新名称' })
@@ -237,4 +276,65 @@ it('does not offer source-add actions in the sidebar or open registry from the h
   expect(source).toContain('@click="showHomeManagement = true"')
   expect(source).toContain(':items="homeItems" :groups="managementGroups"')
   expect(source).toContain('v-for="item in visibleHomeMenu"')
+})
+
+
+describe('placement changes preserve loaded Home data', () => {
+  it('does not request data when adding local shelves or reordering existing remote favorites', () => {
+    const previous = ['sources', 'a:server-favorites:movies', 'b:server-favorites:tv']
+    const next = ['b:server-favorites:tv', 'catalog:tv/genres/Drama', 'sources', 'a:server-favorites:movies']
+    expect(newlyVisibleServerFavoriteIDs(next, previous)).toEqual([])
+  })
+  it('requests only newly enabled remote favorites, without reloading siblings', () => {
+    expect(newlyVisibleServerFavoriteIDs(
+      ['a:server-favorites:movies', 'a:server-favorites:tv', 'a:server-favorites:tv', 'catalog:movies'],
+      ['a:server-favorites:movies']
+    )).toEqual(['a:server-favorites:tv'])
+  })
+  it('does not reload data for removed remote favorites', () => {
+    expect(newlyVisibleServerFavoriteIDs(['sources'], ['sources', 'a:server-favorites:movies'])).toEqual([])
+  })
+})
+
+
+it('preserves localized synthetic titles after saving the Home order', () => {
+  const known = [
+    { id: 'sources', title: '收藏夹', sourceId: 'local', available: true },
+    { id: 'custom-series', title: '系列', sourceId: 'local', available: true }
+  ]
+  const order = ['sources', 'custom-series', 'catalog:movies/networks', 'resume', 'source:video']
+  const fallback = undiscoveredHomeIDs(order, []).map(id => ({ id, title: id, sourceId: 'local', available: true }))
+  const menus = withFixedHomeMenus([...known, ...fallback])
+  expect(menus.find(item => item.id === 'sources')?.title).toBe('收藏夹')
+  expect(menus.find(item => item.id === 'custom-series')?.title).toBe('系列')
+  expect(fallback.map(item => item.id)).toEqual(['catalog:movies/networks'])
+})
+
+it('opens an empty metadata category and updates its children while it stays open', async () => {
+  const root = node('root')
+  const item = { id: 'catalog:movies/networks', title: '按网络', sourceId: 'local', available: true }
+  const groups = Vue.reactive([{ id: 'local', title: '媒体库', nodes: [{ id: item.id, title: item.title, item, expandable: true,
+    children: [] as Array<{ id: string; title: string; item: HomeManagementItem }> }] }])
+  const filename = resolve(process.cwd(), 'src/components/UnifiedHomeManagement.vue')
+  const { descriptor } = parse(readFileSync(filename, 'utf8'), { filename })
+  const compiled = compileTemplate({ filename, id: 'empty-category-test', source: descriptor.template!.content,
+    compilerOptions: { mode: 'function', bindingMetadata: compileScript(descriptor, { id: 'empty-category-test' }).bindings } })
+  expect(compiled.errors).toEqual([])
+  const render = new Function('Vue', compiled.code)(Vue)
+  const app = renderer.createApp({ ...UnifiedHomeManagement, render }, { items: [item], groups, settings: defaultHomeSettings() })
+  app.provide(Vue.ssrContextKey, { modules: new Set() })
+  app.component('a-modal', { render: () => null }); app.component('a-input', { render: () => null })
+  app.mount(root)
+  try {
+    flatten(root).find(item => item.type === 'button' && item.props.class === 'edit')!.props.onClick()
+    await nextTick()
+    flatten(root).find(item => item.type === 'button' && item.props.class === 'node-title' && text(item) === '按网络')!.props.onClick()
+    await nextTick()
+    expect(flatten(root).some(item => item.props.role === 'status')).toBe(true)
+    const child = { ...item, id: item.id + '/Netflix', title: 'Netflix' }
+    groups[0].nodes[0].children.push({ id: child.id, title: child.title, item: child })
+    await nextTick()
+    expect(flatten(root).some(item => item.props.role === 'status')).toBe(false)
+    expect(text(root)).toContain('Netflix')
+  } finally { app.unmount() }
 })

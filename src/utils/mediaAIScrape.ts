@@ -248,6 +248,7 @@ function tvToMediaItem(tvResult: MediaLibraryTvSeriesItem, decision: MediaAIScra
     overview: tvResult.tv.overview,
     posterUrl: tmdbImageUrl(tvResult.tv.poster_path) || undefined,
     backdropUrl: tmdbImageUrl(tvResult.tv.backdrop_path) || undefined,
+    logoUrl: tmdbImageUrl(tvResult.tv.logo_path) || undefined,
     year: tvResult.tv.first_air_date?.substring(0, 4),
     certification: tvResult.tv.certification,
     rating: tvResult.tv.vote_average,

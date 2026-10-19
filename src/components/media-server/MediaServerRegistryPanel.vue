@@ -6,6 +6,7 @@
       :editing-server="editingServer"
       :default-type="pendingType"
       @submit="handleSubmitServer"
+      @remove="handleRemoveFromEditor"
     />
     <PlexResourcesModal
       v-model:visible="showPlexResourcesModal"
@@ -45,6 +46,12 @@
                 <a-doption @click="handleSortByChange('updatedAt')">{{ t('mediaServer.sortUpdated') }}</a-doption>
               </template>
             </a-dsubmenu>
+            <template v-if="registry.preferences.serverListView === 'list'">
+              <a-doption @click="toggleListOption('showAddress')">{{ registry.preferences.showAddress ? '✓ ' : '' }}{{ t('mediaServer.showAddress') }}</a-doption>
+              <a-doption @click="toggleListOption('showMediaStatistics')">{{ registry.preferences.showMediaStatistics ? '✓ ' : '' }}{{ t('mediaServer.showMediaStatistics') }}</a-doption>
+              <a-doption @click="toggleListOption('showConnectionStatus')">{{ registry.preferences.showConnectionStatus ? '✓ ' : '' }}{{ t('mediaServer.showConnectionStatus') }}</a-doption>
+              <a-doption @click="toggleListOption('showWatchTime')">{{ registry.preferences.showWatchTime ? '✓ ' : '' }}{{ t('mediaServer.showWatchTime') }}</a-doption>
+            </template>
           </template>
         </a-dropdown>
       </div>
@@ -75,7 +82,7 @@
                 <h3>{{ server.name }}</h3>
                 <div class="server-name-status">
                   <span
-                    v-if="server.loginStatus === 'success' || server.loginStatus === 'failed'"
+                    v-if="registry.preferences.serverListView === 'grid' || (registry.preferences.showConnectionStatus && (server.loginStatus === 'success' || server.loginStatus === 'failed'))"
                     class="server-login-dot"
                     :class="server.loginStatus"
                   />
@@ -88,7 +95,13 @@
                   <span v-if="registry.currentServer?.id === server.id && registry.preferences.serverListView !== 'grid'" class="current-badge">{{ t('mediaServer.current') }}</span>
                 </div>
               </div>
-              <div class="server-subtitle">{{ server.type }} - {{ normalizeServerHost(server.baseUrl) }}</div>
+              <div v-if="registry.preferences.showAddress" class="server-subtitle">{{ server.type }} - {{ normalizeServerHost(server.baseUrl) }}</div>
+              <div v-if="registry.preferences.serverListView === 'list' && registry.preferences.showMediaStatistics && serverStatistics[server.id]" class="server-subtitle">
+                {{ t('mediaServer.statisticsSummary', { movies: serverStatistics[server.id]?.movieCount ?? 0, series: serverStatistics[server.id]?.seriesCount ?? 0 }) }}
+              </div>
+              <div v-if="registry.preferences.serverListView === 'list' && registry.preferences.showWatchTime" class="server-subtitle">
+                {{ t('mediaServer.watchTime') }}: {{ formatRelativeTime(server.lastPlayedAt) }}
+              </div>
               <div v-if="server.notes" class="server-notes">{{ server.notes }}</div>
             </div>
           </div>
@@ -310,11 +323,13 @@
 
 <script setup lang="ts">
 import { Modal } from '@arco-design/web-vue'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import message from '../../utils/message'
 import useMediaServerRegistryStore from '../../store/mediaServerRegistry'
 import useMediaServerNavigationStore from '../../store/mediaServerNavigation'
 import type { MediaServerConfig, MediaServerSortBy, MediaServerType } from '../../types/mediaServer'
+import type { MediaServerHomeStatistics } from '../../types/mediaServerContent'
+import { getMediaServerHomeShell, getMediaServerHomeStatistics } from '../../media-server/contentGateway'
 import type { PlexResource } from '../../types/mediaServerPlex'
 import jellyfinIcon from '../../assets/media-server/jellyfin.svg'
 import embyIcon from '../../assets/media-server/emby.svg'
@@ -327,6 +342,22 @@ import { t } from '../../i18n'
 
 defineProps<{ formOnly?: boolean }>()
 const registry = useMediaServerRegistryStore()
+type ListOption = 'showAddress' | 'showMediaStatistics' | 'showConnectionStatus' | 'showWatchTime'
+const serverStatistics = ref<Record<string, MediaServerHomeStatistics>>({})
+const toggleListOption = (option: ListOption) => {
+  registry.preferences[option] = !registry.preferences[option]
+  registry.save()
+}
+watch(() => [registry.preferences.serverListView, registry.preferences.showMediaStatistics, registry.servers.map((server) => server.id).join(',')], () => {
+  if (registry.preferences.serverListView !== 'list' || !registry.preferences.showMediaStatistics) return
+  for (const server of registry.servers) {
+    if (serverStatistics.value[server.id]) continue
+    getMediaServerHomeShell(server).then(async ({ statistics }) => {
+      serverStatistics.value[server.id] = statistics
+      if (server.type !== 'plex') serverStatistics.value[server.id] = await getMediaServerHomeStatistics(server, statistics.libraryCount)
+    }).catch(() => { /* Offline servers have no current media counts. */ })
+  }
+}, { immediate: true })
 const navigation = useMediaServerNavigationStore()
 const emit = defineEmits<{ (event: 'open-server', id: string): void }>()
 const MEDIA_SERVER_ICON_SET_URLS_KEY = 'MediaServer_IconSetUrls'
@@ -487,6 +518,11 @@ const handleDeleteServer = (id: string) => {
       message.success(t('mediaServer.serverDeleted'))
     }
   })
+}
+
+const handleRemoveFromEditor = (id: string) => {
+  showServerModal.value = false
+  handleDeleteServer(id)
 }
 
 const isServerPinned = (id: string) => {

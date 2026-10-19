@@ -50,7 +50,7 @@ import { completeDocumentReadingUnit, createDocumentReadingJob, failDocumentRead
 import type { CreateDocumentReadingJobInput, DocumentReadingJobStatus } from '@shared/types/documentReading'
 import { downloadAndExtractPdf } from '../documentInsight/PdfExtractionService'
 import { sendPdfProgress } from '../documentInsight/pdfProgress'
-import { buildQuarkCookieHeader, mergeQuarkCookieHeaders } from '@shared/quarkCookies'
+import { buildQuarkCookieHeader, mergeQuarkCookieHeaders, mergeQuarkAccountCookies } from '@shared/quarkCookies'
 import { resolveCloudDriveCliConfigDir } from './cliConfigPath'
 
 let psbId: any
@@ -707,9 +707,9 @@ export default class ipcEvent {
       })
       const url = `https://drive-pc.quark.cn/1/clouddrive/file/sort?${params.toString()}`
       const accountCookieHeader = String(data?.cookie || '')
-      const cookieHeader = mergeQuarkCookieHeaders(await getQuarkSessionCookieHeader('https://drive-pc.quark.cn'), accountCookieHeader)
+      const cookieHeader = mergeQuarkAccountCookies(accountCookieHeader, await getQuarkSessionCookieHeader('https://drive-pc.quark.cn'))
       return await new Promise((resolve) => {
-        const request = net.request({ method: 'GET', url, useSessionCookies: true } as any)
+        const request = net.request({ method: 'GET', url, useSessionCookies: false } as any)
         request.setHeader('Accept', 'application/json, text/plain, */*')
         request.setHeader('Accept-Language', 'zh-CN,zh;q=0.9')
         request.setHeader('Content-Type', 'application/json')

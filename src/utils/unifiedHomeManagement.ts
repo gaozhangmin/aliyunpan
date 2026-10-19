@@ -13,6 +13,8 @@ export interface HomeManagementNode {
   title: string
   item?: HomeManagementItem
   children?: HomeManagementNode[]
+  /** A category remains navigable even before metadata produces child groups. */
+  expandable?: boolean
 }
 
 export interface HomeManagementGroup {
@@ -45,22 +47,29 @@ export function withFixedHomeMenus(items: HomeManagementItem[]) {
 
 export function orderedHomeItems(items: HomeManagementItem[], settings: UnifiedHomeSettings) {
   const rank = new Map(settings.order.map((id, index) => [id, index]))
-  return [...items].sort((a, b) => (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER))
+  return [...items].sort((a, b) => {
+    const savedOrder = (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER)
+    return savedOrder || Number(b.id === 'sources') - Number(a.id === 'sources')
+  })
+}
+
+export function isHomeItemEnabled(item: HomeManagementItem, settings: UnifiedHomeSettings) {
+  // A category and a separately added child are independent home entries.
+  // New children remain opt-in; hiding their parent must not disable them.
+  return !settings.hidden.includes(item.id) && ((!item.optIn && !item.child) || settings.order.includes(item.id))
 }
 
 export function visibleHomeItems(items: HomeManagementItem[], settings: UnifiedHomeSettings) {
-  return orderedHomeItems(items, settings).filter(item => item.available && (!item.child || item.id.includes(':group:')) && (!item.optIn && !item.child || settings.order.includes(item.id)) && !settings.hidden.includes(item.id))
+  return orderedHomeItems(items, settings).filter(item => item.available && (!item.child || item.id.includes(':group:')) && isHomeItemEnabled(item, settings))
 }
 
-// The sidebar keeps its fixed menus first; the home content starts with source shortcuts.
+// Home content, sidebar and management share the same persisted/default order.
 export function visibleHomeSections(items: HomeManagementItem[], settings: UnifiedHomeSettings) {
-  const visible = visibleHomeItems(items, settings)
-  if (settings.order.length) return visible
-  return [...visible.filter(item => item.id === 'sources'), ...visible.filter(item => item.id !== 'sources')]
+  return visibleHomeItems(items, settings)
 }
 
 export function mergeHomeOrder(order: string[], items: HomeManagementItem[]) {
-  return [...new Set([...order, ...items.filter(item => !item.optIn && !item.child).map(item => item.id)])]
+  return [...new Set([...order, ...orderedHomeItems(items, defaultHomeSettings()).filter(item => !item.optIn && !item.child).map(item => item.id)])]
 }
 
 export function moveHomeItem(settings: UnifiedHomeSettings, visibleIds: string[], id: string, destination: string): UnifiedHomeSettings {
@@ -77,4 +86,16 @@ export function homeItemTitle(item: HomeManagementItem, settings: UnifiedHomeSet
 export function homeMenuTitle(item: HomeManagementItem, settings: UnifiedHomeSettings) {
   const title = homeItemTitle(item, settings)
   return item.sourceTitle ? `${title} - ${item.sourceTitle}` : title
+}
+
+/** Visibility/order edits do not invalidate Home data. Fetch only a newly enabled remote favorites row. */
+export function newlyVisibleServerFavoriteIDs(next: string[], previous: string[]): string[] {
+  const existing = new Set(previous)
+  return [...new Set(next)].filter(id => id.includes(':server-favorites:') && !existing.has(id))
+}
+
+/** Synthetic sections already have localized definitions outside raw media rows. */
+export function undiscoveredHomeIDs(order: string[], rowIDs: string[]): string[] {
+  const known = new Set(['sources', 'custom-series', 'resume', ...rowIDs])
+  return [...new Set(order)].filter(id => !known.has(id) && !id.startsWith('source:'))
 }

@@ -63,7 +63,11 @@ const defaultPreferences = (): MediaServerPreferences => ({
   serverSortBy: 'lastUsedAt',
   serverSortOrder: 'desc',
   serverSearchText: '',
-  pinnedServerIds: []
+  pinnedServerIds: [],
+  showAddress: true,
+  showMediaStatistics: true,
+  showConnectionStatus: true,
+  showWatchTime: true
 })
 
 const persistState = (servers: MediaServerConfig[], preferences: MediaServerPreferences) => {
@@ -219,6 +223,12 @@ const useMediaServerRegistryStore = defineStore('media-server-registry', {
     },
     setCurrentServer(id: string) {
       this.preferences.currentServerId = id
+      this.save()
+    },
+    recordPlayback(id: string) {
+      const server = this.servers.find((item) => item.id === id)
+      if (!server) return
+      server.lastPlayedAt = Date.now()
       this.save()
     },
     setCurrentServerLine(lineKey?: string) {

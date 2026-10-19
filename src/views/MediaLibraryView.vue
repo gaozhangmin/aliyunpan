@@ -91,6 +91,7 @@ import { MediaScanner } from '../utils/mediaScanner'
 import UserDAL from '../user/userdal'
 import message from '../utils/message'
 import type { MediaLibraryFolder } from '../types/media'
+import type { IAliGetFileModel } from '../aliapi/alimodels'
 import { isAliyunUser, isBaiduUser, isBoxUser, isCloud123User, isDrive115User, isDropboxUser, isGoogleUser, isOneDriveUser, isPikPakUser, isQuarkUser } from '../aliapi/utils'
 import AliDirFileList from '../aliapi/dirfilelist'
 import { apiBaiduFileList, mapBaiduFileToAliModel } from '../cloudbaidu/dirfilelist'
@@ -196,6 +197,16 @@ const handleFolderSelected = async (folder: MediaLibraryFolder) => {
   await loadFolderContent(folder)
 }
 
+const selectDriveRoots = (name: string, id: string, userId: string, drives: IAliGetFileModel[]) => {
+  homeNavigationActive.value = false
+  const folder: MediaLibraryFolder = { id, fileId: 'root', name, path: '/', userId,
+    driveId: 'aliyun', driveServerId: 'aliyun', scanDate: new Date(), itemCount: drives.length }
+  selectedFolder.value = folder
+  activeCategory.value = ''
+  resetDrillDownFilters()
+  mediaLibrary.value?.showRootFolderFiles(drives, folder)
+}
+
 // 加载文件夹内容 - 直接显示文件列表
 const loadFolderContent = async (folder: MediaLibraryFolder) => {
   try {
@@ -246,11 +257,9 @@ const loadFolderContent = async (folder: MediaLibraryFolder) => {
       }
     }
 
-    mediaStore.addFolder({
-      ...folder,
-      userId,
-      driveId
-    })
+    if (!folder.id.startsWith('account:') && !folder.id.startsWith('webdav:')) {
+      mediaStore.addFolder({ ...folder, userId, driveId })
+    }
 
     console.warn('[MediaLibraryDebug] loadFolderContent context', {
       folderId: folder.id,
@@ -296,6 +305,18 @@ const loadFolderContent = async (folder: MediaLibraryFolder) => {
       const { items: list } = await apiPikPakFileList(userId, parentId, 100)
       items = list.map((item) => { const mapped = mapPikPakFileToAliModel(item, driveId, parentId); (mapped as any).user_id = userId; return mapped })
       console.log('使用PikPak API获取文件列表')
+    } else if (driveId === 'cloud139') {
+      const { apiCloud139FileList, mapCloud139FileToAliModel } = await import('../cloud139/dirfilelist')
+      const list = await apiCloud139FileList(userId, fileId, 200)
+      items = list.map(item => ({ ...mapCloud139FileToAliModel(item, driveId, fileId), user_id: userId }))
+    } else if (driveId === 'cloud189') {
+      const { apiCloud189FileList, mapCloud189FileToAliModel } = await import('../cloud189/dirfilelist')
+      const list = await apiCloud189FileList(userId, fileId, 200)
+      items = list.map(item => ({ ...mapCloud189FileToAliModel(item, driveId, fileId), user_id: userId }))
+    } else if (driveId === 'guangya') {
+      const { apiGuangyaFileList, mapGuangyaFileToAliModel } = await import('../guangya/dirfilelist')
+      const list = await apiGuangyaFileList(userId, fileId, 200)
+      items = list.map(item => ({ ...mapGuangyaFileToAliModel(item, driveId, fileId), user_id: userId }))
     } else if (isQuarkUser(userId) || driveId === 'quark') {
       const { apiQuarkFileList, mapQuarkFileToAliModel } = await import('../quark/dirfilelist')
       const parentId = fileId === 'quark_root' ? '0' : fileId
@@ -352,6 +373,8 @@ const loadFolderContent = async (folder: MediaLibraryFolder) => {
       console.log(`文件夹 ${folder.name} 包含 ${items.length} 个项目`)
       // 直接将文件列表传递给 MediaLibrary 组件显示
       mediaLibrary.value?.showFolderFiles(items, folder)
+    } else if (folder.id.startsWith('account:')) {
+      mediaLibrary.value?.showFolderFiles([], folder)
     } else {
       console.log(`文件夹 ${folder.name} 为空或加载失败`)
       message.info('文件夹为空或加载失败')
@@ -681,6 +704,7 @@ defineExpose({
   manageLibrary: handleManageLibrary,
   selectCategory: handleCategorySelected,
   selectFolder: handleFolderSelected,
+  selectDriveRoots,
   openItem: (item: import('../types/media').MediaLibraryItem) => mediaLibrary.value?.openMedia(item)
 })
 </script>

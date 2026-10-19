@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { matchLibraryRanking, fetchRankingPages } from '../tmdbLibraryRecommendations'
+import { matchDailyLibraryRanking, matchLibraryRanking, fetchRankingPages } from '../tmdbLibraryRecommendations'
 import type { MediaLibraryItem } from '../../types/media'
 const movie = (id: string, tmdbId: number, rating = 10) => ({ id, tmdbId, rating, type: 'movie' } as MediaLibraryItem)
 describe('TMDB library recommendations', () => {
@@ -17,6 +17,13 @@ describe('TMDB library recommendations', () => {
     expect(matchLibraryRanking([movie('member', 5), movie('other', 6)], [{ id: 5, type: 'movie' }]).map(x => x.id)).toEqual(['member'])
   })
   it('returns empty for an empty ranking without fallback', () => expect(matchLibraryRanking([movie('high', 5)], [])).toEqual([]))
+  it('fills daily picks from a stable rotation when the chart has no local matches', () => {
+    const library = [movie('a', 1), movie('b', 2), movie('c', 3)]
+    const day = new Date('2026-10-17T00:00:00Z')
+    expect(matchDailyLibraryRanking(library, [{ id: 99, type: 'movie' }], day)).toHaveLength(3)
+    expect(matchDailyLibraryRanking(library, [{ id: 99, type: 'movie' }], day).map(item => item.id))
+      .toEqual(matchDailyLibraryRanking(library, [], day).map(item => item.id))
+  })
   it('paginates the actual list, bounds requests, and deduplicates IDs', async () => {
     const urls: string[] = []
     const result = await fetchRankingPages('https://example.test', '/movie/top_rated', 'movie', async url => { urls.push(url); return new Response(JSON.stringify({ results: [{ id: 5 }, { id: urls.length }], total_pages: 20 })) }, 2)

@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { compareMediaBrowseValues, nextMediaBrowseSort, type MediaBrowseSort } from '../mediaBrowseSort'
 
 describe('media browse sorting', () => {
-  it('cycles filename, added date, release date, title and wraps', () => {
-    let sort: MediaBrowseSort = 'fileName'
-    expect([1, 2, 3, 4].map(() => (sort = nextMediaBrowseSort(sort)))).toEqual(['addedAt', 'premiereDate', 'title', 'fileName'])
+  it('cycles title, filename, added date, release date and wraps', () => {
+    let sort: MediaBrowseSort = 'title'
+    expect([1, 2, 3, 4].map(() => (sort = nextMediaBrowseSort(sort)))).toEqual(['fileName', 'addedAt', 'premiereDate', 'title'])
   })
   it('distinguishes filename from scraped title and uses natural filename order', () => {
     const a = { title: 'Z', fileName: 'video2.mp4' }, b = { title: 'A', fileName: 'video10.mp4' }

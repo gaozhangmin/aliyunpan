@@ -22,6 +22,16 @@ export const mergeQuarkCookieHeaders = (preferred = '', supplemental = '') => {
   return Array.from(cookies.values(), ([name, value]) => `${name}=${value}`).join('; ')
 }
 
+/** A request for a specific account must not inherit another active account's auth cookies. */
+export const mergeQuarkAccountCookies = (account = '', session = '') => {
+  const authenticationCookies = new Set(['__uid', '__pus', '__kps', '__puus'])
+  const supplemental = cookiePairs(session)
+    .filter(([name]) => !authenticationCookies.has(name.toLowerCase()))
+    .map(([name, value]) => `${name}=${value}`)
+    .join('; ')
+  return mergeQuarkCookieHeaders(account, supplemental)
+}
+
 /** Only include cookies that apply to the actual Quark request host. */
 export const buildQuarkCookieHeader = (cookies: QuarkCookieLike[], targetUrl: string) => {
   let host = ''

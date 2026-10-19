@@ -40,6 +40,7 @@ export function mergeScrapedMedia(existing: MediaLibraryItem, incoming: MediaLib
     ...existing,
     ...incoming,
     certification: incoming.certification || existing.certification,
+    networks: incoming.networks?.length ? incoming.networks : existing.networks,
     id: existing.id,
     folderId: existing.folderId || incoming.folderId,
     driveFiles: mergeDriveFileSources([...(existing.driveFiles || []), ...(incoming.driveFiles || [])]),

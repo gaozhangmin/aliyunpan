@@ -42,6 +42,7 @@ export interface MediaServerCardItem {
   addedAt?: string | number
   premiereDate?: string
   year?: number
+  seasonCount?: number
   rating?: number
   tmdbId?: number
   imdbId?: string
@@ -91,6 +92,7 @@ export interface MediaServerSourceOption {
   id: string
   title: string
   fileLabel?: string
+  filePath?: string
   fileSubLabel?: string
   mediaInfoCards: MediaServerMediaInfoCard[]
 }
@@ -139,6 +141,7 @@ export interface MediaServerItemDetail extends MediaServerLibraryNode {
   mediaInfoCards: MediaServerMediaInfoCard[]
   sourceOptions: MediaServerSourceOption[]
   fileLabel?: string
+  filePath?: string
   fileSubLabel?: string
   playbackPositionTicks?: number
   chapters?: MediaServerChapter[]

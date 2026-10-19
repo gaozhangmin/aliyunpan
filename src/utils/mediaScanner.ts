@@ -150,6 +150,12 @@ export class MediaScanner {
             scanDate: new Date(),
             itemCount: totalFound
           }
+          const savedFavorite = this.mediaStore.folders.find(item => item.id === folderKey)
+          if (savedFavorite) {
+            mediaFolder.name = savedFavorite.name
+            mediaFolder.isDriveRootFavorite = savedFavorite.isDriveRootFavorite
+            mediaFolder.isFavorite = savedFavorite.isFavorite
+          }
           this.mediaStore.addFolder(mediaFolder)
           this.mediaStore.pruneOrphanDuplicateFolders()
         }
@@ -823,6 +829,7 @@ export class MediaScanner {
           overview: movie.overview,
           posterUrl: tmdbImageUrl(movie.poster_path) || undefined,
           backdropUrl: tmdbImageUrl(movie.backdrop_path) || undefined,
+          logoUrl: tmdbImageUrl(movie.logo_path) || undefined,
           releaseDate: movie.release_date,
           year: movie.release_date?.substring(0, 4),
           certification: movie.certification,
@@ -845,6 +852,7 @@ export class MediaScanner {
             overview: movie.overview,
             posterUrl: tmdbImageUrl(movie.poster_path) || undefined,
             backdropUrl: tmdbImageUrl(movie.backdrop_path) || undefined,
+            logoUrl: tmdbImageUrl(movie.logo_path) || undefined,
             releaseDate: movie.release_date,
           year: movie.release_date?.substring(0, 4),
             certification: movie.certification,
@@ -989,11 +997,13 @@ export class MediaScanner {
       overview: tvResult.tv.overview,
       posterUrl: tmdbImageUrl(tvResult.tv.poster_path) || undefined,
       backdropUrl: tmdbImageUrl(tvResult.tv.backdrop_path) || undefined,
+      logoUrl: tmdbImageUrl(tvResult.tv.logo_path) || undefined,
       releaseDate: tvResult.tv.first_air_date,
       year: tvResult.tv.first_air_date?.substring(0, 4),
       certification: tvResult.tv.certification,
       rating: tvResult.tv.vote_average,
       genres: tvResult.tv.genres?.map((g: any) => g.name) || [],
+      networks: tvResult.tv.networks || [],
       credits: tvResult.current_season?.credits,
       productionCountries: tvResult.tv.production_countries?.map((c: any) => c.name) || [],
       tmdbId: tvResult.tv.id,
@@ -1107,11 +1117,13 @@ export class MediaScanner {
             overview: tvResult.tv.overview,
             posterUrl: tmdbImageUrl(tvResult.tv.poster_path) || undefined,
             backdropUrl: tmdbImageUrl(tvResult.tv.backdrop_path) || undefined,
+            logoUrl: tmdbImageUrl(tvResult.tv.logo_path) || undefined,
             releaseDate: tvResult.tv.first_air_date,
       year: tvResult.tv.first_air_date?.substring(0, 4),
             certification: tvResult.tv.certification,
             rating: tvResult.tv.vote_average,
             genres: tvResult.tv.genres?.map(g => g.name) || [],
+            networks: tvResult.tv.networks || [],
             credits: tvResult.current_season?.credits,
             productionCountries: tvResult.tv.production_countries?.map(c => c.name) || [],
             tmdbId: tvResult.tv.id,

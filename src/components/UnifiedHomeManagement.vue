@@ -2,10 +2,10 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { Check, ChevronLeft, ChevronRight, Menu, Minus, Pencil, Plus, X } from 'lucide-vue-next'
 import { t } from '../i18n'
-import { homeItemTitle, homeMenuTitle, mergeHomeOrder, moveHomeItem, visibleHomeItems, type HomeManagementGroup, type HomeManagementItem, type HomeManagementNode, type UnifiedHomeSettings } from '../utils/unifiedHomeManagement'
+import { homeItemTitle, homeMenuTitle, isHomeItemEnabled, mergeHomeOrder, moveHomeItem, visibleHomeItems, type HomeManagementGroup, type HomeManagementItem, type HomeManagementNode, type UnifiedHomeSettings } from '../utils/unifiedHomeManagement'
 
-const props = defineProps<{ items: HomeManagementItem[]; groups: HomeManagementGroup[]; settings: UnifiedHomeSettings }>()
-const emit = defineEmits<{ (event: 'save', value: UnifiedHomeSettings): void; (event: 'close'): void; (event: 'reset'): void; (event: 'rename', id: string, title: string): void }>()
+const props = defineProps<{ items: HomeManagementItem[]; groups: HomeManagementGroup[]; settings: UnifiedHomeSettings; canEnable?: (id: string) => boolean; placementState?: (id: string) => { home: boolean; favorite: boolean } }>()
+const emit = defineEmits<{ (event: 'save', value: UnifiedHomeSettings): void; (event: 'close'): void; (event: 'reset'): void; (event: 'rename', id: string, title: string): void; (event: 'remove-placement', id: string): void }>()
 const draft = ref<UnifiedHomeSettings>({ order: mergeHomeOrder(props.settings.order, props.items), hidden: [...props.settings.hidden], titles: { ...props.settings.titles } })
 const editing = ref(false)
 const path = ref<HomeManagementNode[]>([])
@@ -86,21 +86,35 @@ function startDrag(event: PointerEvent, id: string) {
 onBeforeUnmount(() => dragCleanup?.())
 const renameTarget = ref<HomeManagementItem>()
 const renameText = ref('')
+const favoriteOnly = (item: HomeManagementItem) => {
+  const state = props.placementState?.(item.id)
+  return !!state?.favorite && !state.home
+}
 const visible = computed(() => visibleHomeItems(props.items, draft.value))
-const displayNodes = computed<HomeManagementNode[]>(() => {
+const nodesById = computed(() => {
   const flatten = (nodes: HomeManagementNode[]): HomeManagementNode[] => nodes.flatMap(node => [node, ...flatten(node.children || [])])
-  const byId = new Map(props.groups.flatMap(group => flatten(group.nodes)).map(node => [node.id, node]))
-  return visible.value.map(item => ({ id: item.id, title: item.title, item, children: byId.get(item.id)?.children }))
+  return new Map(props.groups.flatMap(group => flatten(group.nodes)).map(node => [node.id, node]))
 })
-const currentNodes = computed(() => path.value.at(-1)?.children || [])
-const currentTitle = computed(() => path.value.at(-1)?.title || t('nav.home'))
+const displayNodes = computed<HomeManagementNode[]>(() => visible.value.map(item => ({
+  id: item.id, title: item.title, item, children: nodesById.value.get(item.id)?.children,
+  expandable: nodesById.value.get(item.id)?.expandable
+})))
+// Resolve open levels from the latest catalog, not the snapshot from the click.
+const currentNode = computed(() => {
+  const opened = path.value.at(-1)
+  return opened ? nodesById.value.get(opened.id) || opened : undefined
+})
+const currentNodes = computed(() => currentNode.value?.children || [])
+const currentTitle = computed(() => currentNode.value?.title || t('nav.home'))
 function title(item: HomeManagementItem) { return homeItemTitle(item, draft.value) }
 function toggle(item: HomeManagementItem) {
-  const enabled = !draft.value.hidden.includes(item.id) && (!item.optIn && !item.child || draft.value.order.includes(item.id))
+  const enabled = isHomeItemEnabled(item, draft.value)
+  if (!enabled && favoriteOnly(item)) { emit('remove-placement', item.id); return }
+  if (!enabled && props.canEnable?.(item.id) === false) return
   draft.value.hidden = enabled ? [...draft.value.hidden, item.id] : draft.value.hidden.filter(id => id !== item.id)
   if (!enabled && !draft.value.order.includes(item.id)) draft.value.order.push(item.id)
 }
-function enabled(item: HomeManagementItem) { return !draft.value.hidden.includes(item.id) && (!item.optIn && !item.child || draft.value.order.includes(item.id)) }
+function enabled(item: HomeManagementItem) { return isHomeItemEnabled(item, draft.value) || favoriteOnly(item) }
 function save() { emit('save', draft.value); emit('close') }
 function move(id: string, target: string) {
   draft.value = moveHomeItem(draft.value, visible.value.map(item => item.id), id, target)
@@ -138,13 +152,14 @@ watch(() => props.items, items => { draft.value.order = mergeHomeOrder(draft.val
         </div>
       </template>
       <template v-else>
+        <p v-if="path.length && !currentNodes.length" class="management-empty" role="status">{{ t('libraryBrowse.empty') }}</p>
         <template v-for="group in path.length ? [{ id: 'current', title: '', nodes: currentNodes }] : [{ id: 'display', title: t('unified.displayItems'), nodes: displayNodes }, ...groups]" :key="group.id">
           <h3 v-if="group.title">{{ group.title }}</h3>
           <div v-for="node in group.nodes" :key="node.id" class="management-row">
-            <button v-if="group.id !== 'display' && node.children?.length" class="node-title" @click="path.push(node)">{{ node.title }}</button><strong v-else>{{ group.id === 'display' && node.item ? homeMenuTitle(node.item, draft) : node.title }}</strong>
-            <button v-if="group.id !== 'display' && node.children?.length" class="icon" :aria-label="t('common.open')" @click="path.push(node)"><ChevronRight :size="17" /></button>
+            <button v-if="group.id !== 'display' && (node.expandable || node.children?.length)" class="node-title" @click="path.push(node)">{{ node.title }}</button><strong v-else>{{ group.id === 'display' && node.item ? homeMenuTitle(node.item, draft) : node.title }}</strong>
+            <button v-if="group.id !== 'display' && (node.expandable || node.children?.length)" class="icon" :aria-label="t('common.open')" @click="path.push(node)"><ChevronRight :size="17" /></button>
             <button v-if="group.id === 'display' && node.item && node.id !== 'sources'" class="icon" :aria-label="t('file.rename')" @click="beginRename(node.item)"><Pencil :size="17" /></button>
-            <button v-if="node.item" class="visibility" :class="{ hidden: !enabled(node.item) }" :aria-label="t(!enabled(node.item) ? 'unified.showItem' : 'unified.hideItem', { name: title(node.item) })" @click="toggle(node.item)"><Plus v-if="!enabled(node.item)" :size="13" /><Minus v-else :size="13" /></button>
+            <button v-if="node.item" class="visibility" :disabled="!enabled(node.item) && canEnable?.(node.item.id) === false" :class="{ hidden: !enabled(node.item) }" :aria-label="t(!enabled(node.item) ? 'unified.showItem' : 'unified.hideItem', { name: title(node.item) })" @click="toggle(node.item)"><Plus v-if="!enabled(node.item)" :size="13" /><Minus v-else :size="13" /></button>
           </div>
         </template>
       </template>
@@ -155,6 +170,7 @@ watch(() => props.items, items => { draft.value.order = mergeHomeOrder(draft.val
 </template>
 
 <style scoped>
+.management-empty { padding: 24px 8px; color: var(--color-text-3); text-align: center; }
 .home-management{width:100%;min-width:0;box-sizing:border-box}
 .management-scroll{width:100%;min-width:0;box-sizing:border-box;scrollbar-gutter:stable}
 .management-row{width:100%;box-sizing:border-box}

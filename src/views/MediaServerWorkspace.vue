@@ -1,5 +1,6 @@
 <template>
   <div class="media-server-workspace" :class="{ 'unified-server-category': props.unifiedBrowse, 'unified-server-root': props.unifiedRoot }">
+    <MediaServerPlaylistModal />
     <MediaServerRegistryPanel v-if="currentRoute.kind === 'registry'" />
 
     <div v-else-if="!registry.currentServer" class="server-empty-shell">
@@ -452,7 +453,7 @@
         </template>
 
         <template v-else-if="currentRoute.kind === 'collection-page'">
-          <div class="home-page">
+          <div class="home-page" :class="{ 'collection-page-initial-loading': currentCollectionLoading && currentCollectionItems.length === 0 }">
             <div v-if="!props.unifiedBrowse && !props.unifiedRoot" class="listing-page-header">
               <button type="button" class="detail-back-button listing-back-button" @click="navigation.goHome()">
                 <IconFont name="iconarrow-left-2-icon" />
@@ -474,7 +475,10 @@
                 </button>
               </div>
             </div>
-            <div class="library-shell" :class="listingShellClass">
+            <div v-if="currentCollectionLoading && currentCollectionItems.length === 0" class="workspace-center-progress collection-initial-loading">
+              <MediaLoadingIndicator />
+            </div>
+            <div v-else class="library-shell" :class="listingShellClass">
               <a-trigger v-for="item in currentCollectionItems" :key="item.id" trigger="contextMenu" align-point auto-fit-position>
 <div role="button" tabindex="0"
 
@@ -539,8 +543,8 @@
               <a-button type="primary" @click="loadCurrentCollection(true)">{{ t('mediaServer.retry') }}</a-button>
             </div>
             <MediaEmptyFolder v-else-if="currentCollectionItems.length === 0 && !currentCollectionLoading" class="server-empty-folder" />
-            <div v-else-if="currentCollectionLoading" class="home-loading collection-loading-inline">
-              <MediaLoadingIndicator />
+            <div v-else-if="currentCollectionLoading && currentCollectionItems.length > 0" class="home-loading collection-loading-inline">
+              <MediaLoadingIndicator :size="32" />
               <span>{{ t('mediaServer.loadingMore') }}</span>
             </div>
             <div v-else-if="currentCollectionError" class="home-error inline-home-error">
@@ -809,6 +813,13 @@
                       <IconFont name="iconarrow-left-2-icon" />
                       <span>{{ currentBackLabel }}</span>
                     </button>
+                    <div class="detail-top-actions">
+                      <button type="button" class="detail-top-icon-action" title="播放列表" @click="handleServerPosterAction(detailDisplayedItem, 'playlist')"><ListPlus :size="20" /></button>
+                      <a-dropdown trigger="click" position="br">
+                        <button type="button" class="detail-top-icon-action" title="更多操作"><Ellipsis :size="20" /><ChevronDown :size="12" /></button>
+                        <template #content><MediaPosterMenu server detail :tv="currentDetail.kind === 'series' || currentDetail.kind === 'season'" :watched="detailIsWatched" :favorite="detailIsFavorite" @action="handleServerPosterAction(detailDisplayedItem, $event)" /></template>
+                      </a-dropdown>
+                    </div>
                   </div>
 
                   <div class="detail-hero-copy">
@@ -822,19 +833,22 @@
                             @error="handleDetailLogoError"
                           />
                         </div>
+                        <div v-else class="detail-title-block">
+                          <h1 class="detail-hero-title">{{ currentDetail.title }}</h1>
+                        </div>
 
                         <div class="detail-actions-column">
-                          <div class="detail-play-row">
+                          <div class="detail-play-row" :class="{ 'has-version': detailSourceOptions.length > 1 }">
                             <button class="detail-primary-play" :class="{ 'has-resume': detailPlayResume }" @click="handleDetailPlay">
                               <span v-if="detailPlayResume" class="detail-play-progress" aria-hidden="true" :style="{ width: `${detailPlayResume.percent}%` }"></span>
                               <span class="detail-play-label">{{ detailPlayLabel }}</span>
                             </button>
                             <a-trigger
-                              v-if="detailSourceOptions.length > 0"
+                              v-if="detailSourceOptions.length > 1"
                               v-model:popup-visible="versionMenuVisible"
                               trigger="click"
                               position="bottom"
-                              auto-fit-popup-width="false"
+                              :auto-fit-popup-width="false"
                               :unmount-on-close="false"
                             >
                               <button class="detail-play-version-trigger" title="选择视频版本">
@@ -851,32 +865,29 @@
                                     @click="selectSourceOption(source.id)"
                                   >
                                     <div class="detail-version-main">
-                                      <span>{{ source.title }}</span>
-                                      <small v-if="source.fileSubLabel">{{ source.fileSubLabel }}</small>
+                                      <span>{{ mediaVersionQualityTitle(source.mediaInfoCards) || source.title }}</span>
+                                      <small v-if="mediaVersionQualityDetails(source.mediaInfoCards)">{{ mediaVersionQualityDetails(source.mediaInfoCards) }}</small>
                                     </div>
                                     <span v-if="selectedSourceOption?.id === source.id" class="detail-version-check">{{ t('mediaServer.current') }}</span>
                                   </button>
                                 </div>
                               </template>
                             </a-trigger>
-                            <button v-else class="detail-play-version-trigger" disabled title="暂无更多版本">
-                              <IconFont name="icondown" />
-                            </button>
                           </div>
                           <div class="detail-icon-actions">
                             <button
                               class="detail-square-action"
                               :class="{ active: detailIsWatched }"
-                              title="标记已观看"
+                              :title="detailIsWatched ? '标记未观看' : '标记已观看'"
                               @click="handleDetailAction('watched')"
                             >
-                              <IconFont name="iconchakan" />
+                              <component :is="detailIsWatched ? EyeOff : Eye" :size="20" />
                             </button>
                             <a-trigger
                               v-if="detailDownloadOptions.length > 1"
                               trigger="click"
                               position="bottom"
-                              auto-fit-popup-width="false"
+                              :auto-fit-popup-width="false"
                             >
                               <button class="detail-square-action" title="下载">
                                 <IconFont name="icondownload" />
@@ -903,12 +914,18 @@
                             </button>
                             <button
                               class="detail-square-action"
+                              title="评分"
+                              @click="openServerPersonalRating(detailDisplayedItem)"
+                            ><Star :size="20" /></button>
+                            <button
+                              class="detail-square-action"
                               :class="{ active: detailIsFavorite }"
-                              title="收藏"
+                              :title="detailIsFavorite ? '取消收藏' : '收藏'"
                               @click="handleDetailAction('favorite')"
                             >
-                              <IconFont name="iconstar" :fill="detailIsFavorite ? 'currentColor' : 'none'" />
+                              <Heart :size="20" :fill="detailIsFavorite ? 'currentColor' : 'none'" />
                             </button>
+                            <button class="detail-square-action" title="播放列表" @click="handleServerPosterAction(detailDisplayedItem, 'playlist')"><ListPlus :size="20" /></button>
                           </div>
                         </div>
                       </div>
@@ -932,10 +949,11 @@
                               {{ currentOverviewText || t('mediaServer.noOverview') }}
                             </p>
                           </div>
-                          <div v-if="typeof detailDisplayedItem.rating === 'number'" class="detail-score-row">
-                            <img class="detail-score-logo" :src="tmdbVerticalLogo" alt="TMDB" />
-                            <strong>{{ detailDisplayedItem.rating.toFixed(1) }}</strong>
-                          </div>
+                          <MediaSourceRatings
+                            class="detail-score-row"
+                            :rating="detailDisplayedItem.rating"
+                            :critic-rating="detailDisplayedItem.criticRating"
+                          />
                         </div>
                       </div>
                     </div>
@@ -984,9 +1002,6 @@
                           <button type="button" class="detail-episode-play-overlay" :aria-label="`播放 ${episode.title}`" @click.stop="playHomeMediaItem(episode)">
                             <Play :size="20" fill="currentColor" aria-hidden="true" />
                           </button>
-                          <div v-if="selectedEpisodeId === episode.id" class="detail-episode-selected-badge">
-                            <span>✓</span>
-                          </div>
                           <div v-if="typeof episode.progress === 'number' && episode.progress > 0" class="detail-episode-progress">
                             <div class="detail-episode-progress-bar" :style="{ width: `${Math.min(100, episode.progress)}%` }" />
                           </div>
@@ -1108,12 +1123,15 @@
                     </div>
                   </section>
 
-                  <section v-if="selectedSourceOption?.mediaInfoCards.length || selectedSourceOption?.fileLabel || detailDisplayedItem.mediaInfoCards.length || detailDisplayedItem.fileLabel" class="detail-section detail-section-media">
+                  <section v-if="selectedSourceOption?.mediaInfoCards.length || selectedSourceOption?.fileLabel || selectedSourceOption?.filePath || detailDisplayedItem.mediaInfoCards.length || detailDisplayedItem.fileLabel || detailDisplayedItem.filePath" class="detail-section detail-section-media">
                     <div class="detail-section-header">
                       <h4>媒体</h4>
                     </div>
-                    <div v-if="selectedSourceOption?.fileLabel || detailDisplayedItem.fileLabel || detailFileSummary" class="detail-file-bar">
+                    <div v-if="selectedSourceOption?.fileLabel || selectedSourceOption?.filePath || detailDisplayedItem.fileLabel || detailDisplayedItem.filePath || detailFileSummary" class="detail-file-bar">
                       <div class="detail-file-source">在 {{ registry.currentServer?.name || '媒体服务器' }} 上</div>
+                      <div v-if="selectedSourceOption?.filePath || detailDisplayedItem.filePath" class="detail-file-path">
+                        路径：{{ selectedSourceOption?.filePath || detailDisplayedItem.filePath }}
+                      </div>
                       <div class="detail-file-name">{{ selectedSourceOption?.fileLabel || detailDisplayedItem.fileLabel }}</div>
                       <div v-if="detailFileSummary" class="detail-file-meta">{{ detailFileSummary }}</div>
                     </div>
@@ -1381,15 +1399,19 @@ import type { PosterAction } from '../utils/mediaPosterMenu'
 import { openCustomSeries } from '../utils/customMediaSeries'
 import { detailResumeState } from '../utils/detailResume'
 import MediaEmptyFolder from '../components/MediaEmptyFolder.vue'
-import { Folder, Play, UserRound } from 'lucide-vue-next'
+import { Folder, Play, UserRound, Heart, Star, ListPlus, Ellipsis, ChevronDown, Eye, EyeOff } from 'lucide-vue-next'
 import { openMediaShare } from '../utils/mediaShare'
 import { openServerPersonalRating } from '../utils/mediaPersonalRating'
+import MediaServerPlaylistModal from '../components/MediaServerPlaylistModal.vue'
+import { openServerPlaylist } from '../media-server/playlists'
 import WatchedIndicator from '../components/WatchedIndicator.vue'
 import PosterRatingBadge from '../components/PosterRatingBadge.vue'
 import { compareMediaServerItems, type MediaServerBrowseSort, type MediaServerSortDirection } from '../utils/mediaServerBrowseSort'
 const props = defineProps<{ unifiedRoot?: boolean; rootSelection?: boolean; unifiedBrowse?: boolean; browseMode?: 'grid' | 'list'; serverSort?: MediaServerBrowseSort; serverSortDirection?: MediaServerSortDirection; serverSortSeed?: number }>()
 function sortListing<T extends MediaServerLibraryNode>(items: T[]): T[] {
   if (!props.unifiedBrowse && !props.unifiedRoot) return items
+  // Paged catalogs keep the provider's global order. Shuffle is a stable local presentation.
+  if (props.unifiedBrowse && props.serverSort !== 'random' && currentCollectionKind.value !== 'nextup') return items
   return [...items].sort((a, b) => compareMediaServerItems(a, b, props.serverSort || 'sortName', props.serverSortDirection || 'ascending', props.serverSortSeed))
 }
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -1400,9 +1422,9 @@ import MediaServerStatsRow from '../components/media-server/home/MediaServerStat
 import jellyfinIcon from '../assets/media-server/jellyfin.svg'
 import embyIcon from '../assets/media-server/emby.svg'
 import plexIcon from '../assets/media-server/plex.svg'
-import tmdbVerticalLogo from '../assets/media-server/tmdb_vertical_logo.svg'
+import MediaSourceRatings from '../components/MediaSourceRatings.vue'
 import { getMediaServerDownloadInfo, getMediaServerPlaybackInfo, getMediaServerSimilarItems, updateMediaServerFavoriteState, updateMediaServerPlayedState } from '../media-server/contentGateway'
-import { mediaFileSummary } from '../media-server/mediaSummary'
+import { mediaFileSummary, mediaVersionQualityDetails, mediaVersionQualityTitle } from '../media-server/mediaSummary'
 import { resolveMediaServerImage } from '../media-server/imageSources'
 import { toMsCacheUrl } from '../media-server/imageCache'
 import useMediaServerRegistryStore from '../store/mediaServerRegistry'
@@ -2121,7 +2143,9 @@ const detailDownloadOptions = computed<Array<{ key: DetailDownloadScope; label: 
   return [{ key: 'current', label: '下载', description: item.title }]
 })
 
-const currentOverviewText = computed(() => detailDisplayedItem.value.overview || currentDetail.value?.overview || '')
+const currentOverviewText = computed(() => detailDisplayedItem.value.overview?.trim()
+  || currentDetail.value?.overview?.trim()
+  || '')
 
 const detailEpisodeHeading = computed(() => {
   if (!currentDetail.value) return ''
@@ -2549,6 +2573,7 @@ watch(() => [detailBackdropUrl.value, personBackdropUrl.value] as const, () => {
   detailBackdropLoadFailed.value = false
 })
 
+const pageOrder = () => props.unifiedBrowse ? { sort: props.serverSort, direction: props.serverSortDirection } : {}
 const loadCurrentLibrary = async (force = false) => {
   if (!registry.currentServer) return
   try {
@@ -2557,14 +2582,14 @@ const loadCurrentLibrary = async (force = false) => {
       return
     }
     if (currentRoute.value.kind === 'library-page') {
-      await content.queueLibraryPageLoad(registry.currentServer, currentRoute.value.libraryId, force, true)
+      await content.queueLibraryPageLoad(registry.currentServer, currentRoute.value.libraryId, force, true, pageOrder())
       return
     }
     if (currentRoute.value.kind === 'genre-page') {
       await content.loadFilteredPage(
         registry.currentServer,
         `genre:${currentRoute.value.genre}`,
-        { genre: currentRoute.value.genre },
+        { genre: currentRoute.value.genre, order: pageOrder() },
         force
       )
       return
@@ -2573,7 +2598,7 @@ const loadCurrentLibrary = async (force = false) => {
       await content.loadFilteredPage(
         registry.currentServer,
         `studio:${currentRoute.value.studio}`,
-        { studio: currentRoute.value.studio },
+        { studio: currentRoute.value.studio, order: pageOrder() },
         force
       )
     }
@@ -2671,6 +2696,7 @@ const openMediaServerPlayback = async (
       media_server_episode_playlist: options?.episodePlaylist || []
     }
   })
+  if (window.WebOpenWindow) registry.recordPlayback(server.id)
 }
 
 const cleanDownloadSegment = (value: string) => {
@@ -2888,6 +2914,11 @@ const playHomeMediaItem = async (item: MediaServerCardItem | MediaServerLibraryN
 
 const serverDeletePending = new Set<string>()
 const handleServerPosterAction = async (item: MediaServerCardItem | MediaServerLibraryNode, action: PosterAction) => {
+ if (action === 'playlist') {
+  const server = ('serverId' in item && item.serverId ? registry.servers.find(server => server.id === item.serverId) : registry.currentServer)
+  if (server) openServerPlaylist({ config: server, itemId: item.id, title: item.title })
+  return
+ }
  if (action === 'rating') {
   const server = registry.servers.find(server => server.id === item.serverId)
   if (!server) return
@@ -2923,6 +2954,10 @@ const handleServerPosterAction = async (item: MediaServerCardItem | MediaServerL
  if (action === 'share') { openMediaShare({ id: item.id, title: item.title, year: item.year }); return }
  if (action === 'play' || action === 'loop' || action === 'shuffle') { await playHomeMediaItem(item, action); return }
  if (action === 'refresh') { await refreshHomeAfterMediaAction(); if (currentRoute.value.kind === 'collection-page') await loadCurrentCollection(true); else await loadCurrentLibrary(true); return }
+ if ((action === 'watched' || action === 'favorite') && currentRoute.value.kind === 'item-detail' && item.id === detailDisplayedItem.value.id) {
+   await handleDetailAction(action)
+   return
+ }
  if (action === 'watched' || action === 'favorite' || action === 'download') await handleHomeMediaAction(item, action)
 }
 const watchedPending = ref(new Set<string>())
@@ -3203,7 +3238,12 @@ const handleDetailAction = async (action: 'watched' | 'favorite') => {
     const wasPlayed = detailIsWatched.value
     try {
       await updateMediaServerPlayedState(server, itemId, wasPlayed)
+      for (const episode of detailEpisodeItems.value) {
+        if (episode.id === itemId || detailDisplayedItem.value.kind === 'series' || detailDisplayedItem.value.kind === 'season') episode.isPlayed = !wasPlayed
+      }
       await content.loadItemDetail(server, itemId, true)
+      const episodeParentId = activeDetailSeason.value?.id || (currentDetail.value?.kind === 'season' ? currentDetail.value.id : '')
+      if (episodeParentId) await content.loadLibraryPage(server, episodeParentId, true, false)
       if (currentDetail.value?.id && currentDetail.value.id !== itemId) {
         await content.loadItemDetail(server, currentDetail.value.id, true)
       }
@@ -3336,21 +3376,18 @@ const loadCurrentCollection = async (force = false) => {
     await content.queueCollectionPageLoad(registry.currentServer, kind, {
       resumeNextUp: homePreferences.resumeNextUp,
       maxNextUpDays: homePreferences.maxNextUpDays
-    }, force)
+    }, force, pageOrder())
   } catch {
     // store keeps error state
   }
 }
 
-// Finish pagination before settling the global order, not just sorting each fetched page.
-watch(() => [props.unifiedBrowse, props.serverSort, props.serverSortDirection, currentPagedLibrary.value.key, currentPagedLibrary.value.currentPage, currentLibraryPageLoading.value, currentCollection.value.currentPage, currentCollectionLoading.value], () => {
+// Sort changes start a new server-side result set; scrolling owns subsequent pages.
+watch(() => [props.unifiedBrowse, props.serverSort, props.serverSortDirection], () => {
   if (!props.unifiedBrowse) return
-  if (currentRoute.value.kind === 'collection-page') {
-    if (!currentCollectionLoading.value && !currentCollectionError.value && currentCollection.value.currentPage >= 0 && currentCollection.value.hasNextPage) void loadCurrentCollection(false)
-  } else if (['library-page', 'genre-page', 'studio-page'].includes(currentRoute.value.kind)) {
-    if (!currentLibraryPageLoading.value && !currentLibraryError.value && currentPagedLibrary.value.currentPage >= 0 && currentPagedLibrary.value.hasNextPage) void loadCurrentLibrary(false)
-  }
-}, { flush: 'post' })
+  if (currentRoute.value.kind === 'collection-page') void loadCurrentCollection(true)
+  else if (['library-page', 'genre-page', 'studio-page'].includes(currentRoute.value.kind)) void loadCurrentLibrary(true)
+})
 
 const handleWorkspaceScroll = () => {
   if (!workspacePageRef.value) return
@@ -3371,6 +3408,17 @@ const handleWorkspaceScroll = () => {
     loadCurrentLibrary(false)
   }
 }
+
+// A very wide/tall window may fit the first page without a scrollbar. Fill
+// only that viewport; subsequent pages still require scrolling near the bottom.
+watch(() => [currentLibraryItems.value.length, currentCollectionItems.value.length,
+  currentLibraryPageLoading.value, currentCollectionLoading.value, props.browseMode], async () => {
+  await nextTick()
+  const element = workspacePageRef.value
+  if (!element || !element.clientHeight || element.scrollHeight > element.clientHeight + 1) return
+  if (currentLibraryError.value || currentCollectionError.value) return
+  handleWorkspaceScroll()
+}, { flush: 'post' })
 
 const handleLibraryItemClick = (itemId: string, title: string, item?: MediaServerLibraryNode) => {
   if (item && isDetailCandidate(item)) {
@@ -4633,6 +4681,16 @@ onUnmounted(() => {
 
 .collection-loading-inline {
   margin-top: 8px;
+  justify-content: center;
+}
+
+.collection-page-initial-loading {
+  min-height: 100%;
+}
+
+.collection-initial-loading {
+  flex: 1;
+  min-height: 320px;
 }
 
 .statistics-row {
@@ -6758,22 +6816,6 @@ onUnmounted(() => {
 
 .detail-episode-play-overlay svg {
   margin-left: 2px;
-}
-
-.detail-episode-selected-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #4a7df1;
-  color: #fff;
-  font-size: 16px;
-  font-weight: 800;
 }
 
 .detail-episode-progress {
@@ -9037,6 +9079,11 @@ body:not([arco-theme='dark']) #xbybody .media-server-workspace .detail-backdrop-
   cursor: default;
 }
 
+#xbybody .media-server-workspace .detail-top-actions > .detail-top-icon-action {
+  background: transparent;
+  border-color: transparent;
+}
+
 #xbybody .media-server-workspace .detail-top-action-plus {
   margin-left: -7px;
   margin-top: -10px;
@@ -9372,21 +9419,6 @@ body:not([arco-theme='dark']) #xbybody .media-server-workspace .detail-backdrop-
   outline-offset: -3px !important;
 }
 
-#xbybody .media-server-workspace .detail-episode-selected-badge {
-  top: 0 !important;
-  right: 0 !important;
-  width: 0 !important;
-  height: 0 !important;
-  border-radius: 0 !important;
-  border-top: 32px solid var(--detail-accent) !important;
-  border-left: 32px solid transparent !important;
-  background: transparent !important;
-}
-
-#xbybody .media-server-workspace .detail-episode-selected-badge span {
-  display: none !important;
-}
-
 #xbybody .media-server-workspace .detail-episode-caption {
   min-width: 0;
   margin-top: 7px;
@@ -9480,9 +9512,9 @@ body:not([arco-theme='dark']) #xbybody .media-server-workspace .detail-backdrop-
   order: 0;
   margin: 3px 0 0 !important;
   padding: 0 !important;
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 2px 24px;
+  display: flex !important;
+  flex-direction: column;
+  gap: 2px;
   border: 0 !important;
   border-radius: 0 !important;
   color: rgba(255, 255, 255, 0.5) !important;
@@ -9492,13 +9524,11 @@ body:not([arco-theme='dark']) #xbybody .media-server-workspace .detail-backdrop-
 }
 
 #xbybody .media-server-workspace .detail-file-source {
-  grid-column: 1;
   font-size: 11px;
   line-height: 1.4;
 }
 
 #xbybody .media-server-workspace .detail-file-name {
-  grid-column: 1;
   overflow: hidden;
   color: rgba(255, 255, 255, 0.48) !important;
   font-size: 11px !important;
@@ -9507,10 +9537,15 @@ body:not([arco-theme='dark']) #xbybody .media-server-workspace .detail-backdrop-
   white-space: nowrap;
 }
 
+#xbybody .media-server-workspace .detail-file-path {
+  overflow-wrap: anywhere;
+  color: rgba(255, 255, 255, 0.48) !important;
+  font-size: 11px !important;
+  line-height: 1.4;
+}
+
 #xbybody .media-server-workspace .detail-file-meta {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: end;
+  align-self: flex-start;
   max-width: 100%;
   display: flex;
   flex-wrap: wrap;
@@ -9678,5 +9713,11 @@ body:not([arco-theme='dark']) #xbybody .media-server-workspace .detail-backdrop-
 #xbybody .media-server-workspace.unified-server-category .unified-listing .library-list-overview {
   max-width: none !important; font-size: 13px !important; line-height: 1.4 !important;
   color: var(--color-text-3) !important; -webkit-line-clamp: 2 !important;
+}
+</style>
+
+<style scoped>
+#xbybody .media-server-workspace .detail-play-row:not(.has-version) {
+  grid-template-columns: minmax(0, 1fr);
 }
 </style>

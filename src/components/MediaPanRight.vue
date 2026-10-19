@@ -4,10 +4,7 @@
     <div v-if="props.unifiedFiles" class="folder-browser" :class="{ 'folder-browser-list': props.browseMode === 'list' }">
       <template v-for="item in browserItems" :key="item.file_id">
         <LocalMediaFileCard v-if="item.drive_id === 'local'" :name="item.name" :path="item.file_id" :thumbnail="item.thumbnail" :duration="item.media_duration" :height="item.media_height" :directory="item.isDir" :mode="props.browseMode" :selection="props.browseSelection" :selected="mediaPanFileStore.ListSelected.has(item.file_id)" :watched="localFileWatched(item)" @open="props.browseSelection ? handleSelect(item.file_id, {} as MouseEvent, true) : handleOpenFile({} as Event, item)" @watched="toggleLocalFileWatched(item)" @context="openFileMenu($event, item)" />
-      <button v-else :key="item.file_id" class="folder-browser-card" @contextmenu.prevent="openFileMenu($event, item)" @click="props.browseSelection ? handleSelect(item.file_id, $event, true) : handleOpenFile($event, item)">
-        <div class="folder-browser-art"><Folder v-if="item.isDir" :size="props.browseMode === 'list' ? 28 : 56" /><img v-else-if="item.thumbnail" :src="item.thumbnail" /><FileVideo v-else :size="props.browseMode === 'list' ? 28 : 56" /><input v-if="props.browseSelection" type="checkbox" :checked="mediaPanFileStore.ListSelected.has(item.file_id)" tabindex="-1" :aria-label="item.name" /></div>
-        <strong>{{ item.name }}</strong>
-      </button>
+      <FileBrowserCard v-else :key="item.file_id" :name="item.name" :directory="item.isDir" :thumbnail="item.thumbnail" :size-text="item.isDir ? '' : (item.sizeStr || formatBrowserFileSize(item.size))" :mode="props.browseMode" :selection="props.browseSelection" :selected="mediaPanFileStore.ListSelected.has(item.file_id)" @context="openFileMenu($event, item)" @open="props.browseSelection ? handleSelect(item.file_id, $event, true) : handleOpenFile($event, item)" />
       </template>
     </div>
     <!-- 加载状态 -->
@@ -136,7 +133,7 @@
         </div>
       </template>
     </a-list>
-    <a-dropdown trigger="contextMenu" :popup-visible="!!menuFile" :style="{ position: 'fixed', left: menuPosition.x + 'px', top: menuPosition.y + 'px' }" @popup-visible-change="(visible: boolean) => { if (!visible) menuFile = undefined }"><span /><template #content><div class="file-browser-context-menu"><button v-for="action in fileMenuActions" :key="action.id" :disabled="action.disabled" @click="runFileAction(action.id)"><component :is="action.icon" :size="16" /><span>{{ t(action.label) }}</span></button></div></template></a-dropdown>
+    <div v-if="menuFile" class="file-browser-context-menu" :style="{ left: menuPosition.x + 'px', top: menuPosition.y + 'px' }" role="menu"><button v-for="action in fileMenuActions" :key="action.id" type="button" role="menuitem" :disabled="action.disabled" @click="runFileAction(action.id)"><component :is="action.icon" :size="16" /><span>{{ t(action.label) }}</span></button></div>
   </div>
 </template>
 
@@ -148,11 +145,21 @@ import { isContinueWatchingMember } from '../utils/continueWatchingAction'
 import DB from '../utils/db'
 import { Play, RefreshCw, Shuffle, Star, SquareCheck, Share2, Download, Pencil, Eye, Bookmark, ListPlus, Library, Trash2 } from 'lucide-vue-next'
 import LocalMediaFileCard from './LocalMediaFileCard.vue'
+import FileBrowserCard from './FileBrowserCard.vue'
 import { useMediaLibraryStore } from '../store/medialibrary'
-import { Folder, FileVideo } from 'lucide-vue-next'
 import { IAliGetFileModel } from '../aliapi/alimodels'
 import { useMediaPanFileStore } from './stores'
 import { menuOpenFile } from '../utils/openfile'
+
+const sizeFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 })
+const formatBrowserFileSize = (bytes: number): string => {
+  if (!Number.isFinite(bytes) || bytes < 0) return ''
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let value = bytes
+  let index = 0
+  while (value >= 1024 && index < units.length - 1) { value /= 1024; index++ }
+  return `${sizeFormatter.format(value)} ${units[index]}`
+}
 
 // 定义 emit 事件
 const emit = defineEmits<{
@@ -166,7 +173,7 @@ onMounted(() => { document.addEventListener('keydown', closeFileMenu); document.
 onUnmounted(() => { document.removeEventListener('keydown', closeFileMenu); document.removeEventListener('click', closeFileMenu) })
 const menuPosition = ref({ x: 0, y: 0 })
 const openFileMenu = (event: MouseEvent, file: IAliGetFileModel) => { menuFile.value = file; menuPosition.value = { x: event.clientX, y: event.clientY } }
-const fileMenuActions = computed<Array<{ id: string; icon: typeof Play; label: Parameters<typeof t>[0]; disabled?: boolean }>>(() => menuFile.value?.isDir ? [
+const fileMenuActions = computed<Array<{ id: string; icon: typeof Play; label: Parameters<typeof t>[0]; disabled?: boolean }>>(() => !menuFile.value ? [] : menuFile.value.isDir ? [
   { id: 'play', icon: Play, label: 'unified.play' }, { id: 'loop', icon: RefreshCw, label: 'unified.loopPlay' }, { id: 'shuffle', icon: Shuffle, label: 'unified.shufflePlay' }, { id: 'favorite', icon: Star, label: 'unified.addToFavorites' }
 ] : [
   { id: 'play', icon: Play, label: 'unified.play' }, { id: 'loop', icon: RefreshCw, label: 'unified.loopPlay' }, { id: 'select', icon: SquareCheck, label: 'unified.selectItems' }, { id: 'rating', icon: Star, label: 'media.rating' },
@@ -234,17 +241,7 @@ defineExpose({
 
 <style scoped>
 .folder-browser{display:grid;grid-template-columns:repeat(auto-fill,174px);gap:24px 20px;padding:20px;align-content:start}
-.folder-browser-card{display:flex;flex-direction:column;gap:8px;min-width:0;padding:0;border:0;background:transparent;color:var(--color-text-1);text-align:left;cursor:pointer}
-.folder-browser-art{position:relative;width:174px;aspect-ratio:2/3;background:var(--color-fill-2);border-radius:16px;display:grid;place-items:center;color:#ff8b25;overflow:hidden}
-.folder-browser-art img{width:100%;height:100%;object-fit:cover}
-.folder-browser-art input{position:absolute;top:8px;right:8px;accent-color:#ff8b25}
-.folder-browser-card strong{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .folder-browser-list{display:flex;flex-direction:column;gap:0;padding:0 16px}
-.folder-browser-list .folder-browser-card{flex-direction:row;align-items:center;gap:16px;padding:16px;border-bottom:1px solid var(--color-border-2)}
-.folder-browser-list .folder-browser-art{width:86px;height:129px;flex-shrink:0;border-radius:8px}
-.folder-browser-list strong{font-size:14px}
-:global(body[arco-theme='dark']) .folder-browser-art{background:#222!important}
-:global(body[arco-theme='dark']) .folder-browser-list .folder-browser-art{background:#333!important}
 .media-pan-right {
   width: 100%;
   height: 100%;
@@ -402,11 +399,5 @@ defineExpose({
 }
 </style>
 <style>
-body[arco-theme='dark'] #xbybody .folder-browser .folder-browser-art{background:#222!important}
-body[arco-theme='dark'] #xbybody .folder-browser-list .folder-browser-art{background:#333!important}
-</style>
-
-<style>
-.arco-dropdown:has(.file-browser-context-menu),.arco-dropdown-list:has(.file-browser-context-menu){max-height:none!important;overflow:visible!important}
-.file-browser-context-menu{padding:5px;min-width:174px;background:var(--color-bg-popup);border:1px solid var(--color-border-2);border-radius:12px;box-shadow:0 8px 24px #0004}.file-browser-context-menu button{display:flex;align-items:center;gap:7px;width:100%;border:0;border-radius:5px;background:transparent;padding:5px 9px;text-align:left;color:var(--color-text-1);font-size:13px;cursor:pointer}.file-browser-context-menu button svg{color:#ff8b25}.file-browser-context-menu button:hover:not(:disabled){background:var(--color-fill-2)}.file-browser-context-menu button:disabled{opacity:.4;cursor:not-allowed}body[arco-theme=dark] .file-browser-context-menu{background:#191919}
+.file-browser-context-menu{position:fixed;z-index:2100;padding:5px;min-width:174px;background:var(--color-bg-popup);border:1px solid var(--color-border-2);border-radius:12px;box-shadow:0 8px 24px #0004}.file-browser-context-menu button{display:flex;align-items:center;gap:7px;width:100%;border:0;border-radius:5px;background:transparent;padding:5px 9px;text-align:left;color:var(--color-text-1);font-size:13px;cursor:pointer}.file-browser-context-menu button svg{color:#ff8b25}.file-browser-context-menu button:hover:not(:disabled){background:var(--color-fill-2)}.file-browser-context-menu button:disabled{opacity:.4;cursor:not-allowed}body[arco-theme=dark] .file-browser-context-menu{background:#191919}
 </style>
