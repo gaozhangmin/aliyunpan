@@ -9,7 +9,6 @@ describe('music and book artwork placeholders', () => {
     expect(placeholder).toContain('<BookOpen v-else />')
     expect(readFileSync('src/components/UnifiedMediaRow.vue', 'utf8')).toContain("row.key === 'music' ? 'music' : row.key === 'books' ? 'book' : 'film'")
     const view = readFileSync('src/views/UnifiedMediaLibraryView.vue', 'utf8')
-    expect(view).toContain('<Music v-else-if="card.key === \'music\'"')
-    expect(view).toContain('<BookOpen v-else-if="card.key === \'books\'"')
+    expect(view).toContain('libraryCategoryIcon(card.key)')
   })
 })

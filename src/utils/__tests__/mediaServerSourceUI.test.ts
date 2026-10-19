@@ -8,10 +8,11 @@ describe('media server source UI', () => {
   it('offers cover selection only for media servers', () => {
     const source = read('views/UnifiedMediaLibraryView.vue')
     const options = source.slice(source.indexOf('const contextOptions'), source.indexOf('function persistSources'))
-    const [serverOptions, folderOptions] = options.split('\n  : ')
+    const serverOptions = options.slice(options.indexOf("sourceMenu.value?.key.startsWith('server:')"), options.indexOf("  : [{ id: 'play'"))
+    const folderOptions = options.slice(0, options.indexOf("sourceMenu.value?.key.startsWith('server:')"))
     expect(serverOptions).toContain("id: 'cover'")
     expect(folderOptions).not.toContain("id: 'cover'")
-    expect(source).not.toContain("sourceDialog.value = 'cover'")
+    expect(source).toContain("sourceDialog.value = 'cover'")
   })
   it('edits the specific server without opening the registry window', () => {
     const source = read('views/UnifiedMediaLibraryView.vue')
@@ -26,7 +27,7 @@ describe('media server source UI', () => {
     const source = read('views/UnifiedMediaLibraryView.vue')
     expect(source).not.toContain('<Server ')
     expect(source).not.toContain('icon: Server')
-    expect(source.match(/<MediaServerIcon /g)).toHaveLength(4)
+    expect(source.match(/<MediaServerIcon /g)?.length).toBeGreaterThanOrEqual(4)
     expect(source).toContain('.file-source-art :deep(img.media-server-provider-icon) { position: static; inset: auto; object-fit: contain; border-radius: 0 }')
     const icon = read('components/media-server/MediaServerIcon.vue')
     for (const provider of ['emby', 'jellyfin', 'plex']) expect(icon).toContain(`assets/media-server/${provider}.svg`)

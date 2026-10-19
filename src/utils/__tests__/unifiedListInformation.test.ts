@@ -13,7 +13,7 @@ describe('home section list information', () => {
     expect(row).toContain('class="list-overview"')
     expect(row).toContain("card.posterMenu?.action('watched')")
     expect(row).toContain('@toggle="toggleWatched(card)"')
-    expect(row).toContain('<div v-for="card in row.cards"')
+    expect(row).toContain('visibleCards')
     expect(row).toContain('@click.stop @dblclick.stop @keydown.stop')
     expect(row).not.toContain('!card.posterMenu.server')
   })

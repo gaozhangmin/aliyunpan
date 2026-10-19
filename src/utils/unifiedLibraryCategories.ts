@@ -154,7 +154,7 @@ export function libraryPlaylistMembers(items: MediaLibraryItem[], ids: string[])
     for (const series of seriesItems) {
       const season = series.seasons?.find(season => season.episodes?.some(episode => `${series.id}_${episode.seasonNumber}_${episode.episodeNumber}` === id))
       const episode = season?.episodes?.find(episode => `${series.id}_${episode.seasonNumber}_${episode.episodeNumber}` === id)
-      if (episode) return [{ ...series, id, parentId: series.id, name: series.name, type: 'unmatched' as const, posterUrl: season?.posterPath ? tmdbImageUrl(season.posterPath) : series.posterUrl, seasons: season ? [{ ...season, episodes: [episode] }] : series.seasons, driveFiles: episode.driveFiles }]
+      if (episode) return [{ ...series, id, parentId: series.id, name: `${series.name} · S${episode.seasonNumber}E${episode.episodeNumber}${episode.name ? ` ${episode.name}` : ''}`, type: 'unmatched' as const, posterUrl: season?.posterPath ? tmdbImageUrl(season.posterPath) : series.posterUrl, seasons: season ? [{ ...season, episodes: [episode] }] : series.seasons, driveFiles: episode.driveFiles }]
     }
     return []
   })

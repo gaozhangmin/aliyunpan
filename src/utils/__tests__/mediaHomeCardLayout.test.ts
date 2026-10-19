@@ -17,9 +17,9 @@ describe('compact media library home cards', () => {
   })
   it('matches the reference favorite card proportions, gutters and captions', () => {
     expect(home).toMatch(/\.favorite-shortcut\{[^}]*width:172px/)
-    expect(home).toMatch(/\.favorite-shortcut-art\{[^}]*height:91px;[^}]*border-radius:16px/)
+    expect(home).toMatch(/\.favorite-shortcut-art\{[^}]*aspect-ratio:1\.8;[^}]*border-radius:10% \/ 18%/)
     expect(home).toContain('.source-shortcuts .horizontal-row{gap:24px}')
-    expect(home).toMatch(/\.favorite-shortcut strong\{[^}]*margin-top:8px;[^}]*font-size:12px/)
+    expect(home).toMatch(/\.favorite-shortcut strong\{[^}]*margin-top:8px;[^}]*font-size:14px/)
     expect(home).not.toContain('.favorite-shortcut{width:240px}')
   })
   it('uses the same poster ratio at every horizontal-row breakpoint', () => {
@@ -31,8 +31,8 @@ describe('compact media library home cards', () => {
     expect(row).toContain('.media-card.landscape { width: 280px; }')
   })
   it('preserves provider icons, image loading and menu/navigation behavior', () => {
-    expect(home).toContain('<MediaServerIcon v-else-if="sourceServer(source.key)"')
-    expect(row).toContain('@click="clickCard(card)"')
+    expect(home).toContain('<MediaServerIcon v-if="sourceServer(card.key)"')
+    expect(row).toContain('@click="!reordering && clickCard(card)"')
     expect(row).toContain('@contextmenu="openMenu($event, card)"')
     expect(row).toContain('loading="lazy"')
     expect(home).toContain("showCatalog('favorites')")

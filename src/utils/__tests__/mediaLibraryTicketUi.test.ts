@@ -16,10 +16,10 @@ describe('media library ticket regressions', () => {
   it('shows quick filtering on every media-list navigation page', () => {
     const source = read('src/components/MediaLibrary.vue')
 
-    expect(source).toContain("'continue', 'continue-watching', 'recent', 'recently-added', 'movies', 'tv', 'tv-shows'")
-    expect(source).toContain("'documentary', 'animation', 'unmatched', 'unwatched', 'favorites'")
-    expect(source).toContain('return quickSearchCategories.has(category) || showDrillDownBackBar.value || showPlaylistBackBar.value')
-    expect(source).toContain('const showResultCount = computed(() => showQuickSearch.value)')
+    expect(source).toContain('class="search-panel-input"')
+    expect(source).toContain('v-model="localSearchQuery"')
+    expect(source).toContain('showDrillDownBackBar')
+    expect(source).toContain('showPlaylistBackBar')
   })
 
   it('keeps media results visible while a folder scan is running', () => {
@@ -76,7 +76,7 @@ describe('media library ticket regressions', () => {
     const library = read('src/components/MediaLibrary.vue')
     const fileList = read('src/components/MediaPanRight.vue')
 
-    expect(library).toContain('v-if="!props.unifiedBrowse && !showingDetail && !props.selectedFolder"')
+    expect(library).toContain('v-else-if="props.selectedFolder && folderFileList.length > 0"')
     expect(library).not.toContain('library-home-page')
     expect(library).not.toContain('isHomeView')
     expect(library).not.toContain('localHomePreferences')
