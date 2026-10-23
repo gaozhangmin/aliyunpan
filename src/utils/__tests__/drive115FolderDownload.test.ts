@@ -31,4 +31,10 @@ describe('cloud folder download', () => {
     expect(downDal).toContain("cloudPath: file.path || ''")
     expect(aria).toContain("dirInfo as any).dirPath = info.cloudPath || ''")
   })
+
+  it('normalizes synthetic root ids before listing recursive Aliyun download children', () => {
+    const trash = readFileSync(resolve(process.cwd(), 'src/aliapi/trash.ts'), 'utf8')
+    expect(trash).toContain("const parentFileId = dir.dirID.includes('root') ? 'root' : dir.dirID")
+    expect(trash).toContain('parent_file_id: parentFileId')
+  })
 })

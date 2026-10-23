@@ -14,6 +14,11 @@ export default function getFileIcon(category: string | undefined, ext: string | 
   ext = '.' + ext.toLowerCase().replace('.', '').trim() + '.'
   mimext = '.' + mimext.toLowerCase().replace('.', '').trim() + '.'
 
+  // Audio extensions take precedence over provider-supplied video categories.
+  if (new Set(['mp3', 'aac', 'ac3', 'amr', 'ape', 'aif', 'aiff', 'au', 'dsf', 'dts', 'dtshd', 'eac3', 'flac', 'm1a', 'm2a', 'm4a', 'm4b', 'm4r', 'mka', 'mpa', 'mpc', 'opus', 'ogg', 'f4a', 'f4b', 'ra', 'tak', 'tta', 'wav', 'wma', 'wv']).has(ext.slice(1, -1))) {
+    return ['audio2', 'iconfile-audio']
+  }
+
   switch (ext) {
     case '.txt.':
       return ['doc', 'iconfile-txt']

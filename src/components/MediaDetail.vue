@@ -60,7 +60,7 @@ const activeMediaItem = computed<MediaLibraryItem>(() => (props.mediaItem.collec
 const selectedSeason = ref(activeMediaItem.value.type === 'tv' && activeMediaItem.value.seasons?.length ? activeMediaItem.value.seasons[0].seasonNumber : 1)
 const detailLogoLoadFailed = ref(false)
 const detailLogoUrl = computed(() => {
-  if (detailLogoLoadFailed.value || !activeMediaItem.value.logoUrl) return ''
+  if (activeMediaItem.value.type === 'movie' || detailLogoLoadFailed.value || !activeMediaItem.value.logoUrl) return ''
   return activeMediaItem.value.logoUrl
 })
 watch(() => activeMediaItem.value.logoUrl, () => {

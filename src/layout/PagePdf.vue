@@ -39,6 +39,10 @@ const aiFile = computed(() => {
 let pdfDoc: any = null
 let loadingTask: any = null
 let renderTask: any = null
+let renderGeneration = 0
+let renderQueue: Promise<void> = Promise.resolve()
+let disposed = false
+let renderedPage: any = null
 
 const onKeyDown = (event: KeyboardEvent) => {
   const ele = (event.srcElement || event.target) as any
@@ -71,7 +75,13 @@ const handleMaxClick = (_e?: any) => {
   if (window.WebToWindow) window.WebToWindow({ cmd: 'maxsize' })
 }
 
-const renderPage = async () => {
+const renderPage = () => {
+  const generation = ++renderGeneration
+  const requestedPage = pageNum.value
+  const requestedScale = scale.value
+  renderTask?.cancel()
+  renderQueue = renderQueue.catch(() => {}).then(async () => {
+  if (disposed || generation !== renderGeneration) return
   if (!pdfDoc || !canvasRef.value) return
   loading.value = true
   errorText.value = ''
@@ -80,23 +90,34 @@ const renderPage = async () => {
       renderTask.cancel()
       renderTask = null
     }
-    const page = await pdfDoc.getPage(pageNum.value)
-    const viewport = page.getViewport({ scale: scale.value })
+    renderedPage?.cleanup()
+    renderedPage = null
+    const page = await pdfDoc.getPage(requestedPage)
+    if (disposed || generation !== renderGeneration) { page.cleanup(); return }
+    renderedPage = page
+    const viewport = page.getViewport({ scale: requestedScale })
+    // Bound raster memory independently of the logical zoom/page dimensions.
+    const rasterScale = Math.min(1, 4096 / Math.max(viewport.width, viewport.height), Math.sqrt(8_000_000 / (viewport.width * viewport.height)))
     const canvas = canvasRef.value
     const context = canvas.getContext('2d')
     if (!context) throw new Error('无法创建 PDF 画布')
-    canvas.width = Math.floor(viewport.width)
-    canvas.height = Math.floor(viewport.height)
-    renderTask = page.render({ canvasContext: context, viewport })
+    canvas.width = Math.max(1, Math.floor(viewport.width * rasterScale))
+    canvas.height = Math.max(1, Math.floor(viewport.height * rasterScale))
+    canvas.style.width = `${viewport.width}px`
+    canvas.style.height = `${viewport.height}px`
+    renderTask = page.render({ canvasContext: context, viewport, transform: rasterScale === 1 ? undefined : [rasterScale, 0, 0, rasterScale, 0, 0] })
     await renderTask.promise
   } catch (err: any) {
-    if (err?.name !== 'RenderingCancelledException') {
+    if (!disposed && generation === renderGeneration && err?.name !== 'RenderingCancelledException') {
       errorText.value = err?.message || 'PDF 渲染失败'
       message.error(errorText.value)
     }
   } finally {
-    loading.value = false
+    renderTask = null
+    if (generation === renderGeneration) loading.value = false
   }
+  })
+  return renderQueue
 }
 
 const loadPdf = async () => {
@@ -112,7 +133,9 @@ const loadPdf = async () => {
     loadingTask = (pdfjsLib as any).getDocument({
       url,
       withCredentials: false,
-      disableStream: false,
+      disableStream: true,
+      disableAutoFetch: true,
+      rangeChunkSize: 256 * 1024,
       disableRange: false
     })
     pdfDoc = await loadingTask.promise
@@ -171,6 +194,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  disposed = true
+  renderGeneration++
   window.removeEventListener('keydown', onKeyDown, true)
   if (renderTask) renderTask.cancel()
   if (loadingTask) loadingTask.destroy()

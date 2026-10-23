@@ -1986,7 +1986,7 @@ const detailBackdropUrl = computed(() => {
 })
 
 const detailLogoUrl = computed(() => {
-  if (!currentDetail.value || detailLogoLoadFailed.value) return ''
+  if (!currentDetail.value || currentDetail.value.kind === 'movie' || detailLogoLoadFailed.value) return ''
   return wrapCacheUrl(resolveMediaServerImage(currentDetail.value, 'logo'))
 })
 

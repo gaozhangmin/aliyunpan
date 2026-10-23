@@ -159,9 +159,14 @@ export default class AliTrash {
       return true
     }
     const url = 'adrive/v3/file/list'
+    // The download walker can receive the synthetic root id (for example when
+    // the selected folder is the drive root). Aliyun's list endpoint only
+    // accepts the literal `root`; passing a UI/root alias returns an empty
+    // child page and makes nested downloads appear as empty folders.
+    const parentFileId = dir.dirID.includes('root') ? 'root' : dir.dirID
     const postdata = {
       drive_id: dir.m_drive_id,
-      parent_file_id: dir.dirID,
+      parent_file_id: parentFileId,
       marker: dir.next_marker,
       limit: 100,
       all: false,

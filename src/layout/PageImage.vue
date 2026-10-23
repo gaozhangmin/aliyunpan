@@ -186,6 +186,11 @@ const showImage = () => {
         url: 'data-src',
         fullscreen: true,
         loop: false,
+        // Large cloud images can make Viewer.js transition animation contend
+        // with pinch/double-tap rendering. Keep gestures immediate and let
+        // the browser compositor handle the transform.
+        transition: false,
+        zoomRatio: 0.2,
         play: () => {
           isPlaying.value = true
         },
